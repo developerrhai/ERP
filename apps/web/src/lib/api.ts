@@ -4,7 +4,7 @@ import { broadcastLogout, broadcastRefreshed } from '../auth/channel';
 import { clearSession, getAccessToken, setSession } from '../auth/session';
 import type { AuthResult, PageMeta } from '../types';
 
-export const API_BASE = '/api/v1';
+export const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/api/v1';
 const CSRF_HEADER = { 'X-Requested-With': 'rhai-web' } as const;
 export const NETWORK_MESSAGE = 'Cannot reach the server. Check your connection and try again.';
 export const SESSION_ENDED_MESSAGE = 'Your session ended. Please sign in again.';

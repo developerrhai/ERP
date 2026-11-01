@@ -55,7 +55,13 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.WEB_ORIGIN,
+      origin: (origin, callback) => {
+        if (!origin || origin === env.WEB_ORIGIN || origin.endsWith('.vercel.app') || origin.includes('localhost')) {
+          callback(null, true);
+        } else {
+          callback(null, env.WEB_ORIGIN);
+        }
+      },
       credentials: true,
       allowedHeaders: [
         'Content-Type',

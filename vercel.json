@@ -3,6 +3,10 @@
   "outputDirectory": "apps/web/dist",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://institute-api.rhaitech.online/sawant-erp/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
