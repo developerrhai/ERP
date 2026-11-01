@@ -17,7 +17,7 @@ async function openLogin(routes: Record<string, Handler> = {}) {
 }
 
 describe('LoginPage', () => {
-  it('shows only the contract fields, empty, with Sign In and Forgot tabs', async () => {
+  it('renders the full prototype login UI with Company Code, Department, Sign In/Up/Forgot tabs, and demo buttons', async () => {
     await openLogin();
     const id = screen.getByLabelText('Email / User ID');
     const pw = screen.getByLabelText('Password');
@@ -25,13 +25,17 @@ describe('LoginPage', () => {
     expect(pw).toHaveValue('');
     expect(id).toHaveAttribute('autocomplete', 'username');
     expect(pw).toHaveAttribute('autocomplete', 'current-password');
-    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Sign In', 'Forgot']);
-    expect(screen.queryByText(/company code/i)).toBeNull();
-    expect(screen.queryByText(/^department$/i)).toBeNull();
-    expect(screen.queryByText(/sign up/i)).toBeNull();
-    expect(screen.queryByText(/demo/i)).toBeNull();
-    expect(screen.getByText('Sign in with your company account.')).toBeInTheDocument();
-    expect(screen.getByText('Session is verified on the server')).toBeInTheDocument();
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
+      'Sign In',
+      'Sign Up',
+      'Forgot',
+    ]);
+    expect(screen.getByLabelText(/company code/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/department/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Demo ERP — Super User' })).toBeInTheDocument();
+    expect(screen.getByText('Demo Accounts')).toBeInTheDocument();
+    expect(screen.getByText('Sign in with your department account.')).toBeInTheDocument();
+    expect(screen.getByText('Department is verified from User Master')).toBeInTheDocument();
     expect(screen.getByText('ENTERPRISE ERP')).toBeInTheDocument();
     expect(screen.getByText('Authorised users only. All sign-ins are logged.')).toBeInTheDocument();
   });
