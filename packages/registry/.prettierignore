@@ -1,0 +1,4 @@
+node_modules
+registry.json
+registry.d.ts
+package-lock.json

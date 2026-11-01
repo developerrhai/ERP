@@ -1,0 +1,5 @@
+dist
+node_modules
+.parity
+coverage
+package-lock.json

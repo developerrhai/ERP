@@ -1,0 +1,41 @@
+{
+  "name": "@rhai/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "RHAI ERP web client (React 18 + Vite). See docs/phase1/CONTRACT.md section 8.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --max-warnings=0 && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "verify": "npm run lint && npm run typecheck && npm run test"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.30.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.17.0",
+    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/react": "16.1.0",
+    "@testing-library/user-event": "14.5.2",
+    "@types/node": "20.17.10",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "@vitejs/plugin-react": "4.3.4",
+    "eslint": "9.17.0",
+    "eslint-plugin-react-hooks": "5.1.0",
+    "globals": "15.14.0",
+    "jsdom": "25.0.1",
+    "prettier": "3.4.2",
+    "typescript": "5.7.2",
+    "typescript-eslint": "8.18.2",
+    "vite": "5.4.11",
+    "vitest": "2.1.8"
+  }
+}

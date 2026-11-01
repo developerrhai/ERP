@@ -1,0 +1,299 @@
+/* Login screen styles copied verbatim from reference/index.html line 10; additions below are
+   only what the contract's changes need (2-column tabs, policy hints, forgot text). */
+.login {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  grid-template-columns: 1.06fr 0.94fr;
+  background: #eef4ff;
+  overflow: auto;
+}
+.login-left {
+  background: linear-gradient(145deg, #071426, #103268 58%, #1762af);
+  color: #fff;
+  padding: 48px clamp(30px, 6vw, 85px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100vh;
+}
+.login-brand {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+}
+.login-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 17px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  font-weight: 900;
+}
+.login-brand b {
+  font-size: 21px;
+}
+.login-brand small {
+  display: block;
+  color: #bfdbfe;
+}
+.login-copy h1 {
+  font-size: clamp(36px, 4.5vw, 60px);
+  line-height: 1.03;
+  margin: 16px 0;
+}
+.login-copy p {
+  max-width: 680px;
+  line-height: 1.75;
+  color: #dbeafe;
+  font-size: 13px;
+}
+.features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 22px;
+}
+.feature {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.07);
+  padding: 13px;
+  border-radius: 14px;
+}
+.feature b {
+  font-size: 11px;
+}
+.feature small {
+  display: block;
+  color: #bfdbfe;
+  margin-top: 4px;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.login-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.login-card {
+  width: min(520px, 100%);
+  background: #fff;
+  border: 1px solid #dbe4f0;
+  border-radius: 24px;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.17);
+  overflow: hidden;
+}
+.login-head {
+  padding: 24px 27px 12px;
+}
+.login-head h2 {
+  margin: 0;
+  font-size: 25px;
+}
+.login-head p {
+  margin: 6px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  margin: 0 20px;
+  padding: 6px;
+}
+.auth-tab {
+  border: 0;
+  background: transparent;
+  padding: 9px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #64748b;
+}
+.auth-tab.active {
+  background: #fff;
+  color: #1d4ed8;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+}
+.auth-body {
+  padding: 18px 27px 27px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.field label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #475569;
+}
+.field input,
+.field select,
+.field textarea {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px;
+  outline: none;
+}
+.field textarea {
+  min-height: 78px;
+}
+.pass {
+  position: relative;
+}
+.pass input {
+  width: 100%;
+  padding-right: 68px;
+}
+.showpass {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  border: 0;
+  background: #f1f5f9;
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-size: 9px;
+  font-weight: 800;
+}
+.auth-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 6px 0 13px;
+  font-size: 10px;
+  color: #64748b;
+}
+.auth-link {
+  border: 0;
+  background: transparent;
+  color: #1d4ed8;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 0;
+}
+.auth-submit {
+  width: 100%;
+  border: 0;
+  border-radius: 11px;
+  padding: 12px;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb, #0ea5e9);
+  color: #fff;
+  font-weight: 850;
+}
+.auth-alt {
+  width: 100%;
+  margin-top: 9px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 11px;
+  padding: 11px;
+  font-weight: 800;
+  color: #334155;
+}
+.msg {
+  display: none;
+  margin: 0 27px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  font-size: 10px;
+}
+.msg.show {
+  display: block;
+}
+.msg.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.msg.success {
+  background: #dcfce7;
+  color: #166534;
+}
+.msg.info {
+  background: #eff6ff;
+  color: #1e40af;
+}
+.demo {
+  margin-top: 11px;
+  padding: 10px;
+  border: 1px dashed #93c5fd;
+  border-radius: 10px;
+  background: #f8fbff;
+  color: #475569;
+  font-size: 9px;
+  line-height: 1.6;
+}
+.quick-depts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 9px;
+}
+.quick-depts button {
+  border: 1px solid #dbe2ea;
+  background: #fff;
+  border-radius: 8px;
+  padding: 7px;
+  font-size: 9px;
+  font-weight: 800;
+}
+/* Phase 1 additions */
+.auth-tabs + .msg {
+  margin-top: 12px;
+}
+.login-foot {
+  font-size: 9px;
+  color: #93c5fd;
+}
+.auth-tabs.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+.auth-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.forgot-text {
+  margin: 0 0 13px;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.field-error {
+  color: #991b1b;
+  font-size: 10px;
+}
+.field input[aria-invalid='true'],
+.field select[aria-invalid='true'] {
+  border-color: #dc2626;
+}
+.pw-hints {
+  list-style: none;
+  margin: 0 0 13px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 10px;
+  color: #64748b;
+}
+.pw-hints li:before {
+  content: '○ ';
+}
+.pw-hints li.ok {
+  color: #166534;
+}
+.pw-hints li.ok:before {
+  content: '✓ ';
+}
+.msg.static {
+  margin: 0 0 12px;
+}

@@ -1,0 +1,197 @@
+// Database model: Phase 1 (users, sessions, append-only audit log) and Phase 2 (departments, role
+// permissions, department families, module controls, settings; docs/phase2/CONTRACT.md §2.3).
+// Rules Prisma cannot express (single SUPER_ADMIN, append-only audit) live as raw SQL in the migration.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  LEAD
+  MEMBER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DepartmentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DataScope {
+  OWN
+  DEPARTMENT
+  ALL
+}
+
+model User {
+  id                 String           @id @default(uuid()) @db.Uuid
+  loginId            String           @unique @map("login_id") @db.VarChar(64)
+  email              String?          @unique @db.VarChar(254)
+  name               String           @db.VarChar(100)
+  role               Role
+  /// FK to departments.name (ON UPDATE CASCADE, ON DELETE RESTRICT); null only for SUPER_ADMIN.
+  department         String?          @db.VarChar(60)
+  departmentRef      Department?      @relation("UserDepartment", fields: [department], references: [name], onUpdate: Cascade, onDelete: Restrict)
+  status             UserStatus       @default(ACTIVE)
+  passwordHash       String           @map("password_hash")
+  mustChangePassword Boolean          @default(true) @map("must_change_password")
+  failedLoginCount   Int              @default(0) @map("failed_login_count")
+  lockedUntil        DateTime?        @map("locked_until") @db.Timestamptz(3)
+  lastLoginAt        DateTime?        @map("last_login_at") @db.Timestamptz(3)
+  createdById        String?          @map("created_by_id") @db.Uuid
+  createdBy          User?            @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers       User[]           @relation("UserCreatedBy")
+  sessions           Session[]
+  auditEntries       AuditLog[]       @relation("AuditActor")
+  createdDepartments Department[]     @relation("DepartmentCreatedBy")
+  permissionEdits    RolePermission[] @relation("PermissionUpdatedBy")
+  controlEdits       ModuleControl[]  @relation("ModuleControlUpdatedBy")
+  settingEdits       Setting[]        @relation("SettingUpdatedBy")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  version            Int              @default(1)
+
+  @@index([role])
+  @@index([status])
+  @@index([department])
+  @@map("users")
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId         String    @map("family_id") @db.Uuid
+  refreshTokenHash String    @unique @map("refresh_token_hash") @db.Char(64)
+  userAgent        String?   @map("user_agent") @db.VarChar(512)
+  ip               String?   @db.VarChar(64)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastUsedAt       DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(3)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
+  revokedReason    String?   @map("revoked_reason") @db.VarChar(40)
+  /// Set the one time a rotated token is accepted as a tab race (409 REFRESH_RACE); a second replay is reuse.
+  graceUsedAt      DateTime? @map("grace_used_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("sessions")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  at         DateTime @default(now()) @db.Timestamptz(3)
+  actorId    String?  @map("actor_id") @db.Uuid
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  action     String   @db.VarChar(64)
+  targetType String?  @map("target_type") @db.VarChar(40)
+  targetId   String?  @map("target_id") @db.VarChar(64)
+  ip         String?  @db.VarChar(64)
+  userAgent  String?  @map("user_agent") @db.VarChar(512)
+  detail     Json     @default("{}")
+
+  @@index([action, at])
+  @@index([actorId])
+  @@index([targetId])
+  @@map("audit_logs")
+}
+
+model Department {
+  id          String             @id @default(uuid()) @db.Uuid
+  code        String             @unique @db.VarChar(10)
+  name        String             @unique @db.VarChar(60)
+  head        String?            @db.VarChar(100)
+  status      DepartmentStatus   @default(ACTIVE)
+  version     Int                @default(1)
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById String?            @map("created_by_id") @db.Uuid
+  createdBy   User?              @relation("DepartmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  users       User[]             @relation("UserDepartment")
+  families    DepartmentFamily[]
+  modules     ModuleControl[]
+
+  @@map("departments")
+}
+
+/// One row per (role, resource). Never rows for SUPER_ADMIN (CHECK in SQL). resource: "*", "family:<name>" or "page:<id>".
+/// On family/page rows a null action or scope means "inherit" (page -> family -> "*"); "*" rows are never null (CHECK).
+model RolePermission {
+  id          String     @id @default(uuid()) @db.Uuid
+  role        Role
+  resource    String     @db.VarChar(120)
+  view        Boolean?
+  add         Boolean?
+  edit        Boolean?
+  delete      Boolean?
+  approve     Boolean?
+  export      Boolean?
+  controls    Boolean?
+  scope       DataScope?
+  version     Int        @default(1)
+  updatedById String?    @map("updated_by_id") @db.Uuid
+  updatedBy   User?      @relation("PermissionUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([role, resource])
+  @@map("role_permissions")
+}
+
+/// Which menu families a department sees (prototype DEPT_FAMILIES).
+model DepartmentFamily {
+  id             String     @id @default(uuid()) @db.Uuid
+  departmentName String     @map("department_name") @db.VarChar(60)
+  department     Department @relation(fields: [departmentName], references: [name], onUpdate: Cascade, onDelete: Cascade)
+  family         String     @db.VarChar(60)
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([departmentName, family])
+  @@map("department_families")
+}
+
+/// One row per registry page (prototype ctrl()).
+model ModuleControl {
+  pageId           String     @id @map("page_id") @db.VarChar(80)
+  enabled          Boolean    @default(true)
+  ownerDepartment  String     @map("owner_department") @db.VarChar(60)
+  owner            Department @relation(fields: [ownerDepartment], references: [name], onUpdate: Cascade, onDelete: Restrict)
+  approvalRequired Boolean    @default(true) @map("approval_required")
+  allowAdd         Boolean    @default(true) @map("allow_add")
+  allowEdit        Boolean    @default(true) @map("allow_edit")
+  allowDelete      Boolean    @default(true) @map("allow_delete")
+  allowExport      Boolean    @default(true) @map("allow_export")
+  version          Int        @default(1)
+  updatedById      String?    @map("updated_by_id") @db.Uuid
+  updatedBy        User?      @relation("ModuleControlUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([ownerDepartment])
+  @@map("module_controls")
+}
+
+/// Key/value JSON settings (Phase 2: "letterhead"; internal: "system.seed").
+model Setting {
+  key         String   @id @db.VarChar(60)
+  value       Json
+  version     Int      @default(1)
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedBy   User?    @relation("SettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("settings")
+}

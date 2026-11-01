@@ -1,0 +1,358 @@
+// Department Master (admin-departments): prototype master table (Code, Name, Head, Status, Users)
+// with Add/Edit modals and a delete confirm that explains 409 IN_USE; Administration is protected.
+import { useRef, useState, type FormEvent } from 'react';
+import { Field, SelectField } from '../../components/Field';
+import { Modal } from '../../components/Modal';
+import { useToast } from '../../components/Toast';
+import { toUiError, type UiError } from '../../lib/errors';
+import { refreshMenu } from '../../lib/menu';
+import { useLoad } from '../../lib/useLoad';
+import type { ActionSet, Department, UserStatus } from '../../types';
+import {
+  createDepartment,
+  deleteDepartment,
+  listDepartments,
+  updateDepartment,
+  type DepartmentInput,
+} from './adminApi';
+
+export const PROTECTED_DEPARTMENT = 'Administration';
+const CODE_RE = /^[A-Z0-9]{2,10}$/;
+
+export function inUseMessage(count: number): string {
+  return `This department has ${count} user${count === 1 ? '' : 's'}. Move them first or deactivate the department.`;
+}
+
+type Dialog =
+  | { kind: 'add' }
+  | { kind: 'edit'; dept: Department }
+  | { kind: 'delete'; dept: Department }
+  | null;
+
+export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
+  const toast = useToast();
+  const { data, loading, error, reload } = useLoad(listDepartments, []);
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const canChange = actions.controls;
+  const close = (): void => setDialog(null);
+  const afterSave = (message: string): void => {
+    close();
+    reload();
+    void refreshMenu();
+    toast(message);
+  };
+
+  return (
+    <>
+      <div className="page-head">
+        <div>
+          <h1>Department Master</h1>
+          <p>Departments, heads and the users assigned to them.</p>
+        </div>
+        <div className="actions">
+          {canChange ? (
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => setDialog({ kind: 'add' })}
+            >
+              ＋ Add Department
+            </button>
+          ) : null}
+        </div>
+      </div>
+      {error ? (
+        <div className="msg error show static" role="alert">
+          {error}
+        </div>
+      ) : null}
+      <div className="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Code</th>
+              <th scope="col">Name</th>
+              <th scope="col">Head</th>
+              <th scope="col">Status</th>
+              <th scope="col">Users</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(data ?? []).map((d) => {
+              const isProtected = d.name === PROTECTED_DEPARTMENT;
+              return (
+                <tr key={d.id}>
+                  <td>{d.code}</td>
+                  <td>{d.name}</td>
+                  <td>{d.head ?? '—'}</td>
+                  <td>
+                    <span className={`status ${d.status.toLowerCase()}`}>
+                      {d.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td>{d.userCount}</td>
+                  <td>
+                    {canChange ? (
+                      <div className="actions">
+                        <button
+                          type="button"
+                          className="btn sm"
+                          aria-label={`Edit ${d.name}`}
+                          onClick={() => setDialog({ kind: 'edit', dept: d })}
+                        >
+                          Edit
+                        </button>
+                        {isProtected ? null : (
+                          <button
+                            type="button"
+                            className="btn sm danger"
+                            aria-label={`Delete ${d.name}`}
+                            onClick={() => setDialog({ kind: 'delete', dept: d })}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="v8-sub">—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {loading && !data ? (
+              <tr className="empty-row">
+                <td colSpan={6}>Loading…</td>
+              </tr>
+            ) : null}
+            {data && data.length === 0 ? (
+              <tr className="empty-row">
+                <td colSpan={6}>No departments yet.</td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+      {dialog?.kind === 'add' ? (
+        <DepartmentFormModal
+          onClose={close}
+          onSaved={(d) => afterSave(`Department ${d.name} created.`)}
+        />
+      ) : null}
+      {dialog?.kind === 'edit' ? (
+        <DepartmentFormModal
+          dept={dialog.dept}
+          onClose={close}
+          onSaved={(d) => afterSave(`Department ${d.name} updated.`)}
+        />
+      ) : null}
+      {dialog?.kind === 'delete' ? (
+        <DeleteDepartmentModal
+          dept={dialog.dept}
+          onClose={close}
+          onDeleted={() => afterSave(`Department ${dialog.dept.name} deleted.`)}
+        />
+      ) : null}
+    </>
+  );
+}
+
+interface FormProps {
+  dept?: Department;
+  onClose: () => void;
+  onSaved: (d: Department) => void;
+}
+
+function DepartmentFormModal({ dept, onClose, onSaved }: FormProps) {
+  const [code, setCode] = useState(dept?.code ?? '');
+  const [name, setName] = useState(dept?.name ?? '');
+  const [head, setHead] = useState(dept?.head ?? '');
+  const [status, setStatus] = useState<UserStatus>(dept?.status ?? 'ACTIVE');
+  const [err, setErr] = useState<UiError | null>(null);
+  const [pending, setPending] = useState(false);
+  const inFlight = useRef(false);
+  const isProtected = dept?.name === PROTECTED_DEPARTMENT;
+
+  const validate = (): Record<string, string> => {
+    const f: Record<string, string> = {};
+    if (!CODE_RE.test(code.trim())) f.code = 'Code: 2–10 capital letters or digits.';
+    const n = name.trim();
+    if (n.length < 2 || n.length > 60) f.name = 'Name must be 2–60 characters.';
+    if (head.trim().length > 100) f.head = 'Head must be at most 100 characters.';
+    return f;
+  };
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+    e.preventDefault();
+    if (inFlight.current) return;
+    const local = validate();
+    if (Object.keys(local).length) {
+      setErr({ message: '', fields: local, code: 'LOCAL' });
+      return;
+    }
+    const input: DepartmentInput = {
+      code: code.trim(),
+      name: name.trim(),
+      head: head.trim() || null,
+    };
+    inFlight.current = true;
+    setPending(true);
+    setErr(null);
+    try {
+      if (!dept) {
+        onSaved(await createDepartment(input));
+        return;
+      }
+      const patch: Partial<DepartmentInput> = {};
+      if (input.code !== dept.code) patch.code = input.code;
+      if (input.name !== dept.name) patch.name = input.name;
+      if ((input.head ?? null) !== (dept.head ?? null)) patch.head = input.head ?? null;
+      if (status !== dept.status) patch.status = status;
+      if (Object.keys(patch).length === 0) {
+        onClose();
+        return;
+      }
+      onSaved(await updateDepartment(dept.id, dept.version, patch));
+    } catch (caught) {
+      setErr(toUiError(caught));
+    } finally {
+      inFlight.current = false;
+      setPending(false);
+    }
+  };
+
+  const formId = dept ? 'dept-edit-form' : 'dept-add-form';
+  return (
+    <Modal
+      title={dept ? `Edit Department — ${dept.name}` : 'Add Department'}
+      sub={
+        isProtected ? 'Administration cannot be renamed away, deactivated or deleted.' : undefined
+      }
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" form={formId} className="btn primary" disabled={pending}>
+            {pending ? 'Saving…' : dept ? 'Save Changes' : 'Create Department'}
+          </button>
+        </>
+      }
+    >
+      <form id={formId} onSubmit={(e) => void onSubmit(e)} noValidate>
+        {err?.message ? (
+          <div className="msg error show static" role="alert">
+            {err.message}
+          </div>
+        ) : null}
+        <div className="form-grid">
+          <Field
+            label="Code"
+            value={code}
+            maxLength={10}
+            autoComplete="off"
+            error={err?.fields.code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+          />
+          <Field
+            label="Name"
+            value={name}
+            maxLength={60}
+            autoComplete="off"
+            disabled={isProtected}
+            error={err?.fields.name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Field
+            label="Head"
+            value={head}
+            maxLength={100}
+            autoComplete="off"
+            error={err?.fields.head}
+            onChange={(e) => setHead(e.target.value)}
+          />
+          {dept ? (
+            <SelectField
+              label="Status"
+              value={status}
+              disabled={isProtected}
+              error={err?.fields.status}
+              onChange={(v) => setStatus(v as UserStatus)}
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </SelectField>
+          ) : null}
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function DeleteDepartmentModal({
+  dept,
+  onClose,
+  onDeleted,
+}: {
+  dept: Department;
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
+  const inFlight = useRef(false);
+
+  const confirm = async (): Promise<void> => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setPending(true);
+    setError('');
+    try {
+      await deleteDepartment(dept.id, dept.version);
+      onDeleted();
+    } catch (caught) {
+      const ui = toUiError(caught);
+      // Our count may be stale; fall back to the server's own wording if it says 0.
+      setError(
+        ui.code === 'IN_USE' && dept.userCount > 0 ? inUseMessage(dept.userCount) : ui.message,
+      );
+    } finally {
+      inFlight.current = false;
+      setPending(false);
+    }
+  };
+
+  return (
+    <Modal
+      size="sm"
+      title="Delete Department"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn danger"
+            disabled={pending}
+            onClick={() => void confirm()}
+          >
+            {pending ? 'Deleting…' : 'Delete'}
+          </button>
+        </>
+      }
+    >
+      {error ? (
+        <div className="msg error show static" role="alert">
+          {error}
+        </div>
+      ) : null}
+      <p className="confirm-text">
+        Delete the department {dept.name} ({dept.code})? Its menu access settings are removed too.
+      </p>
+    </Modal>
+  );
+}

@@ -1,0 +1,90 @@
+// /m/:pageId[/:sub] — resolves the page in the registry (unknown → 404), asks the server what the
+// user may do there (no view → Access denied), then renders the real screen or a placeholder.
+import { useParams } from 'react-router-dom';
+import { isAdminRole, lookupPage, type PageLookup } from '../lib/registry';
+import { usePagePermissions } from '../lib/usePagePermissions';
+import type { User } from '../types';
+import { AuditTrailPage } from './admin/AuditTrailPage';
+import { ControlCenterPage } from './admin/ControlCenterPage';
+import { DepartmentMasterPage } from './admin/DepartmentMasterPage';
+import { LetterheadPage } from './admin/LetterheadPage';
+import { PermissionMasterPage } from './admin/PermissionMasterPage';
+import { RoleMasterPage } from './admin/RoleMasterPage';
+import { SystemSetupPage } from './admin/SystemSetupPage';
+import { NotFoundPage } from './NotFoundPage';
+import { UserMasterPage } from './users/UserMasterPage';
+
+const SUB_PAGES: Record<string, readonly string[]> = {
+  'admin-settings': ['controls', 'letterhead'],
+};
+
+export function AccessDenied({ message }: { message?: string }) {
+  return (
+    <NotFoundPage
+      title="Access denied"
+      message={message ?? 'Your account does not have access to this page.'}
+    />
+  );
+}
+
+export function ModulePage({ user }: { user: User }) {
+  const { pageId = '', sub } = useParams();
+  const page = lookupPage(pageId);
+  if (!page) return <NotFoundPage />;
+  if (sub !== undefined && !SUB_PAGES[pageId]?.includes(sub)) return <NotFoundPage />;
+  return <GuardedPage key={`${pageId}/${sub ?? ''}`} user={user} page={page} sub={sub} />;
+}
+
+function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: string }) {
+  const pageId = page.item.id;
+  const perms = usePagePermissions(pageId);
+
+  if (perms.loading) {
+    return (
+      <p className="v8-sub" role="status">
+        Checking access…
+      </p>
+    );
+  }
+  if (perms.error) {
+    return <NotFoundPage title="Could not open this page" message={perms.error} />;
+  }
+  if (!perms.actions.view) return <AccessDenied />;
+
+  const actions = perms.actions;
+  switch (pageId) {
+    case 'admin-users':
+      if (!isAdminRole(user.role)) {
+        return (
+          <AccessDenied message="User Master is available to Super Admin and Admin accounts only." />
+        );
+      }
+      return <UserMasterPage currentUser={user} actions={actions} />;
+    case 'admin-departments':
+      return <DepartmentMasterPage actions={actions} />;
+    case 'admin-roles':
+      return <RoleMasterPage />;
+    case 'admin-permissions':
+      return <PermissionMasterPage actions={actions} />;
+    case 'admin-settings':
+      if (sub === 'controls') return <ControlCenterPage actions={actions} />;
+      if (sub === 'letterhead') return <LetterheadPage actions={actions} />;
+      return <SystemSetupPage />;
+    case 'admin-audit':
+      return <AuditTrailPage />;
+    default:
+      return (
+        <>
+          <div className="page-head">
+            <div>
+              <h1>{page.item.title}</h1>
+              <p>{page.purpose ?? page.family.name}</p>
+            </div>
+          </div>
+          <div className="notice" role="note">
+            This module will be enabled in a later phase.
+          </div>
+        </>
+      );
+  }
+}

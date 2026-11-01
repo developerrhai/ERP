@@ -1,0 +1,7668 @@
+{
+  "generatedFrom": "reference/index.html",
+  "sha256": "3dfdeafc9e2a3af0cbac67fca4207ef651715bd2bafef0d4edf924d6854fd0ce",
+  "families": [
+    {
+      "name": "Executive",
+      "icon": "▦",
+      "items": [
+        {
+          "id": "dashboard",
+          "title": "Executive Dashboard"
+        },
+        {
+          "id": "command-center",
+          "title": "Command Center"
+        },
+        {
+          "id": "ai-insights",
+          "title": "Executive AI Insights"
+        },
+        {
+          "id": "notifications",
+          "title": "Notification Center"
+        },
+        {
+          "id": "global-search",
+          "title": "Global Search"
+        }
+      ]
+    },
+    {
+      "name": "CRM",
+      "icon": "◎",
+      "items": [
+        {
+          "id": "crm-leads",
+          "title": "Lead Management"
+        },
+        {
+          "id": "crm-opportunities",
+          "title": "Opportunity Management"
+        },
+        {
+          "id": "crm-pipeline",
+          "title": "Sales Pipeline / Kanban"
+        },
+        {
+          "id": "crm-followups",
+          "title": "Follow-ups & Tasks"
+        },
+        {
+          "id": "crm-meetings",
+          "title": "Meetings & Calls"
+        },
+        {
+          "id": "crm-customer360",
+          "title": "Customer 360°"
+        },
+        {
+          "id": "crm-feedback",
+          "title": "Customer Feedback"
+        },
+        {
+          "id": "crm-sources",
+          "title": "Lead Sources"
+        }
+      ]
+    },
+    {
+      "name": "Sales",
+      "icon": "₹",
+      "items": [
+        {
+          "id": "sales-quotations",
+          "title": "Sales Quotations"
+        },
+        {
+          "id": "sales-orders",
+          "title": "Sales Orders"
+        },
+        {
+          "id": "sales-reservations",
+          "title": "Stock Reservations"
+        },
+        {
+          "id": "sales-delivery",
+          "title": "Delivery Scheduling"
+        },
+        {
+          "id": "sales-dispatch",
+          "title": "Dispatch"
+        },
+        {
+          "id": "sales-invoices",
+          "title": "Sales Invoices"
+        },
+        {
+          "id": "sales-collections",
+          "title": "Collections"
+        },
+        {
+          "id": "sales-pricelist",
+          "title": "Price Lists"
+        },
+        {
+          "id": "sales-credit",
+          "title": "Credit Limits"
+        },
+        {
+          "id": "sales-returns",
+          "title": "Sales Returns"
+        }
+      ]
+    },
+    {
+      "name": "Procurement / SCM",
+      "icon": "🛒",
+      "items": [
+        {
+          "id": "scm-pr",
+          "title": "Purchase Requisition"
+        },
+        {
+          "id": "scm-rfq",
+          "title": "RFQ Management"
+        },
+        {
+          "id": "scm-vendorquote",
+          "title": "Vendor Quotations"
+        },
+        {
+          "id": "scm-comparison",
+          "title": "Vendor Comparison"
+        },
+        {
+          "id": "scm-po",
+          "title": "Purchase Orders"
+        },
+        {
+          "id": "scm-grn",
+          "title": "Goods Receipt / GRN"
+        },
+        {
+          "id": "scm-purchaseinvoice",
+          "title": "Purchase Invoice"
+        },
+        {
+          "id": "scm-approval",
+          "title": "Purchase Approval"
+        },
+        {
+          "id": "scm-suppliers",
+          "title": "Supplier Master"
+        },
+        {
+          "id": "scm-evaluation",
+          "title": "Supplier Evaluation"
+        },
+        {
+          "id": "scm-contracts",
+          "title": "Rate / Blanket Contracts"
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "icon": "▤",
+      "items": [
+        {
+          "id": "inv-items",
+          "title": "Item / SKU Master"
+        },
+        {
+          "id": "inv-stock",
+          "title": "Stock Balance"
+        },
+        {
+          "id": "inv-transactions",
+          "title": "Inventory Transactions"
+        },
+        {
+          "id": "inv-opening",
+          "title": "Opening Stock"
+        },
+        {
+          "id": "inv-adjustment",
+          "title": "Stock Adjustment"
+        },
+        {
+          "id": "inv-transfer",
+          "title": "Stock Transfer"
+        },
+        {
+          "id": "inv-reservation",
+          "title": "Stock Reservation"
+        },
+        {
+          "id": "inv-reconciliation",
+          "title": "Stock Reconciliation"
+        },
+        {
+          "id": "inv-ageing",
+          "title": "Stock Ageing"
+        },
+        {
+          "id": "inv-valuation",
+          "title": "Stock Valuation"
+        },
+        {
+          "id": "inv-reorder",
+          "title": "Smart Reorder"
+        },
+        {
+          "id": "inv-batch",
+          "title": "Batch / Lot Tracking"
+        },
+        {
+          "id": "inv-serial",
+          "title": "Serial Number Tracking"
+        },
+        {
+          "id": "inv-expiry",
+          "title": "Expiry Tracking"
+        }
+      ]
+    },
+    {
+      "name": "Warehouse / WMS",
+      "icon": "▥",
+      "items": [
+        {
+          "id": "wms-warehouses",
+          "title": "Warehouse Master"
+        },
+        {
+          "id": "wms-zones",
+          "title": "Zone Management"
+        },
+        {
+          "id": "wms-racks",
+          "title": "Rack Management"
+        },
+        {
+          "id": "wms-shelves",
+          "title": "Shelf Management"
+        },
+        {
+          "id": "wms-bins",
+          "title": "Bin Management"
+        },
+        {
+          "id": "wms-putaway",
+          "title": "Put Away"
+        },
+        {
+          "id": "wms-pick",
+          "title": "Pick List"
+        },
+        {
+          "id": "wms-packing",
+          "title": "Packing"
+        },
+        {
+          "id": "wms-cycle",
+          "title": "Cycle Count"
+        },
+        {
+          "id": "wms-physical",
+          "title": "Physical Verification"
+        },
+        {
+          "id": "wms-transfer",
+          "title": "Warehouse Transfers"
+        },
+        {
+          "id": "wms-barcode",
+          "title": "Barcode / QR"
+        },
+        {
+          "id": "wms-rfid",
+          "title": "RFID Support"
+        }
+      ]
+    },
+    {
+      "name": "Manufacturing",
+      "icon": "⚙",
+      "items": [
+        {
+          "id": "mfg-bom",
+          "title": "Bill of Materials"
+        },
+        {
+          "id": "mfg-routing",
+          "title": "Routing"
+        },
+        {
+          "id": "mfg-workcenters",
+          "title": "Work Centers"
+        },
+        {
+          "id": "mfg-plan",
+          "title": "Production Planning"
+        },
+        {
+          "id": "mfg-orders",
+          "title": "Production Orders"
+        },
+        {
+          "id": "mfg-mrp",
+          "title": "Material Requirement Planning"
+        },
+        {
+          "id": "mfg-workorders",
+          "title": "Work Orders"
+        },
+        {
+          "id": "mfg-shopfloor",
+          "title": "Shop Floor Dashboard"
+        },
+        {
+          "id": "mfg-wip",
+          "title": "WIP Tracking"
+        },
+        {
+          "id": "mfg-fg",
+          "title": "Finished Goods Receipt"
+        },
+        {
+          "id": "mfg-scrap",
+          "title": "Scrap Management"
+        },
+        {
+          "id": "mfg-rework",
+          "title": "Rework Management"
+        },
+        {
+          "id": "mfg-costing",
+          "title": "Production Costing"
+        }
+      ]
+    },
+    {
+      "name": "Quality / QMS",
+      "icon": "✓",
+      "items": [
+        {
+          "id": "qms-plans",
+          "title": "Inspection Plans"
+        },
+        {
+          "id": "qms-incoming",
+          "title": "Incoming Quality"
+        },
+        {
+          "id": "qms-process",
+          "title": "In-Process Quality"
+        },
+        {
+          "id": "qms-final",
+          "title": "Final Quality"
+        },
+        {
+          "id": "qms-supplier",
+          "title": "Supplier Quality"
+        },
+        {
+          "id": "qms-inspections",
+          "title": "Quality Inspections"
+        },
+        {
+          "id": "qms-ncr",
+          "title": "Non-Conformance / NCR"
+        },
+        {
+          "id": "qms-capa",
+          "title": "CAPA"
+        },
+        {
+          "id": "qms-5why",
+          "title": "5 Why Analysis"
+        },
+        {
+          "id": "qms-calibration",
+          "title": "Calibration"
+        }
+      ]
+    },
+    {
+      "name": "Maintenance",
+      "icon": "🔧",
+      "items": [
+        {
+          "id": "maint-machines",
+          "title": "Machine Master"
+        },
+        {
+          "id": "maint-equipment",
+          "title": "Equipment Master"
+        },
+        {
+          "id": "maint-preventive",
+          "title": "Preventive Maintenance"
+        },
+        {
+          "id": "maint-breakdown",
+          "title": "Breakdown Maintenance"
+        },
+        {
+          "id": "maint-workorders",
+          "title": "Maintenance Work Orders"
+        },
+        {
+          "id": "maint-spares",
+          "title": "Spare Parts"
+        },
+        {
+          "id": "maint-schedule",
+          "title": "Maintenance Schedule"
+        },
+        {
+          "id": "maint-downtime",
+          "title": "Downtime"
+        },
+        {
+          "id": "maint-mtbf",
+          "title": "MTBF / MTTR"
+        },
+        {
+          "id": "maint-alerts",
+          "title": "Maintenance Alerts"
+        }
+      ]
+    },
+    {
+      "name": "Finance & Accounts",
+      "icon": "₹",
+      "items": [
+        {
+          "id": "fin-coa",
+          "title": "Chart of Accounts"
+        },
+        {
+          "id": "fin-gl",
+          "title": "General Ledger"
+        },
+        {
+          "id": "fin-journal",
+          "title": "Journal Entries"
+        },
+        {
+          "id": "fin-cashbook",
+          "title": "Cash Book"
+        },
+        {
+          "id": "fin-bankbook",
+          "title": "Bank Book"
+        },
+        {
+          "id": "fin-ap",
+          "title": "Accounts Payable"
+        },
+        {
+          "id": "fin-ar",
+          "title": "Accounts Receivable"
+        },
+        {
+          "id": "fin-creditnote",
+          "title": "Credit Notes"
+        },
+        {
+          "id": "fin-debitnote",
+          "title": "Debit Notes"
+        },
+        {
+          "id": "fin-bankreco",
+          "title": "Bank Reconciliation"
+        },
+        {
+          "id": "fin-costcenter",
+          "title": "Cost Centers"
+        },
+        {
+          "id": "fin-profitcenter",
+          "title": "Profit Centers"
+        },
+        {
+          "id": "fin-expenses",
+          "title": "Expense Management"
+        },
+        {
+          "id": "fin-budget",
+          "title": "Budgeting"
+        },
+        {
+          "id": "fin-trial",
+          "title": "Trial Balance"
+        },
+        {
+          "id": "fin-pnl",
+          "title": "Profit & Loss"
+        },
+        {
+          "id": "fin-bs",
+          "title": "Balance Sheet"
+        },
+        {
+          "id": "fin-cashflow",
+          "title": "Cash Flow"
+        },
+        {
+          "id": "fin-ageing",
+          "title": "AR/AP Ageing"
+        }
+      ]
+    },
+    {
+      "name": "Indian Taxation",
+      "icon": "GST",
+      "items": [
+        {
+          "id": "tax-gst",
+          "title": "GST Setup"
+        },
+        {
+          "id": "tax-gstr1",
+          "title": "GSTR-1"
+        },
+        {
+          "id": "tax-gstr3b",
+          "title": "GSTR-3B"
+        },
+        {
+          "id": "tax-tds",
+          "title": "TDS"
+        },
+        {
+          "id": "tax-tcs",
+          "title": "TCS"
+        },
+        {
+          "id": "tax-hsn",
+          "title": "HSN / SAC"
+        },
+        {
+          "id": "tax-einvoice",
+          "title": "E-Invoice"
+        },
+        {
+          "id": "tax-eway",
+          "title": "E-Way Bill"
+        },
+        {
+          "id": "tax-salesreg",
+          "title": "Sales Register"
+        },
+        {
+          "id": "tax-purchasereg",
+          "title": "Purchase Register"
+        }
+      ]
+    },
+    {
+      "name": "HRMS",
+      "icon": "👥",
+      "items": [
+        {
+          "id": "hr-employees",
+          "title": "Employee Master"
+        },
+        {
+          "id": "hr-recruitment",
+          "title": "Recruitment"
+        },
+        {
+          "id": "hr-onboarding",
+          "title": "Onboarding"
+        },
+        {
+          "id": "hr-attendance",
+          "title": "Attendance"
+        },
+        {
+          "id": "hr-shifts",
+          "title": "Shift Management"
+        },
+        {
+          "id": "hr-leave",
+          "title": "Leave Management"
+        },
+        {
+          "id": "hr-expense",
+          "title": "Employee Expenses"
+        },
+        {
+          "id": "hr-performance",
+          "title": "Performance"
+        },
+        {
+          "id": "hr-training",
+          "title": "Training"
+        },
+        {
+          "id": "hr-documents",
+          "title": "Employee Documents"
+        },
+        {
+          "id": "hr-exit",
+          "title": "Exit Management"
+        },
+        {
+          "id": "hr-ess",
+          "title": "Employee Self Service"
+        }
+      ]
+    },
+    {
+      "name": "Payroll",
+      "icon": "₹",
+      "items": [
+        {
+          "id": "pay-structure",
+          "title": "Salary Structure"
+        },
+        {
+          "id": "pay-processing",
+          "title": "Payroll Processing"
+        },
+        {
+          "id": "pay-overtime",
+          "title": "Overtime"
+        },
+        {
+          "id": "pay-incentive",
+          "title": "Incentives / Bonus"
+        },
+        {
+          "id": "pay-loan",
+          "title": "Loans / Advances"
+        },
+        {
+          "id": "pay-pf",
+          "title": "PF"
+        },
+        {
+          "id": "pay-esic",
+          "title": "ESIC"
+        },
+        {
+          "id": "pay-pt",
+          "title": "Professional Tax"
+        },
+        {
+          "id": "pay-tds",
+          "title": "Payroll TDS"
+        },
+        {
+          "id": "pay-payslip",
+          "title": "Payslips"
+        },
+        {
+          "id": "pay-bank",
+          "title": "Bank Transfer File"
+        },
+        {
+          "id": "pay-register",
+          "title": "Salary Register"
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "icon": "▣",
+      "items": [
+        {
+          "id": "proj-projects",
+          "title": "Projects"
+        },
+        {
+          "id": "proj-tasks",
+          "title": "Tasks"
+        },
+        {
+          "id": "proj-subtasks",
+          "title": "Subtasks"
+        },
+        {
+          "id": "proj-milestones",
+          "title": "Milestones"
+        },
+        {
+          "id": "proj-team",
+          "title": "Team Assignment"
+        },
+        {
+          "id": "proj-timesheets",
+          "title": "Timesheets"
+        },
+        {
+          "id": "proj-expenses",
+          "title": "Project Expenses"
+        },
+        {
+          "id": "proj-budget",
+          "title": "Project Budget"
+        },
+        {
+          "id": "proj-kanban",
+          "title": "Kanban"
+        },
+        {
+          "id": "proj-gantt",
+          "title": "Gantt / Timeline"
+        },
+        {
+          "id": "proj-profitability",
+          "title": "Project Profitability"
+        }
+      ]
+    },
+    {
+      "name": "Assets",
+      "icon": "◈",
+      "items": [
+        {
+          "id": "asset-master",
+          "title": "Asset Master"
+        },
+        {
+          "id": "asset-capitalization",
+          "title": "Capitalization"
+        },
+        {
+          "id": "asset-allocation",
+          "title": "Allocation"
+        },
+        {
+          "id": "asset-transfer",
+          "title": "Asset Transfer"
+        },
+        {
+          "id": "asset-maintenance",
+          "title": "Asset Maintenance"
+        },
+        {
+          "id": "asset-depreciation",
+          "title": "Depreciation"
+        },
+        {
+          "id": "asset-disposal",
+          "title": "Asset Disposal"
+        },
+        {
+          "id": "asset-qr",
+          "title": "Asset QR Codes"
+        }
+      ]
+    },
+    {
+      "name": "Service / Support",
+      "icon": "🎫",
+      "items": [
+        {
+          "id": "service-tickets",
+          "title": "Service Tickets"
+        },
+        {
+          "id": "service-requests",
+          "title": "Service Requests"
+        },
+        {
+          "id": "service-technicians",
+          "title": "Technician Allocation"
+        },
+        {
+          "id": "service-visits",
+          "title": "Site Visits"
+        },
+        {
+          "id": "service-spares",
+          "title": "Service Spare Parts"
+        },
+        {
+          "id": "service-history",
+          "title": "Service History"
+        },
+        {
+          "id": "service-amc",
+          "title": "AMC Management"
+        },
+        {
+          "id": "service-warranty",
+          "title": "Warranty Tracking"
+        },
+        {
+          "id": "service-claims",
+          "title": "Warranty Claims"
+        }
+      ]
+    },
+    {
+      "name": "Logistics / Fleet",
+      "icon": "🚚",
+      "items": [
+        {
+          "id": "log-transporters",
+          "title": "Transporter Master"
+        },
+        {
+          "id": "log-routes",
+          "title": "Route Management"
+        },
+        {
+          "id": "log-freight",
+          "title": "Freight Calculation"
+        },
+        {
+          "id": "log-shipments",
+          "title": "Shipment Scheduling"
+        },
+        {
+          "id": "log-tracking",
+          "title": "Shipment Tracking"
+        },
+        {
+          "id": "log-pod",
+          "title": "POD Tracking"
+        },
+        {
+          "id": "fleet-vehicles",
+          "title": "Fleet Vehicles"
+        },
+        {
+          "id": "fleet-drivers",
+          "title": "Drivers"
+        },
+        {
+          "id": "fleet-fuel",
+          "title": "Fuel Management"
+        },
+        {
+          "id": "fleet-service",
+          "title": "Vehicle Service"
+        },
+        {
+          "id": "fleet-documents",
+          "title": "Vehicle Documents"
+        },
+        {
+          "id": "gate-in",
+          "title": "Inward Gate Pass"
+        },
+        {
+          "id": "gate-out",
+          "title": "Outward Gate Pass"
+        },
+        {
+          "id": "gate-return",
+          "title": "Returnable Gate Pass"
+        },
+        {
+          "id": "gate-nonreturn",
+          "title": "Non-Returnable Gate Pass"
+        },
+        {
+          "id": "container-track",
+          "title": "Container Tracking"
+        }
+      ]
+    },
+    {
+      "name": "Document Management",
+      "icon": "📁",
+      "items": [
+        {
+          "id": "dms-folders",
+          "title": "Folders"
+        },
+        {
+          "id": "dms-docs",
+          "title": "Documents"
+        },
+        {
+          "id": "dms-versions",
+          "title": "Version Control"
+        },
+        {
+          "id": "dms-permissions",
+          "title": "Document Permissions"
+        },
+        {
+          "id": "dms-tags",
+          "title": "Tags"
+        },
+        {
+          "id": "dms-search",
+          "title": "Document Search"
+        }
+      ]
+    },
+    {
+      "name": "Business Intelligence",
+      "icon": "▦",
+      "items": [
+        {
+          "id": "bi-builder",
+          "title": "Report Builder"
+        },
+        {
+          "id": "bi-reports",
+          "title": "Saved Reports"
+        },
+        {
+          "id": "bi-dashboards",
+          "title": "Custom Dashboards"
+        },
+        {
+          "id": "bi-scheduler",
+          "title": "Report Scheduler"
+        },
+        {
+          "id": "bi-sales",
+          "title": "Sales Analytics"
+        },
+        {
+          "id": "bi-purchase",
+          "title": "Purchase Analytics"
+        },
+        {
+          "id": "bi-inventory",
+          "title": "Inventory Analytics"
+        },
+        {
+          "id": "bi-finance",
+          "title": "Financial Analytics"
+        },
+        {
+          "id": "bi-branch",
+          "title": "Branch Performance"
+        },
+        {
+          "id": "bi-profit",
+          "title": "Profitability Analysis"
+        }
+      ]
+    },
+    {
+      "name": "AI & Automation",
+      "icon": "AI",
+      "items": [
+        {
+          "id": "ai-copilot",
+          "title": "ERP AI Copilot"
+        },
+        {
+          "id": "ai-demand",
+          "title": "Demand Forecasting"
+        },
+        {
+          "id": "ai-inventory",
+          "title": "Inventory Intelligence"
+        },
+        {
+          "id": "ai-sales",
+          "title": "Sales Intelligence"
+        },
+        {
+          "id": "ai-vendor",
+          "title": "Vendor Intelligence"
+        },
+        {
+          "id": "ai-finance",
+          "title": "Finance Anomaly Detection"
+        },
+        {
+          "id": "ai-executive",
+          "title": "Executive Insights"
+        },
+        {
+          "id": "auto-workflows",
+          "title": "Workflow Automation"
+        },
+        {
+          "id": "auto-rules",
+          "title": "Automation Rules"
+        },
+        {
+          "id": "auto-jobs",
+          "title": "Background Jobs"
+        },
+        {
+          "id": "auto-webhooks",
+          "title": "Webhooks"
+        }
+      ]
+    },
+    {
+      "name": "Communication",
+      "icon": "✉",
+      "items": [
+        {
+          "id": "comm-whatsapp",
+          "title": "WhatsApp Business API"
+        },
+        {
+          "id": "comm-email",
+          "title": "Email Integration"
+        },
+        {
+          "id": "comm-sms",
+          "title": "SMS Integration"
+        },
+        {
+          "id": "comm-templates",
+          "title": "Message Templates"
+        },
+        {
+          "id": "comm-logs",
+          "title": "Communication Logs"
+        },
+        {
+          "id": "comm-payment",
+          "title": "Payment Gateway"
+        }
+      ]
+    },
+    {
+      "name": "Administration",
+      "icon": "⚙",
+      "items": [
+        {
+          "id": "admin-company",
+          "title": "Companies"
+        },
+        {
+          "id": "admin-branches",
+          "title": "Branches"
+        },
+        {
+          "id": "admin-departments",
+          "title": "Departments"
+        },
+        {
+          "id": "admin-designations",
+          "title": "Designations"
+        },
+        {
+          "id": "admin-users",
+          "title": "Users"
+        },
+        {
+          "id": "admin-roles",
+          "title": "Roles"
+        },
+        {
+          "id": "admin-permissions",
+          "title": "Permissions"
+        },
+        {
+          "id": "admin-approval",
+          "title": "Approval Matrix"
+        },
+        {
+          "id": "admin-fy",
+          "title": "Financial Years"
+        },
+        {
+          "id": "admin-currency",
+          "title": "Currencies"
+        },
+        {
+          "id": "admin-taxes",
+          "title": "Taxes"
+        },
+        {
+          "id": "admin-numbering",
+          "title": "Document Numbering"
+        },
+        {
+          "id": "admin-uom",
+          "title": "UOM"
+        },
+        {
+          "id": "admin-customfields",
+          "title": "Custom Fields"
+        },
+        {
+          "id": "admin-formbuilder",
+          "title": "Form Builder"
+        },
+        {
+          "id": "admin-workflow",
+          "title": "Workflow Builder"
+        },
+        {
+          "id": "admin-import",
+          "title": "Import / Export"
+        },
+        {
+          "id": "admin-duplicates",
+          "title": "Duplicate Detection"
+        },
+        {
+          "id": "admin-audit",
+          "title": "Audit Trail"
+        },
+        {
+          "id": "admin-security",
+          "title": "Security"
+        },
+        {
+          "id": "admin-backup",
+          "title": "Backup & Restore"
+        },
+        {
+          "id": "admin-api",
+          "title": "API Management"
+        },
+        {
+          "id": "admin-integrations",
+          "title": "Integrations"
+        },
+        {
+          "id": "admin-settings",
+          "title": "System Settings"
+        }
+      ]
+    }
+  ],
+  "profiles": {
+    "ai-insights": {
+      "title": "Executive AI Insights",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Executive AI Insights Workspace",
+        "Executive AI Insights Details",
+        "Executive AI Insights Workflow",
+        "Executive AI Insights Exceptions",
+        "Executive AI Insights Performance",
+        "Executive AI Insights Controls"
+      ],
+      "fields": [
+        "Record ID",
+        "Model Rule",
+        "Module",
+        "Trigger Input",
+        "Score Condition",
+        "Recommended Action",
+        "Owner",
+        "Last Run",
+        "Next Run",
+        "Status"
+      ]
+    },
+    "crm-leads": {
+      "title": "Lead Management",
+      "family": "CRM",
+      "purpose": "Manage prospect engagement, qualification, relationship history and conversion performance.",
+      "tabs": [
+        "Lead Register",
+        "Qualification Desk",
+        "Communication Timeline",
+        "Follow-up Queue",
+        "Lead Scoring",
+        "Conversion Analytics"
+      ],
+      "fields": [
+        "Lead No",
+        "Lead Name",
+        "Company",
+        "Mobile",
+        "Email",
+        "Source",
+        "Campaign",
+        "Owner",
+        "Stage",
+        "Qualification Score",
+        "Expected Value",
+        "Next Follow-up",
+        "Consent Status",
+        "Status"
+      ]
+    },
+    "crm-opportunities": {
+      "title": "Opportunity Management",
+      "family": "CRM",
+      "purpose": "Manage prospect engagement, qualification, relationship history and conversion performance.",
+      "tabs": [
+        "Opportunity Register",
+        "Stage Progress",
+        "Probability & Forecast",
+        "Proposal Activity",
+        "Competitor Tracking",
+        "Win Loss Analysis"
+      ],
+      "fields": [
+        "Opportunity No",
+        "Customer",
+        "Opportunity Name",
+        "Stage",
+        "Probability %",
+        "Expected Value",
+        "Expected Close",
+        "Primary Contact",
+        "Salesperson",
+        "Competitor",
+        "Next Action",
+        "Status"
+      ]
+    },
+    "crm-pipeline": {
+      "title": "Sales Pipeline / Kanban",
+      "family": "CRM",
+      "purpose": "Manage prospect engagement, qualification, relationship history and conversion performance.",
+      "tabs": [
+        "Sales Pipeline / Kanban Workspace",
+        "Sales Pipeline Kanban Details",
+        "Sales Pipeline Kanban Workflow",
+        "Sales Pipeline Kanban Exceptions",
+        "Sales Pipeline Kanban Performance",
+        "Sales Pipeline Kanban Controls"
+      ],
+      "fields": [
+        "Record No",
+        "Name",
+        "Customer Company",
+        "Owner",
+        "Stage",
+        "Priority",
+        "Next Action",
+        "Expected Value",
+        "Due Date",
+        "Status"
+      ]
+    },
+    "crm-followups": {
+      "title": "Follow-ups & Tasks",
+      "family": "CRM",
+      "purpose": "Manage prospect engagement, qualification, relationship history and conversion performance.",
+      "tabs": [
+        "Follow-up Planner",
+        "Due Today",
+        "Overdue Actions",
+        "Reminder Automation",
+        "Outcome Log",
+        "Completion Analytics"
+      ],
+      "fields": [
+        "Follow-up No",
+        "Lead Customer",
+        "Related Record",
+        "Owner",
+        "Due Date",
+        "Due Time",
+        "Channel",
+        "Purpose",
+        "Outcome",
+        "Next Follow-up",
+        "Priority",
+        "Status"
+      ]
+    },
+    "crm-meetings": {
+      "title": "Meetings & Calls",
+      "family": "CRM",
+      "purpose": "Manage prospect engagement, qualification, relationship history and conversion performance.",
+      "tabs": [
+        "Meeting Calendar",
+        "Call Log",
+        "Agenda & Notes",
+        "Participants",
+        "Action Items",
+        "Engagement Analytics"
+      ],
+      "fields": [
+        "Meeting No",
+        "Subject",
+        "Customer Lead",
+        "Start Date",
+        "Start Time",
+        "Duration",
+        "Location Mode",
+        "Organizer",
+        "Participants",
+        "Agenda",
+        "Outcome",
+        "Status"
+      ]
+    },
+    "crm-customer360": {
+      "title": "Customer 360°",
+      "family": "CRM",
+      "purpose": "Manage prospect engagement, qualification, relationship history and conversion performance.",
+      "tabs": [
+        "Customer 360° Workspace",
+        "Customer 360° Details",
+        "Customer 360° Workflow",
+        "Customer 360° Exceptions",
+        "Customer 360° Performance",
+        "Customer 360° Controls"
+      ],
+      "fields": [
+        "Record No",
+        "Name",
+        "Customer Company",
+        "Owner",
+        "Stage",
+        "Priority",
+        "Next Action",
+        "Expected Value",
+        "Due Date",
+        "Status"
+      ]
+    },
+    "crm-feedback": {
+      "title": "Customer Feedback",
+      "family": "CRM",
+      "purpose": "Manage prospect engagement, qualification, relationship history and conversion performance.",
+      "tabs": [
+        "Feedback Inbox",
+        "CSAT & NPS",
+        "Issue Categories",
+        "Response Workflow",
+        "Improvement Actions",
+        "Sentiment Trends"
+      ],
+      "fields": [
+        "Feedback No",
+        "Customer",
+        "Date",
+        "Channel",
+        "Rating",
+        "NPS Score",
+        "Category",
+        "Comments",
+        "Owner",
+        "Corrective Action",
+        "Closure Date",
+        "Status"
+      ]
+    },
+    "crm-sources": {
+      "title": "Lead Sources",
+      "family": "CRM",
+      "purpose": "Manage prospect engagement, qualification, relationship history and conversion performance.",
+      "tabs": [
+        "Source Master",
+        "Campaign Mapping",
+        "UTM Tracking",
+        "Source Cost",
+        "Source Quality",
+        "ROI Analysis"
+      ],
+      "fields": [
+        "Source Code",
+        "Source Name",
+        "Channel",
+        "Campaign",
+        "UTM Source",
+        "UTM Medium",
+        "Monthly Cost",
+        "Leads",
+        "Qualified",
+        "Won",
+        "Revenue",
+        "Status"
+      ]
+    },
+    "sales-quotations": {
+      "title": "Sales Quotations",
+      "family": "Sales",
+      "purpose": "Control quote-to-cash execution with pricing, stock, delivery, billing and customer credit visibility.",
+      "tabs": [
+        "Quotation Register",
+        "Item & Tax Lines",
+        "Pricing Controls",
+        "Terms & Validity",
+        "Approval & Revision",
+        "Conversion Analysis"
+      ],
+      "fields": [
+        "Quotation No",
+        "Customer",
+        "Quote Date",
+        "Valid Till",
+        "Price List",
+        "Currency",
+        "Subtotal",
+        "Discount",
+        "Taxable",
+        "GST",
+        "Freight",
+        "Grand Total",
+        "Salesperson",
+        "Revision",
+        "Status"
+      ]
+    },
+    "sales-orders": {
+      "title": "Sales Orders",
+      "family": "Sales",
+      "purpose": "Control quote-to-cash execution with pricing, stock, delivery, billing and customer credit visibility.",
+      "tabs": [
+        "Order Register",
+        "Order Items",
+        "Stock Allocation",
+        "Delivery Commitments",
+        "Billing Status",
+        "Margin & Credit"
+      ],
+      "fields": [
+        "SO No",
+        "Customer",
+        "PO Reference",
+        "Order Date",
+        "Promise Date",
+        "Warehouse",
+        "Currency",
+        "Subtotal",
+        "Discount",
+        "GST",
+        "Freight",
+        "Total",
+        "Credit Check",
+        "Salesperson",
+        "Status"
+      ]
+    },
+    "sales-reservations": {
+      "title": "Stock Reservations",
+      "family": "Sales",
+      "purpose": "Control quote-to-cash execution with pricing, stock, delivery, billing and customer credit visibility.",
+      "tabs": [
+        "Reservation Queue",
+        "Warehouse Allocation",
+        "Batch Serial Allocation",
+        "Expiry Priority",
+        "Release & Reallocate",
+        "Reservation Exceptions"
+      ],
+      "fields": [
+        "Reservation No",
+        "Demand Ref",
+        "Customer",
+        "Item",
+        "Warehouse",
+        "Batch Serial",
+        "Required Qty",
+        "Reserved Qty",
+        "Short Qty",
+        "Priority",
+        "Expiry Date",
+        "Status"
+      ]
+    },
+    "sales-delivery": {
+      "title": "Delivery Scheduling",
+      "family": "Sales",
+      "purpose": "Control quote-to-cash execution with pricing, stock, delivery, billing and customer credit visibility.",
+      "tabs": [
+        "Delivery Plan",
+        "Promise Dates",
+        "Route & Vehicle",
+        "Load Planning",
+        "Delivery Exceptions",
+        "OTIF Performance"
+      ],
+      "fields": [
+        "Delivery Plan No",
+        "Sales Order",
+        "Customer",
+        "Ship To",
+        "Promise Date",
+        "Route",
+        "Transporter",
+        "Vehicle",
+        "Planned Qty",
+        "Delivered Qty",
+        "POD",
+        "OTIF Status",
+        "Status"
+      ]
+    },
+    "sales-dispatch": {
+      "title": "Dispatch",
+      "family": "Sales",
+      "purpose": "Control quote-to-cash execution with pricing, stock, delivery, billing and customer credit visibility.",
+      "tabs": [
+        "Dispatch Queue",
+        "Pick Pack Readiness",
+        "Vehicle & Driver",
+        "Dispatch Documents",
+        "POD Status",
+        "Dispatch Analytics"
+      ],
+      "fields": [
+        "Dispatch No",
+        "Sales Order",
+        "Customer",
+        "Warehouse",
+        "Pick List",
+        "Packing Ref",
+        "Vehicle",
+        "Driver",
+        "Dispatch Date",
+        "E Way Bill",
+        "LR No",
+        "POD Status",
+        "Status"
+      ]
+    },
+    "sales-invoices": {
+      "title": "Sales Invoices",
+      "family": "Sales",
+      "purpose": "Control quote-to-cash execution with pricing, stock, delivery, billing and customer credit visibility.",
+      "tabs": [
+        "Invoice Register",
+        "Tax Breakdown",
+        "E-Invoice Status",
+        "Receipts & Balance",
+        "Credit Notes",
+        "Invoice Ageing"
+      ],
+      "fields": [
+        "Invoice No",
+        "Customer",
+        "Invoice Date",
+        "Due Date",
+        "GSTIN",
+        "Place of Supply",
+        "Taxable Value",
+        "CGST",
+        "SGST",
+        "IGST",
+        "Grand Total",
+        "Paid",
+        "Balance",
+        "IRN Status",
+        "Status"
+      ]
+    },
+    "sales-collections": {
+      "title": "Collections",
+      "family": "Sales",
+      "purpose": "Control quote-to-cash execution with pricing, stock, delivery, billing and customer credit visibility.",
+      "tabs": [
+        "Collection Worklist",
+        "Due Today",
+        "Promise to Pay",
+        "Receipt Allocation",
+        "Escalation Actions",
+        "DSO Analytics"
+      ],
+      "fields": [
+        "Collection No",
+        "Customer",
+        "Invoice No",
+        "Due Date",
+        "Outstanding",
+        "Promise Date",
+        "Collector",
+        "Contact Mode",
+        "Receipt Amount",
+        "Receipt Date",
+        "Reference",
+        "Status"
+      ]
+    },
+    "sales-pricelist": {
+      "title": "Price Lists",
+      "family": "Sales",
+      "purpose": "Control quote-to-cash execution with pricing, stock, delivery, billing and customer credit visibility.",
+      "tabs": [
+        "Price List Master",
+        "Customer Pricing",
+        "Quantity Slabs",
+        "Promotion Rules",
+        "Effective Dates",
+        "Margin Simulation"
+      ],
+      "fields": [
+        "Price List Code",
+        "Price List Name",
+        "Customer Segment",
+        "Item Category",
+        "Currency",
+        "Base Price",
+        "Min Qty",
+        "Discount %",
+        "Effective From",
+        "Effective To",
+        "Margin %",
+        "Status"
+      ]
+    },
+    "sales-credit": {
+      "title": "Credit Limits",
+      "family": "Sales",
+      "purpose": "Control quote-to-cash execution with pricing, stock, delivery, billing and customer credit visibility.",
+      "tabs": [
+        "Credit Profiles",
+        "Limit Utilization",
+        "Overdue Exposure",
+        "Credit Holds",
+        "Approval Overrides",
+        "Risk Scoring"
+      ],
+      "fields": [
+        "Customer Code",
+        "Customer",
+        "Credit Limit",
+        "Used Limit",
+        "Available Limit",
+        "Overdue",
+        "Oldest Due Days",
+        "Risk Grade",
+        "Hold Status",
+        "Override Approver",
+        "Review Date",
+        "Status"
+      ]
+    },
+    "sales-returns": {
+      "title": "Sales Returns",
+      "family": "Sales",
+      "purpose": "Control quote-to-cash execution with pricing, stock, delivery, billing and customer credit visibility.",
+      "tabs": [
+        "Return Register",
+        "Return Reason",
+        "Inspection & Disposition",
+        "Credit Note Link",
+        "Replacement Flow",
+        "Return Analytics"
+      ],
+      "fields": [
+        "Return No",
+        "Customer",
+        "Invoice Ref",
+        "Return Date",
+        "Item",
+        "Qty",
+        "Reason",
+        "Condition",
+        "Disposition",
+        "Credit Note Ref",
+        "Replacement Ref",
+        "Status"
+      ]
+    },
+    "scm-pr": {
+      "title": "Purchase Requisition",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "Requisition Register",
+        "Requirement Details",
+        "Budget Availability",
+        "Approval Journey",
+        "RFQ Conversion",
+        "PR Cycle Analytics"
+      ],
+      "fields": [
+        "PR No",
+        "PR Date",
+        "Department",
+        "Requester",
+        "Required Date",
+        "Item Service",
+        "Specification",
+        "Quantity",
+        "UOM",
+        "Budget Amount",
+        "Cost Center",
+        "Project",
+        "Priority",
+        "Approval Level",
+        "Status"
+      ]
+    },
+    "scm-rfq": {
+      "title": "RFQ Management",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "RFQ Register",
+        "Supplier Invitations",
+        "Technical Requirements",
+        "Commercial Terms",
+        "Response Tracker",
+        "Sourcing Cycle Analytics"
+      ],
+      "fields": [
+        "RFQ No",
+        "PR No",
+        "RFQ Date",
+        "Closing Date",
+        "Buyer",
+        "Category",
+        "Vendor Count",
+        "Technical Spec",
+        "Commercial Terms",
+        "Delivery Location",
+        "Validity",
+        "Status"
+      ]
+    },
+    "scm-vendorquote": {
+      "title": "Vendor Quotations",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "Quotation Register",
+        "Commercial Breakdown",
+        "Technical Compliance",
+        "Negotiation History",
+        "Deviation Log",
+        "Quote Analytics"
+      ],
+      "fields": [
+        "Quote No",
+        "RFQ No",
+        "Vendor",
+        "Quote Date",
+        "Base Amount",
+        "Discount",
+        "GST",
+        "Freight",
+        "Landed Cost",
+        "Lead Time Days",
+        "Payment Terms",
+        "Warranty",
+        "Technical Compliance",
+        "Status"
+      ]
+    },
+    "scm-comparison": {
+      "title": "Vendor Comparison",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "Comparison Sheet",
+        "Weighted Criteria",
+        "Landed Cost",
+        "Technical Compliance",
+        "Negotiation Scenario",
+        "Award Recommendation"
+      ],
+      "fields": [
+        "Document No",
+        "Vendor",
+        "Department",
+        "Buyer",
+        "Date",
+        "Required Date",
+        "Amount",
+        "Approval Level",
+        "Reference",
+        "Status"
+      ]
+    },
+    "scm-po": {
+      "title": "Purchase Orders",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "PO Register",
+        "Item Schedule",
+        "Commercial Terms",
+        "Approval & Amendments",
+        "GRN Invoice Match",
+        "Supplier Performance"
+      ],
+      "fields": [
+        "PO No",
+        "Vendor",
+        "PO Type",
+        "PO Date",
+        "Delivery Date",
+        "Ship To Warehouse",
+        "Currency",
+        "Subtotal",
+        "Discount",
+        "GST",
+        "Freight",
+        "Other Charges",
+        "Grand Total",
+        "Payment Terms",
+        "Buyer",
+        "Revision",
+        "Status"
+      ]
+    },
+    "scm-grn": {
+      "title": "Goods Receipt / GRN",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "GRN Register",
+        "Receipt Lines",
+        "Batch Serial Capture",
+        "QC & Acceptance",
+        "PO Variance",
+        "Receipt Analytics"
+      ],
+      "fields": [
+        "GRN No",
+        "PO No",
+        "Vendor",
+        "Receipt Date",
+        "Warehouse",
+        "Vehicle",
+        "LR No",
+        "Vendor Invoice",
+        "Item Count",
+        "Accepted Qty",
+        "Rejected Qty",
+        "QC Status",
+        "Putaway Status",
+        "Status"
+      ]
+    },
+    "scm-purchaseinvoice": {
+      "title": "Purchase Invoice",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "Invoice Register",
+        "PO GRN Matching",
+        "Tax Validation",
+        "Debit Adjustments",
+        "Payment Readiness",
+        "Invoice Exceptions"
+      ],
+      "fields": [
+        "Purchase Invoice No",
+        "Vendor",
+        "Vendor Invoice Ref",
+        "Invoice Date",
+        "Due Date",
+        "PO No",
+        "GRN No",
+        "Taxable Value",
+        "GST",
+        "TDS",
+        "Invoice Total",
+        "Matched Amount",
+        "Variance",
+        "Payment Status",
+        "Status"
+      ]
+    },
+    "scm-approval": {
+      "title": "Purchase Approval",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "Approval Inbox",
+        "Amount Matrix",
+        "Department Rules",
+        "Delegation & Escalation",
+        "Decision History",
+        "Approval SLA"
+      ],
+      "fields": [
+        "Request No",
+        "Transaction Type",
+        "Document No",
+        "Department",
+        "Requester",
+        "Amount",
+        "Current Level",
+        "Approver",
+        "Submitted At",
+        "Age Hours",
+        "Decision",
+        "Comments",
+        "Status"
+      ]
+    },
+    "scm-suppliers": {
+      "title": "Supplier Master",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "Supplier Directory",
+        "Compliance Documents",
+        "Category Capability",
+        "Bank & Tax Details",
+        "Performance Scorecard",
+        "Supplier Risk"
+      ],
+      "fields": [
+        "Vendor Code",
+        "Company Name",
+        "GSTIN",
+        "PAN",
+        "Category",
+        "Contact Person",
+        "Mobile",
+        "Email",
+        "Payment Terms",
+        "Bank Account",
+        "Compliance Score",
+        "Quality Score",
+        "Delivery Score",
+        "Overall Rating",
+        "Status"
+      ]
+    },
+    "scm-evaluation": {
+      "title": "Supplier Evaluation",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "Evaluation Cycles",
+        "Quality Score",
+        "Delivery OTIF",
+        "Cost Competitiveness",
+        "Compliance Rating",
+        "Supplier Ranking"
+      ],
+      "fields": [
+        "Evaluation No",
+        "Vendor",
+        "Period",
+        "Quality Score",
+        "Delivery OTIF",
+        "Cost Score",
+        "Responsiveness",
+        "Compliance",
+        "Rejection PPM",
+        "Lead Time Days",
+        "Overall Score",
+        "Rank",
+        "Status"
+      ]
+    },
+    "scm-contracts": {
+      "title": "Rate / Blanket Contracts",
+      "family": "Procurement / SCM",
+      "purpose": "Control source-to-pay execution with supplier collaboration, approvals, logistics and three-way matching.",
+      "tabs": [
+        "Contract Register",
+        "Rate Schedule",
+        "Volume Commitments",
+        "Validity & Renewal",
+        "Release Orders",
+        "Contract Utilization"
+      ],
+      "fields": [
+        "Contract No",
+        "Vendor",
+        "Contract Type",
+        "Category",
+        "Start Date",
+        "End Date",
+        "Currency",
+        "Committed Value",
+        "Consumed Value",
+        "Balance Value",
+        "Release Orders",
+        "Renewal Date",
+        "Status"
+      ]
+    },
+    "inv-items": {
+      "title": "Item / SKU Master",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Item Master",
+        "Classification & UOM",
+        "Tax & HSN",
+        "Planning Parameters",
+        "Traceability Setup",
+        "Cost & Price"
+      ],
+      "fields": [
+        "Item Code",
+        "Item Name",
+        "Item Type",
+        "Category",
+        "Brand",
+        "HSN SAC",
+        "Base UOM",
+        "Alt UOM",
+        "Barcode",
+        "Batch Tracked",
+        "Serial Tracked",
+        "Shelf Life Days",
+        "Standard Cost",
+        "Selling Price",
+        "Reorder Level",
+        "Status"
+      ]
+    },
+    "inv-stock": {
+      "title": "Stock Balance",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Stock Overview",
+        "Warehouse Balance",
+        "Available vs Reserved",
+        "Batch Expiry",
+        "Blocked Stock",
+        "Stock Health"
+      ],
+      "fields": [
+        "Item Code",
+        "Item Name",
+        "Warehouse",
+        "Zone",
+        "Rack",
+        "Shelf",
+        "Bin",
+        "Batch",
+        "On Hand",
+        "Reserved",
+        "Blocked",
+        "Available",
+        "Reorder Level",
+        "Average Cost",
+        "Stock Value",
+        "Status"
+      ]
+    },
+    "inv-transactions": {
+      "title": "Inventory Transactions",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Movement Ledger",
+        "Receipts",
+        "Issues",
+        "Transfers",
+        "Adjustments",
+        "Transaction Audit"
+      ],
+      "fields": [
+        "Transaction No",
+        "Date Time",
+        "Transaction Type",
+        "Reference",
+        "Item",
+        "Warehouse From",
+        "Warehouse To",
+        "Batch Serial",
+        "Qty In",
+        "Qty Out",
+        "Unit Cost",
+        "Value",
+        "User",
+        "Status"
+      ]
+    },
+    "inv-opening": {
+      "title": "Opening Stock",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Opening Stock Register",
+        "Warehouse Upload",
+        "Batch Serial Opening",
+        "Valuation Basis",
+        "Validation Errors",
+        "Posting Summary"
+      ],
+      "fields": [
+        "Opening Ref",
+        "Financial Year",
+        "Warehouse",
+        "Item",
+        "Batch Serial",
+        "Opening Qty",
+        "Unit Cost",
+        "Opening Value",
+        "Valuation Method",
+        "Upload Batch",
+        "Validation Status",
+        "Posting Status"
+      ]
+    },
+    "inv-adjustment": {
+      "title": "Stock Adjustment",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Adjustment Register",
+        "Count Variance",
+        "Reason Codes",
+        "Approval Control",
+        "Value Impact",
+        "Adjustment Audit"
+      ],
+      "fields": [
+        "Adjustment No",
+        "Date",
+        "Warehouse",
+        "Item",
+        "System Qty",
+        "Counted Qty",
+        "Variance Qty",
+        "Unit Cost",
+        "Value Impact",
+        "Reason Code",
+        "Approver",
+        "Status"
+      ]
+    },
+    "inv-transfer": {
+      "title": "Stock Transfer",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Transfer Orders",
+        "Source Allocation",
+        "In Transit",
+        "Destination Receipt",
+        "Transfer Variance",
+        "Transfer SLA"
+      ],
+      "fields": [
+        "Transfer No",
+        "Transfer Date",
+        "Source Warehouse",
+        "Destination Warehouse",
+        "Item",
+        "Requested Qty",
+        "Dispatched Qty",
+        "Received Qty",
+        "In Transit",
+        "Vehicle Ref",
+        "Expected Receipt",
+        "Status"
+      ]
+    },
+    "inv-reservation": {
+      "title": "Stock Reservation",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Reservation Register",
+        "Demand Source",
+        "Allocation Priority",
+        "Shortage Handling",
+        "Release Rules",
+        "Reservation Ageing"
+      ],
+      "fields": [
+        "Reservation No",
+        "Demand Type",
+        "Demand Ref",
+        "Item",
+        "Warehouse",
+        "Batch Serial",
+        "Required Qty",
+        "Reserved Qty",
+        "Available Qty",
+        "Priority",
+        "Reserved Until",
+        "Status"
+      ]
+    },
+    "inv-reconciliation": {
+      "title": "Stock Reconciliation",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "System vs Physical",
+        "Variance Lines",
+        "Root Cause",
+        "Approval Posting",
+        "Value Impact",
+        "Reconciliation History"
+      ],
+      "fields": [
+        "Reconciliation No",
+        "Count Ref",
+        "Warehouse",
+        "Item",
+        "System Qty",
+        "Physical Qty",
+        "Variance",
+        "Unit Cost",
+        "Value Variance",
+        "Root Cause",
+        "Posting Ref",
+        "Status"
+      ]
+    },
+    "inv-ageing": {
+      "title": "Stock Ageing",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Ageing Summary",
+        "0 to 30 Days",
+        "31 to 90 Days",
+        "91 to 180 Days",
+        "180 Plus Days",
+        "Slow Dead Stock"
+      ],
+      "fields": [
+        "Item Code",
+        "Item Name",
+        "Warehouse",
+        "Last Movement",
+        "Age Days",
+        "0 30 Qty",
+        "31 90 Qty",
+        "91 180 Qty",
+        "180 Plus Qty",
+        "Stock Value",
+        "Classification",
+        "Action"
+      ]
+    },
+    "inv-valuation": {
+      "title": "Stock Valuation",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Valuation Summary",
+        "FIFO Layers",
+        "Weighted Average",
+        "Standard Cost",
+        "Revaluation",
+        "Inventory GL Bridge"
+      ],
+      "fields": [
+        "Valuation Ref",
+        "Date",
+        "Warehouse",
+        "Item",
+        "Method",
+        "Opening Value",
+        "Receipt Value",
+        "Issue Value",
+        "Adjustment Value",
+        "Closing Qty",
+        "Closing Value",
+        "GL Balance",
+        "Variance"
+      ]
+    },
+    "inv-reorder": {
+      "title": "Smart Reorder",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Reorder Dashboard",
+        "Min Max Policy",
+        "Safety Stock",
+        "EOQ & Lead Time",
+        "Suggested PR",
+        "Forecast Accuracy"
+      ],
+      "fields": [
+        "Item Code",
+        "Item Name",
+        "Warehouse",
+        "Avg Daily Usage",
+        "Lead Time Days",
+        "Safety Stock",
+        "Reorder Level",
+        "On Hand",
+        "Open PO",
+        "Net Requirement",
+        "Suggested Qty",
+        "Preferred Vendor",
+        "Status"
+      ]
+    },
+    "inv-batch": {
+      "title": "Batch / Lot Tracking",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Batch Register",
+        "Manufacturing Expiry",
+        "Batch Stock",
+        "Batch Movements",
+        "Quality Status",
+        "Batch Recall"
+      ],
+      "fields": [
+        "Batch No",
+        "Item",
+        "Warehouse",
+        "Mfg Date",
+        "Expiry Date",
+        "Received Qty",
+        "Available Qty",
+        "Blocked Qty",
+        "QC Status",
+        "Supplier",
+        "GRN Ref",
+        "Status"
+      ]
+    },
+    "inv-serial": {
+      "title": "Serial Number Tracking",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Serial Register",
+        "Ownership History",
+        "Warranty Link",
+        "Serial Movements",
+        "Service History",
+        "Serial Exceptions"
+      ],
+      "fields": [
+        "Serial No",
+        "Item",
+        "Current Warehouse",
+        "Current Owner",
+        "Purchase GRN",
+        "Sales Invoice",
+        "Warranty End",
+        "Last Movement",
+        "Service Ticket",
+        "Condition",
+        "Status"
+      ]
+    },
+    "inv-expiry": {
+      "title": "Expiry Tracking",
+      "family": "Inventory",
+      "purpose": "Maintain accurate quantity, valuation, traceability, replenishment and stock movement controls.",
+      "tabs": [
+        "Expiry Dashboard",
+        "Near Expiry",
+        "Expired Stock",
+        "FEFO Allocation",
+        "Disposition Actions",
+        "Expiry Loss"
+      ],
+      "fields": [
+        "Item",
+        "Batch",
+        "Warehouse",
+        "Expiry Date",
+        "Days to Expiry",
+        "Available Qty",
+        "Stock Value",
+        "FEFO Priority",
+        "Disposition",
+        "Owner",
+        "Status"
+      ]
+    },
+    "wms-warehouses": {
+      "title": "Warehouse Master",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Warehouse Directory",
+        "Capacity Profile",
+        "Storage Policy",
+        "Operating Calendar",
+        "Service Zones",
+        "Warehouse KPIs"
+      ],
+      "fields": [
+        "Warehouse Code",
+        "Warehouse Name",
+        "Branch",
+        "Address",
+        "Manager",
+        "Total Capacity",
+        "Used Capacity",
+        "Dock Doors",
+        "Operating Hours",
+        "Temperature Zone",
+        "Status"
+      ]
+    },
+    "wms-zones": {
+      "title": "Zone Management",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Zone Directory",
+        "Zone Capacity",
+        "Storage Restrictions",
+        "Putaway Priority",
+        "Picking Strategy",
+        "Zone Utilization"
+      ],
+      "fields": [
+        "Zone Code",
+        "Warehouse",
+        "Zone Name",
+        "Zone Type",
+        "Capacity",
+        "Used",
+        "Storage Class",
+        "Temperature",
+        "Putaway Priority",
+        "Pick Sequence",
+        "Status"
+      ]
+    },
+    "wms-racks": {
+      "title": "Rack Management",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Rack Directory",
+        "Rack Capacity",
+        "Load Limits",
+        "Slotting Rules",
+        "Occupancy Heatmap",
+        "Rack Audit"
+      ],
+      "fields": [
+        "Rack Code",
+        "Warehouse",
+        "Zone",
+        "Aisle",
+        "Rack Type",
+        "Levels",
+        "Max Load",
+        "Used Load",
+        "Occupancy %",
+        "Last Audit",
+        "Status"
+      ]
+    },
+    "wms-shelves": {
+      "title": "Shelf Management",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Shelf Directory",
+        "Shelf Dimensions",
+        "SKU Compatibility",
+        "Occupancy",
+        "Replenishment",
+        "Shelf Audit"
+      ],
+      "fields": [
+        "Shelf Code",
+        "Rack",
+        "Level",
+        "Dimensions",
+        "Max Weight",
+        "SKU Count",
+        "Occupied %",
+        "Storage Rule",
+        "Last Count",
+        "Status"
+      ]
+    },
+    "wms-bins": {
+      "title": "Bin Management",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Bin Directory",
+        "Bin Capacity",
+        "SKU Slotting",
+        "Occupancy Heatmap",
+        "Movement History",
+        "Bin Exceptions"
+      ],
+      "fields": [
+        "Bin Code",
+        "Warehouse",
+        "Zone",
+        "Rack",
+        "Shelf",
+        "Bin Type",
+        "Capacity",
+        "Occupied",
+        "Available",
+        "SKU Count",
+        "Putaway Priority",
+        "Status"
+      ]
+    },
+    "wms-putaway": {
+      "title": "Put Away",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Putaway Queue",
+        "Suggested Bins",
+        "Rule Priority",
+        "Operator Tasks",
+        "Putaway Exceptions",
+        "Dock to Stock Time"
+      ],
+      "fields": [
+        "Task No",
+        "GRN Ref",
+        "Item",
+        "Batch",
+        "Qty",
+        "Source Dock",
+        "Suggested Bin",
+        "Operator",
+        "Priority",
+        "Created Time",
+        "Completed Time",
+        "Exception",
+        "Status"
+      ]
+    },
+    "wms-pick": {
+      "title": "Pick List",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Pick Waves",
+        "Pick Tasks",
+        "Route Optimization",
+        "Batch Serial Pick",
+        "Short Picks",
+        "Pick Productivity"
+      ],
+      "fields": [
+        "Pick Task No",
+        "Wave No",
+        "Sales Order",
+        "Item",
+        "Batch Serial",
+        "Source Bin",
+        "Required Qty",
+        "Picked Qty",
+        "Picker",
+        "Route Seq",
+        "Short Qty",
+        "Status"
+      ]
+    },
+    "wms-packing": {
+      "title": "Packing",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Packing Queue",
+        "Cartonization",
+        "Label Printing",
+        "Weight Verification",
+        "Packing Exceptions",
+        "Pack Productivity"
+      ],
+      "fields": [
+        "Pack No",
+        "Sales Order",
+        "Customer",
+        "Picked Qty",
+        "Cartons",
+        "Gross Weight",
+        "Volumetric Weight",
+        "Label Status",
+        "Packer",
+        "QC Check",
+        "Dispatch Ready",
+        "Status"
+      ]
+    },
+    "wms-cycle": {
+      "title": "Cycle Count",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Cycle Count Plan",
+        "ABC Frequency",
+        "Count Tasks",
+        "Variance Review",
+        "Approval Posting",
+        "Count Accuracy"
+      ],
+      "fields": [
+        "Count Plan No",
+        "Warehouse",
+        "Zone",
+        "ABC Class",
+        "Frequency",
+        "Planned Date",
+        "Items Planned",
+        "Items Counted",
+        "Variance Lines",
+        "Accuracy %",
+        "Supervisor",
+        "Status"
+      ]
+    },
+    "wms-physical": {
+      "title": "Physical Verification",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Physical Count Plan",
+        "Freeze Controls",
+        "Count Sheets",
+        "Recount Queue",
+        "Reconciliation",
+        "Audit Closure"
+      ],
+      "fields": [
+        "Physical Count No",
+        "Warehouse",
+        "Freeze Date",
+        "Count Team",
+        "Items",
+        "First Count Variance",
+        "Recount Variance",
+        "Value Variance",
+        "Approved By",
+        "Posting Date",
+        "Status"
+      ]
+    },
+    "wms-transfer": {
+      "title": "Warehouse Transfers",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Transfer Queue",
+        "Inter Warehouse Plan",
+        "Pick Dispatch",
+        "In Transit",
+        "Destination Putaway",
+        "Transfer Accuracy"
+      ],
+      "fields": [
+        "WMS Transfer No",
+        "Source Warehouse",
+        "Destination",
+        "Pick Wave",
+        "Dispatch Ref",
+        "In Transit Qty",
+        "Received Qty",
+        "Putaway Qty",
+        "Variance",
+        "Expected Date",
+        "Status"
+      ]
+    },
+    "wms-barcode": {
+      "title": "Barcode / QR",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "Barcode Registry",
+        "Label Templates",
+        "Scan Transactions",
+        "Printer Setup",
+        "Invalid Scans",
+        "Scan Productivity"
+      ],
+      "fields": [
+        "Barcode",
+        "Item",
+        "Barcode Type",
+        "UOM",
+        "Label Template",
+        "Printer",
+        "Last Printed",
+        "Scan Count",
+        "Invalid Scans",
+        "Status"
+      ]
+    },
+    "wms-rfid": {
+      "title": "RFID Support",
+      "family": "Warehouse / WMS",
+      "purpose": "Run warehouse execution from receiving and slotting through picking, packing, counting and dispatch.",
+      "tabs": [
+        "RFID Tag Registry",
+        "Reader Setup",
+        "Read Events",
+        "Portal Mapping",
+        "Missed Reads",
+        "RFID Accuracy"
+      ],
+      "fields": [
+        "Tag EPC",
+        "Item",
+        "Batch Serial",
+        "Reader Zone",
+        "Last Read Time",
+        "Read Strength",
+        "Expected Location",
+        "Actual Location",
+        "Exception",
+        "Status"
+      ]
+    },
+    "mfg-bom": {
+      "title": "Bill of Materials",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "BOM Register",
+        "BOM Structure",
+        "Component Effectivity",
+        "Alternates & Substitutes",
+        "Revision Control",
+        "Cost Rollup"
+      ],
+      "fields": [
+        "BOM No",
+        "Parent Item",
+        "Version",
+        "BOM Type",
+        "Base Qty",
+        "Effective From",
+        "Effective To",
+        "Component Count",
+        "Material Cost",
+        "Scrap %",
+        "Revision",
+        "Status"
+      ]
+    },
+    "mfg-routing": {
+      "title": "Routing",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "Routing Register",
+        "Operation Sequence",
+        "Standard Times",
+        "Work Center Assignment",
+        "Tooling Requirements",
+        "Routing Efficiency"
+      ],
+      "fields": [
+        "Routing No",
+        "Item",
+        "Version",
+        "Operation Count",
+        "Primary Work Center",
+        "Setup Time",
+        "Run Time",
+        "Queue Time",
+        "Move Time",
+        "Labor Cost",
+        "Machine Cost",
+        "Status"
+      ]
+    },
+    "mfg-workcenters": {
+      "title": "Work Centers",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "Work Center Master",
+        "Capacity Calendar",
+        "Machines & Labor",
+        "Rates & Cost",
+        "Shift Availability",
+        "Utilization"
+      ],
+      "fields": [
+        "Work Center Code",
+        "Work Center Name",
+        "Department",
+        "Machine Count",
+        "Labor Count",
+        "Daily Capacity Hrs",
+        "Efficiency %",
+        "Hourly Rate",
+        "Calendar",
+        "Status"
+      ]
+    },
+    "mfg-plan": {
+      "title": "Production Planning",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "Production Plan",
+        "Demand Inputs",
+        "Capacity Check",
+        "Material Check",
+        "Plan Release",
+        "Plan Adherence"
+      ],
+      "fields": [
+        "Plan No",
+        "Plan Date",
+        "Horizon",
+        "Item",
+        "Demand Qty",
+        "Planned Qty",
+        "Capacity Load %",
+        "Material Availability %",
+        "Release Date",
+        "Planner",
+        "Status"
+      ]
+    },
+    "mfg-orders": {
+      "title": "Production Orders",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "Production Orders",
+        "Material Issue",
+        "Operation Progress",
+        "Quality Results",
+        "Finished Receipt",
+        "Order Variance"
+      ],
+      "fields": [
+        "Production No",
+        "Item",
+        "BOM Version",
+        "Routing",
+        "Planned Qty",
+        "Produced Qty",
+        "Rejected Qty",
+        "Start Date",
+        "Due Date",
+        "Work Center",
+        "Priority",
+        "Material Status",
+        "Status"
+      ]
+    },
+    "mfg-mrp": {
+      "title": "Material Requirement Planning",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "MRP Run",
+        "Gross Requirements",
+        "Net Requirements",
+        "Planned Orders",
+        "Shortage Exceptions",
+        "MRP Pegging"
+      ],
+      "fields": [
+        "MRP Run No",
+        "Run Date",
+        "Horizon",
+        "Item",
+        "Gross Requirement",
+        "On Hand",
+        "Scheduled Receipt",
+        "Safety Stock",
+        "Net Requirement",
+        "Planned Order Qty",
+        "Required Date",
+        "Pegging Ref",
+        "Status"
+      ]
+    },
+    "mfg-workorders": {
+      "title": "Work Orders",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "Work Order Queue",
+        "Operation Details",
+        "Operator Assignment",
+        "Material Consumption",
+        "Downtime & Scrap",
+        "Completion"
+      ],
+      "fields": [
+        "WO No",
+        "Production Order",
+        "Operation",
+        "Work Center",
+        "Machine",
+        "Operator",
+        "Planned Qty",
+        "Completed Qty",
+        "Start Time",
+        "End Time",
+        "Downtime Min",
+        "Scrap Qty",
+        "Status"
+      ]
+    },
+    "mfg-shopfloor": {
+      "title": "Shop Floor Dashboard",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "Shop Floor Dashboard Workspace",
+        "Shop Floor Dashboard Details",
+        "Shop Floor Dashboard Workflow",
+        "Shop Floor Dashboard Exceptions",
+        "Shop Floor Dashboard Performance",
+        "Shop Floor Dashboard Controls"
+      ],
+      "fields": [
+        "Document No",
+        "Item",
+        "Production Order",
+        "Work Center",
+        "Planned Qty",
+        "Actual Qty",
+        "Start Date",
+        "Due Date",
+        "Owner",
+        "Status"
+      ]
+    },
+    "mfg-wip": {
+      "title": "WIP Tracking",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "WIP Overview",
+        "Stage Inventory",
+        "Operation Ageing",
+        "Bottleneck Queue",
+        "WIP Valuation",
+        "WIP Reconciliation"
+      ],
+      "fields": [
+        "WIP Ref",
+        "Production Order",
+        "Item",
+        "Operation",
+        "Work Center",
+        "Qty In",
+        "Qty Good",
+        "Qty Rejected",
+        "Queue Age Hrs",
+        "Unit Cost",
+        "WIP Value",
+        "Status"
+      ]
+    },
+    "mfg-fg": {
+      "title": "Finished Goods Receipt",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "FG Receipt Register",
+        "Production Reference",
+        "Batch Serial Capture",
+        "QC Release",
+        "Warehouse Putaway",
+        "Yield Analysis"
+      ],
+      "fields": [
+        "FG Receipt No",
+        "Production Order",
+        "Item",
+        "Batch Serial",
+        "Receipt Date",
+        "Produced Qty",
+        "Accepted Qty",
+        "Rejected Qty",
+        "Warehouse",
+        "Bin",
+        "QC Release",
+        "Status"
+      ]
+    },
+    "mfg-scrap": {
+      "title": "Scrap Management",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "Scrap Register",
+        "Scrap Reasons",
+        "Material Recovery",
+        "Approval & Disposal",
+        "Cost Impact",
+        "Scrap Trend"
+      ],
+      "fields": [
+        "Scrap No",
+        "Production Order",
+        "Operation",
+        "Item",
+        "Scrap Qty",
+        "Reason",
+        "Recoverable Qty",
+        "Disposal Method",
+        "Unit Cost",
+        "Loss Value",
+        "Approver",
+        "Status"
+      ]
+    },
+    "mfg-rework": {
+      "title": "Rework Management",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "Rework Queue",
+        "Defect Source",
+        "Rework Routing",
+        "Material Labor",
+        "Reinspection",
+        "Rework Cost"
+      ],
+      "fields": [
+        "Rework No",
+        "Source NCR",
+        "Production Order",
+        "Item",
+        "Qty",
+        "Defect",
+        "Rework Routing",
+        "Labor Hrs",
+        "Material Cost",
+        "Reinspection Result",
+        "Status"
+      ]
+    },
+    "mfg-costing": {
+      "title": "Production Costing",
+      "family": "Manufacturing",
+      "purpose": "Plan and execute material, capacity, work orders, WIP, yield and production cost with end-to-end traceability.",
+      "tabs": [
+        "Cost Sheet",
+        "Material Cost",
+        "Labor Cost",
+        "Machine Overhead",
+        "Variance Analysis",
+        "Actual vs Standard"
+      ],
+      "fields": [
+        "Cost Sheet No",
+        "Production Order",
+        "Item",
+        "Standard Material",
+        "Actual Material",
+        "Standard Labor",
+        "Actual Labor",
+        "Machine OH",
+        "Other OH",
+        "Standard Total",
+        "Actual Total",
+        "Variance %",
+        "Status"
+      ]
+    },
+    "qms-plans": {
+      "title": "Inspection Plans",
+      "family": "Quality / QMS",
+      "purpose": "Define inspection standards, capture results, control nonconformance and drive corrective action.",
+      "tabs": [
+        "Inspection Plan Master",
+        "Characteristics",
+        "Sampling Rules",
+        "Specification Limits",
+        "Revision Control",
+        "Plan Coverage"
+      ],
+      "fields": [
+        "Plan Code",
+        "Plan Name",
+        "Inspection Type",
+        "Item Category",
+        "Revision",
+        "Sampling Standard",
+        "Sample Size",
+        "Characteristic Count",
+        "Effective Date",
+        "Owner",
+        "Status"
+      ]
+    },
+    "qms-incoming": {
+      "title": "Incoming Quality",
+      "family": "Quality / QMS",
+      "purpose": "Define inspection standards, capture results, control nonconformance and drive corrective action.",
+      "tabs": [
+        "Incoming Inspection Queue",
+        "Supplier Lot",
+        "Sampling & Tests",
+        "Acceptance Decision",
+        "NCR Link",
+        "Supplier Quality Trend"
+      ],
+      "fields": [
+        "Inspection No",
+        "GRN Ref",
+        "Vendor",
+        "Item",
+        "Batch",
+        "Lot Qty",
+        "Sample Qty",
+        "Accepted Qty",
+        "Rejected Qty",
+        "Decision",
+        "Inspector",
+        "NCR Ref",
+        "Status"
+      ]
+    },
+    "qms-process": {
+      "title": "In-Process Quality",
+      "family": "Quality / QMS",
+      "purpose": "Define inspection standards, capture results, control nonconformance and drive corrective action.",
+      "tabs": [
+        "In Process Inspection",
+        "Operation Checkpoints",
+        "SPC Readings",
+        "Hold Release",
+        "Defect Escalation",
+        "Process Capability"
+      ],
+      "fields": [
+        "Inspection No",
+        "Production Order",
+        "Operation",
+        "Item",
+        "Sample Time",
+        "Parameter",
+        "Specification",
+        "Actual",
+        "Result",
+        "Inspector",
+        "Hold Status",
+        "Status"
+      ]
+    },
+    "qms-final": {
+      "title": "Final Quality",
+      "family": "Quality / QMS",
+      "purpose": "Define inspection standards, capture results, control nonconformance and drive corrective action.",
+      "tabs": [
+        "Final Inspection Queue",
+        "Final Checklist",
+        "Test Results",
+        "Release Certificate",
+        "Customer Requirement",
+        "Final Yield"
+      ],
+      "fields": [
+        "Inspection No",
+        "Production Order",
+        "Item",
+        "Batch Serial",
+        "Qty",
+        "Checklist Score",
+        "Test Result",
+        "Accepted",
+        "Rejected",
+        "Certificate No",
+        "Inspector",
+        "Status"
+      ]
+    },
+    "qms-supplier": {
+      "title": "Supplier Quality",
+      "family": "Quality / QMS",
+      "purpose": "Define inspection standards, capture results, control nonconformance and drive corrective action.",
+      "tabs": [
+        "Supplier Quality Dashboard",
+        "PPM & Rejection",
+        "Incoming Trends",
+        "SCAR Actions",
+        "Audit Findings",
+        "Supplier Quality Score"
+      ],
+      "fields": [
+        "Vendor",
+        "Period",
+        "Lots Received",
+        "Lots Rejected",
+        "PPM",
+        "Quality Score",
+        "OTIF",
+        "NCR Count",
+        "SCAR Open",
+        "Audit Score",
+        "Overall Rating",
+        "Status"
+      ]
+    },
+    "qms-inspections": {
+      "title": "Quality Inspections",
+      "family": "Quality / QMS",
+      "purpose": "Define inspection standards, capture results, control nonconformance and drive corrective action.",
+      "tabs": [
+        "Inspection Register",
+        "Parameter Results",
+        "Sample Details",
+        "Accept Reject",
+        "Attachments & Certificates",
+        "Inspection Analytics"
+      ],
+      "fields": [
+        "Inspection No",
+        "Inspection Type",
+        "Reference",
+        "Item",
+        "Lot Batch",
+        "Sample Qty",
+        "Parameters",
+        "Accepted",
+        "Rejected",
+        "Inspector",
+        "Inspection Date",
+        "Status"
+      ]
+    },
+    "qms-ncr": {
+      "title": "Non-Conformance / NCR",
+      "family": "Quality / QMS",
+      "purpose": "Define inspection standards, capture results, control nonconformance and drive corrective action.",
+      "tabs": [
+        "NCR Register",
+        "Containment",
+        "Root Cause",
+        "Disposition",
+        "Responsibility & Due Date",
+        "NCR Trend"
+      ],
+      "fields": [
+        "NCR No",
+        "Date",
+        "Source",
+        "Reference",
+        "Item",
+        "Problem Description",
+        "Containment",
+        "Disposition",
+        "Owner",
+        "Due Date",
+        "Severity",
+        "Status"
+      ]
+    },
+    "qms-capa": {
+      "title": "CAPA",
+      "family": "Quality / QMS",
+      "purpose": "Define inspection standards, capture results, control nonconformance and drive corrective action.",
+      "tabs": [
+        "CAPA Register",
+        "Problem Statement",
+        "Root Cause",
+        "Corrective Action",
+        "Preventive Action",
+        "Effectiveness Check"
+      ],
+      "fields": [
+        "CAPA No",
+        "NCR Ref",
+        "Problem Statement",
+        "Root Cause",
+        "Corrective Action",
+        "Preventive Action",
+        "Owner",
+        "Target Date",
+        "Effectiveness Date",
+        "Effectiveness Result",
+        "Status"
+      ]
+    },
+    "qms-5why": {
+      "title": "5 Why Analysis",
+      "family": "Quality / QMS",
+      "purpose": "Define inspection standards, capture results, control nonconformance and drive corrective action.",
+      "tabs": [
+        "5 Why Cases",
+        "Problem Definition",
+        "Why Chain",
+        "Root Cause Evidence",
+        "Action Linkage",
+        "Closure Review"
+      ],
+      "fields": [
+        "Case No",
+        "NCR Ref",
+        "Problem",
+        "Why 1",
+        "Why 2",
+        "Why 3",
+        "Why 4",
+        "Why 5",
+        "Root Cause",
+        "Owner",
+        "Status"
+      ]
+    },
+    "qms-calibration": {
+      "title": "Calibration",
+      "family": "Quality / QMS",
+      "purpose": "Define inspection standards, capture results, control nonconformance and drive corrective action.",
+      "tabs": [
+        "Instrument Register",
+        "Calibration Schedule",
+        "Calibration Results",
+        "Out of Tolerance",
+        "Certificates",
+        "Compliance Status"
+      ],
+      "fields": [
+        "Instrument ID",
+        "Instrument Name",
+        "Department",
+        "Range",
+        "Accuracy",
+        "Calibration Frequency",
+        "Last Calibration",
+        "Next Due",
+        "Agency",
+        "Certificate",
+        "Result",
+        "Status"
+      ]
+    },
+    "maint-machines": {
+      "title": "Machine Master",
+      "family": "Maintenance",
+      "purpose": "Maximize asset availability with preventive schedules, breakdown response, spare planning and reliability KPIs.",
+      "tabs": [
+        "Machine Register",
+        "Technical Specifications",
+        "Location & Ownership",
+        "Service History",
+        "Documents",
+        "Machine Health"
+      ],
+      "fields": [
+        "Machine Code",
+        "Machine Name",
+        "Department",
+        "Location",
+        "Make",
+        "Model",
+        "Serial No",
+        "Criticality",
+        "Commission Date",
+        "Last Service",
+        "Next Service",
+        "MTBF Hrs",
+        "Status"
+      ]
+    },
+    "maint-equipment": {
+      "title": "Equipment Master",
+      "family": "Maintenance",
+      "purpose": "Maximize asset availability with preventive schedules, breakdown response, spare planning and reliability KPIs.",
+      "tabs": [
+        "Equipment Register",
+        "Criticality",
+        "Component Hierarchy",
+        "Operating Parameters",
+        "Maintenance History",
+        "Lifecycle Cost"
+      ],
+      "fields": [
+        "Equipment Code",
+        "Equipment Name",
+        "Parent Asset",
+        "Department",
+        "Location",
+        "Criticality",
+        "Make",
+        "Model",
+        "Serial No",
+        "Warranty End",
+        "Status"
+      ]
+    },
+    "maint-preventive": {
+      "title": "Preventive Maintenance",
+      "family": "Maintenance",
+      "purpose": "Maximize asset availability with preventive schedules, breakdown response, spare planning and reliability KPIs.",
+      "tabs": [
+        "PM Schedule",
+        "Maintenance Plans",
+        "Due Work",
+        "Checklist Execution",
+        "Spare Planning",
+        "PM Compliance"
+      ],
+      "fields": [
+        "PM Plan No",
+        "Machine",
+        "Frequency",
+        "Checklist",
+        "Last Done",
+        "Next Due",
+        "Estimated Hrs",
+        "Technician Skill",
+        "Spare Kit",
+        "Compliance %",
+        "Status"
+      ]
+    },
+    "maint-breakdown": {
+      "title": "Breakdown Maintenance",
+      "family": "Maintenance",
+      "purpose": "Maximize asset availability with preventive schedules, breakdown response, spare planning and reliability KPIs.",
+      "tabs": [
+        "Breakdown Queue",
+        "Failure Details",
+        "Response Timeline",
+        "Repair Actions",
+        "Root Cause",
+        "Breakdown Cost"
+      ],
+      "fields": [
+        "Breakdown No",
+        "Machine",
+        "Reported At",
+        "Reported By",
+        "Failure Symptom",
+        "Priority",
+        "Technician",
+        "Response Time Min",
+        "Repair Time Min",
+        "Production Loss Hrs",
+        "Root Cause",
+        "Status"
+      ]
+    },
+    "maint-workorders": {
+      "title": "Maintenance Work Orders",
+      "family": "Maintenance",
+      "purpose": "Maximize asset availability with preventive schedules, breakdown response, spare planning and reliability KPIs.",
+      "tabs": [
+        "Maintenance WO",
+        "Job Plan",
+        "Technician Assignment",
+        "Parts & Tools",
+        "Completion & Signoff",
+        "Work Order KPI"
+      ],
+      "fields": [
+        "MWO No",
+        "Type",
+        "Machine",
+        "Job Description",
+        "Priority",
+        "Technician",
+        "Planned Start",
+        "Planned End",
+        "Actual Hrs",
+        "Parts Cost",
+        "Labor Cost",
+        "Completion",
+        "Status"
+      ]
+    },
+    "maint-spares": {
+      "title": "Spare Parts",
+      "family": "Maintenance",
+      "purpose": "Maximize asset availability with preventive schedules, breakdown response, spare planning and reliability KPIs.",
+      "tabs": [
+        "Spare Master",
+        "Stock Availability",
+        "Critical Spares",
+        "Consumption History",
+        "Reorder Planning",
+        "Spare Cost"
+      ],
+      "fields": [
+        "Spare Code",
+        "Spare Name",
+        "Machine Category",
+        "Warehouse",
+        "On Hand",
+        "Reserved",
+        "Reorder Level",
+        "Lead Time",
+        "Preferred Vendor",
+        "Unit Cost",
+        "Criticality",
+        "Status"
+      ]
+    },
+    "maint-schedule": {
+      "title": "Maintenance Schedule",
+      "family": "Maintenance",
+      "purpose": "Maximize asset availability with preventive schedules, breakdown response, spare planning and reliability KPIs.",
+      "tabs": [
+        "Maintenance Calendar",
+        "Weekly Plan",
+        "Monthly Plan",
+        "Resource Loading",
+        "Shutdown Plan",
+        "Schedule Compliance"
+      ],
+      "fields": [
+        "Schedule Ref",
+        "Period",
+        "Machine",
+        "Maintenance Type",
+        "Planned Date",
+        "Duration Hrs",
+        "Technician",
+        "Production Window",
+        "Parts Ready",
+        "Status"
+      ]
+    },
+    "maint-downtime": {
+      "title": "Downtime",
+      "family": "Maintenance",
+      "purpose": "Maximize asset availability with preventive schedules, breakdown response, spare planning and reliability KPIs.",
+      "tabs": [
+        "Downtime Register",
+        "Planned Downtime",
+        "Unplanned Downtime",
+        "Reason Pareto",
+        "Production Loss",
+        "Downtime Trend"
+      ],
+      "fields": [
+        "Downtime No",
+        "Machine",
+        "Start Time",
+        "End Time",
+        "Duration Min",
+        "Type",
+        "Reason",
+        "Production Order",
+        "Lost Qty",
+        "Cost Impact",
+        "Owner",
+        "Status"
+      ]
+    },
+    "maint-mtbf": {
+      "title": "MTBF / MTTR",
+      "family": "Maintenance",
+      "purpose": "Maximize asset availability with preventive schedules, breakdown response, spare planning and reliability KPIs.",
+      "tabs": [
+        "Reliability Dashboard",
+        "MTBF by Asset",
+        "MTTR by Asset",
+        "Failure Frequency",
+        "Reliability Trend",
+        "Improvement Actions"
+      ],
+      "fields": [
+        "Machine",
+        "Period",
+        "Operating Hours",
+        "Failures",
+        "MTBF Hrs",
+        "Repair Hours",
+        "MTTR Hrs",
+        "Availability %",
+        "Target MTBF",
+        "Trend",
+        "Status"
+      ]
+    },
+    "maint-alerts": {
+      "title": "Maintenance Alerts",
+      "family": "Maintenance",
+      "purpose": "Maximize asset availability with preventive schedules, breakdown response, spare planning and reliability KPIs.",
+      "tabs": [
+        "Alert Center",
+        "Service Due",
+        "Calibration Due",
+        "Document Expiry",
+        "Breakdown Escalation",
+        "Alert Rules"
+      ],
+      "fields": [
+        "Alert No",
+        "Alert Type",
+        "Asset",
+        "Due Date",
+        "Days Remaining",
+        "Owner",
+        "Escalation Level",
+        "Notification Channel",
+        "Acknowledged",
+        "Status"
+      ]
+    },
+    "fin-coa": {
+      "title": "Chart of Accounts",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Account Tree",
+        "Account Master",
+        "Group Mapping",
+        "Posting Controls",
+        "Opening Balances",
+        "COA Validation"
+      ],
+      "fields": [
+        "Account Code",
+        "Account Name",
+        "Account Type",
+        "Parent Group",
+        "Normal Balance",
+        "Posting Allowed",
+        "Cost Center Required",
+        "Tax Mapping",
+        "Currency",
+        "Status"
+      ]
+    },
+    "fin-gl": {
+      "title": "General Ledger",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "General Ledger",
+        "Voucher Drilldown",
+        "Account Movement",
+        "Cost Center Split",
+        "Period Comparison",
+        "Ledger Audit"
+      ],
+      "fields": [
+        "Posting Date",
+        "Voucher No",
+        "Voucher Type",
+        "Account",
+        "Narration",
+        "Debit",
+        "Credit",
+        "Cost Center",
+        "Profit Center",
+        "Reference",
+        "Running Balance",
+        "Status"
+      ]
+    },
+    "fin-journal": {
+      "title": "Journal Entries",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Journal Register",
+        "Debit Credit Lines",
+        "Supporting Documents",
+        "Approval & Posting",
+        "Reversal Entries",
+        "Journal Audit"
+      ],
+      "fields": [
+        "JV No",
+        "Date",
+        "Reference",
+        "Narration",
+        "Debit Total",
+        "Credit Total",
+        "Cost Center",
+        "Supporting Doc",
+        "Prepared By",
+        "Approved By",
+        "Posting Status",
+        "Status"
+      ]
+    },
+    "fin-cashbook": {
+      "title": "Cash Book",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Cash Book",
+        "Receipts",
+        "Payments",
+        "Petty Cash",
+        "Cash Reconciliation",
+        "Cash Position"
+      ],
+      "fields": [
+        "Date",
+        "Voucher No",
+        "Receipt Payment",
+        "Party",
+        "Narration",
+        "Cash In",
+        "Cash Out",
+        "Balance",
+        "Reference",
+        "User",
+        "Status"
+      ]
+    },
+    "fin-bankbook": {
+      "title": "Bank Book",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Bank Book",
+        "Bank Receipts",
+        "Bank Payments",
+        "Transfers",
+        "Uncleared Items",
+        "Bank Position"
+      ],
+      "fields": [
+        "Date",
+        "Voucher No",
+        "Bank Account",
+        "Receipt Payment",
+        "Party",
+        "Instrument UTR",
+        "Debit",
+        "Credit",
+        "Balance",
+        "Clearing Status",
+        "Status"
+      ]
+    },
+    "fin-ap": {
+      "title": "Accounts Payable",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Vendor Payables",
+        "Invoice Queue",
+        "Due Schedule",
+        "Payment Proposal",
+        "Debit Notes",
+        "AP Ageing"
+      ],
+      "fields": [
+        "Vendor Invoice",
+        "Vendor",
+        "Invoice Date",
+        "Due Date",
+        "Invoice Amount",
+        "Paid",
+        "Outstanding",
+        "Age Days",
+        "Payment Block",
+        "Payment Method",
+        "Status"
+      ]
+    },
+    "fin-ar": {
+      "title": "Accounts Receivable",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Customer Receivables",
+        "Invoice Exposure",
+        "Due Schedule",
+        "Collection Allocation",
+        "Credit Notes",
+        "AR Ageing"
+      ],
+      "fields": [
+        "Invoice No",
+        "Customer",
+        "Invoice Date",
+        "Due Date",
+        "Invoice Amount",
+        "Received",
+        "Outstanding",
+        "Age Days",
+        "Credit Limit",
+        "Collection Owner",
+        "Status"
+      ]
+    },
+    "fin-creditnote": {
+      "title": "Credit Notes",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Credit Note Register",
+        "Reference Invoice",
+        "Tax Adjustment",
+        "Approval",
+        "Ledger Posting",
+        "Credit Note Analysis"
+      ],
+      "fields": [
+        "Credit Note No",
+        "Customer",
+        "Invoice Ref",
+        "Date",
+        "Reason",
+        "Taxable Adjustment",
+        "GST Adjustment",
+        "Total",
+        "Approval",
+        "Posting Ref",
+        "Status"
+      ]
+    },
+    "fin-debitnote": {
+      "title": "Debit Notes",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Debit Note Register",
+        "Vendor Reference",
+        "Tax Adjustment",
+        "Approval",
+        "Ledger Posting",
+        "Debit Note Analysis"
+      ],
+      "fields": [
+        "Debit Note No",
+        "Vendor",
+        "Invoice Ref",
+        "Date",
+        "Reason",
+        "Taxable Adjustment",
+        "GST Adjustment",
+        "Total",
+        "Approval",
+        "Posting Ref",
+        "Status"
+      ]
+    },
+    "fin-bankreco": {
+      "title": "Bank Reconciliation",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Reconciliation Workspace",
+        "Bank Statement",
+        "ERP Transactions",
+        "Auto Matching",
+        "Unmatched Exceptions",
+        "Reconciliation Summary"
+      ],
+      "fields": [
+        "Statement Ref",
+        "Bank Account",
+        "Statement Date",
+        "ERP Balance",
+        "Bank Balance",
+        "Matched Amount",
+        "Unmatched Bank",
+        "Unmatched ERP",
+        "Difference",
+        "Reconciled By",
+        "Status"
+      ]
+    },
+    "fin-costcenter": {
+      "title": "Cost Centers",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Cost Center Master",
+        "Hierarchy",
+        "Budget Mapping",
+        "Transaction Allocation",
+        "Cost Statement",
+        "Variance"
+      ],
+      "fields": [
+        "Cost Center Code",
+        "Cost Center Name",
+        "Department",
+        "Manager",
+        "Parent",
+        "Budget",
+        "Actual",
+        "Committed",
+        "Available",
+        "Status"
+      ]
+    },
+    "fin-profitcenter": {
+      "title": "Profit Centers",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Profit Center Master",
+        "Revenue Allocation",
+        "Cost Allocation",
+        "Contribution Margin",
+        "Segment P&L",
+        "Performance"
+      ],
+      "fields": [
+        "Profit Center Code",
+        "Profit Center Name",
+        "Branch",
+        "Manager",
+        "Revenue",
+        "Direct Cost",
+        "Allocated Cost",
+        "Contribution",
+        "Margin %",
+        "Status"
+      ]
+    },
+    "fin-expenses": {
+      "title": "Expense Management",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Expense Register",
+        "Expense Claims",
+        "Policy Validation",
+        "Approval Queue",
+        "Payment Status",
+        "Spend Analytics"
+      ],
+      "fields": [
+        "Expense No",
+        "Employee Vendor",
+        "Date",
+        "Category",
+        "Department",
+        "Cost Center",
+        "Amount",
+        "GST",
+        "Policy Result",
+        "Approver",
+        "Payment Status",
+        "Status"
+      ]
+    },
+    "fin-budget": {
+      "title": "Budgeting",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Budget Register",
+        "Department Budgets",
+        "Commitments",
+        "Actual Consumption",
+        "Budget Control",
+        "Variance Forecast"
+      ],
+      "fields": [
+        "Budget No",
+        "Financial Year",
+        "Department",
+        "Cost Center",
+        "Account",
+        "Budget Amount",
+        "Committed",
+        "Actual",
+        "Available",
+        "Variance %",
+        "Control Mode",
+        "Status"
+      ]
+    },
+    "fin-trial": {
+      "title": "Trial Balance",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Trial Balance",
+        "Opening Balance",
+        "Debit Movement",
+        "Credit Movement",
+        "Closing Balance",
+        "Exception Review"
+      ],
+      "fields": [
+        "Account Code",
+        "Account Name",
+        "Opening Debit",
+        "Opening Credit",
+        "Period Debit",
+        "Period Credit",
+        "Closing Debit",
+        "Closing Credit",
+        "Variance",
+        "Status"
+      ]
+    },
+    "fin-pnl": {
+      "title": "Profit & Loss",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Profit & Loss",
+        "Revenue Breakdown",
+        "COGS & Gross Margin",
+        "Operating Expenses",
+        "EBITDA & Net Profit",
+        "Period Comparison"
+      ],
+      "fields": [
+        "Line Code",
+        "Particulars",
+        "Current Month",
+        "YTD",
+        "Prior Year YTD",
+        "Budget YTD",
+        "Variance",
+        "Variance %",
+        "Status"
+      ]
+    },
+    "fin-bs": {
+      "title": "Balance Sheet",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Balance Sheet",
+        "Assets",
+        "Liabilities",
+        "Equity",
+        "Working Capital",
+        "Period Comparison"
+      ],
+      "fields": [
+        "Line Code",
+        "Particulars",
+        "Current Period",
+        "Prior Period",
+        "Movement",
+        "Category",
+        "Status"
+      ]
+    },
+    "fin-cashflow": {
+      "title": "Cash Flow",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Cash Flow",
+        "Operating Activities",
+        "Investing Activities",
+        "Financing Activities",
+        "Cash Forecast",
+        "Variance"
+      ],
+      "fields": [
+        "Line Code",
+        "Cash Flow Category",
+        "Current Month",
+        "YTD",
+        "Prior YTD",
+        "Forecast",
+        "Variance",
+        "Status"
+      ]
+    },
+    "fin-ageing": {
+      "title": "AR/AP Ageing",
+      "family": "Finance & Accounts",
+      "purpose": "Maintain controlled double-entry accounting, reconciliations, working capital and statutory-ready financial reporting.",
+      "tabs": [
+        "Ageing Summary",
+        "Receivable Buckets",
+        "Payable Buckets",
+        "Top Overdue Accounts",
+        "Collection Priority",
+        "Ageing Trend"
+      ],
+      "fields": [
+        "Party Code",
+        "Party Name",
+        "Type",
+        "Current",
+        "1 30 Days",
+        "31 60 Days",
+        "61 90 Days",
+        "90 Plus",
+        "Total Outstanding",
+        "Owner",
+        "Status"
+      ]
+    },
+    "tax-gst": {
+      "title": "GST Setup",
+      "family": "Indian Taxation",
+      "purpose": "Operate India tax compliance for GST, TDS, TCS, e-invoice, e-way bill and return reconciliation.",
+      "tabs": [
+        "GST Configuration",
+        "GSTIN Registrations",
+        "Tax Rates",
+        "Place of Supply",
+        "Reverse Charge",
+        "GST Validation"
+      ],
+      "fields": [
+        "GSTIN",
+        "Legal Name",
+        "State",
+        "Registration Type",
+        "Effective Date",
+        "Default Tax Scheme",
+        "E Invoice Enabled",
+        "E Way Enabled",
+        "Status"
+      ]
+    },
+    "tax-gstr1": {
+      "title": "GSTR-1",
+      "family": "Indian Taxation",
+      "purpose": "Operate India tax compliance for GST, TDS, TCS, e-invoice, e-way bill and return reconciliation.",
+      "tabs": [
+        "GSTR 1 Workspace",
+        "B2B Invoices",
+        "B2C Supplies",
+        "Credit Debit Notes",
+        "HSN Summary",
+        "Return Validation"
+      ],
+      "fields": [
+        "Return Period",
+        "GSTIN",
+        "B2B Taxable",
+        "B2C Taxable",
+        "Exports",
+        "Credit Notes",
+        "Tax Liability",
+        "Document Count",
+        "Validation Errors",
+        "Filing Status"
+      ]
+    },
+    "tax-gstr3b": {
+      "title": "GSTR-3B",
+      "family": "Indian Taxation",
+      "purpose": "Operate India tax compliance for GST, TDS, TCS, e-invoice, e-way bill and return reconciliation.",
+      "tabs": [
+        "GSTR 3B Workspace",
+        "Outward Tax Liability",
+        "Eligible ITC",
+        "Ineligible ITC",
+        "Tax Payment",
+        "Return Reconciliation"
+      ],
+      "fields": [
+        "Return Period",
+        "GSTIN",
+        "Outward Tax",
+        "Reverse Charge",
+        "Eligible ITC",
+        "Ineligible ITC",
+        "Net Tax Payable",
+        "Cash Paid",
+        "Credit Utilized",
+        "Filing Status"
+      ]
+    },
+    "tax-tds": {
+      "title": "TDS",
+      "family": "Indian Taxation",
+      "purpose": "Operate India tax compliance for GST, TDS, TCS, e-invoice, e-way bill and return reconciliation.",
+      "tabs": [
+        "TDS Register",
+        "Section Mapping",
+        "Deduction Entries",
+        "Challan Allocation",
+        "Return Preparation",
+        "TDS Compliance"
+      ],
+      "fields": [
+        "TDS Entry No",
+        "Section",
+        "Deductee",
+        "PAN",
+        "Payment Date",
+        "Amount Paid",
+        "Rate %",
+        "TDS Amount",
+        "Challan Ref",
+        "Return Quarter",
+        "Status"
+      ]
+    },
+    "tax-tcs": {
+      "title": "TCS",
+      "family": "Indian Taxation",
+      "purpose": "Operate India tax compliance for GST, TDS, TCS, e-invoice, e-way bill and return reconciliation.",
+      "tabs": [
+        "TCS Register",
+        "Section Mapping",
+        "Collection Entries",
+        "Challan Allocation",
+        "Return Preparation",
+        "TCS Compliance"
+      ],
+      "fields": [
+        "TCS Entry No",
+        "Section",
+        "Collectee",
+        "PAN",
+        "Receipt Date",
+        "Amount",
+        "Rate %",
+        "TCS Amount",
+        "Challan Ref",
+        "Return Quarter",
+        "Status"
+      ]
+    },
+    "tax-hsn": {
+      "title": "HSN / SAC",
+      "family": "Indian Taxation",
+      "purpose": "Operate India tax compliance for GST, TDS, TCS, e-invoice, e-way bill and return reconciliation.",
+      "tabs": [
+        "HSN SAC Master",
+        "Rate Mapping",
+        "Item Service Mapping",
+        "Usage Validation",
+        "HSN Summary",
+        "Compliance Checks"
+      ],
+      "fields": [
+        "HSN SAC",
+        "Description",
+        "Goods Service",
+        "GST Rate",
+        "Cess Rate",
+        "UQC",
+        "Effective From",
+        "Effective To",
+        "Usage Count",
+        "Status"
+      ]
+    },
+    "tax-einvoice": {
+      "title": "E-Invoice",
+      "family": "Indian Taxation",
+      "purpose": "Operate India tax compliance for GST, TDS, TCS, e-invoice, e-way bill and return reconciliation.",
+      "tabs": [
+        "E Invoice Queue",
+        "IRN Generation",
+        "QR Code",
+        "Cancellation",
+        "Error Queue",
+        "IRP Reconciliation"
+      ],
+      "fields": [
+        "Invoice No",
+        "Customer GSTIN",
+        "Invoice Date",
+        "Taxable Value",
+        "GST",
+        "IRN",
+        "Ack No",
+        "Ack Date",
+        "QR Status",
+        "Cancellation Status",
+        "Error",
+        "Status"
+      ]
+    },
+    "tax-eway": {
+      "title": "E-Way Bill",
+      "family": "Indian Taxation",
+      "purpose": "Operate India tax compliance for GST, TDS, TCS, e-invoice, e-way bill and return reconciliation.",
+      "tabs": [
+        "E Way Bill Queue",
+        "Part A Details",
+        "Vehicle Part B",
+        "Validity & Distance",
+        "Extension Cancellation",
+        "EWB Exceptions"
+      ],
+      "fields": [
+        "EWB No",
+        "Document No",
+        "Document Date",
+        "From GSTIN",
+        "To GSTIN",
+        "Transporter",
+        "Vehicle",
+        "Distance KM",
+        "Valid Until",
+        "Part B Status",
+        "Status"
+      ]
+    },
+    "tax-salesreg": {
+      "title": "Sales Register",
+      "family": "Indian Taxation",
+      "purpose": "Operate India tax compliance for GST, TDS, TCS, e-invoice, e-way bill and return reconciliation.",
+      "tabs": [
+        "Sales Register",
+        "Invoice Detail",
+        "Tax Summary",
+        "Customer GSTIN",
+        "Document Type",
+        "GST Reconciliation"
+      ],
+      "fields": [
+        "Invoice No",
+        "Date",
+        "Customer",
+        "GSTIN",
+        "Document Type",
+        "Taxable",
+        "CGST",
+        "SGST",
+        "IGST",
+        "Total",
+        "IRN",
+        "Status"
+      ]
+    },
+    "tax-purchasereg": {
+      "title": "Purchase Register",
+      "family": "Indian Taxation",
+      "purpose": "Operate India tax compliance for GST, TDS, TCS, e-invoice, e-way bill and return reconciliation.",
+      "tabs": [
+        "Purchase Register",
+        "Vendor Invoice Detail",
+        "ITC Eligibility",
+        "Vendor GSTIN",
+        "2B Match Status",
+        "GST Reconciliation"
+      ],
+      "fields": [
+        "Vendor Invoice",
+        "Date",
+        "Vendor",
+        "GSTIN",
+        "Taxable",
+        "CGST",
+        "SGST",
+        "IGST",
+        "ITC Eligible",
+        "2B Match",
+        "Difference",
+        "Status"
+      ]
+    },
+    "hr-employees": {
+      "title": "Employee Master",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Employee Directory",
+        "Employment Profile",
+        "Personal & Statutory",
+        "Organization Assignment",
+        "Documents",
+        "Employee Lifecycle"
+      ],
+      "fields": [
+        "Employee ID",
+        "Employee Name",
+        "Department",
+        "Designation",
+        "Manager",
+        "Employment Type",
+        "Joining Date",
+        "Work Location",
+        "Mobile",
+        "Email",
+        "PAN",
+        "Aadhaar",
+        "UAN",
+        "ESIC IP",
+        "Shift",
+        "Status"
+      ]
+    },
+    "hr-recruitment": {
+      "title": "Recruitment",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Job Requisitions",
+        "Candidate Pipeline",
+        "Interviews",
+        "Offers",
+        "Joining Forecast",
+        "Recruitment Analytics"
+      ],
+      "fields": [
+        "Requisition No",
+        "Job Title",
+        "Department",
+        "Openings",
+        "Hiring Manager",
+        "Candidate",
+        "Stage",
+        "Source",
+        "Interview Date",
+        "Offer CTC",
+        "Expected Join",
+        "Status"
+      ]
+    },
+    "hr-onboarding": {
+      "title": "Onboarding",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Onboarding Queue",
+        "Document Collection",
+        "Joining Checklist",
+        "IT Asset Allocation",
+        "Induction",
+        "Probation Tracking"
+      ],
+      "fields": [
+        "Onboarding ID",
+        "Employee Candidate",
+        "Joining Date",
+        "Department",
+        "Documents %",
+        "Background Check",
+        "Laptop Asset",
+        "Email Created",
+        "Induction",
+        "Probation End",
+        "Owner",
+        "Status"
+      ]
+    },
+    "hr-attendance": {
+      "title": "Attendance",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Daily Attendance",
+        "Monthly Calendar",
+        "Late Early & Overtime",
+        "Geo Device Logs",
+        "Regularization",
+        "Attendance Analytics"
+      ],
+      "fields": [
+        "Date",
+        "Employee ID",
+        "Employee",
+        "Shift",
+        "Punch In",
+        "Punch Out",
+        "Work Hours",
+        "Late Min",
+        "Early Min",
+        "Overtime Hrs",
+        "Mode",
+        "Location",
+        "Regularization",
+        "Status"
+      ]
+    },
+    "hr-shifts": {
+      "title": "Shift Management",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Shift Master",
+        "Shift Rosters",
+        "Rotation Rules",
+        "Night Shift",
+        "Weekly Off & Holiday",
+        "Coverage Analysis"
+      ],
+      "fields": [
+        "Shift Code",
+        "Shift Name",
+        "Start Time",
+        "End Time",
+        "Break Min",
+        "Grace Min",
+        "Min Hours",
+        "Overtime Rule",
+        "Night Shift",
+        "Weekly Off Pattern",
+        "Status"
+      ]
+    },
+    "hr-leave": {
+      "title": "Leave Management",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Leave Requests",
+        "Leave Balances",
+        "Approval Queue",
+        "Leave Calendar",
+        "Policy Rules",
+        "Leave Analytics"
+      ],
+      "fields": [
+        "Leave Request No",
+        "Employee",
+        "Leave Type",
+        "From Date",
+        "To Date",
+        "Days",
+        "Reason",
+        "Balance Before",
+        "Balance After",
+        "Approver",
+        "Decision",
+        "Status"
+      ]
+    },
+    "hr-expense": {
+      "title": "Employee Expenses",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Expense Claims",
+        "Receipts & Categories",
+        "Policy Validation",
+        "Approval Queue",
+        "Payment Link",
+        "Expense Analytics"
+      ],
+      "fields": [
+        "Claim No",
+        "Employee",
+        "Date",
+        "Category",
+        "Purpose",
+        "Amount",
+        "GST",
+        "Receipt",
+        "Policy Limit",
+        "Approver",
+        "Payment Status",
+        "Status"
+      ]
+    },
+    "hr-performance": {
+      "title": "Performance",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Performance Cycles",
+        "Goals & KRAs",
+        "Check Ins",
+        "Ratings",
+        "Calibration",
+        "Performance Analytics"
+      ],
+      "fields": [
+        "Cycle",
+        "Employee",
+        "Department",
+        "Goal Score",
+        "Competency Score",
+        "Manager Rating",
+        "Calibration Rating",
+        "Final Rating",
+        "Promotion Potential",
+        "Status"
+      ]
+    },
+    "hr-training": {
+      "title": "Training",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Training Calendar",
+        "Programs",
+        "Participants",
+        "Assessments",
+        "Certificates",
+        "Training Effectiveness"
+      ],
+      "fields": [
+        "Training ID",
+        "Program",
+        "Provider",
+        "Start Date",
+        "End Date",
+        "Participants",
+        "Cost",
+        "Assessment Score",
+        "Certificate",
+        "Effectiveness",
+        "Status"
+      ]
+    },
+    "hr-documents": {
+      "title": "Employee Documents",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Employee Documents",
+        "Expiry Tracker",
+        "Verification",
+        "Access Control",
+        "Acknowledgements",
+        "Document Compliance"
+      ],
+      "fields": [
+        "Document ID",
+        "Employee",
+        "Document Type",
+        "Document No",
+        "Issue Date",
+        "Expiry Date",
+        "Verified",
+        "Verified By",
+        "File",
+        "Status"
+      ]
+    },
+    "hr-exit": {
+      "title": "Exit Management",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "Exit Cases",
+        "Resignation Approval",
+        "Clearance Checklist",
+        "Final Settlement",
+        "Exit Interview",
+        "Attrition Analytics"
+      ],
+      "fields": [
+        "Exit Case No",
+        "Employee",
+        "Resignation Date",
+        "Last Working Date",
+        "Reason",
+        "Manager Approval",
+        "Clearance %",
+        "Asset Return",
+        "Final Settlement",
+        "Exit Interview",
+        "Status"
+      ]
+    },
+    "hr-ess": {
+      "title": "Employee Self Service",
+      "family": "HRMS",
+      "purpose": "Manage the employee lifecycle, time, attendance, leave, performance, learning and self-service.",
+      "tabs": [
+        "My Profile",
+        "My Attendance",
+        "My Leave",
+        "My Payslips",
+        "My Expenses",
+        "HR Requests"
+      ],
+      "fields": [
+        "Request No",
+        "Employee",
+        "Request Type",
+        "Request Date",
+        "Subject",
+        "Details",
+        "Assigned HR",
+        "Response Due",
+        "Resolution",
+        "Status"
+      ]
+    },
+    "pay-structure": {
+      "title": "Salary Structure",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "Salary Structure Master",
+        "Earnings Components",
+        "Deduction Components",
+        "Statutory Mapping",
+        "CTC Simulation",
+        "Structure Revision"
+      ],
+      "fields": [
+        "Structure Code",
+        "Structure Name",
+        "Grade",
+        "Basic %",
+        "HRA %",
+        "Allowances",
+        "Employer PF",
+        "Employer ESIC",
+        "Variable Pay",
+        "Effective From",
+        "Status"
+      ]
+    },
+    "pay-processing": {
+      "title": "Payroll Processing",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "Payroll Run",
+        "Attendance Inputs",
+        "Earnings Deductions",
+        "Statutory Calculation",
+        "Validation & Lock",
+        "Payroll Summary"
+      ],
+      "fields": [
+        "Payroll Month",
+        "Employee ID",
+        "Employee",
+        "Paid Days",
+        "Gross Salary",
+        "PF",
+        "ESIC",
+        "PT",
+        "TDS",
+        "Loan",
+        "Overtime",
+        "Bonus",
+        "Other Deduction",
+        "Net Salary",
+        "Status"
+      ]
+    },
+    "pay-overtime": {
+      "title": "Overtime",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "Overtime Register",
+        "Eligible Hours",
+        "Rate Rules",
+        "Approval Queue",
+        "Payroll Transfer",
+        "OT Analytics"
+      ],
+      "fields": [
+        "OT No",
+        "Employee",
+        "Date",
+        "Shift",
+        "Eligible Hours",
+        "Approved Hours",
+        "Rate Type",
+        "OT Rate",
+        "OT Amount",
+        "Approver",
+        "Payroll Month",
+        "Status"
+      ]
+    },
+    "pay-incentive": {
+      "title": "Incentives / Bonus",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "Incentive Register",
+        "Scheme Rules",
+        "Target Achievement",
+        "Approval",
+        "Payroll Transfer",
+        "Incentive Analytics"
+      ],
+      "fields": [
+        "Incentive No",
+        "Employee",
+        "Scheme",
+        "Period",
+        "Target",
+        "Achievement %",
+        "Calculated Amount",
+        "Approved Amount",
+        "Approver",
+        "Payroll Month",
+        "Status"
+      ]
+    },
+    "pay-loan": {
+      "title": "Loans / Advances",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "Loan Register",
+        "Disbursement",
+        "EMI Schedule",
+        "Recovery",
+        "Foreclosure",
+        "Outstanding Analysis"
+      ],
+      "fields": [
+        "Loan No",
+        "Employee",
+        "Loan Type",
+        "Disbursement Date",
+        "Principal",
+        "Interest",
+        "EMI",
+        "Paid EMIs",
+        "Outstanding",
+        "Next Recovery",
+        "Status"
+      ]
+    },
+    "pay-pf": {
+      "title": "PF",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "PF Workspace",
+        "UAN Mapping",
+        "Employee Contribution",
+        "Employer Contribution",
+        "ECR Validation",
+        "PF Compliance"
+      ],
+      "fields": [
+        "Payroll Month",
+        "Employee",
+        "UAN",
+        "PF Wage",
+        "Employee PF",
+        "Employer EPF",
+        "Employer EPS",
+        "VPF",
+        "ECR Status",
+        "Status"
+      ]
+    },
+    "pay-esic": {
+      "title": "ESIC",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "ESIC Workspace",
+        "IP Mapping",
+        "Contribution Calculation",
+        "Eligibility",
+        "Challan Preparation",
+        "ESIC Compliance"
+      ],
+      "fields": [
+        "Payroll Month",
+        "Employee",
+        "IP Number",
+        "ESIC Wage",
+        "Employee ESIC",
+        "Employer ESIC",
+        "Eligibility",
+        "Challan Status",
+        "Status"
+      ]
+    },
+    "pay-pt": {
+      "title": "Professional Tax",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "Professional Tax",
+        "State Slabs",
+        "Employee Liability",
+        "Monthly Summary",
+        "Challan",
+        "PT Compliance"
+      ],
+      "fields": [
+        "Payroll Month",
+        "Employee",
+        "State",
+        "Gross Wage",
+        "PT Slab",
+        "PT Amount",
+        "Challan Batch",
+        "Status"
+      ]
+    },
+    "pay-tds": {
+      "title": "Payroll TDS",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "Payroll TDS",
+        "Tax Regime",
+        "Declarations",
+        "Taxable Income",
+        "Monthly Deduction",
+        "Form 16 Summary"
+      ],
+      "fields": [
+        "Payroll Month",
+        "Employee",
+        "PAN",
+        "Tax Regime",
+        "Projected Income",
+        "Deductions",
+        "Taxable Income",
+        "Annual Tax",
+        "TDS Till Date",
+        "Current TDS",
+        "Status"
+      ]
+    },
+    "pay-payslip": {
+      "title": "Payslips",
+      "family": "Payroll",
+      "purpose": "Generate, validate, approve, distribute and audit employee payslips with complete earnings, deductions, statutory information and payment details.",
+      "tabs": [
+        "Payslip Register",
+        "Earnings Breakdown",
+        "Deductions Breakdown",
+        "Employer Contribution",
+        "Payment & Distribution",
+        "Payslip Audit"
+      ],
+      "fields": [
+        "Payroll Month",
+        "Employee ID",
+        "Employee",
+        "Department",
+        "Designation",
+        "Joining Date",
+        "PAN",
+        "PF UAN",
+        "ESIC No",
+        "Bank Name",
+        "Bank Account",
+        "Paid Days",
+        "Basic",
+        "HRA",
+        "Special Allowance",
+        "Conveyance",
+        "Overtime",
+        "Bonus",
+        "Other Earnings",
+        "Gross",
+        "PF",
+        "ESIC",
+        "Professional Tax",
+        "TDS",
+        "Loan Deduction",
+        "Other Deduction",
+        "Total Deductions",
+        "Net Pay",
+        "Employer PF",
+        "Employer ESIC",
+        "Gratuity",
+        "CTC",
+        "Payment Mode",
+        "Payment Date",
+        "Email Status",
+        "Download Count",
+        "Status"
+      ]
+    },
+    "pay-bank": {
+      "title": "Bank Transfer File",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "Bank Transfer Batches",
+        "Salary Accounts",
+        "Payment File",
+        "Validation Errors",
+        "Bank Acknowledgement",
+        "Payment Reconciliation"
+      ],
+      "fields": [
+        "Batch No",
+        "Payroll Month",
+        "Bank",
+        "Employee Count",
+        "Gross Transfer",
+        "File Format",
+        "Generated At",
+        "Uploaded At",
+        "Bank Ack",
+        "Failed Count",
+        "Status"
+      ]
+    },
+    "pay-register": {
+      "title": "Salary Register",
+      "family": "Payroll",
+      "purpose": "Calculate, validate, approve and distribute payroll with statutory deductions and payment reconciliation.",
+      "tabs": [
+        "Salary Register",
+        "Department Summary",
+        "Employee Breakdown",
+        "Statutory Deductions",
+        "Cost Center Split",
+        "Payroll Trend"
+      ],
+      "fields": [
+        "Payroll Month",
+        "Department",
+        "Employee Count",
+        "Gross Salary",
+        "Employee Deductions",
+        "Employer Contributions",
+        "Net Salary",
+        "Overtime",
+        "Bonus",
+        "Status"
+      ]
+    },
+    "proj-projects": {
+      "title": "Projects",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Project Register",
+        "Scope & Milestones",
+        "Team & Roles",
+        "Budget & Cost",
+        "Risks & Issues",
+        "Project Health"
+      ],
+      "fields": [
+        "Project Code",
+        "Project Name",
+        "Customer",
+        "Project Manager",
+        "Start Date",
+        "End Date",
+        "Budget",
+        "Committed Cost",
+        "Actual Cost",
+        "Progress %",
+        "Health",
+        "Status"
+      ]
+    },
+    "proj-tasks": {
+      "title": "Tasks",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Task Register",
+        "Priority Board",
+        "Dependencies",
+        "Assignees",
+        "Time Tracking",
+        "Task Analytics"
+      ],
+      "fields": [
+        "Task No",
+        "Project",
+        "Task",
+        "Owner",
+        "Priority",
+        "Start Date",
+        "Due Date",
+        "Estimated Hrs",
+        "Actual Hrs",
+        "Dependency",
+        "Progress %",
+        "Status"
+      ]
+    },
+    "proj-subtasks": {
+      "title": "Subtasks",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Subtask Register",
+        "Parent Task",
+        "Dependencies",
+        "Assignees",
+        "Completion Evidence",
+        "Subtask Progress"
+      ],
+      "fields": [
+        "Subtask No",
+        "Parent Task",
+        "Subtask",
+        "Owner",
+        "Due Date",
+        "Estimated Hrs",
+        "Actual Hrs",
+        "Dependency",
+        "Evidence",
+        "Progress %",
+        "Status"
+      ]
+    },
+    "proj-milestones": {
+      "title": "Milestones",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Milestone Plan",
+        "Deliverables",
+        "Acceptance Criteria",
+        "Dependencies",
+        "Status Review",
+        "Milestone Variance"
+      ],
+      "fields": [
+        "Milestone No",
+        "Project",
+        "Milestone",
+        "Target Date",
+        "Actual Date",
+        "Acceptance Criteria",
+        "Owner",
+        "Dependency",
+        "Progress %",
+        "Status"
+      ]
+    },
+    "proj-team": {
+      "title": "Team Assignment",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Team Allocation",
+        "Role Matrix",
+        "Availability",
+        "Utilization",
+        "Skills",
+        "Resource Forecast"
+      ],
+      "fields": [
+        "Project",
+        "Employee",
+        "Role",
+        "Allocation %",
+        "From Date",
+        "To Date",
+        "Billable",
+        "Hourly Cost",
+        "Availability %",
+        "Status"
+      ]
+    },
+    "proj-timesheets": {
+      "title": "Timesheets",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Timesheet Register",
+        "Daily Entries",
+        "Approval Queue",
+        "Billable Hours",
+        "Project Allocation",
+        "Utilization Analytics"
+      ],
+      "fields": [
+        "Timesheet No",
+        "Employee",
+        "Project",
+        "Task",
+        "Date",
+        "Hours",
+        "Billable Hours",
+        "Description",
+        "Approver",
+        "Approval Status",
+        "Status"
+      ]
+    },
+    "proj-expenses": {
+      "title": "Project Expenses",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Project Expense Register",
+        "Cost Category",
+        "Budget Check",
+        "Approval",
+        "Client Billable",
+        "Expense Variance"
+      ],
+      "fields": [
+        "Expense No",
+        "Project",
+        "Date",
+        "Category",
+        "Vendor Employee",
+        "Amount",
+        "Billable",
+        "Budget Head",
+        "Approver",
+        "Status"
+      ]
+    },
+    "proj-budget": {
+      "title": "Project Budget",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Project Budget",
+        "Budget Lines",
+        "Committed Cost",
+        "Actual Cost",
+        "Estimate to Complete",
+        "Cost Variance"
+      ],
+      "fields": [
+        "Budget Line",
+        "Project",
+        "Cost Category",
+        "Budget",
+        "Committed",
+        "Actual",
+        "Estimate to Complete",
+        "Estimate at Completion",
+        "Variance",
+        "Status"
+      ]
+    },
+    "proj-kanban": {
+      "title": "Kanban",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Kanban Workspace",
+        "Kanban Details",
+        "Kanban Workflow",
+        "Kanban Exceptions",
+        "Kanban Performance",
+        "Kanban Controls"
+      ],
+      "fields": [
+        "Record No",
+        "Project",
+        "Task Milestone",
+        "Owner",
+        "Start Date",
+        "Due Date",
+        "Budget Hrs",
+        "Actual Hrs",
+        "Progress %",
+        "Status"
+      ]
+    },
+    "proj-gantt": {
+      "title": "Gantt / Timeline",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Gantt Plan",
+        "Task Timeline",
+        "Dependencies",
+        "Critical Path",
+        "Baseline Variance",
+        "Schedule Forecast"
+      ],
+      "fields": [
+        "Task",
+        "Project",
+        "Start Date",
+        "End Date",
+        "Duration Days",
+        "Dependency",
+        "Baseline Start",
+        "Baseline End",
+        "Variance Days",
+        "Critical",
+        "Progress %",
+        "Status"
+      ]
+    },
+    "proj-profitability": {
+      "title": "Project Profitability",
+      "family": "Projects",
+      "purpose": "Control scope, schedule, resources, time, cost, risks and profitability across projects.",
+      "tabs": [
+        "Profitability Summary",
+        "Revenue",
+        "Direct Cost",
+        "Resource Cost",
+        "Contribution Margin",
+        "Project Ranking"
+      ],
+      "fields": [
+        "Project",
+        "Customer",
+        "Revenue",
+        "Labor Cost",
+        "Material Cost",
+        "Expense Cost",
+        "Other Cost",
+        "Contribution",
+        "Margin %",
+        "Rank",
+        "Status"
+      ]
+    },
+    "asset-master": {
+      "title": "Asset Master",
+      "family": "Assets",
+      "purpose": "Track fixed assets from capitalization and allocation through maintenance, depreciation and disposal.",
+      "tabs": [
+        "Asset Register",
+        "Classification",
+        "Location & Custodian",
+        "Financial Details",
+        "Documents & QR",
+        "Lifecycle Status"
+      ],
+      "fields": [
+        "Asset ID",
+        "Asset Name",
+        "Category",
+        "Department",
+        "Location",
+        "Custodian",
+        "Purchase Date",
+        "Supplier",
+        "Purchase Cost",
+        "Capitalization Date",
+        "Useful Life Months",
+        "Book Value",
+        "QR Code",
+        "Status"
+      ]
+    },
+    "asset-capitalization": {
+      "title": "Capitalization",
+      "family": "Assets",
+      "purpose": "Track fixed assets from capitalization and allocation through maintenance, depreciation and disposal.",
+      "tabs": [
+        "Capitalization Queue",
+        "Purchase Link",
+        "Capitalization Date",
+        "Cost Components",
+        "GL Mapping",
+        "Capitalization Audit"
+      ],
+      "fields": [
+        "Capitalization No",
+        "Asset",
+        "Purchase Ref",
+        "Capitalization Date",
+        "Base Cost",
+        "Freight",
+        "Installation",
+        "Other Cost",
+        "Capitalized Value",
+        "GL Account",
+        "Approver",
+        "Status"
+      ]
+    },
+    "asset-allocation": {
+      "title": "Allocation",
+      "family": "Assets",
+      "purpose": "Track fixed assets from capitalization and allocation through maintenance, depreciation and disposal.",
+      "tabs": [
+        "Allocation Register",
+        "Employee Assignment",
+        "Department Location",
+        "Handover",
+        "Return",
+        "Allocation History"
+      ],
+      "fields": [
+        "Allocation No",
+        "Asset",
+        "Employee",
+        "Department",
+        "Location",
+        "Allocation Date",
+        "Condition Out",
+        "Handover Doc",
+        "Return Due",
+        "Status"
+      ]
+    },
+    "asset-transfer": {
+      "title": "Asset Transfer",
+      "family": "Assets",
+      "purpose": "Track fixed assets from capitalization and allocation through maintenance, depreciation and disposal.",
+      "tabs": [
+        "Transfer Requests",
+        "Source Custodian",
+        "Destination Custodian",
+        "Approval",
+        "Physical Verification",
+        "Transfer History"
+      ],
+      "fields": [
+        "Transfer No",
+        "Asset",
+        "From Employee",
+        "From Location",
+        "To Employee",
+        "To Location",
+        "Request Date",
+        "Transfer Date",
+        "Approver",
+        "Condition",
+        "Status"
+      ]
+    },
+    "asset-maintenance": {
+      "title": "Asset Maintenance",
+      "family": "Assets",
+      "purpose": "Track fixed assets from capitalization and allocation through maintenance, depreciation and disposal.",
+      "tabs": [
+        "Asset Maintenance",
+        "Service Schedule",
+        "Work History",
+        "Service Cost",
+        "Warranty AMC Link",
+        "Asset Health"
+      ],
+      "fields": [
+        "Service No",
+        "Asset",
+        "Service Type",
+        "Due Date",
+        "Service Date",
+        "Vendor Technician",
+        "Parts Cost",
+        "Labor Cost",
+        "Downtime Hrs",
+        "Next Due",
+        "Status"
+      ]
+    },
+    "asset-depreciation": {
+      "title": "Depreciation",
+      "family": "Assets",
+      "purpose": "Track fixed assets from capitalization and allocation through maintenance, depreciation and disposal.",
+      "tabs": [
+        "Depreciation Run",
+        "Book Value",
+        "Useful Life",
+        "Method & Rate",
+        "Monthly Posting",
+        "Depreciation Forecast"
+      ],
+      "fields": [
+        "Run No",
+        "Period",
+        "Asset",
+        "Opening Book Value",
+        "Depreciable Base",
+        "Method",
+        "Rate",
+        "Depreciation",
+        "Closing Book Value",
+        "GL Posting",
+        "Status"
+      ]
+    },
+    "asset-disposal": {
+      "title": "Asset Disposal",
+      "family": "Assets",
+      "purpose": "Track fixed assets from capitalization and allocation through maintenance, depreciation and disposal.",
+      "tabs": [
+        "Disposal Register",
+        "Approval",
+        "Sale Scrap Value",
+        "Gain Loss",
+        "Asset Derecognition",
+        "Disposal Audit"
+      ],
+      "fields": [
+        "Disposal No",
+        "Asset",
+        "Request Date",
+        "Disposal Method",
+        "Sale Scrap Value",
+        "Book Value",
+        "Gain Loss",
+        "Buyer Vendor",
+        "Approval",
+        "Posting Ref",
+        "Status"
+      ]
+    },
+    "asset-qr": {
+      "title": "Asset QR Codes",
+      "family": "Assets",
+      "purpose": "Track fixed assets from capitalization and allocation through maintenance, depreciation and disposal.",
+      "tabs": [
+        "QR Registry",
+        "Label Generation",
+        "Print Queue",
+        "Scan History",
+        "Asset Verification",
+        "Invalid Scans"
+      ],
+      "fields": [
+        "QR Code",
+        "Asset ID",
+        "Asset Name",
+        "Label Template",
+        "Printed Date",
+        "Printed By",
+        "Last Scan",
+        "Scan Location",
+        "Verification Status",
+        "Status"
+      ]
+    },
+    "service-tickets": {
+      "title": "Service Tickets",
+      "family": "Service / Support",
+      "purpose": "Manage customer service, field visits, SLA, spares, AMC and warranty execution.",
+      "tabs": [
+        "Ticket Queue",
+        "SLA & Priority",
+        "Assignment",
+        "Conversation Timeline",
+        "Resolution & Closure",
+        "Service Analytics"
+      ],
+      "fields": [
+        "Ticket No",
+        "Customer",
+        "Product Asset",
+        "Subject",
+        "Category",
+        "Priority",
+        "Channel",
+        "Assigned To",
+        "Created At",
+        "SLA Due",
+        "First Response",
+        "Resolution Time",
+        "Customer Rating",
+        "Status"
+      ]
+    },
+    "service-requests": {
+      "title": "Service Requests",
+      "family": "Service / Support",
+      "purpose": "Manage customer service, field visits, SLA, spares, AMC and warranty execution.",
+      "tabs": [
+        "Request Register",
+        "Request Classification",
+        "Customer Equipment",
+        "Approval & Estimate",
+        "Execution",
+        "Request Analytics"
+      ],
+      "fields": [
+        "Request No",
+        "Customer",
+        "Equipment",
+        "Request Type",
+        "Description",
+        "Priority",
+        "Estimate",
+        "Approval",
+        "Assigned Team",
+        "Requested Date",
+        "Target Date",
+        "Status"
+      ]
+    },
+    "service-technicians": {
+      "title": "Technician Allocation",
+      "family": "Service / Support",
+      "purpose": "Manage customer service, field visits, SLA, spares, AMC and warranty execution.",
+      "tabs": [
+        "Technician Board",
+        "Skills & Territory",
+        "Availability",
+        "Job Assignment",
+        "Travel Load",
+        "Technician Productivity"
+      ],
+      "fields": [
+        "Technician ID",
+        "Technician",
+        "Skills",
+        "Territory",
+        "Current Jobs",
+        "Available From",
+        "Travel KM",
+        "Utilization %",
+        "First Time Fix %",
+        "Rating",
+        "Status"
+      ]
+    },
+    "service-visits": {
+      "title": "Site Visits",
+      "family": "Service / Support",
+      "purpose": "Manage customer service, field visits, SLA, spares, AMC and warranty execution.",
+      "tabs": [
+        "Visit Schedule",
+        "Route Plan",
+        "Visit Checklist",
+        "Parts Used",
+        "Customer Signoff",
+        "Visit Compliance"
+      ],
+      "fields": [
+        "Visit No",
+        "Ticket AMC",
+        "Customer",
+        "Site",
+        "Technician",
+        "Visit Date",
+        "Arrival",
+        "Departure",
+        "Checklist %",
+        "Parts Used",
+        "Customer Signoff",
+        "Status"
+      ]
+    },
+    "service-spares": {
+      "title": "Service Spare Parts",
+      "family": "Service / Support",
+      "purpose": "Manage customer service, field visits, SLA, spares, AMC and warranty execution.",
+      "tabs": [
+        "Service Spare Register",
+        "Van Stock",
+        "Issue to Job",
+        "Return Unused",
+        "Reorder",
+        "Spare Consumption"
+      ],
+      "fields": [
+        "Issue No",
+        "Ticket Visit",
+        "Technician Van",
+        "Spare Item",
+        "Issued Qty",
+        "Used Qty",
+        "Returned Qty",
+        "Unit Cost",
+        "Value",
+        "Status"
+      ]
+    },
+    "service-history": {
+      "title": "Service History",
+      "family": "Service / Support",
+      "purpose": "Manage customer service, field visits, SLA, spares, AMC and warranty execution.",
+      "tabs": [
+        "Customer Service History",
+        "Equipment History",
+        "Tickets",
+        "Visits",
+        "Parts Replaced",
+        "Failure Trend"
+      ],
+      "fields": [
+        "History Ref",
+        "Customer",
+        "Equipment",
+        "Event Type",
+        "Reference",
+        "Date",
+        "Issue",
+        "Action",
+        "Technician",
+        "Parts",
+        "Cost",
+        "Status"
+      ]
+    },
+    "service-amc": {
+      "title": "AMC Management",
+      "family": "Service / Support",
+      "purpose": "Manage customer service, field visits, SLA, spares, AMC and warranty execution.",
+      "tabs": [
+        "AMC Register",
+        "Coverage & SLA",
+        "Visit Schedule",
+        "Renewal Pipeline",
+        "Billing Status",
+        "AMC Profitability"
+      ],
+      "fields": [
+        "AMC No",
+        "Customer",
+        "Equipment",
+        "Coverage Type",
+        "Start Date",
+        "End Date",
+        "Visit Frequency",
+        "Visits Planned",
+        "Visits Completed",
+        "Contract Value",
+        "Billed",
+        "Next Visit",
+        "Renewal Stage",
+        "Status"
+      ]
+    },
+    "service-warranty": {
+      "title": "Warranty Tracking",
+      "family": "Service / Support",
+      "purpose": "Manage customer service, field visits, SLA, spares, AMC and warranty execution.",
+      "tabs": [
+        "Warranty Register",
+        "Serial Eligibility",
+        "Coverage Terms",
+        "Claim History",
+        "Expiry Alerts",
+        "Warranty Cost"
+      ],
+      "fields": [
+        "Warranty ID",
+        "Customer",
+        "Product",
+        "Serial No",
+        "Invoice Ref",
+        "Warranty Start",
+        "Warranty End",
+        "Coverage",
+        "Claims Count",
+        "Warranty Cost",
+        "Status"
+      ]
+    },
+    "service-claims": {
+      "title": "Warranty Claims",
+      "family": "Service / Support",
+      "purpose": "Manage customer service, field visits, SLA, spares, AMC and warranty execution.",
+      "tabs": [
+        "Claim Register",
+        "Eligibility Check",
+        "Inspection",
+        "Approval",
+        "Replacement Repair",
+        "Claim Analytics"
+      ],
+      "fields": [
+        "Claim No",
+        "Warranty ID",
+        "Customer",
+        "Serial No",
+        "Claim Date",
+        "Problem",
+        "Eligibility",
+        "Inspection Result",
+        "Decision",
+        "Repair Replace",
+        "Claim Cost",
+        "Status"
+      ]
+    },
+    "log-transporters": {
+      "title": "Transporter Master",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Transporter Directory",
+        "Lane Capability",
+        "Rate Cards",
+        "Compliance Documents",
+        "Performance Score",
+        "Transporter Risk"
+      ],
+      "fields": [
+        "Transporter Code",
+        "Transporter Name",
+        "GSTIN",
+        "Contact",
+        "Primary Lanes",
+        "Vehicle Types",
+        "Rate Card",
+        "Insurance Valid",
+        "Compliance Score",
+        "OTIF %",
+        "Rating",
+        "Status"
+      ]
+    },
+    "log-routes": {
+      "title": "Route Management",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Route Master",
+        "Stops & Distance",
+        "Transit Time",
+        "Toll & Restriction",
+        "Route Cost",
+        "Route Performance"
+      ],
+      "fields": [
+        "Route Code",
+        "Route Name",
+        "Origin",
+        "Destination",
+        "Stops",
+        "Distance KM",
+        "Standard Transit Hrs",
+        "Toll Cost",
+        "Restriction",
+        "Primary Transporter",
+        "Status"
+      ]
+    },
+    "log-freight": {
+      "title": "Freight Calculation",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Freight Calculator",
+        "Rate Contracts",
+        "Weight Volume Slab",
+        "Fuel Surcharge",
+        "Additional Charges",
+        "Freight Variance"
+      ],
+      "fields": [
+        "Calculation Ref",
+        "Shipment Ref",
+        "Transporter",
+        "Route",
+        "Weight KG",
+        "Volume CBM",
+        "Base Freight",
+        "Fuel Surcharge",
+        "Toll",
+        "Other Charges",
+        "Total Freight",
+        "Status"
+      ]
+    },
+    "log-shipments": {
+      "title": "Shipment Scheduling",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Shipment Plan",
+        "Order Consolidation",
+        "Carrier Allocation",
+        "Vehicle Load",
+        "Dispatch Window",
+        "Shipment SLA"
+      ],
+      "fields": [
+        "Shipment No",
+        "Sales Orders",
+        "Customer",
+        "Origin",
+        "Destination",
+        "Transporter",
+        "Vehicle",
+        "Planned Dispatch",
+        "Planned Delivery",
+        "Weight",
+        "Volume",
+        "Status"
+      ]
+    },
+    "log-tracking": {
+      "title": "Shipment Tracking",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Live Shipment Board",
+        "Milestones",
+        "Current Status",
+        "Delay Exceptions",
+        "Customer ETA",
+        "Tracking Performance"
+      ],
+      "fields": [
+        "Shipment No",
+        "Customer",
+        "Transporter",
+        "Vehicle",
+        "Last Location",
+        "Last Update",
+        "Current Milestone",
+        "ETA",
+        "Delay Min",
+        "Exception",
+        "Status"
+      ]
+    },
+    "log-pod": {
+      "title": "POD Tracking",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "POD Queue",
+        "Delivery Evidence",
+        "Receiver Details",
+        "Short Damage",
+        "Billing Release",
+        "POD Turnaround"
+      ],
+      "fields": [
+        "POD No",
+        "Shipment No",
+        "Customer",
+        "Delivery Date",
+        "Receiver",
+        "Receiver Mobile",
+        "POD File",
+        "Short Qty",
+        "Damage Qty",
+        "Billing Release",
+        "Status"
+      ]
+    },
+    "fleet-vehicles": {
+      "title": "Fleet Vehicles",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Vehicle Register",
+        "Compliance Documents",
+        "Odometer & Usage",
+        "Fuel Performance",
+        "Service Schedule",
+        "Vehicle Cost"
+      ],
+      "fields": [
+        "Vehicle No",
+        "Vehicle Type",
+        "Branch",
+        "Driver",
+        "Make Model",
+        "Insurance Expiry",
+        "Fitness Expiry",
+        "Permit Expiry",
+        "Pollution Expiry",
+        "Odometer",
+        "Fuel Avg",
+        "Next Service",
+        "Status"
+      ]
+    },
+    "fleet-drivers": {
+      "title": "Drivers",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Driver Register",
+        "License & Documents",
+        "Vehicle Assignment",
+        "Trip History",
+        "Safety Incidents",
+        "Driver Score"
+      ],
+      "fields": [
+        "Driver ID",
+        "Driver Name",
+        "Mobile",
+        "License No",
+        "License Expiry",
+        "Vehicle Assigned",
+        "Trips Month",
+        "KM Month",
+        "Incidents",
+        "Rating",
+        "Status"
+      ]
+    },
+    "fleet-fuel": {
+      "title": "Fuel Management",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Fuel Register",
+        "Fuel Issues",
+        "Mileage Calculation",
+        "Fuel Variance",
+        "Vendor Bills",
+        "Fuel Trend"
+      ],
+      "fields": [
+        "Fuel Entry No",
+        "Date",
+        "Vehicle",
+        "Driver",
+        "Odometer",
+        "Fuel Qty",
+        "Rate",
+        "Amount",
+        "Vendor",
+        "Mileage",
+        "Variance %",
+        "Status"
+      ]
+    },
+    "fleet-service": {
+      "title": "Vehicle Service",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Vehicle Service Plan",
+        "Due Service",
+        "Job Card",
+        "Parts & Labor",
+        "Downtime",
+        "Service Cost"
+      ],
+      "fields": [
+        "Service Job No",
+        "Vehicle",
+        "Service Type",
+        "Due KM Date",
+        "Service Date",
+        "Odometer",
+        "Vendor Workshop",
+        "Parts Cost",
+        "Labor Cost",
+        "Next Due",
+        "Downtime",
+        "Status"
+      ]
+    },
+    "fleet-documents": {
+      "title": "Vehicle Documents",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Vehicle Documents",
+        "Insurance",
+        "Fitness",
+        "Permit",
+        "Pollution Certificate",
+        "Expiry Alerts"
+      ],
+      "fields": [
+        "Document Ref",
+        "Vehicle",
+        "Document Type",
+        "Document No",
+        "Issue Date",
+        "Expiry Date",
+        "Authority",
+        "File",
+        "Days Remaining",
+        "Status"
+      ]
+    },
+    "gate-in": {
+      "title": "Inward Gate Pass",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Inward Pass Register",
+        "Vehicle Entry",
+        "Material Details",
+        "Security Checks",
+        "Weighment",
+        "Exit Closure"
+      ],
+      "fields": [
+        "Gate Pass No",
+        "Date",
+        "Vehicle",
+        "Driver",
+        "Vendor",
+        "Material",
+        "Quantity",
+        "PO GRN Ref",
+        "Entry Time",
+        "Weigh In",
+        "Security Check",
+        "Exit Time",
+        "Status"
+      ]
+    },
+    "gate-out": {
+      "title": "Outward Gate Pass",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Outward Pass Register",
+        "Vehicle Dispatch",
+        "Material Details",
+        "Security Checks",
+        "Document Validation",
+        "Exit Closure"
+      ],
+      "fields": [
+        "Gate Pass No",
+        "Date",
+        "Vehicle",
+        "Driver",
+        "Customer",
+        "Material",
+        "Quantity",
+        "Dispatch Ref",
+        "E Way Bill",
+        "Entry Time",
+        "Weigh Out",
+        "Exit Time",
+        "Status"
+      ]
+    },
+    "gate-return": {
+      "title": "Returnable Gate Pass",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Returnable Pass Register",
+        "Material Out",
+        "Expected Return",
+        "Return Receipt",
+        "Overdue Items",
+        "Pass History"
+      ],
+      "fields": [
+        "Pass No",
+        "Date",
+        "Party",
+        "Material",
+        "Quantity",
+        "Purpose",
+        "Expected Return",
+        "Returned Qty",
+        "Return Date",
+        "Balance Qty",
+        "Authorized By",
+        "Status"
+      ]
+    },
+    "gate-nonreturn": {
+      "title": "Non-Returnable Gate Pass",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Non Returnable Pass",
+        "Material Out",
+        "Authorization",
+        "Value & Reason",
+        "Security Exit",
+        "Pass Audit"
+      ],
+      "fields": [
+        "Pass No",
+        "Date",
+        "Party",
+        "Material",
+        "Quantity",
+        "Value",
+        "Reason",
+        "Department",
+        "Authorized By",
+        "Vehicle",
+        "Exit Time",
+        "Status"
+      ]
+    },
+    "container-track": {
+      "title": "Container Tracking",
+      "family": "Logistics / Fleet",
+      "purpose": "Plan transport, track shipments, control fleet, gate movements, POD and freight cost.",
+      "tabs": [
+        "Container Register",
+        "Allocation",
+        "Loading",
+        "Transit",
+        "Unloading & Return",
+        "Container Turnaround"
+      ],
+      "fields": [
+        "Container No",
+        "Type",
+        "Owner",
+        "Allocation Ref",
+        "Loading Date",
+        "Shipment",
+        "Current Location",
+        "ETA",
+        "Unloading Date",
+        "Return Due",
+        "Return Date",
+        "Status"
+      ]
+    },
+    "dms-folders": {
+      "title": "Folders",
+      "family": "Document Management",
+      "purpose": "Control enterprise documents, metadata, versions, permissions, retention and search.",
+      "tabs": [
+        "Folder Tree",
+        "Folder Metadata",
+        "Ownership",
+        "Retention Rules",
+        "Access Rights",
+        "Folder Activity"
+      ],
+      "fields": [
+        "Folder ID",
+        "Folder Name",
+        "Parent Folder",
+        "Owner",
+        "Department",
+        "Retention Years",
+        "Confidentiality",
+        "Document Count",
+        "Last Activity",
+        "Status"
+      ]
+    },
+    "dms-docs": {
+      "title": "Documents",
+      "family": "Document Management",
+      "purpose": "Control enterprise documents, metadata, versions, permissions, retention and search.",
+      "tabs": [
+        "Document Register",
+        "Metadata & Tags",
+        "Preview & Versions",
+        "Access Rights",
+        "Workflow & Approval",
+        "Document Activity"
+      ],
+      "fields": [
+        "Document ID",
+        "Document Name",
+        "Folder",
+        "Document Type",
+        "Owner",
+        "Version",
+        "Tags",
+        "Effective Date",
+        "Expiry Date",
+        "Approval Status",
+        "Access Level",
+        "Status"
+      ]
+    },
+    "dms-versions": {
+      "title": "Version Control",
+      "family": "Document Management",
+      "purpose": "Control enterprise documents, metadata, versions, permissions, retention and search.",
+      "tabs": [
+        "Version History",
+        "Check In Out",
+        "Change Notes",
+        "Compare Versions",
+        "Rollback",
+        "Version Audit"
+      ],
+      "fields": [
+        "Document ID",
+        "Document Name",
+        "Version",
+        "Created Date",
+        "Created By",
+        "Change Note",
+        "File Size",
+        "Checked Out By",
+        "Current Version",
+        "Status"
+      ]
+    },
+    "dms-permissions": {
+      "title": "Document Permissions",
+      "family": "Document Management",
+      "purpose": "Control enterprise documents, metadata, versions, permissions, retention and search.",
+      "tabs": [
+        "Access Matrix",
+        "Users & Roles",
+        "Folder Rights",
+        "Document Rights",
+        "Share Links",
+        "Permission Audit"
+      ],
+      "fields": [
+        "Resource",
+        "Resource Type",
+        "User Role",
+        "View",
+        "Upload",
+        "Edit",
+        "Delete",
+        "Download",
+        "Share",
+        "Approve",
+        "Status"
+      ]
+    },
+    "dms-tags": {
+      "title": "Tags",
+      "family": "Document Management",
+      "purpose": "Control enterprise documents, metadata, versions, permissions, retention and search.",
+      "tabs": [
+        "Tag Master",
+        "Tag Groups",
+        "Document Usage",
+        "Auto Tag Rules",
+        "Duplicate Tags",
+        "Tag Analytics"
+      ],
+      "fields": [
+        "Tag Code",
+        "Tag Name",
+        "Group",
+        "Description",
+        "Usage Count",
+        "Auto Tag Rule",
+        "Owner",
+        "Status"
+      ]
+    },
+    "dms-search": {
+      "title": "Document Search",
+      "family": "Document Management",
+      "purpose": "Control enterprise documents, metadata, versions, permissions, retention and search.",
+      "tabs": [
+        "Search Workspace",
+        "Full Text Search",
+        "Metadata Filters",
+        "Saved Searches",
+        "Recent Results",
+        "Search Analytics"
+      ],
+      "fields": [
+        "Search Ref",
+        "User",
+        "Query",
+        "Filters",
+        "Result Count",
+        "Search Date",
+        "Saved Search",
+        "Exported",
+        "Status"
+      ]
+    },
+    "bi-builder": {
+      "title": "Report Builder",
+      "family": "Business Intelligence",
+      "purpose": "Design, distribute and analyze governed reports, dashboards, KPIs and scheduled insights.",
+      "tabs": [
+        "Report Designer",
+        "Data Sources",
+        "Fields & Measures",
+        "Filters & Groups",
+        "Chart Builder",
+        "Preview & Publish"
+      ],
+      "fields": [
+        "Report ID",
+        "Report Name",
+        "Data Source",
+        "Dimensions",
+        "Measures",
+        "Filters",
+        "Visualization",
+        "Owner",
+        "Published",
+        "Last Run",
+        "Status"
+      ]
+    },
+    "bi-reports": {
+      "title": "Saved Reports",
+      "family": "Business Intelligence",
+      "purpose": "Design, distribute and analyze governed reports, dashboards, KPIs and scheduled insights.",
+      "tabs": [
+        "Report Library",
+        "Favorites",
+        "Permissions",
+        "Run History",
+        "Exports",
+        "Usage Analytics"
+      ],
+      "fields": [
+        "Report ID",
+        "Report Name",
+        "Category",
+        "Owner",
+        "Shared With",
+        "Last Run",
+        "Run Count",
+        "Export Count",
+        "Favorite",
+        "Status"
+      ]
+    },
+    "bi-dashboards": {
+      "title": "Custom Dashboards",
+      "family": "Business Intelligence",
+      "purpose": "Design, distribute and analyze governed reports, dashboards, KPIs and scheduled insights.",
+      "tabs": [
+        "Dashboard Library",
+        "Widget Layout",
+        "Filters",
+        "Sharing",
+        "Subscriptions",
+        "Dashboard Usage"
+      ],
+      "fields": [
+        "Dashboard ID",
+        "Dashboard Name",
+        "Owner",
+        "Widget Count",
+        "Shared With",
+        "Default Filters",
+        "Last Viewed",
+        "View Count",
+        "Status"
+      ]
+    },
+    "bi-scheduler": {
+      "title": "Report Scheduler",
+      "family": "Business Intelligence",
+      "purpose": "Design, distribute and analyze governed reports, dashboards, KPIs and scheduled insights.",
+      "tabs": [
+        "Schedule Register",
+        "Report Selection",
+        "Frequency",
+        "Recipients",
+        "Delivery Format",
+        "Run History"
+      ],
+      "fields": [
+        "Schedule ID",
+        "Report",
+        "Frequency",
+        "Run Time",
+        "Recipients",
+        "Format",
+        "Last Run",
+        "Next Run",
+        "Delivery Status",
+        "Status"
+      ]
+    },
+    "bi-sales": {
+      "title": "Sales Analytics",
+      "family": "Business Intelligence",
+      "purpose": "Design, distribute and analyze governed reports, dashboards, KPIs and scheduled insights.",
+      "tabs": [
+        "Sales KPI Summary",
+        "Revenue Trend",
+        "Product Mix",
+        "Customer Analysis",
+        "Salesperson Performance",
+        "Forecast"
+      ],
+      "fields": [
+        "Period",
+        "Revenue",
+        "Orders",
+        "Average Order Value",
+        "Gross Margin %",
+        "New Customers",
+        "Win Rate %",
+        "Forecast",
+        "Variance %",
+        "Status"
+      ]
+    },
+    "bi-purchase": {
+      "title": "Purchase Analytics",
+      "family": "Business Intelligence",
+      "purpose": "Design, distribute and analyze governed reports, dashboards, KPIs and scheduled insights.",
+      "tabs": [
+        "Purchase KPI Summary",
+        "Spend Trend",
+        "Supplier Spend",
+        "Price Variance",
+        "Lead Time",
+        "Savings Analysis"
+      ],
+      "fields": [
+        "Period",
+        "Purchase Spend",
+        "PO Count",
+        "Supplier Count",
+        "Price Variance %",
+        "OTIF %",
+        "Savings",
+        "Open Commitments",
+        "Status"
+      ]
+    },
+    "bi-inventory": {
+      "title": "Inventory Analytics",
+      "family": "Business Intelligence",
+      "purpose": "Design, distribute and analyze governed reports, dashboards, KPIs and scheduled insights.",
+      "tabs": [
+        "Inventory KPI Summary",
+        "Stock Value",
+        "Turnover",
+        "Ageing",
+        "Shortage & Overstock",
+        "Forecast"
+      ],
+      "fields": [
+        "Period",
+        "Stock Value",
+        "Inventory Turns",
+        "Days on Hand",
+        "Slow Stock Value",
+        "Shortage SKUs",
+        "Overstock SKUs",
+        "Forecast Accuracy %",
+        "Status"
+      ]
+    },
+    "bi-finance": {
+      "title": "Financial Analytics",
+      "family": "Business Intelligence",
+      "purpose": "Design, distribute and analyze governed reports, dashboards, KPIs and scheduled insights.",
+      "tabs": [
+        "Finance KPI Summary",
+        "Revenue Profit",
+        "Working Capital",
+        "Cash Flow",
+        "Budget Variance",
+        "Financial Ratios"
+      ],
+      "fields": [
+        "Period",
+        "Revenue",
+        "Gross Profit",
+        "EBITDA",
+        "Net Profit",
+        "Receivables",
+        "Payables",
+        "Cash Balance",
+        "Budget Variance %",
+        "Status"
+      ]
+    },
+    "bi-branch": {
+      "title": "Branch Performance",
+      "family": "Business Intelligence",
+      "purpose": "Design, distribute and analyze governed reports, dashboards, KPIs and scheduled insights.",
+      "tabs": [
+        "Branch Scorecard",
+        "Revenue",
+        "Profit",
+        "Inventory",
+        "People",
+        "Branch Ranking"
+      ],
+      "fields": [
+        "Branch",
+        "Revenue",
+        "Gross Profit",
+        "Net Profit",
+        "Inventory Value",
+        "Employee Count",
+        "Sales Orders",
+        "Customer Count",
+        "Health Score",
+        "Rank",
+        "Status"
+      ]
+    },
+    "bi-profit": {
+      "title": "Profitability Analysis",
+      "family": "Business Intelligence",
+      "purpose": "Design, distribute and analyze governed reports, dashboards, KPIs and scheduled insights.",
+      "tabs": [
+        "Profitability Summary",
+        "Product Margin",
+        "Customer Margin",
+        "Branch Margin",
+        "Project Margin",
+        "Contribution Analysis"
+      ],
+      "fields": [
+        "Dimension",
+        "Name",
+        "Revenue",
+        "Direct Cost",
+        "Allocated Cost",
+        "Contribution",
+        "Margin %",
+        "Rank",
+        "Trend",
+        "Status"
+      ]
+    },
+    "ai-copilot": {
+      "title": "ERP AI Copilot",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "ERP AI Copilot Workspace",
+        "ERP AI Copilot Details",
+        "ERP AI Copilot Workflow",
+        "ERP AI Copilot Exceptions",
+        "ERP AI Copilot Performance",
+        "ERP AI Copilot Controls"
+      ],
+      "fields": [
+        "Record ID",
+        "Model Rule",
+        "Module",
+        "Trigger Input",
+        "Score Condition",
+        "Recommended Action",
+        "Owner",
+        "Last Run",
+        "Next Run",
+        "Status"
+      ]
+    },
+    "ai-demand": {
+      "title": "Demand Forecasting",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Demand Model",
+        "Forecast Horizon",
+        "Seasonality Drivers",
+        "Forecast Output",
+        "Accuracy Monitoring",
+        "Replenishment Recommendations"
+      ],
+      "fields": [
+        "Model ID",
+        "Product Category",
+        "Forecast Horizon",
+        "Training Window",
+        "Seasonality",
+        "Forecast Qty",
+        "Confidence %",
+        "MAPE %",
+        "Last Trained",
+        "Next Refresh",
+        "Status"
+      ]
+    },
+    "ai-inventory": {
+      "title": "Inventory Intelligence",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Inventory Signals",
+        "Slow Dead Stock",
+        "Overstock Risk",
+        "Shortage Risk",
+        "Expiry Risk",
+        "Recommended Actions"
+      ],
+      "fields": [
+        "Signal ID",
+        "Item",
+        "Warehouse",
+        "Signal Type",
+        "Current Stock",
+        "Expected Demand",
+        "Risk Score",
+        "Estimated Value Impact",
+        "Recommended Action",
+        "Owner",
+        "Status"
+      ]
+    },
+    "ai-sales": {
+      "title": "Sales Intelligence",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Lead Opportunity Scoring",
+        "Win Probability",
+        "Next Best Action",
+        "Churn Risk",
+        "Cross Sell",
+        "Sales Forecast"
+      ],
+      "fields": [
+        "Signal ID",
+        "Lead Opportunity",
+        "Model Score",
+        "Win Probability",
+        "Churn Risk",
+        "Next Best Action",
+        "Recommended Product",
+        "Expected Value",
+        "Owner",
+        "Status"
+      ]
+    },
+    "ai-vendor": {
+      "title": "Vendor Intelligence",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Vendor Risk Signals",
+        "Delivery Prediction",
+        "Quality Risk",
+        "Price Anomaly",
+        "Compliance Risk",
+        "Sourcing Recommendation"
+      ],
+      "fields": [
+        "Signal ID",
+        "Vendor",
+        "Delivery Risk",
+        "Quality Risk",
+        "Price Risk",
+        "Compliance Risk",
+        "Overall Risk",
+        "Recommended Action",
+        "Category Owner",
+        "Status"
+      ]
+    },
+    "ai-finance": {
+      "title": "Finance Anomaly Detection",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Anomaly Dashboard",
+        "Expense Anomalies",
+        "Duplicate Payments",
+        "Revenue Exceptions",
+        "Journal Risk",
+        "Investigation Queue"
+      ],
+      "fields": [
+        "Alert ID",
+        "Transaction",
+        "Alert Type",
+        "Risk Score",
+        "Amount",
+        "Reason",
+        "Detected At",
+        "Reviewer",
+        "Disposition",
+        "Status"
+      ]
+    },
+    "ai-executive": {
+      "title": "Executive Insights",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Executive Brief",
+        "Revenue Insights",
+        "Working Capital Insights",
+        "Operations Insights",
+        "Risk Alerts",
+        "Recommended Actions"
+      ],
+      "fields": [
+        "Insight ID",
+        "Domain",
+        "Insight",
+        "Business Impact",
+        "Confidence %",
+        "Recommended Action",
+        "Owner",
+        "Generated At",
+        "Status"
+      ]
+    },
+    "auto-workflows": {
+      "title": "Workflow Automation",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Workflow Automation Workspace",
+        "Workflow Automation Details",
+        "Workflow Automation Workflow",
+        "Workflow Automation Exceptions",
+        "Workflow Automation Performance",
+        "Workflow Automation Controls"
+      ],
+      "fields": [
+        "Record ID",
+        "Model Rule",
+        "Module",
+        "Trigger Input",
+        "Score Condition",
+        "Recommended Action",
+        "Owner",
+        "Last Run",
+        "Next Run",
+        "Status"
+      ]
+    },
+    "auto-rules": {
+      "title": "Automation Rules",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Rule Library",
+        "Triggers",
+        "Conditions",
+        "Actions",
+        "Escalations",
+        "Execution History"
+      ],
+      "fields": [
+        "Rule ID",
+        "Rule Name",
+        "Module",
+        "Trigger",
+        "Condition",
+        "Action",
+        "Escalation",
+        "Priority",
+        "Last Run",
+        "Executions",
+        "Status"
+      ]
+    },
+    "auto-jobs": {
+      "title": "Background Jobs",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Job Queue",
+        "Scheduled Jobs",
+        "Running Jobs",
+        "Failed Jobs",
+        "Retry Policy",
+        "Job Performance"
+      ],
+      "fields": [
+        "Job ID",
+        "Job Name",
+        "Job Type",
+        "Schedule",
+        "Queue",
+        "Started At",
+        "Duration",
+        "Attempts",
+        "Last Error",
+        "Next Run",
+        "Status"
+      ]
+    },
+    "auto-webhooks": {
+      "title": "Webhooks",
+      "family": "AI & Automation",
+      "purpose": "Apply AI signals and workflow automation to prediction, exception detection and business actions.",
+      "tabs": [
+        "Webhook Registry",
+        "Event Subscriptions",
+        "Endpoints & Secrets",
+        "Delivery Log",
+        "Retry Queue",
+        "Webhook Health"
+      ],
+      "fields": [
+        "Webhook ID",
+        "Event",
+        "Endpoint",
+        "Secret Status",
+        "Timeout",
+        "Max Retries",
+        "Last Delivery",
+        "Last HTTP Code",
+        "Failure Count",
+        "Status"
+      ]
+    },
+    "comm-whatsapp": {
+      "title": "WhatsApp Business API",
+      "family": "Communication",
+      "purpose": "Manage WhatsApp, email, SMS and payment communication with templates, delivery logs and reconciliation.",
+      "tabs": [
+        "WhatsApp Dashboard",
+        "Templates",
+        "Conversation Log",
+        "Delivery Status",
+        "Automation",
+        "Opt In Compliance"
+      ],
+      "fields": [
+        "Account",
+        "Phone Number ID",
+        "Business Account",
+        "Template Count",
+        "Conversations Today",
+        "Sent",
+        "Delivered",
+        "Read",
+        "Failed",
+        "Opt In %",
+        "Status"
+      ]
+    },
+    "comm-email": {
+      "title": "Email Integration",
+      "family": "Communication",
+      "purpose": "Manage WhatsApp, email, SMS and payment communication with templates, delivery logs and reconciliation.",
+      "tabs": [
+        "Email Accounts",
+        "Templates",
+        "Outbox Queue",
+        "Delivery Status",
+        "Linked Records",
+        "Email Analytics"
+      ],
+      "fields": [
+        "Account ID",
+        "Provider",
+        "From Address",
+        "SMTP Host",
+        "Authentication",
+        "Daily Limit",
+        "Sent Today",
+        "Bounce %",
+        "Last Sync",
+        "Status"
+      ]
+    },
+    "comm-sms": {
+      "title": "SMS Integration",
+      "family": "Communication",
+      "purpose": "Manage WhatsApp, email, SMS and payment communication with templates, delivery logs and reconciliation.",
+      "tabs": [
+        "SMS Accounts",
+        "Templates",
+        "Outbound Queue",
+        "Delivery Reports",
+        "OTP Messages",
+        "SMS Analytics"
+      ],
+      "fields": [
+        "Account ID",
+        "Provider",
+        "Sender ID",
+        "DLT Entity",
+        "DLT Header",
+        "Daily Limit",
+        "Sent Today",
+        "Delivery %",
+        "Failed",
+        "Status"
+      ]
+    },
+    "comm-templates": {
+      "title": "Message Templates",
+      "family": "Communication",
+      "purpose": "Manage WhatsApp, email, SMS and payment communication with templates, delivery logs and reconciliation.",
+      "tabs": [
+        "Template Library",
+        "Variables",
+        "Channel Versions",
+        "Approval Status",
+        "Test Preview",
+        "Template Usage"
+      ],
+      "fields": [
+        "Template ID",
+        "Template Name",
+        "Channel",
+        "Category",
+        "Language",
+        "Variables",
+        "Approval Status",
+        "Last Updated",
+        "Usage Count",
+        "Status"
+      ]
+    },
+    "comm-logs": {
+      "title": "Communication Logs",
+      "family": "Communication",
+      "purpose": "Manage WhatsApp, email, SMS and payment communication with templates, delivery logs and reconciliation.",
+      "tabs": [
+        "Communication Timeline",
+        "WhatsApp Logs",
+        "Email Logs",
+        "SMS Logs",
+        "Failures",
+        "Delivery Analytics"
+      ],
+      "fields": [
+        "Message ID",
+        "Channel",
+        "Recipient",
+        "Template Subject",
+        "Related Record",
+        "Sent At",
+        "Delivered At",
+        "Read At",
+        "Failure Reason",
+        "Status"
+      ]
+    },
+    "comm-payment": {
+      "title": "Payment Gateway",
+      "family": "Communication",
+      "purpose": "Manage WhatsApp, email, SMS and payment communication with templates, delivery logs and reconciliation.",
+      "tabs": [
+        "Payment Gateway Setup",
+        "Payment Links",
+        "Transactions",
+        "Refunds",
+        "Webhook Events",
+        "Settlement Reconciliation"
+      ],
+      "fields": [
+        "Gateway",
+        "Merchant ID",
+        "Mode",
+        "Webhook Status",
+        "Transactions Today",
+        "Success %",
+        "Failed",
+        "Refunds",
+        "Settlement Due",
+        "Status"
+      ]
+    },
+    "admin-company": {
+      "title": "Companies",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Company Master",
+        "Legal & Tax Details",
+        "Addresses",
+        "Bank Accounts",
+        "Branding",
+        "Company Controls"
+      ],
+      "fields": [
+        "Company Code",
+        "Legal Name",
+        "Trade Name",
+        "CIN",
+        "PAN",
+        "GSTIN",
+        "Registered Address",
+        "Currency",
+        "Timezone",
+        "Financial Year",
+        "Status"
+      ]
+    },
+    "admin-branches": {
+      "title": "Branches",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Branch Master",
+        "Addresses",
+        "GST Registration",
+        "Warehouses",
+        "Users",
+        "Branch Controls"
+      ],
+      "fields": [
+        "Branch Code",
+        "Branch Name",
+        "Company",
+        "Address",
+        "GSTIN",
+        "Manager",
+        "Warehouse Count",
+        "Employee Count",
+        "Timezone",
+        "Status"
+      ]
+    },
+    "admin-departments": {
+      "title": "Departments",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Department Master",
+        "Hierarchy",
+        "Managers",
+        "Cost Centers",
+        "Employees",
+        "Department Controls"
+      ],
+      "fields": [
+        "Department Code",
+        "Department Name",
+        "Parent Department",
+        "Head",
+        "Cost Center",
+        "Employee Count",
+        "Branch",
+        "Status"
+      ]
+    },
+    "admin-designations": {
+      "title": "Designations",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Designation Master",
+        "Grades",
+        "Reporting Level",
+        "Role Mapping",
+        "Employees",
+        "Designation Controls"
+      ],
+      "fields": [
+        "Designation Code",
+        "Designation Name",
+        "Grade",
+        "Level",
+        "Department",
+        "Reports To Level",
+        "Role Mapping",
+        "Employee Count",
+        "Status"
+      ]
+    },
+    "admin-users": {
+      "title": "Users",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "User Directory",
+        "Authentication",
+        "Role Assignment",
+        "Company Branch Scope",
+        "Session History",
+        "User Audit"
+      ],
+      "fields": [
+        "User ID",
+        "Name",
+        "Email",
+        "Mobile",
+        "Role",
+        "Company",
+        "Branch",
+        "Department",
+        "MFA",
+        "Last Login",
+        "Session Count",
+        "Status"
+      ]
+    },
+    "admin-roles": {
+      "title": "Roles",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Role Master",
+        "Module Rights",
+        "Action Rights",
+        "Data Scope",
+        "Approval Limits",
+        "Role Audit"
+      ],
+      "fields": [
+        "Role Code",
+        "Role Name",
+        "User Count",
+        "Module Count",
+        "Approval Limit",
+        "Company Scope",
+        "Branch Scope",
+        "Data Scope",
+        "Status"
+      ]
+    },
+    "admin-permissions": {
+      "title": "Permissions",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Permissions Workspace",
+        "Permissions Details",
+        "Permissions Workflow",
+        "Permissions Exceptions",
+        "Permissions Performance",
+        "Permissions Controls"
+      ],
+      "fields": [
+        "Code",
+        "Name",
+        "Category",
+        "Company",
+        "Branch",
+        "Owner",
+        "Effective From",
+        "Effective To",
+        "Configuration",
+        "Status"
+      ]
+    },
+    "admin-approval": {
+      "title": "Approval Matrix",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Approval Matrix Workspace",
+        "Approval Matrix Details",
+        "Approval Matrix Workflow",
+        "Approval Matrix Exceptions",
+        "Approval Matrix Performance",
+        "Approval Matrix Controls"
+      ],
+      "fields": [
+        "Code",
+        "Name",
+        "Category",
+        "Company",
+        "Branch",
+        "Owner",
+        "Effective From",
+        "Effective To",
+        "Configuration",
+        "Status"
+      ]
+    },
+    "admin-fy": {
+      "title": "Financial Years",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Financial Year Master",
+        "Period Calendar",
+        "Open Close Periods",
+        "Year End Controls",
+        "Carry Forward",
+        "Period Audit"
+      ],
+      "fields": [
+        "FY Code",
+        "Financial Year",
+        "Start Date",
+        "End Date",
+        "Current",
+        "Posting From",
+        "Posting To",
+        "Year End Closed",
+        "Status"
+      ]
+    },
+    "admin-currency": {
+      "title": "Currencies",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Currency Master",
+        "Exchange Rates",
+        "Rate Sources",
+        "Effective Dates",
+        "Revaluation",
+        "Currency Audit"
+      ],
+      "fields": [
+        "Currency Code",
+        "Currency Name",
+        "Symbol",
+        "Decimals",
+        "Base Currency",
+        "Rate",
+        "Rate Date",
+        "Rate Source",
+        "Status"
+      ]
+    },
+    "admin-taxes": {
+      "title": "Taxes",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Tax Master",
+        "Tax Components",
+        "Rate Rules",
+        "Jurisdiction",
+        "Effective Dates",
+        "Tax Validation"
+      ],
+      "fields": [
+        "Tax Code",
+        "Tax Name",
+        "Component",
+        "Rate %",
+        "Jurisdiction",
+        "HSN SAC Scope",
+        "Effective From",
+        "Effective To",
+        "Status"
+      ]
+    },
+    "admin-numbering": {
+      "title": "Document Numbering",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Number Series",
+        "Company Branch Prefix",
+        "Financial Year Pattern",
+        "Sequence Rules",
+        "Reset Rules",
+        "Number Audit"
+      ],
+      "fields": [
+        "Series Code",
+        "Document Type",
+        "Company",
+        "Branch",
+        "Prefix",
+        "FY Pattern",
+        "Sequence Length",
+        "Next Number",
+        "Reset Frequency",
+        "Status"
+      ]
+    },
+    "admin-uom": {
+      "title": "UOM",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "UOM Master",
+        "Conversions",
+        "Base Units",
+        "Precision",
+        "Item Mapping",
+        "UOM Validation"
+      ],
+      "fields": [
+        "UOM Code",
+        "UOM Name",
+        "UOM Class",
+        "Base UOM",
+        "Conversion Factor",
+        "Precision",
+        "Status"
+      ]
+    },
+    "admin-customfields": {
+      "title": "Custom Fields",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Custom Field Library",
+        "Field Types",
+        "Module Mapping",
+        "Validation Rules",
+        "Visibility",
+        "Field Usage"
+      ],
+      "fields": [
+        "Field Code",
+        "Field Label",
+        "Module",
+        "Field Type",
+        "Mandatory",
+        "Default Value",
+        "Validation",
+        "Visibility Rule",
+        "Sort Order",
+        "Status"
+      ]
+    },
+    "admin-formbuilder": {
+      "title": "Form Builder",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Form Designer",
+        "Sections",
+        "Field Layout",
+        "Mandatory Rules",
+        "Conditional Visibility",
+        "Preview & Publish"
+      ],
+      "fields": [
+        "Form Code",
+        "Module",
+        "Form Name",
+        "Sections",
+        "Fields",
+        "Layout",
+        "Conditional Rules",
+        "Version",
+        "Published",
+        "Status"
+      ]
+    },
+    "admin-workflow": {
+      "title": "Workflow Builder",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Workflow Builder Workspace",
+        "Workflow Builder Details",
+        "Workflow Builder Workflow",
+        "Workflow Builder Exceptions",
+        "Workflow Builder Performance",
+        "Workflow Builder Controls"
+      ],
+      "fields": [
+        "Code",
+        "Name",
+        "Category",
+        "Company",
+        "Branch",
+        "Owner",
+        "Effective From",
+        "Effective To",
+        "Configuration",
+        "Status"
+      ]
+    },
+    "admin-import": {
+      "title": "Import / Export",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Import / Export Workspace",
+        "Import Export Details",
+        "Import Export Workflow",
+        "Import Export Exceptions",
+        "Import Export Performance",
+        "Import Export Controls"
+      ],
+      "fields": [
+        "Code",
+        "Name",
+        "Category",
+        "Company",
+        "Branch",
+        "Owner",
+        "Effective From",
+        "Effective To",
+        "Configuration",
+        "Status"
+      ]
+    },
+    "admin-duplicates": {
+      "title": "Duplicate Detection",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Duplicate Rules",
+        "Matching Fields",
+        "Potential Duplicates",
+        "Merge Review",
+        "Prevention Rules",
+        "Duplicate Audit"
+      ],
+      "fields": [
+        "Rule ID",
+        "Module",
+        "Match Fields",
+        "Threshold %",
+        "Block Save",
+        "Warn User",
+        "Auto Merge",
+        "Potential Duplicates",
+        "Last Scan",
+        "Status"
+      ]
+    },
+    "admin-audit": {
+      "title": "Audit Trail",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Audit Explorer",
+        "User Activity",
+        "Data Changes",
+        "Login Events",
+        "Exports & Downloads",
+        "Audit Retention"
+      ],
+      "fields": [
+        "Date Time",
+        "User",
+        "IP",
+        "Device",
+        "Module",
+        "Action",
+        "Record",
+        "Old Value",
+        "New Value",
+        "Session ID",
+        "Status"
+      ]
+    },
+    "admin-security": {
+      "title": "Security",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Security Center",
+        "Password Policy",
+        "MFA",
+        "Session Controls",
+        "IP Restrictions",
+        "Security Events"
+      ],
+      "fields": [
+        "Policy ID",
+        "Policy Name",
+        "Password Min Length",
+        "MFA Required",
+        "Session Timeout Min",
+        "Failed Login Limit",
+        "IP Restriction",
+        "Last Updated",
+        "Status"
+      ]
+    },
+    "admin-backup": {
+      "title": "Backup & Restore",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Backup & Restore Workspace",
+        "Backup and Restore Details",
+        "Backup and Restore Workflow",
+        "Backup and Restore Exceptions",
+        "Backup and Restore Performance",
+        "Backup and Restore Controls"
+      ],
+      "fields": [
+        "Code",
+        "Name",
+        "Category",
+        "Company",
+        "Branch",
+        "Owner",
+        "Effective From",
+        "Effective To",
+        "Configuration",
+        "Status"
+      ]
+    },
+    "admin-api": {
+      "title": "API Management",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "API Clients",
+        "API Keys",
+        "Scopes",
+        "Rate Limits",
+        "Usage Logs",
+        "API Health"
+      ],
+      "fields": [
+        "Client ID",
+        "Client Name",
+        "Owner",
+        "Scopes",
+        "Rate Limit",
+        "Last Used",
+        "Requests Today",
+        "Error %",
+        "Secret Expiry",
+        "Status"
+      ]
+    },
+    "admin-integrations": {
+      "title": "Integrations",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "Integration Catalog",
+        "Connected Apps",
+        "Credentials",
+        "Field Mapping",
+        "Sync Logs",
+        "Integration Health"
+      ],
+      "fields": [
+        "Integration ID",
+        "Integration",
+        "Provider",
+        "Direction",
+        "Authentication",
+        "Last Sync",
+        "Records Synced",
+        "Errors",
+        "Next Sync",
+        "Status"
+      ]
+    },
+    "admin-settings": {
+      "title": "System Settings",
+      "family": "Administration",
+      "purpose": "Configure enterprise masters, security, numbering, permissions, integrations, forms and governance.",
+      "tabs": [
+        "General Settings",
+        "Localization",
+        "Notifications",
+        "Storage",
+        "Feature Flags",
+        "System Diagnostics"
+      ],
+      "fields": [
+        "Setting Key",
+        "Category",
+        "Setting Name",
+        "Value",
+        "Scope",
+        "Editable By",
+        "Last Updated",
+        "Updated By",
+        "Status"
+      ]
+    }
+  },
+  "deptFamilies": {
+    "Administration": [
+      "*"
+    ],
+    "Sales": [
+      "Executive",
+      "CRM",
+      "Sales",
+      "Service / Support",
+      "Communication",
+      "Business Intelligence",
+      "AI & Automation"
+    ],
+    "Purchase": [
+      "Executive",
+      "Procurement / SCM",
+      "Inventory",
+      "Warehouse / WMS",
+      "Logistics / Fleet",
+      "Business Intelligence",
+      "AI & Automation"
+    ],
+    "Finance": [
+      "Executive",
+      "Finance & Accounts",
+      "Indian Taxation",
+      "Sales",
+      "Procurement / SCM",
+      "Business Intelligence",
+      "AI & Automation"
+    ],
+    "HR": [
+      "Executive",
+      "HRMS",
+      "Payroll",
+      "Document Management",
+      "Business Intelligence",
+      "AI & Automation"
+    ],
+    "Production": [
+      "Executive",
+      "Manufacturing",
+      "Inventory",
+      "Warehouse / WMS",
+      "Quality / QMS",
+      "Maintenance",
+      "Business Intelligence",
+      "AI & Automation"
+    ],
+    "Quality": [
+      "Executive",
+      "Quality / QMS",
+      "Manufacturing",
+      "Procurement / SCM",
+      "Business Intelligence",
+      "AI & Automation"
+    ],
+    "Maintenance": [
+      "Executive",
+      "Maintenance",
+      "Assets",
+      "Inventory",
+      "Business Intelligence",
+      "AI & Automation"
+    ],
+    "Warehouse": [
+      "Executive",
+      "Inventory",
+      "Warehouse / WMS",
+      "Logistics / Fleet",
+      "Sales",
+      "Procurement / SCM",
+      "Business Intelligence"
+    ],
+    "Projects": [
+      "Executive",
+      "Projects",
+      "Assets",
+      "Service / Support",
+      "Business Intelligence"
+    ],
+    "Service": [
+      "Executive",
+      "Service / Support",
+      "Assets",
+      "Logistics / Fleet",
+      "CRM",
+      "Business Intelligence"
+    ]
+  },
+  "departments": [
+    "Administration",
+    "Sales",
+    "Purchase",
+    "Finance",
+    "HR",
+    "Production",
+    "Quality",
+    "Maintenance",
+    "Warehouse",
+    "Projects",
+    "Service"
+  ]
+}

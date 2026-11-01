@@ -1,0 +1,25 @@
+/* Design tokens copied verbatim from reference/index.html line 8 (plus PLAN §7.1 derived values)
+   so every component uses the prototype's exact colours, radii and font. */
+:root {
+  --bg: #f4f7fb;
+  --card: #fff;
+  --card2: #f8fafc;
+  --text: #172033;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --primary: #1d4ed8;
+  --success: #16a34a;
+  --warn: #d97706;
+  --danger: #dc2626;
+  --side: #0f172a;
+  --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  --sw: 304px;
+}
+:root {
+  --login-grad: linear-gradient(145deg, #071426, #103268 58%, #1762af);
+  --sidebar-grad: linear-gradient(180deg, #0f172a, #111827);
+  --logo-grad: linear-gradient(135deg, #38bdf8, #2563eb);
+  --hero-grad: linear-gradient(135deg, #071426, #1e3a8a 65%, #0369a1);
+  --submit-grad: linear-gradient(135deg, #1d4ed8, #2563eb, #0ea5e9);
+  --font: Inter, 'Segoe UI', Arial, sans-serif;
+}
