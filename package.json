@@ -6,6 +6,7 @@
     "install:all": "npm --prefix packages/registry install && npm --prefix apps/api install && npm --prefix apps/web install && npm install",
     "dev": "concurrently -n api,web -c blue,green \"npm --prefix apps/api run dev\" \"npm --prefix apps/web run dev\"",
     "build": "npm --prefix apps/api run build && npm --prefix apps/web run build",
+    "build:web": "npm --prefix packages/registry install && npm --prefix apps/web install && npm --prefix apps/web run build",
     "verify": "npm --prefix packages/registry run verify && npm --prefix apps/api run verify && npm --prefix apps/web run verify",
     "e2e": "playwright test -c tests/e2e/playwright.config.ts",
     "deploy:backend": "powershell -ExecutionPolicy Bypass -File ./deploy_to_ec2.ps1"
