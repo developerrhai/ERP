@@ -3,6 +3,7 @@
 import { broadcastLogout, broadcastRefreshed } from '../auth/channel';
 import { clearSession, getAccessToken, setSession } from '../auth/session';
 import type { AuthResult, PageMeta } from '../types';
+import { contextHeaders } from './context-headers';
 
 export const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/api/v1';
 const CSRF_HEADER = { 'X-Requested-With': 'rhai-web' } as const;
@@ -72,7 +73,9 @@ async function parse<T>(res: Response): Promise<Envelope<T>> {
 
 /** fetch with credentials and a REQUEST_TIMEOUT_MS abort; rejection/timeout → ApiError NETWORK. */
 async function send(path: string, opts: RequestOptions, token: string | null): Promise<Response> {
-  const headers: Record<string, string> = { Accept: 'application/json', ...opts.headers };
+  // Working context (unit / FY) rides on every authenticated call; explicit headers win.
+  const ctx = token ? contextHeaders() : {};
+  const headers: Record<string, string> = { Accept: 'application/json', ...ctx, ...opts.headers };
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   if (token) headers.Authorization = `Bearer ${token}`;
   const controller = new AbortController();
@@ -177,7 +180,8 @@ export function refreshSession(): Promise<RefreshOutcome> {
   return refreshInFlight;
 }
 
-export async function request<T>(path: string, opts: RequestOptions = {}): Promise<Envelope<T>> {
+/** Sends an authenticated call; on a 401 refreshes once and retries (shared by JSON and downloads). */
+async function authedSend(path: string, opts: RequestOptions): Promise<Response> {
   const auth = opts.auth ?? true;
   let res = await send(path, opts, auth ? getAccessToken() : null);
   if (res.status === 401 && auth) {
@@ -190,7 +194,20 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
       if (res.status === 401) clearSession();
     }
   }
-  return parse<T>(res);
+  return res;
+}
+
+export async function request<T>(path: string, opts: RequestOptions = {}): Promise<Envelope<T>> {
+  return parse<T>(await authedSend(path, opts));
+}
+
+/** GET a binary file (e.g. export.xlsx) with the Bearer token; the filename comes from Content-Disposition. */
+export async function download(path: string): Promise<{ blob: Blob; filename: string | null }> {
+  const res = await authedSend(path, {});
+  if (!res.ok) await parse<unknown>(res); // throws the ApiError
+  const disposition = res.headers.get('Content-Disposition') ?? '';
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+  return { blob: await res.blob(), filename: match?.[1] ? decodeURIComponent(match[1]) : null };
 }
 
 export async function api<T>(path: string, opts: RequestOptions = {}): Promise<T> {

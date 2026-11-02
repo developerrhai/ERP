@@ -1,26 +1,27 @@
 // Department Access tab: the departments × 22 families checkbox matrix (prototype DEPT_FAMILIES)
 // with Save per department; Administration is locked to all families (CONTRACT §2.6).
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useToast } from '../../components/Toast';
 import { toUiError } from '../../lib/errors';
 import { refreshMenu } from '../../lib/menu';
+import { useUnsavedGuard } from '../../lib/unsaved';
 import { useLoad } from '../../lib/useLoad';
 import { getDepartmentAccess, saveDepartmentAccess } from './adminApi';
 import { PROTECTED_DEPARTMENT } from './DepartmentMasterPage';
 
 export function DepartmentAccessTab({ canEdit }: { canEdit: boolean }) {
   const toast = useToast();
-  const { data, loading, error, reload } = useLoad(getDepartmentAccess, []);
+  const { data, loading, error, setData } = useLoad(getDepartmentAccess, []);
   const original = useMemo(() => {
     const m: Record<string, string[]> = {};
     for (const d of data?.departments ?? []) m[d.name] = [...d.families];
     return m;
   }, [data]);
-  // Only unsaved edits live here; everything else reads straight from the server data.
+  // Only unsaved edits live here; everything else reads straight from the server data. Saving
+  // one department drops only that department's edit, so other unsaved rows are kept.
   const [edits, setEdits] = useState<Record<string, string[]>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [rowError, setRowError] = useState<{ dept: string; message: string } | null>(null);
-  useEffect(() => setEdits({}), [original]);
   const current = (dept: string): string[] => edits[dept] ?? original[dept] ?? [];
 
   const families = data?.families ?? [];
@@ -39,14 +40,31 @@ export function DepartmentAccessTab({ canEdit }: { canEdit: boolean }) {
     return a.size !== b.size || [...a].some((f) => !b.has(f));
   };
 
+  useUnsavedGuard(Object.keys(edits).some(isDirty));
+
   const save = async (dept: string): Promise<void> => {
     if (saving) return;
     setSaving(dept);
     setRowError(null);
+    const chosen = current(dept);
     try {
-      await saveDepartmentAccess(dept, current(dept));
+      await saveDepartmentAccess(dept, chosen);
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              departments: prev.departments.map((d) =>
+                d.name === dept ? { ...d, families: chosen } : d,
+              ),
+            }
+          : prev,
+      );
+      setEdits((prev) => {
+        const next = { ...prev };
+        delete next[dept];
+        return next;
+      });
       toast(`Menu access for ${dept} saved.`);
-      reload();
       void refreshMenu();
     } catch (err) {
       setRowError({ dept, message: toUiError(err).message });

@@ -5,7 +5,9 @@ import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
 import { closeChannelForTests } from '../auth/channel';
 import { resetSessionForTests } from '../auth/session';
+import { resetContextForTests } from '../lib/context';
 import { resetMenuForTests } from '../lib/menu';
+import { resetUnsavedForTests } from '../lib/unsaved';
 
 // The full shell renders ~250 menu links; under parallel load 1 s is too tight for findBy*.
 configure({ asyncUtilTimeout: 5000 });
@@ -14,5 +16,7 @@ afterEach(() => {
   cleanup();
   resetSessionForTests();
   resetMenuForTests();
+  resetContextForTests();
+  resetUnsavedForTests();
   closeChannelForTests();
 });

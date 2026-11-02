@@ -1,12 +1,14 @@
 // Typed wrappers for the /users and /meta endpoints used by User Master (CONTRACT §7),
 // plus the rule that the Role select offers only roles the actor can manage.
 import { api, request } from '../../lib/api';
-import type { PageMeta, RoleCode, RoleMeta, User, UserStatus } from '../../types';
+import type { PageMeta, RoleCode, RoleMeta, UnitRef, User, UserStatus } from '../../types';
 
 export interface UserQuery {
   q: string;
   role: RoleCode | '';
   status: UserStatus | '';
+  /** Phase 3: only users who may work in this unit ('' = any). */
+  unitId?: string;
   page: number;
   size: number;
 }
@@ -21,6 +23,7 @@ export async function listUsers(query: UserQuery): Promise<UserPage> {
   if (query.q.trim()) params.set('q', query.q.trim());
   if (query.role) params.set('role', query.role);
   if (query.status) params.set('status', query.status);
+  if (query.unitId) params.set('unitId', query.unitId);
   params.set('page', String(query.page));
   params.set('size', String(query.size));
   params.set('sort', 'name');
@@ -38,6 +41,8 @@ export interface CreateUserInput {
   role: RoleCode;
   department?: string;
   temporaryPassword: string;
+  unitIds?: string[];
+  defaultUnitId?: string | null;
 }
 
 export function createUser(input: CreateUserInput): Promise<User> {
@@ -50,6 +55,8 @@ export type UserPatch = Partial<{
   role: RoleCode;
   department: string | null;
   status: UserStatus;
+  unitIds: string[];
+  defaultUnitId: string | null;
 }>;
 
 export function updateUser(id: string, version: number, patch: UserPatch): Promise<User> {
@@ -87,3 +94,26 @@ export function canManageUser(row: User, actor: User, roles: RoleMeta[]): boolea
 
 export const VERSION_CONFLICT_MESSAGE =
   'This user was changed by someone else. Reload and try again.';
+
+// ---- Phase 3: units per user -------------------------------------------------------
+
+/** Roles that need at least one unit; ADMIN+ work in every unit implicitly. */
+export const UNIT_SCOPED_ROLES: readonly RoleCode[] = ['MANAGER', 'LEAD', 'MEMBER'];
+
+export function needsUnits(role: RoleCode | ''): boolean {
+  return role !== '' && UNIT_SCOPED_ROLES.includes(role);
+}
+
+/** The user's unit ids, whether the API sends `units` objects or plain `unitIds`. */
+export function userUnitIds(user: Pick<User, 'units' | 'unitIds'>): string[] {
+  return user.units?.map((u) => u.id) ?? user.unitIds ?? [];
+}
+
+/** Table text for the Units column. */
+export function unitsLabel(user: User, known: UnitRef[]): string {
+  if (!needsUnits(user.role)) return 'All units';
+  const names =
+    user.units?.map((u) => u.name) ??
+    userUnitIds(user).map((id) => known.find((k) => k.id === id)?.name ?? id);
+  return names.length ? names.join(', ') : '—';
+}

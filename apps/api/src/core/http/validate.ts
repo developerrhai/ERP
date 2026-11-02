@@ -27,7 +27,8 @@ export function validate(schemas: Schemas): RequestHandler {
       else Object.assign(fields, zodToFieldErrors(result.error));
     }
     if (Object.keys(fields).length > 0) return next(Errors.validation(fields));
-    res.locals.valid = valid;
+    // Merge, so a router-level validate (e.g. the :pageId param) survives a route-level one.
+    res.locals.valid = { ...(res.locals.valid as object | undefined), ...valid };
     next();
   };
 }

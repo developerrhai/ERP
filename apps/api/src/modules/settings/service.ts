@@ -45,6 +45,8 @@ export const settingsService = {
         Object.assign(after, { [key]: input[key] });
       }
     }
+    // Nothing changes: return the current value without a version bump or an audit row.
+    if (current.version > 0 && Object.keys(after).length === 0) return current;
     await prisma.$transaction(async (tx) => {
       const ok = await settingsRepository.writeIfVersion(
         LETTERHEAD_KEY,

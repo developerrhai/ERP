@@ -51,11 +51,15 @@ export const departmentAccessService = {
       throw Errors.protectedResource('The Administration department must keep all families.');
     }
     const ordered = inRegistryOrder(seen);
-    await prisma.$transaction(async (tx) => {
+    const changed = await prisma.$transaction(async (tx) => {
       await departmentAccessRepository.lock(department.name, tx);
       const before = inRegistryOrder(
         await departmentAccessRepository.familiesOf(department.name, tx),
       );
+      // Same families as stored: nothing to write or audit.
+      if (before.length === ordered.length && before.every((f, i) => f === ordered[i])) {
+        return false;
+      }
       await departmentAccessRepository.replace(department.name, ordered, tx);
       await recordAudit(
         {
@@ -68,8 +72,9 @@ export const departmentAccessService = {
         },
         tx,
       );
+      return true;
     });
-    invalidateAccessCache();
+    if (changed) invalidateAccessCache();
     return { name: department.name, families: ordered };
   },
 };

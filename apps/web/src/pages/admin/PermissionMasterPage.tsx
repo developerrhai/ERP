@@ -1,10 +1,12 @@
 // Permission Master (admin-permissions): the prototype role × action table with scope and
 // per-row Save, per-role family overrides (inherit → allow → deny), and the Department Access tab.
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ErrorMessage } from '../../components/ErrorMessage';
 import { useToast } from '../../components/Toast';
 import { toUiError } from '../../lib/errors';
 import { refreshMenu } from '../../lib/menu';
+import { useUnsavedGuard } from '../../lib/unsaved';
 import { useLoad } from '../../lib/useLoad';
 import {
   ACTIONS,
@@ -22,6 +24,7 @@ import {
   effective,
   nextState,
   overrideCount,
+  changedOverrideCells,
   rowsFromDraft,
   withCell,
   withStar,
@@ -99,38 +102,79 @@ export function PermissionMasterPage({ actions }: { actions: ActionSet }) {
 
 function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
   const toast = useToast();
-  const { data, loading, error, reload } = useLoad(getPermissions, []);
+  const { data, loading, error, reload, setData } = useLoad(getPermissions, []);
+  // Only roles with unsaved edits live here; the rest read straight from the server data, so
+  // saving or reloading one role never discards another role's edits.
   const [drafts, setDrafts] = useState<Partial<Record<EditableRole, RoleDraft>>>({});
   const [open, setOpen] = useState<ReadonlySet<string>>(
     () => new Set(focusRole && focusRole !== 'SUPER_ADMIN' ? [focusRole] : []),
   );
   const [saving, setSaving] = useState<EditableRole | null>(null);
-  const [rowError, setRowError] = useState<Partial<Record<EditableRole, string>>>({});
+  const [rowError, setRowError] = useState<
+    Partial<Record<EditableRole, { message: string; conflict: boolean }>>
+  >({});
 
   const originals = useMemo(() => buildDrafts(data), [data]);
-  useEffect(() => setDrafts(originals), [originals]);
+  const originalsRef = useRef(originals);
+  originalsRef.current = originals;
+  const draftFor = (role: EditableRole): RoleDraft | undefined => drafts[role] ?? originals[role];
+  useUnsavedGuard(
+    (Object.keys(drafts) as EditableRole[]).some((role) => {
+      const d = drafts[role];
+      return !!d && isDirty(d, originals[role]);
+    }),
+  );
+
+  const dropDraft = (role: EditableRole): void =>
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[role];
+      return next;
+    });
 
   const update = (role: EditableRole, fn: (d: RoleDraft) => RoleDraft): void => {
     setDrafts((prev) => {
-      const cur = prev[role];
+      const cur = prev[role] ?? originalsRef.current[role];
       return cur ? { ...prev, [role]: fn(cur) } : prev;
     });
   };
 
   const save = async (block: RolePermissions): Promise<void> => {
-    const draft = drafts[block.role];
+    const draft = draftFor(block.role);
     if (!draft || saving) return;
     setSaving(block.role);
     setRowError((e) => ({ ...e, [block.role]: undefined }));
     try {
       await savePermissions(block.role, roleVersion(block.rows), rowsFromDraft(draft));
       toast(`${ROLE_LABEL[block.role]} permissions saved.`);
+      dropDraft(block.role);
       reload();
       void refreshMenu();
     } catch (err) {
-      setRowError((e) => ({ ...e, [block.role]: toUiError(err).message }));
+      const ui = toUiError(err);
+      setRowError((e) => ({
+        ...e,
+        [block.role]: { message: ui.message, conflict: ui.code === 'VERSION_CONFLICT' },
+      }));
     } finally {
       setSaving(null);
+    }
+  };
+
+  /** VERSION_CONFLICT: refetch and replace only this role's rows; other roles keep their drafts. */
+  const reloadRole = async (role: EditableRole): Promise<void> => {
+    try {
+      const fresh = await getPermissions();
+      const block = fresh.roles.find((r) => r.role === role);
+      setData((prev) =>
+        prev && block
+          ? { ...prev, roles: prev.roles.map((r) => (r.role === role ? block : r)) }
+          : prev,
+      );
+      dropDraft(role);
+      setRowError((e) => ({ ...e, [role]: undefined }));
+    } catch (err) {
+      setRowError((e) => ({ ...e, [role]: { message: toUiError(err).message, conflict: false } }));
     }
   };
 
@@ -146,9 +190,13 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
         </div>
       ) : null}
       {errors.map((b) => (
-        <div className="msg error show static" role="alert" key={b.role}>
-          {ROLE_LABEL[b.role]}: {rowError[b.role]}
-        </div>
+        <ErrorMessage
+          key={b.role}
+          onReload={rowError[b.role]?.conflict ? () => void reloadRole(b.role) : undefined}
+          reloadLabel={`Reload ${ROLE_LABEL[b.role]}`}
+        >
+          {ROLE_LABEL[b.role]}: {rowError[b.role]?.message}
+        </ErrorMessage>
       ))}
       <div className="card table-wrap">
         <table>
@@ -184,11 +232,13 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
               </td>
             </tr>
             {blocks.map((block) => {
-              const draft = drafts[block.role];
+              const draft = draftFor(block.role);
               if (!draft) return null;
               const label = ROLE_LABEL[block.role];
               const locked = !block.editable;
               const dirty = isDirty(draft, originals[block.role]);
+              const pendingOverrides = changedOverrideCells(draft, originals[block.role]);
+              const noteId = `perm-note-${block.role}`;
               return (
                 <tr
                   key={block.role}
@@ -241,12 +291,19 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
                       type="button"
                       className="btn"
                       aria-label={`Save ${label}`}
+                      aria-describedby={pendingOverrides ? noteId : undefined}
                       disabled={locked || !dirty || saving !== null}
                       title={locked ? NOT_EDITABLE_TITLE : undefined}
                       onClick={() => void save(block)}
                     >
                       {saving === block.role ? 'Saving…' : 'Save'}
                     </button>
+                    {pendingOverrides ? (
+                      <small className="perm-note" id={noteId}>
+                        includes {pendingOverrides} unsaved family override
+                        {pendingOverrides === 1 ? '' : 's'}
+                      </small>
+                    ) : null}
                   </td>
                 </tr>
               );
@@ -269,7 +326,7 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
           </span>
         </div>
         {blocks.map((block) => {
-          const draft = drafts[block.role];
+          const draft = draftFor(block.role);
           if (!draft) return null;
           const label = ROLE_LABEL[block.role];
           const isOpen = open.has(block.role);
@@ -354,8 +411,7 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
                       className="btn"
                       disabled={locked || saving !== null}
                       onClick={() => {
-                        const orig = originals[block.role];
-                        if (orig) setDrafts((p) => ({ ...p, [block.role]: orig }));
+                        dropDraft(block.role);
                       }}
                     >
                       Discard changes

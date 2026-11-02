@@ -1,0 +1,40 @@
+// Default option lists for `enum` fields when a page has no override (docs/phase3-4 B1): the
+// prototype seeds (Priority, Stage, Source, UOM) plus sensible lists for the "... Status" fields,
+// which are ordinary enums (only the field labelled exactly "Status" is the workflow status).
+// Matched on the whole label, case-insensitively. A label without an entry is free text.
+const SEVERITY = ['Low', 'Medium', 'High', 'Critical'];
+
+export const DEFAULT_ENUM_OPTIONS: Readonly<Record<string, readonly string[]>> = {
+  priority: SEVERITY,
+  'fefo priority': SEVERITY,
+  'putaway priority': SEVERITY,
+  severity: SEVERITY,
+  stage: ['New', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost'],
+  source: ['Website', 'Referral', 'WhatsApp', 'Campaign', 'Existing Customer', 'Walk-in'],
+  uom: ['Nos', 'Set', 'Kg', 'Meter', 'Box', 'Litre'],
+  'approval status': ['Pending', 'Approved', 'Rejected'],
+  'consent status': ['Pending', 'Granted', 'Withdrawn'],
+  'payment status': ['Unpaid', 'Partially Paid', 'Paid'],
+  'qc status': ['Pending', 'Passed', 'Failed', 'On Hold'],
+  'hold status': ['None', 'On Hold', 'Released'],
+  'posting status': ['Unposted', 'Posted', 'Failed'],
+  'delivery status': ['Pending', 'In Transit', 'Delivered', 'Failed'],
+  'filing status': ['Pending', 'Filed', 'Late'],
+  'verification status': ['Pending', 'Verified', 'Rejected'],
+  'validation status': ['Pending', 'Valid', 'Invalid'],
+  'email status': ['Pending', 'Sent', 'Failed'],
+  'webhook status': ['Active', 'Paused', 'Failing'],
+  'label status': ['Pending', 'Printed', 'Failed'],
+  'putaway status': ['Pending', 'In Progress', 'Completed'],
+  'pod status': ['Pending', 'Received', 'Disputed'],
+  'cancellation status': ['None', 'Requested', 'Cancelled'],
+  'clearing status': ['Open', 'Cleared'],
+  'challan status': ['Pending', 'Generated', 'Cancelled'],
+  'ecr status': ['Pending', 'Filed'],
+  'irn status': ['Pending', 'Generated', 'Cancelled'],
+  'part b status': ['Pending', 'Updated'],
+  'qr status': ['Pending', 'Generated'],
+  'secret status': ['Active', 'Rotated', 'Revoked'],
+  'material status': ['Available', 'Short', 'On Order'],
+  'otif status': ['On Time In Full', 'Late', 'Short'],
+};

@@ -182,9 +182,14 @@ describe('DepartmentMasterPage', () => {
     expect(d.getByLabelText('Status')).toBeDisabled();
   });
 
-  it('Delete confirms in a modal and explains 409 IN_USE', async () => {
+  it('Delete confirms in a modal and shows the server 409 IN_USE message', async () => {
     setup({
-      'DELETE /api/v1/departments/d2': () => apiError(409, 'IN_USE', 'Department is in use.'),
+      'DELETE /api/v1/departments/d2': () =>
+        apiError(
+          409,
+          'IN_USE',
+          'This department has 7 users. Move them first or deactivate the department.',
+        ),
     });
     await open();
     const ue = userEvent.setup();
@@ -192,7 +197,7 @@ describe('DepartmentMasterPage', () => {
     const d = within(screen.getByRole('dialog', { name: 'Delete Department' }));
     await ue.click(d.getByRole('button', { name: 'Delete' }));
     expect(await d.findByRole('alert')).toHaveTextContent(
-      'This department has 5 users. Move them first or deactivate the department.',
+      'This department has 7 users. Move them first or deactivate the department.',
     );
   });
 

@@ -4,13 +4,18 @@ import { useParams } from 'react-router-dom';
 import { isAdminRole, lookupPage, type PageLookup } from '../lib/registry';
 import { usePagePermissions } from '../lib/usePagePermissions';
 import type { User } from '../types';
+import { ContextChips } from '../components/ContextChips';
 import { AuditTrailPage } from './admin/AuditTrailPage';
+import { CompanyMasterPage } from './admin/CompanyMasterPage';
 import { ControlCenterPage } from './admin/ControlCenterPage';
 import { DepartmentMasterPage } from './admin/DepartmentMasterPage';
+import { FinancialYearsPage } from './admin/FinancialYearsPage';
 import { LetterheadPage } from './admin/LetterheadPage';
 import { PermissionMasterPage } from './admin/PermissionMasterPage';
 import { RoleMasterPage } from './admin/RoleMasterPage';
 import { SystemSetupPage } from './admin/SystemSetupPage';
+import { UnitMasterPage } from './admin/UnitMasterPage';
+import { GenericModulePage } from './generic/GenericModulePage';
 import { NotFoundPage } from './NotFoundPage';
 import { UserMasterPage } from './users/UserMasterPage';
 
@@ -72,19 +77,33 @@ function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: 
       return <SystemSetupPage />;
     case 'admin-audit':
       return <AuditTrailPage />;
+    case 'admin-company':
+      return <CompanyMasterPage actions={actions} />;
+    case 'admin-branches':
+      return <UnitMasterPage actions={actions} />;
+    case 'admin-fy':
+      return <FinancialYearsPage actions={actions} />;
     default:
       return (
-        <>
-          <div className="page-head">
-            <div>
-              <h1>{page.item.title}</h1>
-              <p>{page.purpose ?? page.family.name}</p>
-            </div>
-          </div>
-          <div className="notice" role="note">
-            This module will be enabled in a later phase.
-          </div>
-        </>
+        <GenericModulePage
+          pageId={pageId}
+          user={user}
+          perms={actions}
+          fallback={
+            <>
+              <div className="page-head">
+                <div>
+                  <h1>{page.item.title}</h1>
+                  <p>{page.purpose ?? page.family.name}</p>
+                </div>
+              </div>
+              <ContextChips user={user} />
+              <div className="notice" role="note">
+                This module will be enabled in a later phase.
+              </div>
+            </>
+          }
+        />
       );
   }
 }

@@ -158,6 +158,8 @@ export const departmentService = {
       Object.assign(after, { [field]: next });
       Object.assign(data, { [field]: next });
     }
+    // Nothing changes: return the current row without a version bump or an audit row.
+    if (Object.keys(data).length === 0) return withCount(target);
     try {
       const updated = await prisma.$transaction(async (tx) => {
         // The name FK cascades to users.department, department_families and module_controls.

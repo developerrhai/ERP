@@ -7,7 +7,7 @@ import { App } from '../App';
 import { AuthProvider } from '../auth/AuthProvider';
 import { getSession } from '../auth/session';
 import { ToastProvider } from '../components/Toast';
-import type { RoleMeta, User } from '../types';
+import type { MeContext, RoleMeta, User } from '../types';
 import { mockMenu, mockPermissions } from './access-mock';
 
 export function makeUser(over: Partial<User> = {}): User {
@@ -52,6 +52,27 @@ export const DEPARTMENTS = [
   'Service',
 ];
 
+/** Seed context (Phase 3): the three units, two FYs (2026-27 current), Talwade selected. */
+export const UNITS = [
+  { id: 'unit-tal', code: 'TAL', name: 'Talwade' },
+  { id: 'unit-saw', code: 'SAW', name: 'Sawardari' },
+  { id: 'unit-var', code: 'VAR', name: 'Varale' },
+];
+
+export function makeContext(over: Partial<MeContext> = {}): MeContext {
+  return {
+    company: { id: 'co-1', code: 'SAWANT', tradeName: 'Sawant Group' },
+    units: UNITS,
+    allUnitsAllowed: true,
+    fys: [
+      { id: 'fy-2627', code: '2026-27', label: 'FY 2026-27', status: 'OPEN', isCurrent: true },
+      { id: 'fy-2526', code: '2025-26', label: 'FY 2025-26', status: 'OPEN', isCurrent: false },
+    ],
+    current: { unitId: 'unit-tal', fyId: 'fy-2627' },
+    ...over,
+  };
+}
+
 export function json(status: number, body?: unknown): Response {
   if (status === 204) return new Response(null, { status });
   return new Response(JSON.stringify(body ?? {}), {
@@ -85,7 +106,8 @@ export type Handler = (call: Call) => Response | Promise<Response>;
 
 /**
  * Routes are keyed "METHOD /api/v1/path" (query string ignored). Unmatched routes return 404,
- * except GET /me/menu and /me/permissions, which default to the seed rules for the signed-in user.
+ * except GET /me/menu and /me/permissions, which default to the seed rules for the signed-in user,
+ * and GET/PUT /me/context, which default to the seed context (PUT echoes the body).
  */
 export function mockFetch(routes: Record<string, Handler>): { fn: Mock; calls: Call[] } {
   const calls: Call[] = [];
@@ -114,6 +136,12 @@ export function mockFetch(routes: Record<string, Handler>): { fn: Mock; calls: C
       if (user && method === 'GET' && path === '/api/v1/me/permissions') {
         const pageId = new URL(url, 'http://test').searchParams.get('pageId') ?? '';
         return json(200, { data: mockPermissions(user, pageId) });
+      }
+      if (user && method === 'GET' && path === '/api/v1/me/context') {
+        return json(200, { data: makeContext() });
+      }
+      if (user && method === 'PUT' && path === '/api/v1/me/context') {
+        return json(200, { data: body });
       }
       return apiError(404, 'NOT_FOUND', `No mock for ${method} ${path}`);
     }

@@ -1,10 +1,25 @@
 // Menu access rules in one place: which registry families a user may see (CONTRACT §2)
 // and page lookups for /m/:pageId. Pure functions so they are unit-tested per role/department.
-import registry from '@registry';
+import rawRegistry from '@registry';
 import type { RegistryFamily, RegistryItem } from '@registry';
 import type { RoleCode } from '../types';
 
-export { registry };
+/**
+ * Titles that differ from the prototype because of owner decisions. The extracted registry stays an
+ * exact copy of index.html (it has a staleness test); the web app relabels here, in one place.
+ */
+const TITLE_OVERRIDES: Readonly<Record<string, string>> = {
+  'admin-company': 'Company Master',
+  'admin-branches': 'Unit Master',
+};
+
+export const registry: typeof rawRegistry = {
+  ...rawRegistry,
+  families: rawRegistry.families.map((f) => ({
+    ...f,
+    items: f.items.map((i) => ({ ...i, title: TITLE_OVERRIDES[i.id] ?? i.title })),
+  })),
+};
 
 const ALL_FAMILIES_ROLES: readonly RoleCode[] = ['SUPER_ADMIN', 'ADMIN'];
 

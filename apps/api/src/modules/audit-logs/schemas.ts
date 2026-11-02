@@ -1,6 +1,7 @@
 // Zod schemas for the Audit Trail viewer: filters (dates accept YYYY-MM-DD or ISO timestamps; a
-// date-only `to` includes that whole day), paging with size ≤ 100.
+// date-only `to` includes that whole day), paging with size ≤ 100 and offset ≤ 10,000.
 import { z } from 'zod';
+import { offsetWithinCap } from '../../core/http/query-safety';
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -16,11 +17,14 @@ export const listAuditLogsQuerySchema = z
     actorId: z.string().uuid('Invalid user id.').optional(),
     action: z.string().trim().min(1).max(64).optional(),
     targetType: z.string().trim().min(1).max(40).optional(),
+    /** Phase 4: records of one page (detail.pageId), e.g. ?targetType=record&pageId=crm-leads. */
+    pageId: z.string().trim().min(1).max(80).optional(),
     q: z.string().trim().max(100).optional(),
     page: z.coerce.number().int().min(1).max(100000).default(1),
     size: z.coerce.number().int().min(1).max(100).default(20),
   })
   .strict()
+  .superRefine(offsetWithinCap)
   .transform((v) => ({
     ...v,
     fromDate: v.from ? new Date(v.from) : undefined,

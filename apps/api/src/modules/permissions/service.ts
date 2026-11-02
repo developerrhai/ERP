@@ -12,12 +12,14 @@ import {
   ACTIONS,
   DEFAULT_RESOURCE,
   PERMISSION_ROLES,
+  familyResource,
   isPermissionRole,
+  noActions,
 } from '../../core/rbac/permission-model';
 import type { PermissionRole, Scope } from '../../core/rbac/permission-model';
 import { canManage } from '../../core/rbac/role-rules';
 import type { RoleCode } from '../../core/rbac/role-rules';
-import { isFamily, pageInfo, registry } from '../../core/registry';
+import { ADMIN_FAMILY, isFamily, pageInfo, registry } from '../../core/registry';
 import { permissionRepository } from './repository';
 import type { PermissionRowInput, PutPermissionsInput } from './schemas';
 
@@ -114,6 +116,42 @@ function validateRows(role: PermissionRole, rows: PermissionRowInput[]): void {
   if (role === 'ADMIN' && star && star.controls !== true) {
     throw Errors.protectedResource("An Admin's controls permission on * cannot be turned off.");
   }
+  for (const row of rows) {
+    if (!isAdministrationResource(row.resource)) continue;
+    if (role === 'ADMIN') {
+      if (row.controls === false) {
+        throw Errors.protectedResource(
+          "An Admin's controls permission on Administration pages cannot be turned off.",
+        );
+      }
+    } else if (ACTIONS.some((a) => row[a] === true)) {
+      throw Errors.protectedResource('Only Admin and above may use Administration pages.');
+    }
+  }
+}
+
+/** `family:Administration` or `page:<id>` of a page in the Administration family. */
+function isAdministrationResource(resource: string): boolean {
+  if (resource === familyResource(ADMIN_FAMILY)) return true;
+  return (
+    resource.startsWith('page:') &&
+    pageInfo(resource.slice('page:'.length))?.family === ADMIN_FAMILY
+  );
+}
+
+/**
+ * Non-admin roles always keep an explicit deny row on `family:Administration`: if the PUT omits it,
+ * or leaves cells as "inherit" (which would inherit `*`), it is stored as all-false.
+ */
+function withAdministrationDeny(
+  role: PermissionRole,
+  rows: PermissionRowInput[],
+): PermissionRowInput[] {
+  if (role === 'ADMIN') return rows;
+  const resource = familyResource(ADMIN_FAMILY);
+  const existing = rows.find((r) => r.resource === resource);
+  const deny: PermissionRowInput = { resource, ...noActions(), scope: existing?.scope ?? 'OWN' };
+  return [...rows.filter((r) => r.resource !== resource), deny];
 }
 
 const snapshot = (rows: RolePermission[]): Prisma.InputJsonArray =>
@@ -153,7 +191,7 @@ export const permissionService = {
     }
     validateRows(role, input.rows);
     // An override row whose cells are all "inherit" carries no information: it is not stored.
-    const rows = input.rows.filter(
+    const rows = withAdministrationDeny(role, input.rows).filter(
       (r) =>
         r.resource === DEFAULT_RESOURCE || r.scope !== null || ACTIONS.some((a) => r[a] !== null),
     );

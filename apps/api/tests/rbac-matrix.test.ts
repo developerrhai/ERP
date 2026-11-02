@@ -10,7 +10,7 @@ import {
   hasMinRole,
 } from '../src/core/rbac/role-rules';
 import type { RoleCode } from '../src/core/rbac/role-rules';
-import { API, makeUser, newApp, owner, signInAs, uniqueLoginId } from './helpers';
+import { API, makeUser, newApp, owner, signInAs, uniqueLoginId, unitIds } from './helpers';
 import type { Signed } from './helpers';
 
 const app = newApp();
@@ -72,13 +72,17 @@ describe('API matrix: actor x target x operation', () => {
 
   it.each(cases)('%s creating %s', async (actor, target) => {
     const loginId = uniqueLoginId('mx');
-    const res = await request(app).post(`${API}/users`).set(actors[actor].bearer).send({
-      loginId,
-      name: 'Matrix User',
-      role: target,
-      department: 'Sales',
-      temporaryPassword: 'Matrix-Passw0rd!',
-    });
+    const res = await request(app)
+      .post(`${API}/users`)
+      .set(actors[actor].bearer)
+      .send({
+        loginId,
+        name: 'Matrix User',
+        role: target,
+        department: 'Sales',
+        temporaryPassword: 'Matrix-Passw0rd!',
+        unitIds: await unitIds(),
+      });
     expect(res.status).toBe(EXPECTED[actor].includes(target) ? 201 : 403);
   });
 

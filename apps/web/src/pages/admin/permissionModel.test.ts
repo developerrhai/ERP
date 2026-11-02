@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ACTIONS, type Action, type PermissionRow } from '../../types';
 import {
   cellState,
+  changedOverrideCells,
   draftFromRows,
   effective,
   nextState,
@@ -95,5 +96,28 @@ describe('permissionModel', () => {
     const page = row('page:crm-leads', { view: true }, null, 2);
     const out = rowsFromDraft(draftFromRows([...manager, page])).at(-1);
     expect(out).toEqual(strip([page])[0]);
+  });
+});
+
+describe('permissionModel review fixes', () => {
+  it('keeps a scope-only family row (all action cells null, scope set)', () => {
+    const rows = [row('*', {}, 'DEPARTMENT', 1, true), row('family:CRM', {}, 'OWN', 2)];
+    expect(rowsFromDraft(draftFromRows(rows)).find((r) => r.resource === 'family:CRM')).toEqual({
+      ...strip([rows[1] as PermissionRow])[0],
+    });
+  });
+
+  it('drops a family row only when cells and scope are all null', () => {
+    let d = draftFromRows(manager);
+    d = withCell(d, 'Sales', 'delete', 'inherit');
+    expect(rowsFromDraft(d).some((r) => r.resource === 'family:Sales')).toBe(false);
+  });
+
+  it('counts unsaved family-override cells against the saved state', () => {
+    const original = draftFromRows(manager);
+    let d = withCell(original, 'CRM', 'view', 'deny');
+    d = withCell(d, 'Sales', 'delete', 'inherit');
+    expect(changedOverrideCells(d, original)).toBe(2);
+    expect(changedOverrideCells(withStar(original, { add: false }), original)).toBe(0);
   });
 });

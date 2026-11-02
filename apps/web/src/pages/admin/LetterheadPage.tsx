@@ -2,10 +2,20 @@
 // human labels, validation per CONTRACT §2.3, If-Match save, and a live letterhead preview.
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { ErrorMessage } from '../../components/ErrorMessage';
 import { Field } from '../../components/Field';
 import { useToast } from '../../components/Toast';
 import { toUiError } from '../../lib/errors';
+import { useUnsavedGuard } from '../../lib/unsaved';
 import { useLoad } from '../../lib/useLoad';
+import {
+  CIN_MESSAGE,
+  CIN_RE,
+  GSTIN_MESSAGE,
+  GSTIN_RE,
+  PAN_MESSAGE,
+  PAN_RE,
+} from '../../lib/validators';
 import type { ActionSet, Letterhead } from '../../types';
 import { getLetterhead, LETTERHEAD_KEYS, saveLetterhead } from './adminApi';
 
@@ -32,9 +42,6 @@ const MAX: Partial<Record<keyof Letterhead, number>> = {
   signatory: 100,
 };
 
-const GSTIN_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
-const PAN_RE = /^[A-Z]{5}\d{4}[A-Z]$/;
-const CIN_RE = /^[LU]\d{5}[A-Z]{2}\d{4}[A-Z]{3}\d{6}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isUrl(v: string): boolean {
@@ -56,11 +63,9 @@ export function validateLetterhead(v: Letterhead): Partial<Record<keyof Letterhe
   if (v.email && !EMAIL_RE.test(v.email))
     e.email = 'Enter a valid email address or leave it empty.';
   if (v.website && !isUrl(v.website)) e.website = 'Enter a full URL (https://…) or leave it empty.';
-  if (v.gstin && !GSTIN_RE.test(v.gstin))
-    e.gstin = 'GSTIN must be 15 characters, e.g. 27ABCDE1234F1Z5.';
-  if (v.pan && !PAN_RE.test(v.pan)) e.pan = 'PAN must look like ABCDE1234F.';
-  if (v.cin && !CIN_RE.test(v.cin))
-    e.cin = 'CIN must be 21 characters, e.g. U12345MH2020PTC123456.';
+  if (v.gstin && !GSTIN_RE.test(v.gstin)) e.gstin = GSTIN_MESSAGE;
+  if (v.pan && !PAN_RE.test(v.pan)) e.pan = PAN_MESSAGE;
+  if (v.cin && !CIN_RE.test(v.cin)) e.cin = CIN_MESSAGE;
   return e;
 }
 
@@ -68,11 +73,14 @@ const UPPER: ReadonlySet<keyof Letterhead> = new Set(['gstin', 'pan', 'cin']);
 
 export function LetterheadPage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
-  const { data, loading, error } = useLoad(getLetterhead, []);
+  const { data, loading, error, reload } = useLoad(getLetterhead, []);
   const [value, setValue] = useState<Letterhead | null>(null);
+  // Last server copy, to know whether the form holds unsaved edits.
+  const [baseline, setBaseline] = useState<Letterhead | null>(null);
   const [version, setVersion] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState('');
+  const [conflict, setConflict] = useState(false);
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
   const canEdit = actions.controls;
@@ -80,9 +88,11 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
   useEffect(() => {
     if (data) {
       setValue(data.value);
+      setBaseline(data.value);
       setVersion(data.version);
     }
   }, [data]);
+  useUnsavedGuard(!!value && !!baseline && LETTERHEAD_KEYS.some((k) => value[k] !== baseline[k]));
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -90,18 +100,21 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
     const local = validateLetterhead(value);
     setFieldErrors(local as Record<string, string>);
     setFormError('');
+    setConflict(false);
     if (Object.keys(local).length) return;
     inFlight.current = true;
     setPending(true);
     try {
       const saved = await saveLetterhead(version, value);
       setValue(saved.value);
+      setBaseline(saved.value);
       setVersion(saved.version);
       toast('Letterhead saved.');
     } catch (err) {
       const ui = toUiError(err);
       setFieldErrors(ui.fields);
       setFormError(ui.message);
+      setConflict(ui.code === 'VERSION_CONFLICT');
     } finally {
       inFlight.current = false;
       setPending(false);
@@ -135,9 +148,20 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
         <>
           <form className="card panel" onSubmit={(e) => void onSubmit(e)} noValidate>
             {formError ? (
-              <div className="msg error show static" role="alert">
+              <ErrorMessage
+                onReload={
+                  conflict
+                    ? () => {
+                        // Take the saved letterhead (and its new version) from the server.
+                        setFormError('');
+                        setConflict(false);
+                        reload();
+                      }
+                    : undefined
+                }
+              >
                 {formError}
-              </div>
+              </ErrorMessage>
             ) : null}
             <div className="form-grid">
               {LETTERHEAD_KEYS.map((k) => (

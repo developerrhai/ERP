@@ -15,12 +15,25 @@ const registrySchema = z.object({
       }),
     )
     .min(1),
+  /** Per-page profile (tabs + field labels) of the 227 generic-engine pages, plus some custom ones. */
+  profiles: z
+    .record(
+      z.object({
+        title: z.string(),
+        family: z.string(),
+        purpose: z.string(),
+        tabs: z.array(z.string()),
+        fields: z.array(z.string()),
+      }),
+    )
+    .default({}),
   deptFamilies: z.record(z.array(z.string())),
   departments: z.array(z.string()),
 });
 
 export type RegistryData = z.infer<typeof registrySchema>;
 export type RegistryFamily = RegistryData['families'][number];
+export type PageProfile = RegistryData['profiles'][string];
 
 export interface PageInfo {
   id: string;
@@ -61,6 +74,10 @@ export const ADMIN_DEPARTMENT = 'Administration';
 
 export function pageInfo(pageId: string): PageInfo | undefined {
   return registry.pages.get(pageId);
+}
+
+export function profileOf(pageId: string): PageProfile | undefined {
+  return registry.data.profiles[pageId];
 }
 
 export function isFamily(name: string): boolean {

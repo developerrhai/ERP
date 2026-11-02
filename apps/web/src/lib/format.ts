@@ -19,3 +19,13 @@ export function formatDateTime(iso: string | null): string {
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "2026-04-01" (or an ISO timestamp) → "01 Apr 2026", without time-zone shifts. */
+export function formatDate(iso: string | null | undefined): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '');
+  if (!m) return '—';
+  const month = MONTHS[Number(m[2]) - 1];
+  return month ? `${m[3]} ${month} ${m[1]}` : '—';
+}

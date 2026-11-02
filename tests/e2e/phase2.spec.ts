@@ -33,10 +33,17 @@ async function changeFirstPassword(page: Page, current: string, next: string) {
 
 /** Calls the API from inside the signed-in page (gets a fresh access token from the httpOnly refresh cookie). */
 async function api(page: Page, method: string, path: string, body?: unknown, ifMatch?: string) {
+  await page.waitForLoadState('networkidle'); // let the app's own session refresh finish first
   return page.evaluate(
     async ({ method, path, body, ifMatch }) => {
-      const r = await fetch('/api/v1/auth/refresh', { method: 'POST', headers: { 'X-Requested-With': 'rhai-web' } });
-      const { data } = (await r.json()) as { data: { accessToken: string } };
+      // The page's own session refresh may run at the same moment (409 REFRESH_RACE) - retry like the app does.
+      let data: { accessToken: string } | undefined;
+      for (let attempt = 0; attempt < 5 && !data; attempt++) {
+        const r = await fetch('/api/v1/auth/refresh', { method: 'POST', headers: { 'X-Requested-With': 'rhai-web' } });
+        if (r.ok) data = ((await r.json()) as { data: { accessToken: string } }).data;
+        else await new Promise((res) => setTimeout(res, 400));
+      }
+      if (!data) throw new Error('could not refresh the session for the test helper');
       const headers: Record<string, string> = { Authorization: `Bearer ${data.accessToken}` };
       if (body !== undefined) headers['Content-Type'] = 'application/json';
       if (ifMatch) headers['If-Match'] = ifMatch;
@@ -55,7 +62,19 @@ test('setup: owner creates a Sales member who signs in once', async ({ browser }
   const owner = await ownerCtx.newPage();
   await signIn(owner, 'owner', OWNER_PW);
   await expect(owner.getByText(/Modules are being enabled/)).toBeVisible();
-  const r = await api(owner, 'POST', '/users', { loginId: M2.loginId, name: M2.name, role: 'MEMBER', department: 'Sales', temporaryPassword: M2.temp });
+  const ctx = await api(owner, 'GET', '/me/context');
+  const units = (ctx.json as { data: { units: { id: string; code: string }[] } }).data.units;
+  const tal = units.find((u) => u.code === 'TAL');
+  expect(tal).toBeDefined();
+  const r = await api(owner, 'POST', '/users', {
+    loginId: M2.loginId,
+    name: M2.name,
+    role: 'MEMBER',
+    department: 'Sales',
+    unitIds: [tal?.id],
+    defaultUnitId: tal?.id,
+    temporaryPassword: M2.temp,
+  });
   expect(r.status).toBe(201);
   await ownerCtx.close();
 
@@ -101,9 +120,13 @@ test('owner disables a module in System Control Center → it disappears from th
   await expect(owner.getByText('1 modules')).toBeVisible(); // filtered list loaded
   await expect(owner.getByLabel('Lead Sources Enabled')).not.toBeChecked();
   await owner.getByLabel('Lead Sources Enabled').check();
-  await owner.getByRole('button', { name: 'Save Lead Sources' }).click();
+  await Promise.all([
+    owner.waitForResponse((r) => r.url().includes('/module-controls/crm-sources') && r.request().method() === 'PATCH' && r.ok()),
+    owner.getByRole('button', { name: 'Save Lead Sources' }).click(),
+  ]);
+  // One navigation, then wait: a second reload while the first page load is still refreshing the session
+  // can lose the rotated cookie (known limitation of rotating refresh tokens, see docs/phase3-4/CHANGES.md).
   await member.goto('/');
-  await member.reload();
   await expect(menuLink(member, 'Lead Sources')).toBeVisible();
   await ownerCtx.close();
   await memberCtx.close();

@@ -2,6 +2,7 @@
 // with Add/Edit modals and a delete confirm that explains 409 IN_USE; Administration is protected.
 import { useRef, useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
+import { ErrorMessage } from '../../components/ErrorMessage';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { toUiError, type UiError } from '../../lib/errors';
@@ -19,10 +20,6 @@ import {
 export const PROTECTED_DEPARTMENT = 'Administration';
 const CODE_RE = /^[A-Z0-9]{2,10}$/;
 
-export function inUseMessage(count: number): string {
-  return `This department has ${count} user${count === 1 ? '' : 's'}. Move them first or deactivate the department.`;
-}
-
 type Dialog =
   | { kind: 'add' }
   | { kind: 'edit'; dept: Department }
@@ -31,10 +28,20 @@ type Dialog =
 
 export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
-  const { data, loading, error, reload } = useLoad(listDepartments, []);
+  const { data, loading, error, reload, setData } = useLoad(listDepartments, []);
   const [dialog, setDialog] = useState<Dialog>(null);
+  // Bumped on a conflict reload so the open modal remounts with the fresh record.
+  const [modalKey, setModalKey] = useState(0);
   const canChange = actions.controls;
   const close = (): void => setDialog(null);
+  /** VERSION_CONFLICT: refetch, then reopen the same dialog on the fresh copy of that record. */
+  const reloadDept = async (id: string): Promise<void> => {
+    const list = await listDepartments();
+    setData(list);
+    const fresh = list.find((d) => d.id === id);
+    setDialog((cur) => (cur && cur.kind !== 'add' && fresh ? { ...cur, dept: fresh } : null));
+    setModalKey((k) => k + 1);
+  };
   const afterSave = (message: string): void => {
     close();
     reload();
@@ -142,14 +149,18 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
       ) : null}
       {dialog?.kind === 'edit' ? (
         <DepartmentFormModal
+          key={modalKey}
           dept={dialog.dept}
+          onReload={() => reloadDept(dialog.dept.id)}
           onClose={close}
           onSaved={(d) => afterSave(`Department ${d.name} updated.`)}
         />
       ) : null}
       {dialog?.kind === 'delete' ? (
         <DeleteDepartmentModal
+          key={modalKey}
           dept={dialog.dept}
+          onReload={() => reloadDept(dialog.dept.id)}
           onClose={close}
           onDeleted={() => afterSave(`Department ${dialog.dept.name} deleted.`)}
         />
@@ -160,11 +171,12 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
 
 interface FormProps {
   dept?: Department;
+  onReload?: () => Promise<void>;
   onClose: () => void;
   onSaved: (d: Department) => void;
 }
 
-function DepartmentFormModal({ dept, onClose, onSaved }: FormProps) {
+function DepartmentFormModal({ dept, onReload, onClose, onSaved }: FormProps) {
   const [code, setCode] = useState(dept?.code ?? '');
   const [name, setName] = useState(dept?.name ?? '');
   const [head, setHead] = useState(dept?.head ?? '');
@@ -243,9 +255,13 @@ function DepartmentFormModal({ dept, onClose, onSaved }: FormProps) {
     >
       <form id={formId} onSubmit={(e) => void onSubmit(e)} noValidate>
         {err?.message ? (
-          <div className="msg error show static" role="alert">
+          <ErrorMessage
+            onReload={
+              err.code === 'VERSION_CONFLICT' && onReload ? () => void onReload() : undefined
+            }
+          >
             {err.message}
-          </div>
+          </ErrorMessage>
         ) : null}
         <div className="form-grid">
           <Field
@@ -293,14 +309,16 @@ function DepartmentFormModal({ dept, onClose, onSaved }: FormProps) {
 
 function DeleteDepartmentModal({
   dept,
+  onReload,
   onClose,
   onDeleted,
 }: {
   dept: Department;
+  onReload: () => Promise<void>;
   onClose: () => void;
   onDeleted: () => void;
 }) {
-  const [error, setError] = useState('');
+  const [error, setError] = useState<UiError | null>(null);
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
 
@@ -308,16 +326,13 @@ function DeleteDepartmentModal({
     if (inFlight.current) return;
     inFlight.current = true;
     setPending(true);
-    setError('');
+    setError(null);
     try {
       await deleteDepartment(dept.id, dept.version);
       onDeleted();
     } catch (caught) {
-      const ui = toUiError(caught);
-      // Our count may be stale; fall back to the server's own wording if it says 0.
-      setError(
-        ui.code === 'IN_USE' && dept.userCount > 0 ? inUseMessage(dept.userCount) : ui.message,
-      );
+      // 409 IN_USE / PROTECTED: show the server's own text (our user count may be stale).
+      setError(toUiError(caught));
     } finally {
       inFlight.current = false;
       setPending(false);
@@ -346,9 +361,11 @@ function DeleteDepartmentModal({
       }
     >
       {error ? (
-        <div className="msg error show static" role="alert">
-          {error}
-        </div>
+        <ErrorMessage
+          onReload={error.code === 'VERSION_CONFLICT' ? () => void onReload() : undefined}
+        >
+          {error.message}
+        </ErrorMessage>
       ) : null}
       <p className="confirm-text">
         Delete the department {dept.name} ({dept.code})? Its menu access settings are removed too.

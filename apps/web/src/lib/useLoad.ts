@@ -1,6 +1,13 @@
 // Tiny data-loading hook (loading / data / error / reload) so every admin page handles API
 // state the same way without a data library; stale responses are ignored.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { ApiError } from './api';
 
 export interface Loaded<T> {
@@ -8,7 +15,8 @@ export interface Loaded<T> {
   loading: boolean;
   error: string;
   reload: () => void;
-  setData: (next: T) => void;
+  /** Functional updates supported, so a late response never overwrites newer local changes. */
+  setData: Dispatch<SetStateAction<T | null>>;
 }
 
 export function useLoad<T>(load: () => Promise<T>, deps: readonly unknown[]): Loaded<T> {

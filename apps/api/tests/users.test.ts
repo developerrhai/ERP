@@ -17,16 +17,19 @@ import {
   signInAs,
   signInOwner,
   uniqueLoginId,
+  unitIds,
 } from './helpers';
 import type { Signed } from './helpers';
 
 const app = newApp();
 let superAdmin: Signed;
 let admin: Signed;
+let allUnits: string[];
 
 beforeAll(async () => {
   superAdmin = await signInOwner(app);
   admin = await signInAs(app, 'ADMIN');
+  allUnits = await unitIds();
 });
 
 interface UserBody {
@@ -50,6 +53,7 @@ function newUserPayload(overrides: Record<string, unknown> = {}) {
     role: 'MEMBER',
     department: 'Sales',
     temporaryPassword: 'Temp-Passw0rd!',
+    unitIds: allUnits,
     ...overrides,
   };
 }
@@ -364,7 +368,8 @@ describe('PATCH /users/:id', () => {
     const member = await makeUser({ role: 'MEMBER' });
     const promote = await patch(admin, member.id, { role: 'ADMIN' }, String(member.version));
     expect(promote.status).toBe(403);
-    const otherAdmin = await makeUser({ role: 'ADMIN' });
+    // Phase 3: a LEAD needs a unit, so this admin keeps one row to be demoted with.
+    const otherAdmin = await makeUser({ role: 'ADMIN', unitCodes: ['SAW'] });
     const demote = await patch(
       admin,
       otherAdmin.id,

@@ -17,7 +17,7 @@ export interface AuditLogDto {
   actor: { id: string; name: string; loginId: string } | null;
 }
 
-function toDto(row: AuditLogWithActor): AuditLogDto {
+export function toAuditLogDto(row: AuditLogWithActor): AuditLogDto {
   return {
     id: row.id,
     at: row.at.toISOString(),
@@ -34,12 +34,12 @@ function toDto(row: AuditLogWithActor): AuditLogDto {
 export const auditLogService = {
   async list(query: ListAuditLogsQuery): Promise<{ rows: AuditLogDto[]; total: number }> {
     const { rows, total } = await auditLogRepository.list(query);
-    return { rows: rows.map(toDto), total };
+    return { rows: rows.map(toAuditLogDto), total };
   },
 
   async get(id: string): Promise<AuditLogDto> {
     const row = await auditLogRepository.findById(id);
     if (!row) throw Errors.notFound('Audit entry not found.');
-    return toDto(row);
+    return toAuditLogDto(row);
   },
 };

@@ -19,6 +19,10 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   version: number;
+  /** Phase 3: units the user may work in (ADMIN+ have all units implicitly and may omit it). */
+  units?: UnitRef[];
+  unitIds?: string[];
+  defaultUnitId?: string | null;
 }
 
 export interface AuthResult {
@@ -38,6 +42,8 @@ export interface PageMeta {
   page: number;
   size: number;
   total: number;
+  /** Column totals over all matching rows (typed list pages such as Stock Balance). */
+  totals?: Record<string, number | string>;
 }
 
 // ---- Phase 2 (docs/phase2/CONTRACT.md §2–§3) ------------------------------
@@ -134,4 +140,75 @@ export interface AuditLog {
   ip: string | null;
   userAgent: string | null;
   detail: unknown;
+}
+
+// ---- Phase 3 (docs/phase3-4/CONTRACT.md Stage A) ---------------------------
+
+export interface UnitRef {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export type FyStatus = 'OPEN' | 'CLOSED';
+
+export interface FyRef {
+  id: string;
+  code: string;
+  label: string;
+  status: FyStatus;
+  isCurrent: boolean;
+}
+
+/** The working context: `unitId: null` means "All Units" (ADMIN+ only). */
+export interface CurrentContext {
+  unitId: string | null;
+  fyId: string;
+}
+
+/** GET /me/context. */
+export interface MeContext {
+  company: { id: string; code: string; tradeName: string };
+  units: UnitRef[];
+  allUnitsAllowed: boolean;
+  fys: FyRef[];
+  current: CurrentContext;
+}
+
+export interface Company {
+  id: string;
+  code: string;
+  legalName: string;
+  tradeName: string;
+  pan: string | null;
+  cin: string | null;
+  gstin: string | null;
+  address: string | null;
+  currency: string;
+  timezone: string;
+  version: number;
+}
+
+export interface Unit {
+  id: string;
+  code: string;
+  name: string;
+  address: string | null;
+  gstin: string | null;
+  status: UserStatus;
+  version: number;
+  /** Optional: shown when the API reports how many users work in the unit. */
+  userCount?: number;
+}
+
+export interface FinancialYear {
+  id: string;
+  code: string;
+  label: string;
+  /** ISO date (YYYY-MM-DD, or a full ISO timestamp). */
+  startDate: string;
+  endDate: string;
+  status: FyStatus;
+  isCurrent: boolean;
+  version: number;
 }

@@ -97,15 +97,32 @@ export function overrideCount(draft: RoleDraft): number {
   return Object.values(draft.overrides).reduce((n, o) => n + Object.keys(o).length, 0);
 }
 
+/** How many family-override cells differ from the saved state (shown next to the row Save). */
+export function changedOverrideCells(draft: RoleDraft, original: RoleDraft | undefined): number {
+  const families = new Set([
+    ...Object.keys(draft.overrides),
+    ...Object.keys(original?.overrides ?? {}),
+  ]);
+  let n = 0;
+  for (const family of families) {
+    for (const a of ACTIONS) {
+      if (draft.overrides[family]?.[a] !== original?.overrides[family]?.[a]) n += 1;
+    }
+  }
+  return n;
+}
+
 /**
- * Rows for PUT /permissions/:role. Inherited cells are sent as null; a family row whose action
- * cells are all null is omitted (orchestrator decision), even if it carried a scope.
+ * Rows for PUT /permissions/:role. Inherited cells are sent as null; a family row is omitted
+ * only when every action cell AND its scope are null (a scope-only override is kept).
  */
 export function rowsFromDraft(draft: RoleDraft): PermissionRowInput[] {
   const rows: PermissionRowInput[] = [{ ...draft.star }];
-  for (const [family, set] of Object.entries(draft.overrides)) {
-    if (Object.keys(set).length === 0) continue;
+  const families = new Set([...Object.keys(draft.overrides), ...Object.keys(draft.familyScopes)]);
+  for (const family of families) {
+    const set = draft.overrides[family] ?? {};
     const scope = draft.familyScopes[family] ?? null;
+    if (Object.keys(set).length === 0 && scope === null) continue;
     const row = { resource: `${FAMILY_PREFIX}${family}`, scope } as PermissionRowInput;
     for (const a of ACTIONS) row[a] = set[a] ?? null;
     rows.push(row);

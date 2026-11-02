@@ -2,6 +2,7 @@
 // (Phase 2 §2.6), all through the shared access decision.
 import { Router } from 'express';
 import { authenticate, requirePasswordChanged } from '../../core/auth/authenticate';
+import { resolveContext } from '../../core/context/resolve-context';
 import { asyncHandler } from '../../core/http/async-handler';
 import { validate } from '../../core/http/validate';
 import { requirePageAction } from '../../core/rbac/access';
@@ -16,7 +17,7 @@ const PAGE = 'admin-departments';
 
 export function createDepartmentsRouter(): Router {
   const router = Router();
-  router.use(authenticate, requirePasswordChanged);
+  router.use(authenticate, requirePasswordChanged, resolveContext);
   router.get('/', requirePageAction(PAGE, 'view'), asyncHandler(departmentsController.list));
   router.post(
     '/',

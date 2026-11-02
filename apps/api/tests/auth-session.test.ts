@@ -228,7 +228,8 @@ describe('authenticate (Bearer)', () => {
 
   it('takes the role from the DB, not the token: a role change applies immediately', async () => {
     const owner = await signInOwner(app);
-    const user = await makeUser({ role: 'ADMIN' });
+    // Phase 3: a MEMBER needs a unit, so the admin keeps one row to be demoted with.
+    const user = await makeUser({ role: 'ADMIN', unitCodes: ['TAL'] });
     const s = await signIn(app, user);
     expect((await request(app).get(`${API}/users`).set(s.bearer)).status).toBe(200);
     const patch = await request(app)

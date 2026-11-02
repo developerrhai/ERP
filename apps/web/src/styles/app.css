@@ -1613,3 +1613,407 @@ a.btn {
   color: var(--muted);
   font-size: 12px;
 }
+
+/* Phase 2 review fixes: reload-in-message, unsaved markers, user typeahead */
+.msg.show.msg-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+}
+.row-dirty td {
+  background: #fffbeb;
+}
+.perm-note {
+  display: block;
+  margin-top: 4px;
+  color: #92400e;
+  font-size: 9px;
+  white-space: normal;
+  max-width: 130px;
+}
+.user-picker {
+  position: relative;
+  display: inline-block;
+}
+.user-picker-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 240px;
+  max-height: 240px;
+  overflow: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: var(--shadow);
+}
+.user-picker-list li {
+  padding: 7px 8px;
+  border-radius: 7px;
+  font-size: 10px;
+  cursor: pointer;
+}
+.user-picker-list li.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.user-picker-list .user-picker-empty {
+  color: var(--muted);
+  cursor: default;
+}
+.user-chip {
+  align-items: center;
+  gap: 6px;
+}
+.chip-clear {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 9px;
+  padding: 0 2px;
+}
+
+/* Phase 3: working context (unit / FY) and the user Units checkbox list */
+.v8-dash-hero p.hero-context {
+  margin-top: 3px;
+  color: #fff;
+  font-weight: 800;
+}
+fieldset.field {
+  border: 0;
+  padding: 0;
+  margin: 0 0 10px;
+  min-width: 0;
+}
+fieldset.field legend,
+.field .field-label {
+  padding: 0;
+  margin-bottom: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #475569;
+}
+.unit-check-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+fieldset.field[aria-invalid='true'] .unit-check-list {
+  border-color: #dc2626;
+}
+.unit-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+}
+.field .unit-check input {
+  padding: 0;
+  border-radius: 3px;
+}
+
+/* Phase 4 (generic module page): minis, drawer tiles, record bar, undo toast, print */
+.v8-minis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+  padding: 10px;
+}
+.drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+.drawer-grid .v8-mini b {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.drawer-meta {
+  margin: 10px 0;
+}
+.field.field-wide {
+  grid-column: 1 / -1;
+}
+.field label.is-required::after {
+  content: ' *';
+  color: #dc2626;
+}
+.input-affix {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+.input-affix span {
+  padding: 0 9px;
+  color: var(--muted);
+  font-weight: 800;
+}
+.field .input-affix input {
+  border: 0;
+  flex: 1;
+  min-width: 0;
+  border-radius: 0;
+}
+.field input:disabled {
+  background: var(--card2);
+  color: var(--muted);
+}
+.field textarea {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  font: inherit;
+}
+.field.lookup {
+  position: relative;
+}
+.lookup-list {
+  top: 100%;
+  width: 100%;
+}
+.toast.toast-action {
+  bottom: 62px;
+  pointer-events: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 1000;
+}
+.toast-undo {
+  border: 0;
+  background: transparent;
+  color: #93c5fd;
+  font-weight: 800;
+  text-decoration: underline;
+  padding: 0;
+}
+.table-title {
+  margin: 0;
+  padding: 11px 12px 0;
+  font-size: 12px;
+}
+.quality-bar {
+  display: inline-block;
+  width: 120px;
+  height: 8px;
+  border-radius: 99px;
+  background: #e2e8f0;
+  vertical-align: middle;
+  overflow: hidden;
+}
+.quality-bar span {
+  display: block;
+  height: 100%;
+  background: #2563eb;
+}
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+  font-size: 11px;
+}
+.timeline li {
+  border-left: 3px solid #93c5fd;
+  padding-left: 10px;
+}
+.report-note {
+  margin: 8px 12px;
+}
+.v8-sort {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  font-weight: inherit;
+}
+@media (max-width: 900px) {
+  .v8-minis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .drawer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media print {
+  .sidebar,
+  .top,
+  .tabs,
+  .page-head .actions,
+  .recordbar,
+  .v8-table-toolbar,
+  .v8-pager,
+  .toast,
+  .drawer,
+  .modal-bg,
+  .no-print,
+  .context {
+    display: none !important;
+  }
+  .app {
+    display: block;
+  }
+  .main {
+    padding: 0;
+    overflow: visible;
+  }
+  .table-wrap {
+    max-height: none;
+    overflow: visible;
+  }
+  table {
+    min-width: 0;
+  }
+}
+
+.row-actions {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+/* Register table: Actions stay visible on the right, checkbox + code on the left (wide screens) */
+.register-table td {
+  white-space: normal;
+}
+.register-table th:first-child,
+.register-table td:first-child {
+  width: 34px;
+  min-width: 34px;
+}
+.register-table .row-actions .btn.sm {
+  min-width: 28px;
+  padding: 5px 7px;
+  font-size: 11px;
+}
+.register-table .row-actions {
+  gap: 4px;
+}
+@media (min-width: 1001px) {
+  .register-table th:first-child,
+  .register-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--card);
+  }
+  .register-table th:nth-child(2),
+  .register-table td:nth-child(2) {
+    position: sticky;
+    left: 34px;
+    z-index: 3;
+    background: var(--card);
+    white-space: nowrap;
+    box-shadow: 6px 0 8px -6px rgba(15, 23, 42, 0.18);
+  }
+  .register-table th:first-child,
+  .register-table th:nth-child(2),
+  .register-table th.sticky-actions {
+    background: #f8fafc;
+    z-index: 4;
+  }
+  .register-table .sticky-actions {
+    position: sticky;
+    right: 0;
+    z-index: 3;
+    background: var(--card);
+    box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.18);
+  }
+  .register-table th.sticky-actions {
+    background: #f8fafc;
+  }
+}
+
+/* Stage C: typed voucher statuses, totals bar, low-stock rows, register filters */
+.status.posted,
+.status.received,
+.status.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+.status.dispatched,
+.status.in-transit {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.status.below-reorder {
+  background: #fee2e2;
+  color: #991b1b;
+}
+tr.row-low td {
+  background: #fff1f2;
+}
+.register-table tr.row-low td:first-child,
+.register-table tr.row-low td:nth-child(2),
+.register-table tr.row-low .sticky-actions {
+  background: #fff1f2;
+}
+.totals-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: flex-end;
+  padding: 10px 14px;
+  border-top: 2px solid var(--line);
+  background: var(--card2);
+}
+.totals-bar small {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+}
+.totals-bar b {
+  font-size: 13px;
+}
+.filter-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Register view toggle (Ledger | Vouchers) and read-only ref chip */
+.seg {
+  display: inline-flex;
+  margin: 10px 10px 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.seg-btn {
+  border: 0;
+  background: #fff;
+  padding: 7px 14px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #475569;
+}
+.seg-btn + .seg-btn {
+  border-left: 1px solid var(--line);
+}
+.seg-btn.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.ref-chip {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 7px 10px;
+}

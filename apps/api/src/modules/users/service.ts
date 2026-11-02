@@ -1,7 +1,7 @@
 // User management business rules: the §1.2 hierarchy (via role-rules.ts), self-edit bans, optimistic
-// locking, duplicate detection, session revocation on deactivate/reset, and audit rows.
+// locking, duplicate detection, session revocation on deactivate/reset, unit assignment (Phase 3:
+// at least one active unit for MANAGER/LEAD/MEMBER, default unit among them), and audit rows.
 import { Prisma } from '@prisma/client';
-import type { User } from '@prisma/client';
 import type { AuthContext, RequestMeta } from '../../core/auth/auth-context';
 import { checkPasswordPolicy, hashPassword } from '../../core/auth/password';
 import { sessionRepository } from '../../core/auth/session-repository';
@@ -12,8 +12,11 @@ import type { FieldErrors } from '../../core/http/errors';
 import { invalidateAccessCache } from '../../core/rbac/access';
 import { assertCanManage } from '../../core/rbac/authorize';
 import { canManage } from '../../core/rbac/role-rules';
+import type { RoleCode } from '../../core/rbac/role-rules';
+import { hasAllUnits } from '../../core/context/context-repository';
+import { unitRepository } from '../units/repository';
 import { toUserDto } from './dto';
-import type { UserDto } from './dto';
+import type { UserDto, UserWithUnits } from './dto';
 import { userRepository } from './repository';
 import type {
   CreateUserInput,
@@ -52,6 +55,13 @@ export async function toDuplicateError(
   values: { loginId?: string; email?: string | null },
   excludeId?: string,
 ): Promise<unknown> {
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
+    // A unit or the department vanished between the check and the write (FK violation).
+    if (/unit/i.test(JSON.stringify(err.meta ?? ''))) {
+      return Errors.validation({ unitIds: 'Choose from the listed units.' });
+    }
+    return Errors.validation({ department: 'Choose one of the listed departments.' });
+  }
   if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== 'P2002') return err;
   const target = JSON.stringify(err.meta?.target ?? '');
   if (/role/i.test(target)) return Errors.forbidden('Only one Super Admin can exist.');
@@ -87,10 +97,73 @@ async function assertActiveDepartment(name: string): Promise<void> {
   }
 }
 
-async function loadTarget(id: string): Promise<User> {
-  const user = await userRepository.findById(id);
+async function loadTarget(id: string): Promise<UserWithUnits> {
+  const user = await userRepository.findWithUnits(id);
   if (!user) throw Errors.notFound('User not found.');
   return user;
+}
+
+interface UnitAssignment {
+  unitIds: string[];
+  defaultUnitId: string | null;
+  unitsChanged: boolean;
+  defaultChanged: boolean;
+}
+
+const sameSet = (a: readonly string[], b: readonly string[]) =>
+  a.length === b.length && a.every((x) => b.includes(x));
+
+/**
+ * Phase 3 unit rules. MANAGER/LEAD/MEMBER need at least one unit; newly assigned units must exist
+ * and be ACTIVE (an already assigned unit that was deactivated may stay). The default unit must be
+ * one of the user's units; ADMIN+ without unit rows may default to any active unit. A default that
+ * is no longer among the units (and was not given explicitly) is cleared.
+ */
+async function resolveUnits(
+  role: RoleCode,
+  input: { unitIds?: string[]; defaultUnitId?: string | null },
+  current: { unitIds: string[]; defaultUnitId: string | null },
+): Promise<UnitAssignment> {
+  const finalIds = input.unitIds ?? current.unitIds;
+  const toCheck = new Set<string>(input.unitIds ?? []);
+  if (input.defaultUnitId) toCheck.add(input.defaultUnitId);
+  const found = new Map((await unitRepository.findByIds([...toCheck])).map((u) => [u.id, u]));
+  const fields: FieldErrors = {};
+  for (const id of input.unitIds ?? []) {
+    const unit = found.get(id);
+    if (!unit) {
+      fields.unitIds = 'Choose from the listed units.';
+      break;
+    }
+    if (unit.status !== 'ACTIVE' && !current.unitIds.includes(id)) {
+      fields.unitIds = `Unit ${unit.code} is inactive.`;
+      break;
+    }
+  }
+  if (!hasAllUnits(role) && finalIds.length === 0) {
+    fields.unitIds ??= 'Choose at least one unit.';
+  }
+  const explicitDefault = input.defaultUnitId !== undefined;
+  let defaultUnitId = explicitDefault ? (input.defaultUnitId ?? null) : current.defaultUnitId;
+  if (defaultUnitId) {
+    const mustBeAssigned = !hasAllUnits(role) || finalIds.length > 0;
+    if (mustBeAssigned && !finalIds.includes(defaultUnitId)) {
+      if (explicitDefault) {
+        fields.defaultUnitId = "The default unit must be one of the user's units.";
+      } else defaultUnitId = null;
+    } else if (explicitDefault && defaultUnitId !== current.defaultUnitId) {
+      const unit = found.get(defaultUnitId);
+      if (!unit) fields.defaultUnitId = 'Choose one of the listed units.';
+      else if (unit.status !== 'ACTIVE') fields.defaultUnitId = `Unit ${unit.code} is inactive.`;
+    }
+  }
+  if (Object.keys(fields).length > 0) throw Errors.validation(fields);
+  return {
+    unitIds: finalIds,
+    defaultUnitId,
+    unitsChanged: input.unitIds !== undefined && !sameSet(finalIds, current.unitIds),
+    defaultChanged: defaultUnitId !== current.defaultUnitId,
+  };
 }
 
 type TrackedField = 'email' | 'name' | 'role' | 'department' | 'status';
@@ -112,6 +185,11 @@ export const userService = {
     const department = input.department ?? null;
     if (!department) throw Errors.validation({ department: 'Department is required.' });
     await assertActiveDepartment(department);
+    const units = await resolveUnits(
+      input.role,
+      { unitIds: input.unitIds, defaultUnitId: input.defaultUnitId },
+      { unitIds: [], defaultUnitId: null },
+    );
     const email = input.email ?? null;
     assertPasswordPolicy(
       input.temporaryPassword,
@@ -133,6 +211,8 @@ export const userService = {
             passwordHash,
             mustChangePassword: true,
             createdById: actor.userId,
+            defaultUnitId: units.defaultUnitId,
+            units: { create: units.unitIds.map((unitId) => ({ unitId })) },
           },
           tx,
         );
@@ -149,11 +229,15 @@ export const userService = {
               name: created.name,
               role: created.role,
               department: created.department,
+              unitIds: [...units.unitIds].sort(),
+              defaultUnitId: units.defaultUnitId,
             },
           },
           tx,
         );
-        return created;
+        const fresh = await userRepository.findWithUnits(created.id, tx);
+        if (!fresh) throw Errors.notFound('User not found.');
+        return fresh;
       });
       invalidateAccessCache();
       return toUserDto(user);
@@ -194,6 +278,15 @@ export const userService = {
       await assertActiveDepartment(input.department);
     }
     if (input.email) await assertNoCollisions({ email: input.email }, target.id);
+    const roleChanges = input.role !== undefined && input.role !== target.role;
+    const units =
+      input.unitIds !== undefined || input.defaultUnitId !== undefined || roleChanges
+        ? await resolveUnits(
+            input.role ?? target.role,
+            { unitIds: input.unitIds, defaultUnitId: input.defaultUnitId },
+            { unitIds: target.units.map((u) => u.unit.id), defaultUnitId: target.defaultUnitId },
+          )
+        : null;
 
     const before: Prisma.InputJsonObject = {};
     const after: Prisma.InputJsonObject = {};
@@ -204,6 +297,16 @@ export const userService = {
       Object.assign(before, { [field]: target[field] });
       Object.assign(after, { [field]: next });
       Object.assign(data, { [field]: next });
+    }
+    if (units?.unitsChanged) {
+      // Sorted so the audit entry is deterministic (the DB returns unit rows in no fixed order).
+      Object.assign(before, { unitIds: target.units.map((u) => u.unit.id).sort() });
+      Object.assign(after, { unitIds: [...units.unitIds].sort() });
+    }
+    if (units?.defaultChanged) {
+      Object.assign(before, { defaultUnitId: target.defaultUnitId });
+      Object.assign(after, { defaultUnitId: units.defaultUnitId });
+      data.defaultUnitId = units.defaultUnitId;
     }
     const deactivating = input.status === 'INACTIVE' && target.status !== 'INACTIVE';
 
@@ -217,6 +320,7 @@ export const userService = {
           tx,
         );
         if (!applied) throw Errors.versionConflict();
+        if (units?.unitsChanged) await userRepository.replaceUnits(target.id, units.unitIds, tx);
         const sessionsRevoked = deactivating
           ? await sessionRepository.revokeAllForUser(target.id, 'deactivated', tx)
           : 0;
@@ -231,7 +335,7 @@ export const userService = {
           },
           tx,
         );
-        const fresh = await userRepository.findById(target.id, tx);
+        const fresh = await userRepository.findWithUnits(target.id, tx);
         if (!fresh) throw Errors.notFound('User not found.');
         return fresh;
       });

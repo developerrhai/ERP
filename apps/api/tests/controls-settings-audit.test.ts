@@ -129,10 +129,19 @@ describe('PATCH /module-controls/:pageId', () => {
       expect(res.status).toBe(409);
       expect(errorOf(res).code).toBe('PROTECTED');
     }
-    const ok = await patch(
+    // Phase 3: allow_* switches cannot be turned off on Administration pages either.
+    const locked = await patch(
       owner,
       'admin-audit',
       { allowExport: false },
+      await controlVersion('admin-audit'),
+    );
+    expect(locked.status).toBe(409);
+    expect(errorOf(locked).code).toBe('PROTECTED');
+    const ok = await patch(
+      owner,
+      'admin-audit',
+      { approvalRequired: true },
       await controlVersion('admin-audit'),
     );
     expect(ok.status).toBe(200);

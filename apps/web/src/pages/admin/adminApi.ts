@@ -1,6 +1,6 @@
 // Typed wrappers for the Phase 2 admin endpoints (docs/phase2/CONTRACT.md §3). Every PATCH/PUT of
 // a versioned row sends If-Match (PUT /permissions/:role uses the role's highest row version).
-import { api, request } from '../../lib/api';
+import { api, ApiError, request } from '../../lib/api';
 import type {
   AuditLog,
   Department,
@@ -280,3 +280,17 @@ export const ROLE_CREATED_BY: Record<RoleCode, string> = {
   LEAD: 'Super Admin, Admin',
   MEMBER: 'Super Admin, Admin',
 };
+
+/**
+ * Known audit actions from GET /audit-logs/actions. Older APIs without that route (404) fall
+ * back to the static list above, so the filter always works.
+ */
+export async function listAuditActions(): Promise<string[]> {
+  try {
+    const actions = await api<string[]>('/audit-logs/actions');
+    return actions.length ? actions : [...AUDIT_ACTIONS];
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return [...AUDIT_ACTIONS];
+    throw err;
+  }
+}

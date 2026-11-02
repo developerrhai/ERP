@@ -69,6 +69,8 @@ describe('POST /auth/login', () => {
         'mustChangePassword',
         'lastLoginAt',
         'createdAt',
+        'defaultUnitId',
+        'units',
         'updatedAt',
         'version',
       ].sort(),

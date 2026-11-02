@@ -24,6 +24,40 @@ export const AUDIT_ACTIONS = [
   'DEPARTMENT_ACCESS_UPDATED',
   'MODULE_CONTROL_UPDATED',
   'SETTINGS_UPDATED',
+  'COMPANY_UPDATED',
+  'UNIT_CREATED',
+  'UNIT_UPDATED',
+  'UNIT_DELETED',
+  'FINANCIAL_YEAR_CREATED',
+  'FINANCIAL_YEAR_UPDATED',
+  'FINANCIAL_YEAR_SET_CURRENT',
+  'FINANCIAL_YEAR_CLOSED',
+  'FINANCIAL_YEAR_REOPENED',
+  'CONTEXT_CHANGED',
+  'RECORD_CREATED',
+  'RECORD_UPDATED',
+  'RECORD_DELETED',
+  'RECORD_RESTORED',
+  'RECORD_STATUS_CHANGED',
+  'RECORDS_EXPORTED',
+  'ITEM_CREATED',
+  'ITEM_UPDATED',
+  'ITEM_DELETED',
+  'ITEM_RESTORED',
+  'ITEM_STATUS_CHANGED',
+  'WAREHOUSE_CREATED',
+  'WAREHOUSE_UPDATED',
+  'WAREHOUSE_DELETED',
+  'WAREHOUSE_RESTORED',
+  'WAREHOUSE_STATUS_CHANGED',
+  'VOUCHER_CREATED',
+  'VOUCHER_UPDATED',
+  'VOUCHER_DELETED',
+  'VOUCHER_RESTORED',
+  'VOUCHER_POSTED',
+  'VOUCHER_CANCELLED',
+  'TRANSFER_DISPATCHED',
+  'TRANSFER_RECEIVED',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -39,6 +73,13 @@ export interface AuditEntry {
     | 'DepartmentAccess'
     | 'ModuleControl'
     | 'Setting'
+    | 'Company'
+    | 'Unit'
+    | 'FinancialYear'
+    | 'Record'
+    | 'Item'
+    | 'Warehouse'
+    | 'Voucher'
     | null;
   targetId?: string | null;
   meta?: RequestMeta;

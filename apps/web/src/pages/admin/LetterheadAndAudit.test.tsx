@@ -186,8 +186,12 @@ describe('AuditTrailPage', () => {
     const ue = userEvent.setup();
     await screen.findByText('Owner Person (owner)', { selector: 'td' });
     await ue.selectOptions(screen.getByLabelText('Filter by action'), 'LOGIN_FAILED');
-    await ue.selectOptions(await screen.findByLabelText('Filter by user'), 'u1');
-    await ue.type(screen.getByLabelText('Search audit details'), 'ghost');
+    await ue.type(screen.getByRole('combobox', { name: 'Filter by user' }), 'own');
+    await ue.click(await screen.findByRole('option', { name: 'Owner Person (owner)' }));
+    expect(
+      screen.getByRole('button', { name: 'Clear user filter (Owner Person (owner))' }),
+    ).toBeInTheDocument();
+    await ue.type(screen.getByLabelText('Search action, target or details'), 'ghost');
     await ue.type(screen.getByLabelText('To'), '2026-11-01');
     await waitFor(() => {
       const url = calls.filter((c) => c.path.endsWith('/audit-logs')).at(-1)?.url ?? '';

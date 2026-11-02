@@ -13,6 +13,13 @@ export type ErrorCode =
   | 'DUPLICATE'
   | 'IN_USE'
   | 'PROTECTED'
+  | 'NOT_GENERIC'
+  | 'PERIOD_CLOSED'
+  | 'RECORD_LOCKED'
+  | 'INSUFFICIENT_STOCK'
+  | 'READ_ONLY'
+  | 'CONTEXT_FORBIDDEN'
+  | 'CONTEXT_INVALID'
   | 'REFRESH_RACE'
   | 'PAYLOAD_TOO_LARGE'
   | 'VALIDATION_ERROR'
@@ -66,6 +73,17 @@ export const Errors = {
     new AppError(409, 'REFRESH_RACE', 'Session was refreshed in another tab. Retry.'),
   inUse: (message: string) => new AppError(409, 'IN_USE', message),
   protectedResource: (message: string) => new AppError(409, 'PROTECTED', message),
+  notGeneric: (message = 'This page is not served by the generic record engine.') =>
+    new AppError(404, 'NOT_GENERIC', message),
+  readOnly: (message = 'This page is read-only.') => new AppError(405, 'READ_ONLY', message),
+  insufficientStock: (message: string) => new AppError(409, 'INSUFFICIENT_STOCK', message),
+  recordLocked: (message: string) => new AppError(409, 'RECORD_LOCKED', message),
+  periodClosed: (message = 'This financial year is closed.') =>
+    new AppError(409, 'PERIOD_CLOSED', message),
+  conflict: (message: string) => new AppError(409, 'CONFLICT', message),
+  contextForbidden: (message = 'You cannot work in this unit.') =>
+    new AppError(403, 'CONTEXT_FORBIDDEN', message),
+  contextInvalid: (message: string) => new AppError(422, 'CONTEXT_INVALID', message),
   payloadTooLarge: () => new AppError(413, 'PAYLOAD_TOO_LARGE', 'The request body is too large.'),
   validation: (fields: FieldErrors, message = 'Please fix the highlighted fields.') =>
     new AppError(422, 'VALIDATION_ERROR', message, fields),

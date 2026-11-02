@@ -1,5 +1,10 @@
-// Database model: Phase 1 (users, sessions, append-only audit log) and Phase 2 (departments, role
-// permissions, department families, module controls, settings; docs/phase2/CONTRACT.md §2.3).
+// Database model: Phase 1 (users, sessions, append-only audit log), Phase 2 (departments, role
+// permissions, department families, module controls, settings; docs/phase2/CONTRACT.md §2.3) and
+// Phase 3 (company, units, financial years, user units, user preferences; docs/phase3-4 Stage A) and
+// Phase 4 (generic records, number series, idempotency keys; Stage B). The tsvector `search` column
+// and the GIN index of generic_records exist only in the migration SQL (Prisma has no model for them).
+// Phase 5 / Inventory slice (items, warehouses, stock ledger + balances, stock vouchers; Stage C). The
+// stock_ledger append-only trigger, CHECKs and the partial unique barcode index are raw SQL too.
 // Rules Prisma cannot express (single SUPER_ADMIN, append-only audit) live as raw SQL in the migration.
 
 generator client {
@@ -27,6 +32,16 @@ enum UserStatus {
 enum DepartmentStatus {
   ACTIVE
   INACTIVE
+}
+
+enum UnitStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum FinancialYearStatus {
+  OPEN
+  CLOSED
 }
 
 enum DataScope {
@@ -59,6 +74,15 @@ model User {
   permissionEdits    RolePermission[] @relation("PermissionUpdatedBy")
   controlEdits       ModuleControl[]  @relation("ModuleControlUpdatedBy")
   settingEdits       Setting[]        @relation("SettingUpdatedBy")
+  /// Phase 3: the unit the user starts in (must be one of their units; ADMIN+ may pick any).
+  defaultUnitId      String?          @map("default_unit_id") @db.Uuid
+  defaultUnit        Unit?            @relation("UserDefaultUnit", fields: [defaultUnitId], references: [id], onDelete: Restrict)
+  /// Phase 3: units a MANAGER/LEAD/MEMBER may work in. ADMIN+ implicitly have all units.
+  units              UserUnit[]
+  preference         UserPreference?
+  createdRecords     GenericRecord[]  @relation("RecordCreatedBy")
+  updatedRecords     GenericRecord[]  @relation("RecordUpdatedBy")
+  deletedRecords     GenericRecord[]  @relation("RecordDeletedBy")
   createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
   version            Int              @default(1)
@@ -66,6 +90,7 @@ model User {
   @@index([role])
   @@index([status])
   @@index([department])
+  @@index([defaultUnitId])
   @@map("users")
 }
 
@@ -194,4 +219,323 @@ model Setting {
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("settings")
+}
+
+/// Phase 3: exactly one row (unique index on a constant in SQL). Edited on page admin-company.
+model Company {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique @db.VarChar(20)
+  legalName String   @map("legal_name") @db.VarChar(300)
+  tradeName String   @map("trade_name") @db.VarChar(120)
+  pan       String?  @db.VarChar(10)
+  cin       String?  @db.VarChar(21)
+  gstin     String?  @db.VarChar(15)
+  address   String?  @db.VarChar(300)
+  currency  String   @default("INR") @db.VarChar(3)
+  timezone  String   @default("Asia/Kolkata") @db.VarChar(64)
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("companies")
+}
+
+/// Phase 3: manufacturing units (page admin-branches, "Unit Master").
+model Unit {
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique @db.VarChar(10)
+  name        String           @unique @db.VarChar(100)
+  address     String?          @db.VarChar(300)
+  gstin       String?          @db.VarChar(15)
+  status      UnitStatus       @default(ACTIVE)
+  version     Int              @default(1)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userUnits   UserUnit[]
+  defaultFor  User[]           @relation("UserDefaultUnit")
+  preferences UserPreference[]
+  records     GenericRecord[]
+  series      NumberSeries[]
+  warehouses  Warehouse[]
+  ledger      StockLedger[]
+  vouchers    StockVoucher[]   @relation("VoucherUnit")
+
+  @@map("units")
+}
+
+/// Phase 3: Indian financial years (1 Apr - 31 Mar). At most one is_current (partial unique index).
+model FinancialYear {
+  id          String              @id @default(uuid()) @db.Uuid
+  code        String              @unique @db.VarChar(7)
+  label       String              @db.VarChar(40)
+  startDate   DateTime            @unique @map("start_date") @db.Date
+  endDate     DateTime            @map("end_date") @db.Date
+  status      FinancialYearStatus @default(OPEN)
+  isCurrent   Boolean             @default(false) @map("is_current")
+  version     Int                 @default(1)
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  preferences UserPreference[]
+  records     GenericRecord[]
+  series      NumberSeries[]
+  vouchers    StockVoucher[]
+
+  @@map("financial_years")
+}
+
+/// Phase 3: which units a user may work in.
+model UserUnit {
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unitId    String   @map("unit_id") @db.Uuid
+  unit      Unit     @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([userId, unitId])
+  @@index([unitId])
+  @@map("user_units")
+}
+
+/// Phase 3: the user's last chosen context (unit null = "All units", ADMIN+ only).
+model UserPreference {
+  userId    String         @id @map("user_id") @db.Uuid
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unitId    String?        @map("unit_id") @db.Uuid
+  unit      Unit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  fyId      String?        @map("fy_id") @db.Uuid
+  fy        FinancialYear? @relation(fields: [fyId], references: [id], onDelete: SetNull)
+  /// True when an ADMIN+ chose "All units" (kept apart from unit_id so a SET NULL is never read as it).
+  allUnits  Boolean        @default(false) @map("all_units")
+  updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("user_preferences")
+}
+
+/// Phase 4: one row per record of a generic (profile-driven) page. `data` holds the typed field
+/// values keyed by field key; amount / doc_date copy the first money / date field for lists.
+model GenericRecord {
+  id          String        @id @default(uuid()) @db.Uuid
+  pageId      String        @map("page_id") @db.VarChar(80)
+  unitId      String        @map("unit_id") @db.Uuid
+  unit        Unit          @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  fyId        String        @map("fy_id") @db.Uuid
+  fy          FinancialYear @relation(fields: [fyId], references: [id], onDelete: Restrict)
+  /// Owner department name of the creator (scope DEPARTMENT); plain text, no FK.
+  department  String        @db.VarChar(60)
+  code        String        @db.VarChar(60)
+  status      String        @db.VarChar(30)
+  amount      Decimal?      @db.Decimal(18, 2)
+  docDate     DateTime?     @map("doc_date") @db.Date
+  data        Json          @default("{}")
+  version     Int           @default(1)
+  createdById String        @map("created_by_id") @db.Uuid
+  createdBy   User          @relation("RecordCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedById String?       @map("updated_by_id") @db.Uuid
+  updatedBy   User?         @relation("RecordUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedById String?       @map("deleted_by_id") @db.Uuid
+  deletedBy   User?         @relation("RecordDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+  deletedAt   DateTime?     @map("deleted_at") @db.Timestamptz(3)
+
+  @@unique([pageId, code])
+  @@index([pageId, unitId, deletedAt])
+  @@index([pageId, fyId])
+  @@map("generic_records")
+}
+
+/// Phase 4: gap-free numbering per (page, unit, FY); next_value is read FOR UPDATE inside the
+/// create transaction, so a rolled-back create gives its number back.
+model NumberSeries {
+  pageId    String        @map("page_id") @db.VarChar(80)
+  unitId    String        @map("unit_id") @db.Uuid
+  unit      Unit          @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  fyId      String        @map("fy_id") @db.Uuid
+  fy        FinancialYear @relation(fields: [fyId], references: [id], onDelete: Restrict)
+  nextValue Int           @default(1) @map("next_value")
+
+  @@id([pageId, unitId, fyId])
+  @@map("number_series")
+}
+
+/// Phase 4: Idempotency-Key replay store for POST /pages/:pageId/records.
+model IdempotencyKey {
+  userId      String   @map("user_id") @db.Uuid
+  key         String   @db.VarChar(128)
+  requestHash String   @map("request_hash") @db.Char(64)
+  recordId    String   @map("record_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([userId, key])
+  @@map("idempotency_keys")
+}
+
+enum MasterStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// Phase 5: item / SKU master (company-wide). Soft-deleted only while it has no ledger rows.
+model Item {
+  id            String         @id @default(uuid()) @db.Uuid
+  code          String         @unique @db.VarChar(30)
+  name          String         @db.VarChar(150)
+  itemType      String         @map("item_type") @db.VarChar(30)
+  category      String?        @db.VarChar(100)
+  brand         String?        @db.VarChar(100)
+  hsnSac        String?        @map("hsn_sac") @db.VarChar(8)
+  baseUom       String         @map("base_uom") @db.VarChar(20)
+  altUom        String?        @map("alt_uom") @db.VarChar(20)
+  altUomFactor  Decimal?       @map("alt_uom_factor") @db.Decimal(18, 6)
+  /// Unique when present: partial unique index in the migration.
+  barcode       String?        @db.VarChar(60)
+  batchTracked  Boolean        @default(false) @map("batch_tracked")
+  serialTracked Boolean        @default(false) @map("serial_tracked")
+  shelfLifeDays Int?           @map("shelf_life_days")
+  standardCost  Decimal?       @map("standard_cost") @db.Decimal(18, 2)
+  sellingPrice  Decimal?       @map("selling_price") @db.Decimal(18, 2)
+  reorderLevel  Decimal?       @map("reorder_level") @db.Decimal(18, 3)
+  status        MasterStatus   @default(ACTIVE)
+  version       Int            @default(1)
+  createdById   String         @map("created_by_id") @db.Uuid
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedById   String?        @map("updated_by_id") @db.Uuid
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedById   String?        @map("deleted_by_id") @db.Uuid
+  deletedAt     DateTime?      @map("deleted_at") @db.Timestamptz(3)
+  balances      StockBalance[]
+  ledger        StockLedger[]
+  vouchers      StockVoucher[]
+
+  @@map("items")
+}
+
+/// Phase 5: warehouse master; belongs to exactly one unit.
+model Warehouse {
+  id              String         @id @default(uuid()) @db.Uuid
+  code            String         @unique @db.VarChar(30)
+  name            String         @db.VarChar(100)
+  unitId          String         @map("unit_id") @db.Uuid
+  unit            Unit           @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  address         String?        @db.VarChar(300)
+  manager         String?        @db.VarChar(100)
+  totalCapacity   Decimal?       @map("total_capacity") @db.Decimal(18, 3)
+  dockDoors       Int?           @map("dock_doors")
+  operatingHours  String?        @map("operating_hours") @db.VarChar(100)
+  temperatureZone String?        @map("temperature_zone") @db.VarChar(20)
+  status          MasterStatus   @default(ACTIVE)
+  version         Int            @default(1)
+  createdById     String         @map("created_by_id") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedById     String?        @map("updated_by_id") @db.Uuid
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedById     String?        @map("deleted_by_id") @db.Uuid
+  deletedAt       DateTime?      @map("deleted_at") @db.Timestamptz(3)
+  balances        StockBalance[]
+  ledger          StockLedger[]
+  vouchers        StockVoucher[] @relation("VoucherWarehouse")
+  incoming        StockVoucher[] @relation("VoucherToWarehouse")
+
+  @@index([unitId])
+  @@map("warehouses")
+}
+
+/// Phase 5: APPEND-ONLY stock ledger (a trigger blocks UPDATE / DELETE / TRUNCATE). value is + in, - out.
+model StockLedger {
+  id           String    @id @default(uuid()) @db.Uuid
+  postingDate  DateTime  @map("posting_date") @db.Date
+  postedAt     DateTime  @default(now()) @map("posted_at") @db.Timestamptz(3)
+  unitId       String    @map("unit_id") @db.Uuid
+  unit         Unit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  warehouseId  String    @map("warehouse_id") @db.Uuid
+  warehouse    Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  itemId       String    @map("item_id") @db.Uuid
+  item         Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  qtyIn        Decimal   @default(0) @map("qty_in") @db.Decimal(18, 3)
+  qtyOut       Decimal   @default(0) @map("qty_out") @db.Decimal(18, 3)
+  rate         Decimal   @db.Decimal(18, 6)
+  value        Decimal   @db.Decimal(18, 2)
+  balanceQty   Decimal   @map("balance_qty") @db.Decimal(18, 3)
+  balanceValue Decimal   @map("balance_value") @db.Decimal(18, 2)
+  voucherType  String    @map("voucher_type") @db.VarChar(20)
+  voucherId    String    @map("voucher_id") @db.Uuid
+  voucherNo    String    @map("voucher_no") @db.VarChar(60)
+  /// For REVERSAL entries: the ledger row they undo.
+  reversesId   String?   @map("reverses_id") @db.Uuid
+  createdById  String    @map("created_by_id") @db.Uuid
+
+  @@index([itemId, warehouseId, postedAt])
+  @@index([unitId, postingDate])
+  @@index([voucherId])
+  @@map("stock_ledger")
+}
+
+/// Phase 5: current stock per item x warehouse; changed in the same transaction as the ledger insert.
+model StockBalance {
+  itemId      String    @map("item_id") @db.Uuid
+  item        Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  warehouseId String    @map("warehouse_id") @db.Uuid
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  onHand      Decimal   @default(0) @map("on_hand") @db.Decimal(18, 3)
+  value       Decimal   @default(0) @db.Decimal(18, 2)
+  avgRate     Decimal   @default(0) @map("avg_rate") @db.Decimal(18, 6)
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  @@id([itemId, warehouseId])
+  @@index([warehouseId])
+  @@map("stock_balances")
+}
+
+/// Phase 5: the four stock vouchers in one table with typed columns (kind: OPENING, TRANSACTION,
+/// ADJUSTMENT, TRANSFER). One item per voucher. Soft-deleted while Draft; numbers are never reused.
+model StockVoucher {
+  id              String        @id @default(uuid()) @db.Uuid
+  kind            String        @db.VarChar(12)
+  number          String        @db.VarChar(60)
+  status          String        @db.VarChar(20)
+  unitId          String        @map("unit_id") @db.Uuid
+  unit            Unit          @relation("VoucherUnit", fields: [unitId], references: [id], onDelete: Restrict)
+  /// Transfers: the destination warehouse unit (it may differ from unit_id).
+  toUnitId        String?       @map("to_unit_id") @db.Uuid
+  fyId            String        @map("fy_id") @db.Uuid
+  fy              FinancialYear @relation(fields: [fyId], references: [id], onDelete: Restrict)
+  postingDate     DateTime      @map("posting_date") @db.Date
+  itemId          String        @map("item_id") @db.Uuid
+  item            Item          @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  warehouseId     String        @map("warehouse_id") @db.Uuid
+  warehouse       Warehouse     @relation("VoucherWarehouse", fields: [warehouseId], references: [id], onDelete: Restrict)
+  toWarehouseId   String?       @map("to_warehouse_id") @db.Uuid
+  toWarehouse     Warehouse?    @relation("VoucherToWarehouse", fields: [toWarehouseId], references: [id], onDelete: Restrict)
+  txType          String?       @map("tx_type") @db.VarChar(10)
+  reference       String?       @db.VarChar(100)
+  batchSerial     String?       @map("batch_serial") @db.VarChar(100)
+  qty             Decimal       @db.Decimal(18, 3)
+  countedQty      Decimal?      @map("counted_qty") @db.Decimal(18, 3)
+  dispatchedQty   Decimal?      @map("dispatched_qty") @db.Decimal(18, 3)
+  receivedQty     Decimal?      @map("received_qty") @db.Decimal(18, 3)
+  unitCost        Decimal?      @map("unit_cost") @db.Decimal(18, 6)
+  value           Decimal?      @db.Decimal(18, 2)
+  systemQty       Decimal?      @map("system_qty") @db.Decimal(18, 3)
+  varianceQty     Decimal?      @map("variance_qty") @db.Decimal(18, 3)
+  reasonCode      String?       @map("reason_code") @db.VarChar(30)
+  approver        String?       @db.VarChar(100)
+  vehicleRef      String?       @map("vehicle_ref") @db.VarChar(60)
+  expectedReceipt DateTime?     @map("expected_receipt") @db.Date
+  dispatchRate    Decimal?      @map("dispatch_rate") @db.Decimal(18, 6)
+  dispatchValue   Decimal?      @map("dispatch_value") @db.Decimal(18, 2)
+  department      String        @db.VarChar(60)
+  postedAt        DateTime?     @map("posted_at") @db.Timestamptz(3)
+  postedById      String?       @map("posted_by_id") @db.Uuid
+  version         Int           @default(1)
+  createdById     String        @map("created_by_id") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedById     String?       @map("updated_by_id") @db.Uuid
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedById     String?       @map("deleted_by_id") @db.Uuid
+  deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz(3)
+
+  @@unique([kind, number])
+  @@index([kind, unitId, deletedAt])
+  @@index([itemId, warehouseId])
+  @@map("stock_vouchers")
 }

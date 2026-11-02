@@ -60,7 +60,7 @@ describe('SystemSetupPage', () => {
     expect(tiles.map((t) => t.querySelector('b')?.textContent)).toEqual([
       'System Controls',
       'Company Master',
-      'Branch Master',
+      'Unit Master',
       'Department Master',
       'User Master',
       'Role Master',
@@ -68,9 +68,12 @@ describe('SystemSetupPage', () => {
       'Approval Matrix',
       'Letterhead & PDF',
     ]);
-    const company = tiles[1] as HTMLElement;
-    expect(company).toBeDisabled();
-    expect(within(company).getByText('Phase 3')).toBeInTheDocument();
+    // Phase 3: Company Master and Unit Master are built and active.
+    expect(tiles[1]).toBeEnabled();
+    expect(tiles[2]).toBeEnabled();
+    expect(within(tiles[2] as HTMLElement).getByText('Unit setup.')).toBeInTheDocument();
+    expect(screen.queryByText('Phase 3')).toBeNull();
+    expect(tiles[7]).toBeDisabled();
     expect(within(tiles[7] as HTMLElement).getByText('Phase 6')).toBeInTheDocument();
     expect(tiles[0]).toBeEnabled();
     expect(

@@ -41,7 +41,7 @@ Write-Host "  Archive created: $ARCHIVE" -ForegroundColor Green
 # Step 3: Create staging and remote directory on EC2
 Write-Host ""
 Write-Host "Step 3: Preparing directories on EC2..." -ForegroundColor Yellow
-ssh -i $KEY -o StrictHostKeyChecking=no $EC2 "mkdir -p $STAGING && sudo mkdir -p $REMOTE_PATH && sudo chown -R ec2-user:ec2-user $REMOTE_PATH"
+ssh -i $KEY -o StrictHostKeyChecking=accept-new $EC2 "mkdir -p $STAGING && sudo mkdir -p $REMOTE_PATH && sudo chown -R ec2-user:ec2-user $REMOTE_PATH"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "SSH command failed. Check connection." -ForegroundColor Red
     exit 1
@@ -51,7 +51,7 @@ Write-Host "  Directories ready." -ForegroundColor Green
 # Step 4: Upload archive to staging
 Write-Host ""
 Write-Host "Step 4: Uploading archive to EC2 staging..." -ForegroundColor Yellow
-scp -i $KEY -o StrictHostKeyChecking=no $ARCHIVE "${EC2}:${STAGING}/backend.tar.gz"
+scp -i $KEY -o StrictHostKeyChecking=accept-new $ARCHIVE "${EC2}:${STAGING}/backend.tar.gz"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "SCP upload failed!" -ForegroundColor Red
     exit 1
@@ -72,14 +72,24 @@ cd $REMOTE_PATH
 echo '--- Installing production packages ---'
 npm install --omit=dev --no-audit --prefer-offline 2>&1 | tail -n 5 || npm install --omit=dev
 
+# The prisma CLI is a devDependency; pin it to the exact version the app was built with (see docs/DEPLOYMENT-REVIEW.md D13)
+PRISMA_VERSION=`$(node -p "require('./package.json').devDependencies.prisma")
+
 echo '--- Generating Prisma client ---'
-npx prisma generate
+npx --yes prisma@`$PRISMA_VERSION generate
+
+echo '--- Applying database migrations (D4) ---'
+npx --yes prisma@`$PRISMA_VERSION migrate deploy
 
 echo '--- Managing PM2 process: sawant-erp-backend ---'
-pm2 restart sawant-erp-backend 2>/dev/null || pm2 start dist/server.js --name "sawant-erp-backend" --time
+pm2 restart sawant-erp-backend --update-env 2>/dev/null || pm2 start dist/server.js --name "sawant-erp-backend" --time
 
-echo '--- Checking PM2 status ---'
-pm2 show sawant-erp-backend | grep -E 'status|uptime|restarts'
+echo '--- Health check (D8) ---'
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  if curl -fsS http://127.0.0.1:5010/api/v1/health | grep -q '"ok"'; then echo 'API healthy'; break; fi
+  if [ `$i -eq 10 ]; then echo 'API NOT HEALTHY after restart - check: pm2 logs sawant-erp-backend'; exit 1; fi
+  sleep 2
+done
 
 echo '--- Cleaning staging ---'
 rm -rf $STAGING
@@ -87,7 +97,8 @@ rm -rf $STAGING
 echo '=== BACKEND DEPLOYMENT COMPLETE ON PORT 5010 ==='
 "@
 
-ssh -i $KEY -o StrictHostKeyChecking=no $EC2 $remoteScript
+# accept-new: trust the server key on first connect, refuse if it ever changes (D7)
+ssh -i $KEY -o StrictHostKeyChecking=accept-new $EC2 $remoteScript
 if ($LASTEXITCODE -eq 0) {
     Write-Host "=== DEPLOYMENT SUCCESSFUL! ===" -ForegroundColor Green
 } else {

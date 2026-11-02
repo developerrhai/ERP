@@ -36,6 +36,8 @@ const member = makeUser({
   roleLabel: 'Member',
   department: 'Sales',
   version: 7,
+  units: [{ id: 'unit-tal', code: 'TAL', name: 'Talwade' }],
+  defaultUnitId: 'unit-tal',
 });
 
 function setup(extra: Record<string, Handler> = {}, roles: RoleMeta[] = ROLES_FOR_ADMIN) {
@@ -83,6 +85,7 @@ describe('UserMasterPage', () => {
       'Email',
       'Department',
       'Role',
+      'Units',
       'Status',
       'Last Login',
       'Action',
@@ -149,6 +152,7 @@ describe('UserMasterPage', () => {
     await ue.type(d.getByLabelText('Full Name'), 'New User');
     await ue.selectOptions(d.getByLabelText('Role'), 'LEAD');
     await ue.selectOptions(d.getByLabelText('Department'), 'Sales');
+    await ue.click(d.getByRole('checkbox', { name: 'Sawardari' }));
     await ue.type(d.getByLabelText('Temporary Password'), 'Temp#Pass2026');
     await ue.click(d.getByRole('button', { name: 'Create User' }));
     expect(await d.findByText('Login ID is already taken.')).toBeInTheDocument();
@@ -159,6 +163,8 @@ describe('UserMasterPage', () => {
       role: 'LEAD',
       department: 'Sales',
       temporaryPassword: 'Temp#Pass2026',
+      unitIds: ['unit-saw'],
+      defaultUnitId: 'unit-saw',
     });
   });
 

@@ -30,6 +30,11 @@ import { createModuleControlsRouter } from './modules/module-controls/routes';
 import { createPermissionsRouter } from './modules/permissions/routes';
 import { createRolesRouter } from './modules/roles/routes';
 import { createSettingsRouter } from './modules/settings/routes';
+import { createCompanyRouter } from './modules/company/routes';
+import { createFinancialYearsRouter } from './modules/financial-years/routes';
+import { createLookupsRouter } from './modules/inventory/lookups/routes';
+import { createPagesRouter } from './modules/records/routes';
+import { createUnitsRouter } from './modules/units/routes';
 
 export interface AppOptions {
   /** Defaults to !RATE_LIMIT_DISABLED. Tests pass true to exercise the limiter. */
@@ -37,6 +42,8 @@ export interface AppOptions {
   dbPing?: DbPing;
   /** Overrides TRUST_PROXY (tests use it to simulate an untrusted peer). */
   trustProxy?: boolean | number | string;
+  /** Overrides the CORS allow-list (WEB_ORIGINS / CORS_ORIGINS / WEB_ORIGIN). */
+  corsOrigins?: string[];
   /** Overrides ARGON2_MAX_CONCURRENCY (process-wide). */
   argon2Concurrency?: number;
   /** Test hook: mount extra routes before the 404 handler (e.g. a route that throws). */
@@ -49,18 +56,17 @@ export function createApp(options: AppOptions = {}): Express {
   app.disable('x-powered-by');
   app.set('trust proxy', options.trustProxy ?? env.trustProxy);
   configureArgon2Concurrency(options.argon2Concurrency ?? env.ARGON2_MAX_CONCURRENCY);
+  const corsOrigins = options.corsOrigins ?? env.corsOrigins;
 
   app.use(pinoHttp({ logger, genReqId: genRequestId }));
   app.use(attachRequestId);
   app.use(helmet());
   app.use(
     cors({
+      // Exact allow-list only. No Origin header (same-origin, curl, server-to-server) needs no
+      // CORS headers; an unlisted origin gets none, so the browser blocks the response.
       origin: (origin, callback) => {
-        if (!origin || origin === env.WEB_ORIGIN || origin.endsWith('.vercel.app') || origin.includes('localhost')) {
-          callback(null, true);
-        } else {
-          callback(null, env.WEB_ORIGIN);
-        }
+        callback(null, origin !== undefined && corsOrigins.includes(origin) ? origin : false);
       },
       credentials: true,
       allowedHeaders: [
@@ -69,6 +75,8 @@ export function createApp(options: AppOptions = {}): Express {
         'X-Requested-With',
         'If-Match',
         'X-Request-Id',
+        'X-Unit-Id',
+        'X-FY-Id',
       ],
       exposedHeaders: ['X-Request-Id', 'Retry-After', 'ETag'],
     }),
@@ -97,6 +105,11 @@ export function createApp(options: AppOptions = {}): Express {
   api.use('/module-controls', createModuleControlsRouter());
   api.use('/settings', createSettingsRouter());
   api.use('/audit-logs', createAuditLogsRouter());
+  api.use('/company', createCompanyRouter());
+  api.use('/units', createUnitsRouter());
+  api.use('/financial-years', createFinancialYearsRouter());
+  api.use('/pages', createPagesRouter());
+  api.use('/lookups', createLookupsRouter());
   app.use('/api/v1', api);
 
   options.extraRoutes?.(app);

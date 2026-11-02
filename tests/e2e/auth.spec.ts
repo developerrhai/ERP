@@ -46,6 +46,7 @@ async function createUser(page: Page, u: { loginId: string; name: string; temp: 
   await dialog.getByLabel('Login ID').fill(u.loginId);
   await dialog.getByLabel('Role').selectOption({ label: role });
   await dialog.getByLabel('Department').selectOption({ label: dept });
+  if (role !== 'Admin') await dialog.getByLabel('Talwade').check(); // Phase 3: non-admins need at least one unit
   await dialog.getByRole('textbox', { name: 'Temporary Password', exact: true }).fill(u.temp);
   await dialog.getByRole('button', { name: 'Create User' }).click();
   await expect(dialog).toBeHidden();

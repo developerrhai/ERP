@@ -69,10 +69,9 @@ export const authController = {
     res.status(204).end();
   },
 
-  me: (req: Request, res: Response): Promise<void> => {
+  me: async (req: Request, res: Response): Promise<void> => {
     res.set('Cache-Control', 'no-store');
-    res.json({ data: authService.me(requireAuth(req)) });
-    return Promise.resolve();
+    res.json({ data: await authService.me(requireAuth(req)) });
   },
 
   changePassword: async (req: Request, res: Response): Promise<void> => {

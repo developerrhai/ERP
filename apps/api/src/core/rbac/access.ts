@@ -6,7 +6,7 @@ import type { RequestHandler } from 'express';
 import { prisma } from '../db/prisma';
 import { asyncHandler } from '../http/async-handler';
 import { Errors } from '../http/errors';
-import { pageInfo, registry } from '../registry';
+import { ADMIN_FAMILY, pageInfo, registry } from '../registry';
 import {
   ACTIONS,
   ALLOW_FLAG_FOR,
@@ -112,8 +112,9 @@ export function decide(
   // 4. The owner may do everything else.
   if (user.role === 'SUPER_ADMIN') return true;
 
-  // admin-users keeps its Phase 1 rule: ADMIN and above only.
-  if (ADMIN_ONLY_PAGES.has(pageId) && !hasMinRole(user.role, 'ADMIN')) return false;
+  // Hard rule: Administration pages are ADMIN and above only, whatever the table says
+  // (this also keeps admin-users on its Phase 1 rule).
+  if (page.family === ADMIN_FAMILY && !hasMinRole(user.role, 'ADMIN')) return false;
 
   const row = resolvePermission(pageId, page.family, data.rows);
   if (!row.hasRow) return false;
@@ -218,6 +219,25 @@ export function requirePageAction(pageId: string, action: Action): RequestHandle
   if (!pageInfo(pageId)) throw new Error(`requirePageAction: unknown page id ${pageId}`);
   return asyncHandler(async (req, _res, next) => {
     if (!req.auth) throw Errors.unauthenticated();
+    const user = req.auth.user;
+    if (
+      !(await can({ id: user.id, role: user.role, department: user.department }, pageId, action))
+    ) {
+      throw Errors.forbidden();
+    }
+    next();
+  });
+}
+
+/**
+ * Like requirePageAction, but the page id comes from the `:pageId` route parameter (Phase 4
+ * generic records). An unknown page id is a 404; the access decision is the same.
+ */
+export function requireParamPageAction(action: Action): RequestHandler {
+  return asyncHandler(async (req, _res, next) => {
+    if (!req.auth) throw Errors.unauthenticated();
+    const pageId = req.params.pageId ?? '';
+    if (!pageInfo(pageId)) throw Errors.notFound('Unknown page.');
     const user = req.auth.user;
     if (
       !(await can({ id: user.id, role: user.role, department: user.department }, pageId, action))

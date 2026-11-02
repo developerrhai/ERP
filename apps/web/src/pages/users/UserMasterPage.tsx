@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useToast } from '../../components/Toast';
 import { ApiError } from '../../lib/api';
+import { useAppContext } from '../../lib/context';
 import { formatDateTime } from '../../lib/format';
 import type { ActionSet, RoleCode, RoleMeta, User, UserStatus } from '../../types';
 import { ResetPasswordModal } from './ResetPasswordModal';
@@ -14,6 +15,7 @@ import {
   fetchRoles,
   listUsers,
   manageableRoles,
+  unitsLabel,
 } from './usersApi';
 
 const PAGE_SIZE = 20;
@@ -55,6 +57,9 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
   const q = useDebounced(search, 300);
   const [role, setRole] = useState<RoleCode | ''>('');
   const [status, setStatus] = useState<UserStatus | ''>('');
+  const [unitId, setUnitId] = useState('');
+  // Phase 3: the assignable units come from the working context (ADMIN+ see every active unit).
+  const units = useAppContext().data?.units ?? [];
   const [page, setPage] = useState(1);
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
@@ -82,7 +87,7 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    listUsers({ q, role, status, page, size: PAGE_SIZE })
+    listUsers({ q, role, status, unitId, page, size: PAGE_SIZE })
       .then((res) => {
         if (!alive) return;
         setUsers(res.users);
@@ -98,7 +103,7 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
     return () => {
       alive = false;
     };
-  }, [q, role, status, page, reloadKey]);
+  }, [q, role, status, unitId, page, reloadKey]);
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
   const close = useCallback(() => setDialog(null), []);
@@ -170,6 +175,21 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
             <option value="ACTIVE">Active</option>
             <option value="INACTIVE">Inactive</option>
           </select>
+          <select
+            aria-label="Filter by unit"
+            value={unitId}
+            onChange={(e) => {
+              setUnitId(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All Units</option>
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
           <span className="v8-spacer" />
           <span className="v8-sub" aria-live="polite">
             {loading ? 'Loading…' : `${total} user${total === 1 ? '' : 's'}`}
@@ -184,6 +204,7 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
                 <th scope="col">Email</th>
                 <th scope="col">Department</th>
                 <th scope="col">Role</th>
+                <th scope="col">Units</th>
                 <th scope="col">Status</th>
                 <th scope="col">Last Login</th>
                 <th scope="col">Action</th>
@@ -199,6 +220,7 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
                     <td>{u.email ?? '—'}</td>
                     <td>{u.department ?? '—'}</td>
                     <td>{u.roleLabel}</td>
+                    <td>{unitsLabel(u, units)}</td>
                     <td>
                       <span className={`status ${u.status.toLowerCase()}`}>
                         {u.status === 'ACTIVE' ? 'Active' : 'Inactive'}
@@ -242,7 +264,7 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
               })}
               {!loading && users.length === 0 ? (
                 <tr className="empty-row">
-                  <td colSpan={8}>No users match these filters.</td>
+                  <td colSpan={9}>No users match these filters.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -290,6 +312,7 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
           user={dialog.kind === 'edit' ? dialog.user : undefined}
           roles={roles}
           departments={departments}
+          units={units}
           onClose={close}
           onSaved={(u) => {
             close();

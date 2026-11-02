@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { Drawer } from '../../components/Drawer';
 import { Pager } from '../../components/Pager';
+import { UserPicker, type PickedUser } from '../../components/UserPicker';
 import { formatDateTime } from '../../lib/format';
 import { useLoad } from '../../lib/useLoad';
-import type { AuditLog, User } from '../../types';
-import { listUsers } from '../users/usersApi';
-import { AUDIT_ACTIONS, listAuditLogs } from './adminApi';
+import type { AuditLog } from '../../types';
+import { AUDIT_ACTIONS, listAuditActions, listAuditLogs } from './adminApi';
 
 const PAGE_SIZE = 25;
 
@@ -42,15 +42,15 @@ export function AuditTrailPage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [action, setAction] = useState('');
-  const [actorId, setActorId] = useState('');
+  const [actor, setActor] = useState<PickedUser | null>(null);
+  const actorId = actor?.id ?? '';
   const [search, setSearch] = useState('');
   const q = useDebounced(search, 300);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<AuditLog | null>(null);
-  const users = useLoad(
-    () => listUsers({ q: '', role: '', status: '', page: 1, size: 100 }).then((r) => r.users),
-    [],
-  );
+  // From GET /audit-logs/actions; the static list covers a 404 or any load failure.
+  const actionList = useLoad(listAuditActions, []);
+  const actions: readonly string[] = actionList.data ?? AUDIT_ACTIONS;
   const { data, loading, error } = useLoad(
     () => listAuditLogs({ from, to, action, actorId, q, page, size: PAGE_SIZE }),
     [from, to, action, actorId, q, page],
@@ -101,28 +101,17 @@ export function AuditTrailPage() {
             onChange={(e) => reset(setAction)(e.target.value)}
           >
             <option value="">All Actions</option>
-            {AUDIT_ACTIONS.map((a) => (
+            {actions.map((a) => (
               <option key={a} value={a}>
                 {humanAction(a)}
               </option>
             ))}
           </select>
-          <select
-            aria-label="Filter by user"
-            value={actorId}
-            onChange={(e) => reset(setActorId)(e.target.value)}
-          >
-            <option value="">All Users</option>
-            {(users.data ?? []).map((u: User) => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({u.loginId})
-              </option>
-            ))}
-          </select>
+          <UserPicker value={actor} onChange={reset(setActor)} />
           <input
             type="search"
-            placeholder="Search details..."
-            aria-label="Search audit details"
+            placeholder="Search action, target or details…"
+            aria-label="Search action, target or details"
             value={search}
             onChange={(e) => reset(setSearch)(e.target.value)}
           />

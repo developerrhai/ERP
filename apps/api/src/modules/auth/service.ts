@@ -67,7 +67,7 @@ async function issueSession(
   return {
     accessToken,
     expiresIn,
-    user: toUserDto(user),
+    user: toUserDto(await userRepository.withUnits(user, db)),
     refreshToken,
     refreshExpiresAt: expiresAt,
   };
@@ -305,8 +305,8 @@ export const authService = {
     });
   },
 
-  me(auth: AuthContext): UserDto {
-    return toUserDto(auth.user);
+  async me(auth: AuthContext): Promise<UserDto> {
+    return toUserDto(await userRepository.withUnits(auth.user));
   },
 
   /**

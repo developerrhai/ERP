@@ -24,6 +24,35 @@ export function parseTrustProxy(value: string): boolean | number | string {
   return value;
 }
 
+const DEFAULT_WEB_ORIGIN = 'http://localhost:5173';
+
+/**
+ * Splits a comma-separated origin list. An origin is accepted only in canonical form: http(s),
+ * host, optional port; no path, query, trailing slash or wildcard (it must equal `new URL(o).origin`).
+ */
+export function parseOrigins(raw: string | undefined): { origins: string[]; invalid: string[] } {
+  const origins: string[] = [];
+  const invalid: string[] = [];
+  for (const item of (raw ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)) {
+    let ok = false;
+    try {
+      const url = new URL(item);
+      ok = (url.protocol === 'http:' || url.protocol === 'https:') && url.origin === item;
+    } catch {
+      ok = false;
+    }
+    if (ok && !item.includes('*')) {
+      if (!origins.includes(item)) origins.push(item);
+    } else {
+      invalid.push(item);
+    }
+  }
+  return { origins, invalid };
+}
+
 const booleanString = z
   .enum(['true', 'false'])
   .default('false')
@@ -48,7 +77,10 @@ const envSchema = z
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(7),
     SESSION_IDLE_MINUTES: z.coerce.number().int().min(1).max(1440).default(30),
     REFRESH_REUSE_GRACE_SECONDS: z.coerce.number().int().min(0).max(60).default(10),
-    WEB_ORIGIN: z.string().url().default('http://localhost:5173'),
+    /** Exact CORS allow-list (comma-separated origins). CORS_ORIGINS and WEB_ORIGIN are aliases. */
+    WEB_ORIGINS: z.string().optional(),
+    CORS_ORIGINS: z.string().optional(),
+    WEB_ORIGIN: z.string().optional(),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
@@ -59,6 +91,16 @@ const envSchema = z
     ARGON2_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(256).default(8),
   })
   .superRefine((value, ctx) => {
+    for (const key of ['WEB_ORIGINS', 'CORS_ORIGINS', 'WEB_ORIGIN'] as const) {
+      const { invalid } = parseOrigins(value[key]);
+      if (invalid.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key],
+          message: `must be exact origins like https://app.example.com (no path or wildcard); invalid: ${invalid.join(', ')}`,
+        });
+      }
+    }
     if (value.NODE_ENV === 'production' && value.JWT_ACCESS_SECRET.length < 48) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -79,9 +121,23 @@ const envSchema = z
     accessTokenTtlSeconds: parseDurationSeconds(value.ACCESS_TOKEN_TTL),
     isProduction: value.NODE_ENV === 'production',
     trustProxy: parseTrustProxy(value.TRUST_PROXY),
+    corsOrigins: resolveCorsOrigins(value),
   }));
 
 export type Env = z.infer<typeof envSchema>;
+
+/** Union of WEB_ORIGINS, CORS_ORIGINS and WEB_ORIGIN; the dev default only when none is set. */
+function resolveCorsOrigins(value: {
+  WEB_ORIGINS?: string;
+  CORS_ORIGINS?: string;
+  WEB_ORIGIN?: string;
+}): string[] {
+  const all = [value.WEB_ORIGINS, value.CORS_ORIGINS, value.WEB_ORIGIN].flatMap(
+    (raw) => parseOrigins(raw).origins,
+  );
+  const unique = [...new Set(all)];
+  return unique.length > 0 ? unique : [DEFAULT_WEB_ORIGIN];
+}
 
 /** Validates a raw environment; throws one readable error listing every problem. */
 export function loadEnv(source: NodeJS.ProcessEnv): Env {

@@ -12,6 +12,7 @@ import {
   prisma,
   signInAs,
   signInOwner,
+  unitIds,
 } from './helpers';
 import type { Signed } from './helpers';
 import { makeDepartment, restoreGlobal, snapshotGlobal } from './phase2-helpers';
@@ -207,6 +208,7 @@ describe('PATCH /departments/:id', () => {
         role: 'MEMBER',
         department: dept.name,
         temporaryPassword: 'Temp-Passw0rd!',
+        unitIds: await unitIds(),
       });
     expect(create.status).toBe(422);
     expect(errorOf(create).fields?.department).toBeDefined();

@@ -1,7 +1,9 @@
 // Zod schemas for every users endpoint: strict (unknown keys -> 422), trimmed strings, lowercase
-// loginId/email. Departments are checked against the active DB departments in the service (Phase 2 §3).
+// loginId/email. Departments are checked against the active DB departments in the service (Phase 2 §3);
+// units (Phase 3) are checked there too.
 // Shared field schemas keep create/update consistent.
 import { z } from 'zod';
+import { offsetWithinCap } from '../../core/http/query-safety';
 import { ROLES } from '../../core/rbac/role-rules';
 
 const trimIfString = (value: unknown): unknown =>
@@ -44,6 +46,19 @@ export const departmentSchema = z.preprocess(
 
 export const statusSchema = z.enum(['ACTIVE', 'INACTIVE']);
 
+/** Phase 3: the units a user may work in (existence / status / role rules are in the service). */
+export const unitIdsSchema = z
+  .array(z.string().uuid('Choose from the listed units.'), {
+    invalid_type_error: 'Choose from the listed units.',
+  })
+  .max(100, 'Too many units.')
+  .refine((ids) => new Set(ids).size === ids.length, 'Each unit may be listed only once.');
+
+export const defaultUnitIdSchema = z.preprocess(
+  emptyToNull,
+  z.string().uuid('Choose one of the listed units.').nullable(),
+);
+
 /** Passwords are not trimmed: whitespace is a legitimate password character. */
 export const passwordInputSchema = z
   .string({ required_error: 'Password is required.' })
@@ -58,6 +73,8 @@ export const createUserSchema = z
     role: roleSchema,
     department: departmentSchema.optional(),
     temporaryPassword: passwordInputSchema,
+    unitIds: unitIdsSchema.optional(),
+    defaultUnitId: defaultUnitIdSchema.optional(),
   })
   .strict();
 export type CreateUserInput = z.output<typeof createUserSchema>;
@@ -69,6 +86,8 @@ export const updateUserSchema = z
     role: roleSchema.optional(),
     department: departmentSchema.optional(),
     status: statusSchema.optional(),
+    unitIds: unitIdsSchema.optional(),
+    defaultUnitId: defaultUnitIdSchema.optional(),
   })
   .strict()
   .refine((value) => Object.values(value).some((v) => v !== undefined), {
@@ -101,11 +120,13 @@ export const listUsersQuerySchema = z
     role: roleSchema.optional(),
     status: statusSchema.optional(),
     department: z.string().trim().min(1).max(60).optional(),
+    unitId: z.string().uuid('Invalid unit id.').optional(),
     page: z.coerce.number().int().min(1).max(100000).default(1),
     size: z.coerce.number().int().min(1).max(100).default(20),
     sort: z.enum(USER_SORTS).default('name'),
   })
-  .strict();
+  .strict()
+  .superRefine(offsetWithinCap);
 export type ListUsersQuery = z.output<typeof listUsersQuerySchema>;
 
 export const userIdParamsSchema = z.object({ id: z.string().uuid('Invalid user id.') }).strict();

@@ -1,5 +1,6 @@
 // Shared test helpers: make users straight in the DB (fast, any role), sign in through the real API,
-// and read the `rt` cookie. Every user gets a unique login ID so test files never collide.
+// and read the `rt` cookie. Every user gets a unique login ID so test files never collide. Like the
+// Phase 3 migration, non-admin users get all seeded units unless the test says otherwise.
 import { randomUUID } from 'node:crypto';
 import type { Role, User, UserStatus } from '@prisma/client';
 import request from 'supertest';
@@ -21,6 +22,18 @@ function passwordHash(): Promise<string> {
   return sharedHash;
 }
 
+export const SEEDED_UNIT_CODES = ['TAL', 'SAW', 'VAR'] as const;
+
+/** Unit ids by code (TAL, SAW, VAR, or any unit a test created). */
+export async function unitIds(codes: readonly string[] = SEEDED_UNIT_CODES): Promise<string[]> {
+  const rows = await prisma.unit.findMany({ where: { code: { in: [...codes] } } });
+  return codes.map((code) => {
+    const row = rows.find((r) => r.code === code);
+    if (!row) throw new Error(`No unit ${code}`);
+    return row.id;
+  });
+}
+
 export function uniqueLoginId(prefix = 'u'): string {
   return `${prefix}-${randomUUID().slice(0, 12)}`;
 }
@@ -34,19 +47,32 @@ export async function makeUser(
     loginId: string;
     email: string | null;
     name: string;
+    /** Unit codes to assign. Default: all seeded units for MANAGER/LEAD/MEMBER, none for ADMIN+. */
+    unitCodes: string[];
+    defaultUnitCode: string | null;
   }> = {},
 ): Promise<User> {
   const loginId = overrides.loginId ?? uniqueLoginId(overrides.role?.toLowerCase() ?? 'member');
+  const role = overrides.role ?? 'MEMBER';
+  const codes =
+    overrides.unitCodes ??
+    (role === 'ADMIN' || role === 'SUPER_ADMIN' ? [] : [...SEEDED_UNIT_CODES]);
+  const ids = codes.length > 0 ? await unitIds(codes) : [];
+  const defaultUnitId = overrides.defaultUnitCode
+    ? ((await unitIds([overrides.defaultUnitCode]))[0] ?? null)
+    : null;
   return prisma.user.create({
     data: {
       loginId,
       email: overrides.email === undefined ? `${loginId}@test.local` : overrides.email,
       name: overrides.name ?? `User ${loginId}`,
-      role: overrides.role ?? 'MEMBER',
+      role,
       department: overrides.department === undefined ? 'Sales' : overrides.department,
       status: overrides.status ?? 'ACTIVE',
       mustChangePassword: overrides.mustChangePassword ?? false,
       passwordHash: await passwordHash(),
+      defaultUnitId,
+      units: { create: ids.map((unitId) => ({ unitId })) },
     },
   });
 }

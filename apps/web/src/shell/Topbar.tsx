@@ -1,7 +1,8 @@
-// Top bar (prototype .top): menu toggle, global search and context selects shown but disabled
-// until later phases, live health pill, and the account button that opens the drawer.
+// Top bar (prototype .top): menu toggle, global search (disabled until a later phase), the
+// Company / Unit / FY context selects, live health pill, and the account button.
 import { initials, roleLine } from '../lib/format';
 import type { User } from '../types';
+import { ContextSelectors } from './ContextSelectors';
 import { HealthPill } from './HealthPill';
 
 const LATER = 'Available in a later phase';
@@ -33,18 +34,7 @@ export function Topbar({ user, sidebarOpen, onToggleSidebar, onOpenAccount }: To
           disabled
         />
       </div>
-      <select className="hide-mobile" aria-label="Company" title="Active Company">
-        <option>Sawant Group</option>
-      </select>
-      <select className="hide-mobile" aria-label="Branch" title="Select Unit">
-        <option>Talwade - Unit 1</option>
-        <option>Sawardari - Unit 2</option>
-        <option>Varale - Unit 3</option>
-      </select>
-      <select className="hide-mobile" aria-label="Financial year" title="Financial Year">
-        <option>FY 2026-27</option>
-        <option>FY 2025-26</option>
-      </select>
+      <ContextSelectors />
       <div className="top-actions">
         <HealthPill />
         <button type="button" className="icon" aria-label="Quick add" title={LATER} disabled>

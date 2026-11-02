@@ -1,8 +1,11 @@
-// The only code that touches the users table (PLAN §6.3 layering). Used by the users service and
-// by the auth service for credential lookups and lockout counters.
+// The only code that touches the users table and its user_units rows (PLAN §6.3 layering). Used by
+// the users service and by the auth service for credential lookups and lockout counters.
 import type { Prisma, Role, User } from '@prisma/client';
 import { prisma } from '../../core/db/prisma';
 import type { Db } from '../../core/db/prisma';
+import { escapeLike } from '../../core/http/query-safety';
+import { USER_UNITS_INCLUDE } from './dto';
+import type { UserWithUnits } from './dto';
 import type { ListUsersQuery, UserSort } from './schemas';
 
 function orderByFor(sort: UserSort): Prisma.UserOrderByWithRelationInput[] {
@@ -28,11 +31,24 @@ function whereFor(query: ListUsersQuery): Prisma.UserWhereInput {
   if (query.role) where.role = query.role;
   if (query.status) where.status = query.status;
   if (query.department) where.department = query.department;
+  if (query.unitId) {
+    // Who may work in the unit: users assigned to it, plus ADMIN+ (every unit implicitly).
+    where.AND = [
+      {
+        OR: [
+          { units: { some: { unitId: query.unitId } } },
+          { role: { in: ['SUPER_ADMIN', 'ADMIN'] } },
+        ],
+      },
+    ];
+  }
   if (query.q) {
+    // Wildcards in the search text match literally.
+    const q = escapeLike(query.q);
     where.OR = [
-      { name: { contains: query.q, mode: 'insensitive' } },
-      { loginId: { contains: query.q, mode: 'insensitive' } },
-      { email: { contains: query.q, mode: 'insensitive' } },
+      { name: { contains: q, mode: 'insensitive' } },
+      { loginId: { contains: q, mode: 'insensitive' } },
+      { email: { contains: q, mode: 'insensitive' } },
     ];
   }
   return where;
@@ -41,6 +57,35 @@ function whereFor(query: ListUsersQuery): Prisma.UserWhereInput {
 export const userRepository = {
   findById(id: string, db: Db = prisma): Promise<User | null> {
     return db.user.findUnique({ where: { id } });
+  },
+
+  findWithUnits(id: string, db: Db = prisma): Promise<UserWithUnits | null> {
+    return db.user.findUnique({ where: { id }, include: USER_UNITS_INCLUDE });
+  },
+
+  /** Adds the unit rows toUserDto needs to a user loaded without them. */
+  async withUnits(user: User, db: Db = prisma): Promise<UserWithUnits> {
+    const units = await db.userUnit.findMany({
+      where: { userId: user.id },
+      include: USER_UNITS_INCLUDE.units.include,
+    });
+    return { ...user, units };
+  },
+
+  async unitIdsOf(userId: string, db: Db = prisma): Promise<string[]> {
+    const rows = await db.userUnit.findMany({ where: { userId }, select: { unitId: true } });
+    return rows.map((r) => r.unitId);
+  },
+
+  /** Makes the user's unit rows exactly `unitIds`. */
+  async replaceUnits(userId: string, unitIds: readonly string[], db: Db = prisma): Promise<void> {
+    await db.userUnit.deleteMany({ where: { userId, unitId: { notIn: [...unitIds] } } });
+    if (unitIds.length > 0) {
+      await db.userUnit.createMany({
+        data: unitIds.map((unitId) => ({ userId, unitId })),
+        skipDuplicates: true,
+      });
+    }
   },
 
   /** identifier is already lowercased; loginId wins over email if both could match. */
@@ -70,11 +115,15 @@ export const userRepository = {
     });
   },
 
-  async list(query: ListUsersQuery, db: Db = prisma): Promise<{ users: User[]; total: number }> {
+  async list(
+    query: ListUsersQuery,
+    db: Db = prisma,
+  ): Promise<{ users: UserWithUnits[]; total: number }> {
     const where = whereFor(query);
     const [users, total] = await Promise.all([
       db.user.findMany({
         where,
+        include: USER_UNITS_INCLUDE,
         orderBy: orderByFor(query.sort),
         skip: (query.page - 1) * query.size,
         take: query.size,

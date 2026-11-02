@@ -1,9 +1,11 @@
 // Phase 1 dashboard placeholder: the prototype .v8-dash-hero band with the real user's
-// department, name and role — deliberately no numbers until real data exists.
+// department, name and role plus the working unit and FY — no numbers until real data exists.
+import { contextLabels, useAppContext } from '../lib/context';
 import type { User } from '../types';
 
 export function DashboardPage({ user }: { user: User }) {
   const dept = user.department ?? 'Administration';
+  const labels = contextLabels(useAppContext().data);
   return (
     <>
       <section className="v8-dash-hero" aria-labelledby="dash-title">
@@ -13,6 +15,11 @@ export function DashboardPage({ user }: { user: User }) {
           <p>
             {user.name} • {user.roleLabel}
           </p>
+          {labels ? (
+            <p className="hero-context" data-testid="hero-context">
+              {labels.unit} • {labels.fy}
+            </p>
+          ) : null}
         </div>
         <div className="v8-health">
           <div>
