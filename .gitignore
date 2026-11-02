@@ -27,3 +27,7 @@ tests/e2e/.artifacts/
 dump/
 .parity/
 
+# Client shared documents & templates (confidential)
+doc from clint/
+*from clint*/
+*from client*/
