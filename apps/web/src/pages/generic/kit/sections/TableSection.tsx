@@ -1,8 +1,9 @@
 // apps/web/src/pages/generic/kit/sections/TableSection.tsx
 // Table section using existing table-wrap, paging, totals, and row actions (docs/plans/07-ENGINE-KIT.md §2.3)
 
-import type { Column, PanelAction, Row } from '../panelTypes';
+import type { Column, PanelAction, PanelCall, Row } from '../panelTypes';
 import { formatValue } from '../formatValue';
+import { InlineCell } from './InlineCell';
 
 export interface TableSectionProps {
   title?: string;
@@ -15,6 +16,7 @@ export interface TableSectionProps {
   headerActions?: PanelAction[];
   onAction?: (action: PanelAction, row?: Row) => void;
   onPageChange?: (page: number) => void;
+  onCall?: (call: PanelCall, opts?: { payload?: Record<string, unknown> }) => Promise<unknown>;
 }
 
 export function TableSection({
@@ -28,6 +30,7 @@ export function TableSection({
   headerActions,
   onAction,
   onPageChange,
+  onCall,
 }: TableSectionProps) {
   const totalPages = meta ? Math.max(1, Math.ceil(meta.total / meta.size)) : 1;
 
@@ -92,7 +95,16 @@ export function TableSection({
                         : 'left');
                     return (
                       <td key={col.key} style={{ textAlign: align }}>
-                        {formatValue(row[col.key], col.format)}
+                        {col.editable ? (
+                          <InlineCell
+                            rowId={String(row.id ?? rIdx)}
+                            initialValue={row[col.key]}
+                            editable={col.editable}
+                            onCall={onCall}
+                          />
+                        ) : (
+                          formatValue(row[col.key], col.format)
+                        )}
                       </td>
                     );
                   })}

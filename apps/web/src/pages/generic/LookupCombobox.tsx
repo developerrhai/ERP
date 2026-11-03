@@ -5,7 +5,7 @@ import { lookup, type LookupItem } from './engineApi';
 
 interface Props {
   label: string;
-  kind: 'items' | 'warehouses';
+  kind: 'items' | 'warehouses' | string;
   /** Selected id ('' = none). */
   value: string;
   /** Label to show for the selected id (from the record's resolved refs). */

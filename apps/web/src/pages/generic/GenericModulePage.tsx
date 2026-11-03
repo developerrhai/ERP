@@ -17,6 +17,8 @@ import { RecordDrawer } from './RecordDrawer';
 import { RecordFormModal } from './RecordFormModal';
 import { PAGE_SIZES, RegisterTab, type QueryPatch, type RegisterQuery } from './RegisterTab';
 import { AuditTab, DashboardTab, DataQualityTab, PhaseNotice, ReportsTab } from './ModuleTabs';
+import { CommandBar } from './kit/CommandBar';
+import { PrintMenu } from './kit/PrintMenu';
 import { PanelView } from './kit/PanelView';
 import {
   deleteRecord,
@@ -266,14 +268,24 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
               Excel
             </button>
           ) : null}
-          <button type="button" className="btn" onClick={() => window.print()}>
-            Print
-          </button>
+          {schema.printTemplates && schema.printTemplates.some((t) => t.scope === 'page') ? (
+            <PrintMenu
+              pageId={schema.pageId ?? ''}
+              templates={schema.printTemplates}
+              buttonLabel="Print ▾"
+              className="btn"
+            />
+          ) : (
+            <button type="button" className="btn" onClick={() => window.print()}>
+              Print
+            </button>
+          )}
           {canAdd ? (
             <button type="button" className="btn primary" onClick={() => setForm({})}>
               ＋ Add
             </button>
           ) : null}
+          <CommandBar schema={schema} perms={perms} onDone={changed} />
         </div>
       </div>
       <ContextChips

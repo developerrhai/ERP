@@ -116,6 +116,7 @@ describe('T-KIT-02 — Kit Schema Extensions, Actions, and Permissions', () => {
         title: 'Schedule',
         sections: [],
       }));
+      kit.pdf('kit-schema-extras', 'po', async () => Buffer.from('pdf'));
     });
 
     bootKit(Router());

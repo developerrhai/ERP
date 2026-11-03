@@ -246,6 +246,8 @@ export function updateRecord(
   });
 }
 
+export const patchRecord = updateRecord;
+
 /** Soft delete; the returned token lets the Undo toast restore it. */
 export async function deleteRecord(
   pageId: string,
@@ -290,10 +292,15 @@ export function runAction(
   id: string,
   action: string,
   idempotencyKey: string,
+  payload?: Record<string, unknown>,
 ): Promise<RecordRow> {
   return api<RecordRow>(
     `${base(pageId)}/records/${encodeURIComponent(id)}/actions/${encodeURIComponent(action)}`,
-    { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey } },
+    {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+      ...(payload !== undefined ? { body: { payload } } : {}),
+    },
   );
 }
 
@@ -326,14 +333,15 @@ export function lookupKind(refPage: string | undefined): 'items' | 'warehouses' 
 }
 
 export function lookup(
-  kind: 'items' | 'warehouses',
+  kind: 'items' | 'warehouses' | string,
   q: string,
   unitId?: string | null,
 ): Promise<LookupItem[]> {
   const p = new URLSearchParams();
   p.set('q', q);
   if (unitId && kind === 'warehouses') p.set('unitId', unitId);
-  return api<LookupItem[]>(`/lookups/${kind}?${p.toString()}`);
+  const slug = kind.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+  return api<LookupItem[]>(`/lookups/${slug}?${p.toString()}`);
 }
 
 export function getPreview(

@@ -6,15 +6,23 @@ import { ErrorMessage } from '../../../components/ErrorMessage';
 import { useToast } from '../../../components/Toast';
 import { ApiError } from '../../../lib/api';
 import type { ActionSet } from '../../../types';
-import type { PageSchema, TabPanelRef } from '../engineApi';
+import type { PageSchema, RecordRow, TabPanelRef } from '../engineApi';
+import { getRecord } from '../engineApi';
 import { getPanel, postCall } from './kitApi';
+import { LinesEditor } from './LinesEditor';
 import { getPanelComponent } from './panelComponents';
-import type { PanelAction, PanelDto, Row } from './panelTypes';
+import type { PanelAction, PanelCall, PanelDto, Row } from './panelTypes';
+import { BarsSection } from './sections/BarsSection';
+import { BoardSection } from './sections/BoardSection';
+import { CalendarSection } from './sections/CalendarSection';
+import { ChartSection } from './sections/ChartSection';
 import { FactsSection } from './sections/FactsSection';
+import { FunnelSection } from './sections/FunnelSection';
 import { KpiRow } from './sections/KpiRow';
 import { NoticeSection } from './sections/NoticeSection';
 import { StepperSection } from './sections/StepperSection';
 import { TableSection } from './sections/TableSection';
+import { TimelineSection } from './sections/TimelineSection';
 
 export interface PanelViewProps {
   pageId: string;
@@ -42,6 +50,7 @@ export function PanelView({
   const [page, setPage] = useState(1);
   const [confirmDlg, setConfirmDlg] = useState<{ action: PanelAction; row?: Row } | null>(null);
   const [acting, setActing] = useState(false);
+  const [record, setRecord] = useState<RecordRow | null>(null);
 
   // If record-scoped panel but no record selected in the register
   if (tab.scope === 'record' && !recId) {
@@ -78,6 +87,11 @@ export function PanelView({
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
+    if (recId) {
+      getRecord(pageId, recId)
+        .then((r) => setRecord(r))
+        .catch(() => {});
+    }
     getPanel(pageId, tab.key, { recId, params: { page } })
       .then((dto) => {
         setPanel(dto);
@@ -128,6 +142,19 @@ export function PanelView({
     }
     executeAction(action, row);
   };
+
+  const handleCall = useCallback(
+    async (call: PanelCall, opts?: { payload?: Record<string, unknown> }) => {
+      const res = await postCall(pageId, call, {
+        recId,
+        payload: opts?.payload,
+      });
+      load();
+      onChanged?.();
+      return res;
+    },
+    [pageId, recId, load, onChanged],
+  );
 
   if (loading && !panel) {
     return (
@@ -192,6 +219,7 @@ export function PanelView({
                   {...section}
                   onAction={(a, row) => handleAction(a, row)}
                   onPageChange={setPage}
+                  onCall={handleCall}
                 />
               );
             case 'stepper':
@@ -200,6 +228,34 @@ export function PanelView({
               return <FactsSection key={`facts-${sIdx}`} {...section} />;
             case 'notice':
               return <NoticeSection key={`notice-${sIdx}`} {...section} />;
+            case 'funnel':
+              return <FunnelSection key={`funnel-${sIdx}`} {...section} />;
+            case 'bars':
+              return <BarsSection key={`bars-${sIdx}`} {...section} />;
+            case 'chart':
+              return <ChartSection key={`chart-${sIdx}`} {...section} />;
+            case 'timeline':
+              return <TimelineSection key={`timeline-${sIdx}`} {...section} />;
+            case 'calendar':
+              return <CalendarSection key={`calendar-${sIdx}`} {...section} />;
+            case 'board':
+              return <BoardSection key={`board-${sIdx}`} {...section} onCall={handleCall} />;
+            case 'lines':
+              return (
+                <LinesEditor
+                  key={`lines-${sIdx}`}
+                  kind={section.lineKind}
+                  record={
+                    record ??
+                    ({ id: recId ?? '', version: 1, status: 'Draft', code: '', data: {} } as RecordRow)
+                  }
+                  schema={schema}
+                  onSaved={() => {
+                    load();
+                    onChanged?.();
+                  }}
+                />
+              );
             case 'custom': {
               const CustomSection = getPanelComponent(section.component);
               if (!CustomSection) {

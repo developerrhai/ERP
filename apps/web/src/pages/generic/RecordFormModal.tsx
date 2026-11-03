@@ -213,8 +213,8 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
     });
     const error = errorFor(f);
     const text = str(values[f.key]);
-    const lk = lookupKind(f.refPage);
-    if (lk && schema.kind === 'typed') {
+    const lk = f.lookup ?? lookupKind(f.refPage);
+    if (lk && (schema.kind === 'typed' || f.lookup)) {
       return (
         <LookupCombobox
           key={f.key}
@@ -337,8 +337,8 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
                   onChange={(e) => set(f.key, e.target.value)}
                 />
               );
-            default:
-              return (
+            default: {
+              const inputEl = (
                 <input
                   {...c}
                   type={f.type === 'email' ? 'email' : 'text'}
@@ -353,6 +353,17 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
                   }
                 />
               );
+              return f.suffix ? (
+                <div className="input-affix" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {inputEl}
+                  <span className="suffix" style={{ fontSize: '11px', color: 'var(--muted)' }}>
+                    {f.suffix}
+                  </span>
+                </div>
+              ) : (
+                inputEl
+              );
+            }
           }
         }}
       </Control>

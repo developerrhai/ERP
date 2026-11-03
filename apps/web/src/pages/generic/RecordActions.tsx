@@ -12,6 +12,7 @@ import {
   type RecordRow,
 } from './engineApi';
 import { actionVisible, confirmText } from './fieldModel';
+import { PayloadDialog } from './kit/PayloadDialog';
 
 export function actionsFor(
   schema: PageSchema,
@@ -88,6 +89,21 @@ export function ActionConfirmModal({
   const inFlight = useRef(false);
   // One key per opened dialog: a retry after a network error replays the same request.
   const key = useRef(newIdempotencyKey());
+
+  if (action.payloadFields && action.payloadFields.length > 0) {
+    return (
+      <PayloadDialog
+        title={`${action.label} ${row.code}`}
+        fields={action.payloadFields}
+        confirmText={action.label}
+        onClose={onClose}
+        onSubmit={async (payload) => {
+          const res = await runAction(schema.pageId, row.id, action.key, key.current, payload);
+          onDone(res);
+        }}
+      />
+    );
+  }
 
   const run = async (): Promise<void> => {
     if (inFlight.current) return;

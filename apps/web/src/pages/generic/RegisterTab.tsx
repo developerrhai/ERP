@@ -13,7 +13,6 @@ import {
   exportXlsx,
   listRecords,
   type BulkResult,
-  filterOption,
   type FieldMeta,
   type PageAction,
   type PageView,
@@ -22,6 +21,7 @@ import {
   type RecordRow,
 } from './engineApi';
 import { ActionButtons } from './RecordActions';
+import { FilterControl } from './kit/FilterBar';
 import {
   canChangeRecord,
   displayValue,
@@ -280,33 +280,14 @@ export function RegisterTab({
         </select>
         {(schema.filters ?? [])
           .filter((flt) => !(views && flt.param === 'view'))
-          .map((flt) =>
-            flt.type === 'bool' ? (
-              <label key={flt.param} className="filter-check">
-                <input
-                  type="checkbox"
-                  className="v8-checkbox"
-                  checked={query.filters[flt.param] === 'true'}
-                  onChange={(e) => onFilter(flt.param, e.target.checked ? 'true' : '')}
-                />{' '}
-                {flt.label}
-              </label>
-            ) : (
-              <select
-                key={flt.param}
-                aria-label={flt.label}
-                value={query.filters[flt.param] ?? ''}
-                onChange={(e) => onFilter(flt.param, e.target.value)}
-              >
-                <option value="">{`All ${flt.label}`}</option>
-                {(flt.options ?? []).map(filterOption).map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            ),
-          )}
+          .map((flt) => (
+            <FilterControl
+              key={flt.param}
+              filter={flt}
+              value={query.filters[flt.param] ?? ''}
+              onChange={(val) => onFilter(flt.param, val)}
+            />
+          ))}
         <span className="v8-spacer" />
         <span className="chip" aria-live="polite">
           {selected.size} selected

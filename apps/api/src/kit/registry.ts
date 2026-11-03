@@ -67,6 +67,12 @@ import { clearKitLookupsForTest } from './lookups';
 import { clearKitPanelsForTest } from './panels/registry';
 import { clearKitCommandsForTest } from './commands';
 
+const testResetters: Array<() => void> = [];
+
+export function registerTestResetter(fn: () => void): void {
+  testResetters.push(fn);
+}
+
 export function clearKitRegistrationsForTest(): void {
   REGISTERED_MODULES.length = 0;
   TYPED_SCHEMAS.clear();
@@ -75,4 +81,7 @@ export function clearKitRegistrationsForTest(): void {
   clearKitLookupsForTest();
   clearKitPanelsForTest();
   clearKitCommandsForTest();
+  for (const fn of testResetters) {
+    fn();
+  }
 }

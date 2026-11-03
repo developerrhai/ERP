@@ -36,6 +36,7 @@ import { createLookupsRouter } from './modules/inventory/lookups/routes';
 import { createKitLookupsRouter } from './kit/lookups';
 import { createKitPanelsRouter } from './kit/panels/routes';
 import { createKitCommandsRouter } from './kit/commands';
+import { createKitPrintRouter } from './kit/print';
 import { createPagesRouter } from './modules/records/routes';
 import { createUnitsRouter } from './modules/units/routes';
 import { bootKit } from './kit/boot';
@@ -117,6 +118,7 @@ export function createApp(options: AppOptions = {}): Express {
   bootKit(api);
   api.use('/pages', createKitPanelsRouter());
   api.use('/pages', createKitCommandsRouter());
+  api.use('/pages', createKitPrintRouter());
   api.use('/pages', createPagesRouter());
   app.use('/api/v1', api);
 

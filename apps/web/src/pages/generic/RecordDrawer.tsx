@@ -4,6 +4,7 @@ import { Drawer } from '../../components/Drawer';
 import { formatDateTime } from '../../lib/format';
 import { useLoad } from '../../lib/useLoad';
 import { ActionButtons } from './RecordActions';
+import { PrintMenu } from './kit/PrintMenu';
 import { listRecordAudit, type PageAction, type PageSchema, type RecordRow } from './engineApi';
 import { displayValue, isEmptyValue, valueOf } from './fieldModel';
 
@@ -90,6 +91,15 @@ export function RecordDrawer({
           >
             Open workspace
           </button>
+        ) : null}
+        {schema.printTemplates && schema.printTemplates.some((t) => t.scope !== 'page') ? (
+          <PrintMenu
+            pageId={schema.pageId}
+            recordId={row.id}
+            templates={schema.printTemplates}
+            buttonLabel="Print ▾"
+            className="btn"
+          />
         ) : null}
         <ActionButtons schema={schema} row={row} perms={perms} onAction={onAction} />
         {canEdit ? (

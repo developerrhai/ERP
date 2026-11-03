@@ -22,6 +22,12 @@ import type { TypedHandler } from '../modules/inventory/typed';
 import { LOOKUP_REGISTRY, toKebabCase, type LookupDef } from './lookups';
 import { getPanelDef, registerPanel } from './panels/registry';
 import { getCommandDef, registerCommand, type CommandOpts } from './commands';
+import {
+  registerPrintData,
+  registerPdf,
+  getPrintDataBuilder,
+  getPdfRenderer,
+} from './print';
 
 export function bootKit(api: Router): void {
   // 1. Load active modules
@@ -62,11 +68,11 @@ export function bootKit(api: Router): void {
         lookupOwners.set(def.name, mod.name);
         lookupDefs.push({ def, moduleName: mod.name });
       },
-      printData(_pageId: string, _key: string, _build: PrintBuilder) {
-        // Handled in T-KIT-11
+      printData(pageId: string, key: string, build: PrintBuilder) {
+        registerPrintData(pageId, key, build);
       },
-      pdf(_pageId: string, _key: string, _render: PdfRenderer) {
-        // Handled in T-KIT-11
+      pdf(pageId: string, key: string, render: PdfRenderer) {
+        registerPdf(pageId, key, render);
       },
       audit(v: { actions: readonly string[]; targets?: readonly string[] }) {
         registerAuditVocabulary(v.actions, v.targets);
@@ -173,6 +179,33 @@ export function bootKit(api: Router): void {
   for (const c of commandDefs) {
     if (!referencedCommandKeys.has(`${c.pageId}:${c.key}`)) {
       throw new Error(`KIT: command runner ${c.pageId}.${c.key} not referenced in schema commands`);
+    }
+  }
+
+  // KR-01 (g) & (h): print templates validation
+  for (const [pageId, def] of pageDefs.entries()) {
+    const schema = def.schema;
+    const webKeys = new Set<string>();
+    const pdfKeys = new Set<string>();
+
+    for (const t of schema.printTemplates ?? []) {
+      if (t.kind === 'web') {
+        if (webKeys.has(t.key)) {
+          throw new Error(`KIT: web print template ${t.key} duplicated on ${pageId}`);
+        }
+        webKeys.add(t.key);
+        if (!getPrintDataBuilder(pageId, t.key)) {
+          throw new Error(`KIT: print template ${pageId}.${t.key} has no builder`);
+        }
+      } else if (t.kind === 'pdf') {
+        if (pdfKeys.has(t.key)) {
+          throw new Error(`KIT: pdf template ${t.key} duplicated on ${pageId}`);
+        }
+        pdfKeys.add(t.key);
+        if (!getPdfRenderer(pageId, t.key)) {
+          throw new Error(`KIT: pdf template ${pageId}.${t.key} has no renderer`);
+        }
+      }
     }
   }
 
