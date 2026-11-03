@@ -11,16 +11,19 @@ import type { PageKind } from './kinds';
 import { enumOptionsFor } from './overrides';
 import { AADHAAR_RE, DATE_RE, HSN_RE, IFSC_RE, PAN_RE, PHONE_RE, UAN_RE } from './validators';
 
+import type { PayloadField, Requires } from '../kit/types';
+
 export interface SchemaAction {
   key: string;
   label: string;
   variant: string;
   confirm: string | null;
   allowedFrom: string[];
-  /** The page permission the action needs: `edit` for most, `delete` for undoing stock that moved. */
-  requires: 'edit' | 'delete';
+  /** The page permission the action needs: `edit` for most, `delete` for undoing stock that moved, `approve` / `add`. */
+  requires: Requires;
   /** If set, `requires` applies only from these statuses; from the others `edit` is enough. */
   requiresFrom?: string[];
+  payloadFields?: PayloadField[];
 }
 
 export interface PageSchema {

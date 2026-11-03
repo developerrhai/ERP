@@ -34,6 +34,8 @@ const HANDLERS: Readonly<Record<string, TypedHandler>> = {
   'inv-stock': stockHandler,
 };
 
+import { kitHandlerFor } from '../../kit/registry';
+
 export function typedHandlerFor(pageId: string): TypedHandler | undefined {
-  return HANDLERS[pageId];
+  return HANDLERS[pageId] ?? kitHandlerFor(pageId) ?? undefined;
 }

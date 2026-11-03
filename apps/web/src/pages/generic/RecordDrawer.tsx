@@ -16,6 +16,7 @@ interface Props {
   onEdit: (row: RecordRow) => void;
   onDelete: (row: RecordRow) => void;
   onAction: (row: RecordRow, action: PageAction) => void;
+  onOpenWorkspace?: (row: RecordRow) => void;
   onClose: () => void;
 }
 
@@ -28,6 +29,7 @@ export function RecordDrawer({
   onEdit,
   onDelete,
   onAction,
+  onOpenWorkspace,
   onClose,
 }: Props) {
   const activity = useLoad(
@@ -80,6 +82,15 @@ export function RecordDrawer({
         </ol>
       </section>
       <div className="drawer-actions">
+        {schema.tabPanels?.some((tp) => tp.scope === 'record') ? (
+          <button
+            type="button"
+            className="btn"
+            onClick={() => onOpenWorkspace?.(row)}
+          >
+            Open workspace
+          </button>
+        ) : null}
         <ActionButtons schema={schema} row={row} perms={perms} onAction={onAction} />
         {canEdit ? (
           <button type="button" className="btn" onClick={() => onEdit(row)}>

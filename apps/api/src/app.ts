@@ -33,8 +33,12 @@ import { createSettingsRouter } from './modules/settings/routes';
 import { createCompanyRouter } from './modules/company/routes';
 import { createFinancialYearsRouter } from './modules/financial-years/routes';
 import { createLookupsRouter } from './modules/inventory/lookups/routes';
+import { createKitLookupsRouter } from './kit/lookups';
+import { createKitPanelsRouter } from './kit/panels/routes';
+import { createKitCommandsRouter } from './kit/commands';
 import { createPagesRouter } from './modules/records/routes';
 import { createUnitsRouter } from './modules/units/routes';
+import { bootKit } from './kit/boot';
 
 export interface AppOptions {
   /** Defaults to !RATE_LIMIT_DISABLED. Tests pass true to exercise the limiter. */
@@ -108,8 +112,12 @@ export function createApp(options: AppOptions = {}): Express {
   api.use('/company', createCompanyRouter());
   api.use('/units', createUnitsRouter());
   api.use('/financial-years', createFinancialYearsRouter());
-  api.use('/pages', createPagesRouter());
   api.use('/lookups', createLookupsRouter());
+  api.use('/lookups', createKitLookupsRouter());
+  bootKit(api);
+  api.use('/pages', createKitPanelsRouter());
+  api.use('/pages', createKitCommandsRouter());
+  api.use('/pages', createPagesRouter());
   app.use('/api/v1', api);
 
   options.extraRoutes?.(app);

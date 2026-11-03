@@ -46,11 +46,13 @@ export interface TypedListQuery {
   view?: string;
   warehouseId?: string;
   belowReorder?: boolean;
+  filters?: Record<string, string | boolean>;
 }
 
 export interface ActionBody {
   dispatchedQty?: number;
   receivedQty?: number;
+  payload?: Record<string, unknown>;
 }
 
 export interface ListResult {
@@ -83,6 +85,8 @@ export interface TypedHandler {
   exportRows?(caller: Caller, query: TypedListQuery): Promise<ListResult>;
   /** Audit rows of this page, optionally of one record. */
   auditScope?(caller: Caller): { unitId: string | null; none: boolean; ownOnly: boolean };
+  /** Dynamic field option overrides (e.g. per-caller or context-dependent options). */
+  schemaOverrides?(caller: Caller): Promise<Record<string, { options?: string[] }>>;
 }
 
 /** The unit filter of the request context: a concrete unit, all units (ADMIN+), or nothing. */
@@ -107,7 +111,7 @@ export function undoTokenOf(id: string, deletedAt: Date): string {
     .slice(0, 32);
 }
 
-export type AuditTarget = 'Item' | 'Warehouse' | 'Voucher';
+export type AuditTarget = string;
 
 export function writeAudit(
   db: Db,

@@ -42,6 +42,44 @@ export interface FieldMeta {
   rootKey?: boolean;
   /** Typed master this ref points to (items / warehouses get a real lookup combobox). */
   refPage?: string;
+  lookup?: string;
+  suffix?: string;
+}
+
+export interface PayloadField {
+  key: string;
+  label: string;
+  type: 'text' | 'longtext' | 'qty' | 'money' | 'date' | 'enum' | 'lookup';
+  required: boolean;
+  options?: string[];
+  lookup?: string;
+  min?: number;
+  max?: number;
+}
+
+export interface TabPanelRef {
+  tab: string;
+  key: string;
+  scope: 'record' | 'page';
+  title?: string;
+  component?: string;
+}
+
+export interface KitCommand {
+  key: string;
+  label: string;
+  variant?: 'primary' | 'default' | 'danger';
+  requires?: 'add' | 'edit' | 'delete' | 'approve';
+  confirm?: string | null;
+  fields?: PayloadField[];
+}
+
+export interface PrintTemplateRef {
+  key: string;
+  label: string;
+  kind: 'web' | 'pdf';
+  scope: 'record' | 'page';
+  default?: boolean;
 }
 
 export interface PageAction {
@@ -52,16 +90,18 @@ export interface PageAction {
   confirm?: string | boolean;
   allowedFrom?: string[];
   /** Page permission the user needs to see this action (cancel of a posted voucher needs delete). */
-  requires?: 'edit' | 'delete';
+  requires?: 'add' | 'edit' | 'delete' | 'approve';
+  payloadFields?: PayloadField[];
 }
 
 export interface PageFilter {
   key: string;
   label: string;
-  type: 'bool' | 'select';
+  type: 'bool' | 'select' | 'text' | 'date' | 'month' | 'lookup';
   /** Query parameter the control sets (also its name in the page URL). */
   param: string;
   options?: (string | { value: string; label: string })[];
+  lookup?: string;
 }
 
 export interface PageTotal {
@@ -107,6 +147,10 @@ export interface PageSchema {
   totals?: PageTotal[];
   /** Alternative register views (Ledger | Vouchers), shown as a segmented toggle (`?view=`). */
   views?: PageView[];
+  tabPanels?: TabPanelRef[];
+  commands?: KitCommand[];
+  readOnlyCreate?: boolean;
+  printTemplates?: PrintTemplateRef[];
 }
 
 export interface RecordRow {

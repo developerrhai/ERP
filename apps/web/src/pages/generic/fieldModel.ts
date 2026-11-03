@@ -19,9 +19,19 @@ export const UNIVERSAL_TABS_AFTER = [
 
 export const DASHBOARD_TAB = 'Module Dashboard';
 
-/** The 16 prototype tabs (v9ModuleTabs): dashboard, the 6 profile tabs, then the universal ones. */
-export function moduleTabs(schema: Pick<PageSchema, 'tabs'>): string[] {
-  return [DASHBOARD_TAB, ...schema.tabs, ...UNIVERSAL_TABS_AFTER];
+/** The 16 prototype tabs: dashboard, the 6 profile tabs, universal tabs, then [ADD] kit tabs after Audit Trail. */
+export function moduleTabs(schema: PageSchema): string[] {
+  const baseTabs = [DASHBOARD_TAB, ...schema.tabs, ...UNIVERSAL_TABS_AFTER];
+  const registeredTabs = new Set(baseTabs);
+  const addTabs: string[] = [];
+  if (schema.tabPanels) {
+    for (const tp of schema.tabPanels) {
+      if (!registeredTabs.has(tp.tab) && !addTabs.includes(tp.tab)) {
+        addTabs.push(tp.tab);
+      }
+    }
+  }
+  return [...baseTabs, ...addTabs];
 }
 
 const REGISTER_RE = /register|list|directory|master|queue|log/i;
@@ -67,7 +77,10 @@ export function phaseForTab(tab: string, family: string): number {
 }
 
 /** Tabs backed by real data in this phase (everything else gets the honest notice). */
-export function isLiveTab(tab: string, schema: Pick<PageSchema, 'tabs'>): boolean {
+export function isLiveTab(tab: string, schema: PageSchema): boolean {
+  if (schema.tabPanels?.some((tp) => tp.tab === tab)) {
+    return true;
+  }
   return (
     tab === DASHBOARD_TAB ||
     tab === registerTabName(schema) ||
@@ -415,7 +428,7 @@ export function baseFilters(schema: PageSchema): Record<string, string> | undefi
  * allowed from Draft only needs `edit` while the row is still a Draft.
  */
 export function actionVisible(
-  a: { requires?: 'edit' | 'delete'; allowedFrom?: string[] },
+  a: { requires?: 'add' | 'edit' | 'delete' | 'approve'; allowedFrom?: string[] },
   status: string,
   perms: Record<string, boolean>,
 ): boolean {

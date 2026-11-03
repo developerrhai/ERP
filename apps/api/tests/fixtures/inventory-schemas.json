@@ -1,0 +1,1265 @@
+{
+  "inv-items": {
+    "readOnly": false,
+    "master": true,
+    "filters": [],
+    "totals": [],
+    "views": [],
+    "transitions": {},
+    "pageId": "inv-items",
+    "title": "Item / SKU Master",
+    "family": "Inventory",
+    "purpose": "Products and materials: classification, units of measure, tax code, costs and reorder level.",
+    "tabs": [],
+    "statuses": [
+      "Active",
+      "Inactive"
+    ],
+    "editableStatuses": [
+      "Active",
+      "Inactive"
+    ],
+    "actions": [
+      {
+        "key": "deactivate",
+        "label": "Deactivate",
+        "variant": "default",
+        "confirm": "Deactivate {code}? It can no longer be used in new vouchers.",
+        "allowedFrom": [
+          "Active"
+        ],
+        "requires": "edit"
+      },
+      {
+        "key": "activate",
+        "label": "Activate",
+        "variant": "primary",
+        "confirm": null,
+        "allowedFrom": [
+          "Inactive"
+        ],
+        "requires": "edit"
+      }
+    ],
+    "fields": [
+      {
+        "key": "itemCode",
+        "label": "Item Code",
+        "type": "code",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 30,
+        "pattern": "^[A-Z0-9/_-]{2,30}$"
+      },
+      {
+        "key": "itemName",
+        "label": "Item Name",
+        "type": "text",
+        "required": true,
+        "readOnly": false,
+        "maxLength": 150,
+        "minLength": 2
+      },
+      {
+        "key": "itemType",
+        "label": "Item Type",
+        "type": "enum",
+        "required": true,
+        "readOnly": false,
+        "options": [
+          "Raw Material",
+          "Semi-Finished",
+          "Finished Good",
+          "Consumable",
+          "Spare Part",
+          "Packing Material",
+          "Service"
+        ]
+      },
+      {
+        "key": "category",
+        "label": "Category",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 100
+      },
+      {
+        "key": "brand",
+        "label": "Brand",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 100
+      },
+      {
+        "key": "hsnSac",
+        "label": "HSN SAC",
+        "type": "hsn",
+        "required": false,
+        "readOnly": false,
+        "pattern": "^(\\d{4}|\\d{6}|\\d{8})$"
+      },
+      {
+        "key": "baseUom",
+        "label": "Base UOM",
+        "type": "enum",
+        "required": true,
+        "readOnly": false,
+        "options": [
+          "Nos",
+          "Set",
+          "Kg",
+          "Meter",
+          "Box",
+          "Litre",
+          "Pair",
+          "Sheet",
+          "Roll"
+        ]
+      },
+      {
+        "key": "altUom",
+        "label": "Alt UOM",
+        "type": "enum",
+        "required": false,
+        "readOnly": false,
+        "options": [
+          "Nos",
+          "Set",
+          "Kg",
+          "Meter",
+          "Box",
+          "Litre",
+          "Pair",
+          "Sheet",
+          "Roll"
+        ]
+      },
+      {
+        "key": "altUomFactor",
+        "label": "Alt UOM Factor",
+        "type": "qty",
+        "required": false,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "barcode",
+        "label": "Barcode",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 60
+      },
+      {
+        "key": "batchTracked",
+        "label": "Batch Tracked",
+        "type": "bool",
+        "required": false,
+        "readOnly": false
+      },
+      {
+        "key": "serialTracked",
+        "label": "Serial Tracked",
+        "type": "bool",
+        "required": false,
+        "readOnly": false
+      },
+      {
+        "key": "shelfLifeDays",
+        "label": "Shelf Life Days",
+        "type": "qty",
+        "required": false,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "standardCost",
+        "label": "Standard Cost",
+        "type": "money",
+        "required": false,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "sellingPrice",
+        "label": "Selling Price",
+        "type": "money",
+        "required": false,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "reorderLevel",
+        "label": "Reorder Level",
+        "type": "qty",
+        "required": false,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "status",
+        "required": false,
+        "readOnly": true,
+        "options": [
+          "Active",
+          "Inactive"
+        ]
+      }
+    ],
+    "kind": "typed",
+    "listColumns": [
+      "itemCode",
+      "itemName",
+      "itemType",
+      "category",
+      "brand",
+      "hsnSac",
+      "baseUom",
+      "altUom",
+      "altUomFactor",
+      "barcode",
+      "batchTracked",
+      "serialTracked"
+    ]
+  },
+  "wms-warehouses": {
+    "readOnly": false,
+    "master": true,
+    "filters": [],
+    "totals": [],
+    "views": [],
+    "transitions": {},
+    "pageId": "wms-warehouses",
+    "title": "Warehouse Master",
+    "family": "Warehouse / WMS",
+    "purpose": "Stores and warehouses of each unit.",
+    "tabs": [],
+    "statuses": [
+      "Active",
+      "Inactive"
+    ],
+    "editableStatuses": [
+      "Active",
+      "Inactive"
+    ],
+    "actions": [
+      {
+        "key": "deactivate",
+        "label": "Deactivate",
+        "variant": "default",
+        "confirm": "Deactivate {code}? It can no longer be used in new vouchers.",
+        "allowedFrom": [
+          "Active"
+        ],
+        "requires": "edit"
+      },
+      {
+        "key": "activate",
+        "label": "Activate",
+        "variant": "primary",
+        "confirm": null,
+        "allowedFrom": [
+          "Inactive"
+        ],
+        "requires": "edit"
+      }
+    ],
+    "fields": [
+      {
+        "key": "warehouseCode",
+        "label": "Warehouse Code",
+        "type": "code",
+        "required": true,
+        "readOnly": false,
+        "maxLength": 30,
+        "pattern": "^[A-Z0-9/_-]{2,30}$"
+      },
+      {
+        "key": "warehouseName",
+        "label": "Warehouse Name",
+        "type": "text",
+        "required": true,
+        "readOnly": false,
+        "maxLength": 100,
+        "minLength": 2
+      },
+      {
+        "key": "branch",
+        "label": "Branch",
+        "type": "ref",
+        "required": false,
+        "readOnly": true,
+        "refPage": "admin-branches"
+      },
+      {
+        "key": "address",
+        "label": "Address",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 300
+      },
+      {
+        "key": "manager",
+        "label": "Manager",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 100
+      },
+      {
+        "key": "totalCapacity",
+        "label": "Total Capacity",
+        "type": "qty",
+        "required": false,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "dockDoors",
+        "label": "Dock Doors",
+        "type": "qty",
+        "required": false,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "operatingHours",
+        "label": "Operating Hours",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 100
+      },
+      {
+        "key": "temperatureZone",
+        "label": "Temperature Zone",
+        "type": "enum",
+        "required": false,
+        "readOnly": false,
+        "options": [
+          "Ambient",
+          "Cold",
+          "Frozen",
+          "Hazardous"
+        ]
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "status",
+        "required": false,
+        "readOnly": true,
+        "options": [
+          "Active",
+          "Inactive"
+        ]
+      }
+    ],
+    "kind": "typed",
+    "listColumns": [
+      "warehouseCode",
+      "warehouseName",
+      "branch",
+      "address",
+      "manager",
+      "totalCapacity",
+      "dockDoors",
+      "operatingHours",
+      "temperatureZone",
+      "status"
+    ]
+  },
+  "inv-opening": {
+    "readOnly": false,
+    "master": false,
+    "filters": [],
+    "totals": [],
+    "views": [],
+    "transitions": {},
+    "pageId": "inv-opening",
+    "title": "Opening Stock",
+    "family": "Inventory",
+    "purpose": "Opening balance of an item in a warehouse, allowed before any other movement.",
+    "tabs": [],
+    "statuses": [
+      "Draft",
+      "Posted",
+      "Cancelled"
+    ],
+    "editableStatuses": [
+      "Draft"
+    ],
+    "actions": [
+      {
+        "key": "post",
+        "label": "Post",
+        "variant": "primary",
+        "confirm": "Post {code}? Stock will change and the voucher will be locked.",
+        "allowedFrom": [
+          "Draft"
+        ],
+        "requires": "edit"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "variant": "danger",
+        "confirm": "Cancel {code}? Reversing stock entries will be written.",
+        "allowedFrom": [
+          "Posted"
+        ],
+        "requires": "delete"
+      }
+    ],
+    "fields": [
+      {
+        "key": "openingRef",
+        "label": "Opening Ref",
+        "type": "code",
+        "required": true,
+        "readOnly": true
+      },
+      {
+        "key": "postingDate",
+        "label": "Posting Date",
+        "type": "date",
+        "required": false,
+        "readOnly": false,
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
+      {
+        "key": "financialYear",
+        "label": "Financial Year",
+        "type": "text",
+        "required": false,
+        "readOnly": true,
+        "maxLength": 40
+      },
+      {
+        "key": "warehouse",
+        "label": "Warehouse",
+        "type": "ref",
+        "required": true,
+        "readOnly": false,
+        "refPage": "wms-warehouses",
+        "lookup": "warehouses"
+      },
+      {
+        "key": "item",
+        "label": "Item",
+        "type": "ref",
+        "required": true,
+        "readOnly": false,
+        "refPage": "inv-items",
+        "lookup": "items"
+      },
+      {
+        "key": "batchSerial",
+        "label": "Batch Serial",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 100
+      },
+      {
+        "key": "openingQty",
+        "label": "Opening Qty",
+        "type": "qty",
+        "required": true,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "unitCost",
+        "label": "Unit Cost",
+        "type": "money",
+        "required": true,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "openingValue",
+        "label": "Opening Value",
+        "type": "money",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "valuationMethod",
+        "label": "Valuation Method",
+        "type": "text",
+        "required": false,
+        "readOnly": true,
+        "maxLength": 40
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "status",
+        "required": false,
+        "readOnly": true,
+        "options": [
+          "Draft",
+          "Posted",
+          "Cancelled"
+        ]
+      }
+    ],
+    "kind": "typed",
+    "listColumns": [
+      "openingRef",
+      "postingDate",
+      "financialYear",
+      "warehouse",
+      "item",
+      "batchSerial",
+      "openingQty",
+      "unitCost",
+      "openingValue",
+      "valuationMethod",
+      "status"
+    ]
+  },
+  "inv-transactions": {
+    "readOnly": false,
+    "master": false,
+    "filters": [
+      {
+        "key": "view",
+        "label": "Show",
+        "type": "select",
+        "param": "view",
+        "options": [
+          "ledger",
+          "vouchers"
+        ]
+      }
+    ],
+    "totals": [],
+    "views": [
+      {
+        "key": "ledger",
+        "label": "Ledger",
+        "columns": [
+          {
+            "key": "postingDate",
+            "label": "Date",
+            "format": "date"
+          },
+          {
+            "key": "voucherNo",
+            "label": "Voucher No",
+            "format": "text"
+          },
+          {
+            "key": "voucherType",
+            "label": "Type",
+            "format": "text"
+          },
+          {
+            "key": "item",
+            "label": "Item",
+            "format": "text"
+          },
+          {
+            "key": "warehouse",
+            "label": "Warehouse",
+            "format": "text"
+          },
+          {
+            "key": "qtyIn",
+            "label": "In",
+            "format": "qty"
+          },
+          {
+            "key": "qtyOut",
+            "label": "Out",
+            "format": "qty"
+          },
+          {
+            "key": "rate",
+            "label": "Rate",
+            "format": "money"
+          },
+          {
+            "key": "value",
+            "label": "Value",
+            "format": "money"
+          },
+          {
+            "key": "balanceQty",
+            "label": "Balance Qty",
+            "format": "qty"
+          },
+          {
+            "key": "postedBy",
+            "label": "Posted By",
+            "format": "text"
+          }
+        ]
+      },
+      {
+        "key": "vouchers",
+        "label": "Vouchers"
+      }
+    ],
+    "transitions": {},
+    "pageId": "inv-transactions",
+    "title": "Inventory Transactions",
+    "family": "Inventory",
+    "purpose": "Manual material receipts and issues; the list shows the stock ledger.",
+    "tabs": [],
+    "statuses": [
+      "Draft",
+      "Posted",
+      "Cancelled"
+    ],
+    "editableStatuses": [
+      "Draft"
+    ],
+    "actions": [
+      {
+        "key": "post",
+        "label": "Post",
+        "variant": "primary",
+        "confirm": "Post {code}? Stock will change and the voucher will be locked.",
+        "allowedFrom": [
+          "Draft"
+        ],
+        "requires": "edit"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "variant": "danger",
+        "confirm": "Cancel {code}? Reversing stock entries will be written.",
+        "allowedFrom": [
+          "Posted"
+        ],
+        "requires": "delete"
+      }
+    ],
+    "fields": [
+      {
+        "key": "transactionNo",
+        "label": "Transaction No",
+        "type": "code",
+        "required": true,
+        "readOnly": true
+      },
+      {
+        "key": "postingDate",
+        "label": "Posting Date",
+        "type": "date",
+        "required": false,
+        "readOnly": false,
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
+      {
+        "key": "transactionType",
+        "label": "Transaction Type",
+        "type": "enum",
+        "required": true,
+        "readOnly": false,
+        "options": [
+          "Receipt",
+          "Issue"
+        ]
+      },
+      {
+        "key": "reference",
+        "label": "Reference",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 100
+      },
+      {
+        "key": "item",
+        "label": "Item",
+        "type": "ref",
+        "required": true,
+        "readOnly": false,
+        "refPage": "inv-items",
+        "lookup": "items"
+      },
+      {
+        "key": "warehouse",
+        "label": "Warehouse",
+        "type": "ref",
+        "required": true,
+        "readOnly": false,
+        "refPage": "wms-warehouses",
+        "lookup": "warehouses"
+      },
+      {
+        "key": "batchSerial",
+        "label": "Batch Serial",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 100
+      },
+      {
+        "key": "qty",
+        "label": "Qty",
+        "type": "qty",
+        "required": true,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "unitCost",
+        "label": "Unit Cost",
+        "type": "money",
+        "required": false,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "value",
+        "label": "Value",
+        "type": "money",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "status",
+        "required": false,
+        "readOnly": true,
+        "options": [
+          "Draft",
+          "Posted",
+          "Cancelled"
+        ]
+      }
+    ],
+    "kind": "typed",
+    "listColumns": [
+      "transactionNo",
+      "postingDate",
+      "transactionType",
+      "reference",
+      "item",
+      "warehouse",
+      "batchSerial",
+      "qty",
+      "unitCost",
+      "value",
+      "status"
+    ]
+  },
+  "inv-adjustment": {
+    "readOnly": false,
+    "master": false,
+    "filters": [],
+    "totals": [],
+    "views": [],
+    "transitions": {},
+    "pageId": "inv-adjustment",
+    "title": "Stock Adjustment",
+    "family": "Inventory",
+    "purpose": "Correct the stock of an item in a warehouse to the counted quantity.",
+    "tabs": [],
+    "statuses": [
+      "Draft",
+      "Posted",
+      "Cancelled"
+    ],
+    "editableStatuses": [
+      "Draft"
+    ],
+    "actions": [
+      {
+        "key": "post",
+        "label": "Post",
+        "variant": "primary",
+        "confirm": "Post {code}? Stock will change and the voucher will be locked.",
+        "allowedFrom": [
+          "Draft"
+        ],
+        "requires": "edit"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "variant": "danger",
+        "confirm": "Cancel {code}? Reversing stock entries will be written.",
+        "allowedFrom": [
+          "Posted"
+        ],
+        "requires": "delete"
+      }
+    ],
+    "fields": [
+      {
+        "key": "adjustmentNo",
+        "label": "Adjustment No",
+        "type": "code",
+        "required": true,
+        "readOnly": true
+      },
+      {
+        "key": "postingDate",
+        "label": "Posting Date",
+        "type": "date",
+        "required": false,
+        "readOnly": false,
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
+      {
+        "key": "warehouse",
+        "label": "Warehouse",
+        "type": "ref",
+        "required": true,
+        "readOnly": false,
+        "refPage": "wms-warehouses",
+        "lookup": "warehouses"
+      },
+      {
+        "key": "item",
+        "label": "Item",
+        "type": "ref",
+        "required": true,
+        "readOnly": false,
+        "refPage": "inv-items",
+        "lookup": "items"
+      },
+      {
+        "key": "systemQty",
+        "label": "System Qty",
+        "type": "qty",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "countedQty",
+        "label": "Counted Qty",
+        "type": "qty",
+        "required": true,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "varianceQty",
+        "label": "Variance Qty",
+        "type": "qty",
+        "required": false,
+        "readOnly": true,
+        "min": -99999999999999,
+        "max": 99999999999999
+      },
+      {
+        "key": "unitCost",
+        "label": "Unit Cost",
+        "type": "money",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "valueImpact",
+        "label": "Value Impact",
+        "type": "money",
+        "required": false,
+        "readOnly": true,
+        "min": -99999999999999,
+        "max": 99999999999999
+      },
+      {
+        "key": "reasonCode",
+        "label": "Reason Code",
+        "type": "enum",
+        "required": true,
+        "readOnly": false,
+        "options": [
+          "Damage",
+          "Expiry",
+          "Count Correction",
+          "Theft/Loss",
+          "Other"
+        ]
+      },
+      {
+        "key": "approver",
+        "label": "Approver",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 100
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "status",
+        "required": false,
+        "readOnly": true,
+        "options": [
+          "Draft",
+          "Posted",
+          "Cancelled"
+        ]
+      }
+    ],
+    "kind": "typed",
+    "listColumns": [
+      "adjustmentNo",
+      "postingDate",
+      "warehouse",
+      "item",
+      "systemQty",
+      "countedQty",
+      "varianceQty",
+      "unitCost",
+      "valueImpact",
+      "reasonCode",
+      "approver",
+      "status"
+    ]
+  },
+  "inv-transfer": {
+    "readOnly": false,
+    "master": false,
+    "filters": [],
+    "totals": [],
+    "views": [],
+    "transitions": {},
+    "pageId": "inv-transfer",
+    "title": "Stock Transfer",
+    "family": "Inventory",
+    "purpose": "Move stock between warehouses, also across units, in two steps: dispatch and receive.",
+    "tabs": [],
+    "statuses": [
+      "Draft",
+      "Dispatched",
+      "Received",
+      "Cancelled"
+    ],
+    "editableStatuses": [
+      "Draft"
+    ],
+    "actions": [
+      {
+        "key": "dispatch",
+        "label": "Dispatch",
+        "variant": "primary",
+        "confirm": "Dispatch {code}? Stock leaves the source warehouse.",
+        "allowedFrom": [
+          "Draft"
+        ],
+        "requires": "edit"
+      },
+      {
+        "key": "receive",
+        "label": "Receive",
+        "variant": "primary",
+        "confirm": "Receive {code}? Stock is added to the destination warehouse.",
+        "allowedFrom": [
+          "Dispatched"
+        ],
+        "requires": "edit"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "variant": "danger",
+        "confirm": "Cancel {code}? Dispatched stock is returned to the source.",
+        "allowedFrom": [
+          "Draft",
+          "Dispatched"
+        ],
+        "requires": "delete",
+        "requiresFrom": [
+          "Dispatched"
+        ]
+      }
+    ],
+    "fields": [
+      {
+        "key": "transferNo",
+        "label": "Transfer No",
+        "type": "code",
+        "required": true,
+        "readOnly": true
+      },
+      {
+        "key": "postingDate",
+        "label": "Transfer Date",
+        "type": "date",
+        "required": false,
+        "readOnly": false,
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
+      {
+        "key": "sourceWarehouse",
+        "label": "Source Warehouse",
+        "type": "ref",
+        "required": true,
+        "readOnly": false,
+        "refPage": "wms-warehouses",
+        "lookup": "warehouses"
+      },
+      {
+        "key": "destinationWarehouse",
+        "label": "Destination Warehouse",
+        "type": "ref",
+        "required": true,
+        "readOnly": false,
+        "refPage": "wms-warehouses",
+        "lookup": "warehouses"
+      },
+      {
+        "key": "item",
+        "label": "Item",
+        "type": "ref",
+        "required": true,
+        "readOnly": false,
+        "refPage": "inv-items",
+        "lookup": "items"
+      },
+      {
+        "key": "requestedQty",
+        "label": "Requested Qty",
+        "type": "qty",
+        "required": true,
+        "readOnly": false,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "dispatchedQty",
+        "label": "Dispatched Qty",
+        "type": "qty",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "receivedQty",
+        "label": "Received Qty",
+        "type": "qty",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "inTransit",
+        "label": "In Transit",
+        "type": "qty",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "vehicleRef",
+        "label": "Vehicle Ref",
+        "type": "text",
+        "required": false,
+        "readOnly": false,
+        "maxLength": 60
+      },
+      {
+        "key": "expectedReceipt",
+        "label": "Expected Receipt",
+        "type": "date",
+        "required": false,
+        "readOnly": false,
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "status",
+        "required": false,
+        "readOnly": true,
+        "options": [
+          "Draft",
+          "Dispatched",
+          "Received",
+          "Cancelled"
+        ]
+      }
+    ],
+    "kind": "typed",
+    "listColumns": [
+      "transferNo",
+      "postingDate",
+      "sourceWarehouse",
+      "destinationWarehouse",
+      "item",
+      "requestedQty",
+      "dispatchedQty",
+      "receivedQty",
+      "inTransit",
+      "vehicleRef",
+      "expectedReceipt",
+      "status"
+    ]
+  },
+  "inv-stock": {
+    "readOnly": true,
+    "master": false,
+    "filters": [
+      {
+        "key": "warehouse",
+        "label": "Warehouse",
+        "type": "select",
+        "param": "warehouseId",
+        "lookup": "warehouses"
+      },
+      {
+        "key": "belowReorder",
+        "label": "Below reorder only",
+        "type": "bool",
+        "param": "belowReorder"
+      }
+    ],
+    "totals": [
+      {
+        "key": "onHand",
+        "label": "On Hand",
+        "format": "qty"
+      },
+      {
+        "key": "stockValue",
+        "label": "Stock Value",
+        "format": "money"
+      }
+    ],
+    "views": [],
+    "transitions": {},
+    "pageId": "inv-stock",
+    "title": "Stock Balance",
+    "family": "Inventory",
+    "purpose": "Stock on hand per item and warehouse, valued at the moving average.",
+    "tabs": [],
+    "statuses": [
+      "OK",
+      "Below Reorder"
+    ],
+    "editableStatuses": [],
+    "actions": [],
+    "fields": [
+      {
+        "key": "itemCode",
+        "label": "Item Code",
+        "type": "text",
+        "required": false,
+        "readOnly": true
+      },
+      {
+        "key": "itemName",
+        "label": "Item Name",
+        "type": "text",
+        "required": false,
+        "readOnly": true
+      },
+      {
+        "key": "unit",
+        "label": "Unit",
+        "type": "text",
+        "required": false,
+        "readOnly": true
+      },
+      {
+        "key": "warehouse",
+        "label": "Warehouse",
+        "type": "text",
+        "required": false,
+        "readOnly": true
+      },
+      {
+        "key": "uom",
+        "label": "UOM",
+        "type": "text",
+        "required": false,
+        "readOnly": true
+      },
+      {
+        "key": "onHand",
+        "label": "On Hand",
+        "type": "qty",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "avgRate",
+        "label": "Avg Rate",
+        "type": "money",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "stockValue",
+        "label": "Stock Value",
+        "type": "money",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "reorderLevel",
+        "label": "Reorder Level",
+        "type": "qty",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "text",
+        "required": false,
+        "readOnly": true
+      }
+    ],
+    "kind": "typed",
+    "listColumns": [
+      "itemCode",
+      "itemName",
+      "unit",
+      "warehouse",
+      "uom",
+      "onHand",
+      "avgRate",
+      "stockValue",
+      "reorderLevel",
+      "status"
+    ]
+  }
+}

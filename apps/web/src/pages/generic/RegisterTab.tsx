@@ -70,6 +70,7 @@ interface Props {
   onNotify: (message: string) => void;
   /** Reports the loaded rows so the page's record bar can offer them. */
   onRows?: (rows: RecordRow[]) => void;
+  onOpenWorkspace?: (row: RecordRow) => void;
 }
 
 export const statusClass = (s: string): string => s.toLowerCase().replace(/\s+/g, '-');
@@ -102,6 +103,7 @@ export function RegisterTab({
   onAction,
   onNotify,
   onRows,
+  onOpenWorkspace,
 }: Props) {
   const fields = useMemo(() => listFields(schema), [schema]);
   const rq: RecordQuery = query;
@@ -392,6 +394,7 @@ export function RegisterTab({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onAction={onAction}
+                onOpenWorkspace={onOpenWorkspace}
               />
             ))}
             {loading && !data ? (
@@ -471,6 +474,7 @@ function RegisterRow({
   onEdit,
   onDelete,
   onAction,
+  onOpenWorkspace,
 }: {
   schema: PageSchema;
   perms: ActionSet;
@@ -482,8 +486,10 @@ function RegisterRow({
   onEdit: (row: RecordRow) => void;
   onDelete: (row: RecordRow) => void;
   onAction: (row: RecordRow, action: PageAction) => void;
+  onOpenWorkspace?: (row: RecordRow) => void;
 }) {
   const changeable = canChangeRecord(schema, row);
+  const hasRecordPanels = schema.tabPanels?.some((tp) => tp.scope === 'record');
   return (
     <tr className={isLowRow(row) ? 'row-low' : undefined}>
       <td>
@@ -510,6 +516,17 @@ function RegisterRow({
       ))}
       <td className="sticky-actions">
         <div className="actions row-actions">
+          {hasRecordPanels && onOpenWorkspace ? (
+            <button
+              type="button"
+              className="btn sm"
+              aria-label={`Open workspace for ${row.code}`}
+              title="Open workspace"
+              onClick={() => onOpenWorkspace(row)}
+            >
+              Open workspace
+            </button>
+          ) : null}
           <button
             type="button"
             className="btn sm"

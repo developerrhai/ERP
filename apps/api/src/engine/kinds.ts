@@ -6,8 +6,7 @@ import { ADMIN_FAMILY, pageInfo } from '../core/registry';
 
 export type PageKind = 'generic' | 'typed' | 'custom';
 
-/** Pages with their own storage (Inventory slice, Stage C). */
-export const TYPED_PAGES: ReadonlySet<string> = new Set([
+const INITIAL_TYPED_PAGES = [
   'inv-items',
   'wms-warehouses',
   'inv-stock',
@@ -15,7 +14,26 @@ export const TYPED_PAGES: ReadonlySet<string> = new Set([
   'inv-transactions',
   'inv-adjustment',
   'inv-transfer',
-]);
+];
+
+const typedPages = new Set<string>(INITIAL_TYPED_PAGES);
+
+/** Pages with their own storage (Inventory slice, Stage C, and Kit modules). */
+export const TYPED_PAGES: ReadonlySet<string> = typedPages;
+
+export function addTypedPage(id: string): void {
+  if (typedPages.has(id)) {
+    throw new Error(`Page ${id} is already registered as typed`);
+  }
+  typedPages.add(id);
+}
+
+export function resetTypedPagesForTest(): void {
+  typedPages.clear();
+  for (const id of INITIAL_TYPED_PAGES) {
+    typedPages.add(id);
+  }
+}
 
 /** The 21 menu pages the prototype draws with a page-specific renderer (docs/REGISTRY.csv). */
 export const CUSTOM_PAGES: ReadonlySet<string> = new Set([

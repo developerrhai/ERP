@@ -5,7 +5,7 @@ import { prisma } from '../db/prisma';
 import type { Db } from '../db/prisma';
 import type { RequestMeta } from '../auth/auth-context';
 
-export const AUDIT_ACTIONS = [
+export const CORE_AUDIT_ACTIONS = [
   'LOGIN_SUCCESS',
   'LOGIN_FAILED',
   'ACCOUNT_LOCKED',
@@ -60,27 +60,14 @@ export const AUDIT_ACTIONS = [
   'TRANSFER_RECEIVED',
 ] as const;
 
-export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+export const AUDIT_ACTIONS: string[] = [...CORE_AUDIT_ACTIONS];
+
+export type AuditAction = string;
 
 export interface AuditEntry {
   action: AuditAction;
   actorId?: string | null;
-  targetType?:
-    | 'User'
-    | 'Session'
-    | 'Department'
-    | 'RolePermissions'
-    | 'DepartmentAccess'
-    | 'ModuleControl'
-    | 'Setting'
-    | 'Company'
-    | 'Unit'
-    | 'FinancialYear'
-    | 'Record'
-    | 'Item'
-    | 'Warehouse'
-    | 'Voucher'
-    | null;
+  targetType?: string | null;
   targetId?: string | null;
   meta?: RequestMeta;
   detail?: Prisma.InputJsonObject;

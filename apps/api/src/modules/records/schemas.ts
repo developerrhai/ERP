@@ -72,6 +72,8 @@ export const typedExportQuerySchema = z
   })
   .strict();
 
+export { buildTypedListQuery, buildTypedExportQuery } from '../../kit/filters';
+
 export const actionParamsSchema = z
   .object({
     pageId: z.string().trim().min(1).max(80),
@@ -84,6 +86,13 @@ export const actionBodySchema = z
   .object({
     dispatchedQty: z.number().positive('Enter a quantity greater than 0.').optional(),
     receivedQty: z.number().positive('Enter a quantity greater than 0.').optional(),
+    payload: z
+      .record(z.string(), z.unknown())
+      .refine(
+        (val) => JSON.stringify(val).length <= 100 * 1024,
+        'Payload exceeds 100 KB limit.',
+      )
+      .optional(),
   })
   .strict();
 

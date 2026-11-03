@@ -9,6 +9,10 @@ import { AppError, Errors } from '../../core/http/errors';
 import { parseIfMatch, parseOptionalIfMatch } from '../../core/http/if-match';
 import { validated } from '../../core/http/validate';
 import { buildPageSchema } from '../../engine/field-schema';
+import { can } from '../../core/rbac/access';
+import type { Requires } from '../../kit/types';
+import { kitAudit } from '../../kit/audit-view';
+import { kitSchemaFor } from '../../kit/registry';
 import { typedAudit } from '../inventory/audit';
 import { typedSchema } from '../inventory/definitions';
 import { buildTypedWorkbook } from '../inventory/export';
@@ -78,13 +82,16 @@ export const recordsController = {
       where: { pageId },
       select: { ownerDepartment: true, approvalRequired: true },
     });
-    res.json({
-      data: {
-        ...schema,
-        ownerDepartment: control?.ownerDepartment ?? null,
-        approvalRequired: control?.approvalRequired ?? false,
-      },
-    });
+    const isReadOnlyCreate = 'readOnlyCreate' in schema && Boolean(schema.readOnlyCreate);
+    const responseData: Record<string, unknown> = {
+      ...schema,
+      ownerDepartment: control?.ownerDepartment ?? null,
+      approvalRequired: control?.approvalRequired ?? false,
+    };
+    if (!isReadOnlyCreate) {
+      delete responseData.readOnlyCreate;
+    }
+    res.json({ data: responseData });
   },
 
   list: async (req: Request, res: Response): Promise<void> => {
@@ -115,6 +122,10 @@ export const recordsController = {
 
   create: async (req: Request, res: Response): Promise<void> => {
     const { pageId } = validated(res, 'params', pageParamsSchema);
+    const schema = typedSchema(pageId);
+    if (schema?.readOnlyCreate) {
+      throw Errors.readOnly('Records of this page are created by other documents.');
+    }
     const body = validated(res, 'body', recordBodySchema);
     const typed = typedHandlerFor(pageId);
     if (typed) {
@@ -180,8 +191,29 @@ export const recordsController = {
   action: async (req: Request, res: Response): Promise<void> => {
     const { pageId, id, action } = validated(res, 'params', actionParamsSchema);
     const body = validated(res, 'body', actionBodySchema);
+    if (body.payload && JSON.stringify(body.payload).length > 100 * 1024) {
+      throw Errors.payloadTooLarge();
+    }
     const typed = typedHandlerFor(pageId);
     if (!typed?.action) throw Errors.notFound('Unknown action.');
+    const existing = await typed.get(callerOf(req), id);
+    const schema = typedSchema(pageId);
+    const actionDef = schema?.actions?.find((a) => a.key === action);
+    if (!actionDef) throw Errors.notFound('Unknown action.');
+    let requiredPerm: Requires = actionDef.requires ?? 'edit';
+    if (actionDef.requiresFrom && actionDef.requiresFrom.length > 0) {
+      if (!actionDef.requiresFrom.includes(existing.status)) {
+        requiredPerm = 'edit';
+      }
+    }
+    const authUser = requireAuth(req).user;
+    const allowed = await can(
+      { id: authUser.id, role: authUser.role, department: authUser.department },
+      pageId,
+      requiredPerm,
+    );
+    if (!allowed) throw Errors.forbidden();
+
     const { record, replay } = await typed.action(
       callerOf(req),
       id,
@@ -224,7 +256,7 @@ export const recordsController = {
       sendXlsx(res, buffer, filename);
       return;
     }
-    const query = validated(res, 'query', typedExportQuerySchema);
+    const query = validated(res, 'query', typedExportQuerySchema) as any;
     const schema = typedSchema(pageId);
     if (!schema) throw Errors.notFound('Unknown page.');
     const { rows, total, totals } = await need(typed.exportRows?.bind(typed))(callerOf(req), {
@@ -253,6 +285,7 @@ export const recordsController = {
           ...(query.q ? { q: query.q } : {}),
           ...(query.status ? { status: query.status } : {}),
           ...(query.view ? { view: query.view } : {}),
+          ...(query.filters ? query.filters : {}),
           unitId: caller.ctx.unitId,
           fyId: caller.ctx.fyId,
         },
@@ -265,10 +298,16 @@ export const recordsController = {
   audit: async (req: Request, res: Response): Promise<void> => {
     const { pageId } = validated(res, 'params', pageParamsSchema);
     const query = validated(res, 'query', auditQuerySchema);
-    const { rows, total } = typedHandlerFor(pageId)
-      ? await typedAudit(callerOf(req), pageId, query)
-      : await recordService.audit(callerOf(req), pageId, query);
-    res.json({ data: rows, meta: { page: query.page, size: query.size, total } });
+    const typed = typedHandlerFor(pageId);
+    let result: { rows: any[]; total: number };
+    if (typed) {
+      result = kitSchemaFor(pageId)
+        ? await kitAudit(callerOf(req), pageId, query)
+        : await typedAudit(callerOf(req), pageId, query);
+    } else {
+      result = await recordService.audit(callerOf(req), pageId, query);
+    }
+    res.json({ data: result.rows, meta: { page: query.page, size: query.size, total: result.total } });
   },
 
   recordAudit: async (req: Request, res: Response): Promise<void> => {
@@ -277,7 +316,9 @@ export const recordsController = {
     const typed = typedHandlerFor(pageId);
     if (typed) {
       await typed.get(callerOf(req), id);
-      const { rows, total } = await typedAudit(callerOf(req), pageId, query, id);
+      const { rows, total } = kitSchemaFor(pageId)
+        ? await kitAudit(callerOf(req), pageId, query, id)
+        : await typedAudit(callerOf(req), pageId, query, id);
       res.json({ data: rows, meta: { page: query.page, size: query.size, total } });
       return;
     }

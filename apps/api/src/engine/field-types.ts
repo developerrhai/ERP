@@ -43,10 +43,12 @@ export interface FieldMeta {
   /** For `ref` fields that point to a known master page (later phases make these real lookups). */
   refPage?: string;
   /**
-   * Typed pages (Inventory slice): the value is the id of an item / warehouse, found with
+   * Typed pages: the value is the id of a referenced entity, found with
    * GET /lookups/<lookup>?q=. Without it a `ref` is free text.
    */
-  lookup?: 'items' | 'warehouses';
+  lookup?: string;
+  /** Display-only suffix shown next to input, e.g. '/10'. */
+  suffix?: string;
 }
 
 /** Types stored as numbers in `data`. */

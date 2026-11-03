@@ -73,7 +73,12 @@ export const ADMIN_FAMILY = 'Administration';
 export const ADMIN_DEPARTMENT = 'Administration';
 
 export function pageInfo(pageId: string): PageInfo | undefined {
-  return registry.pages.get(pageId);
+  const info = registry.pages.get(pageId);
+  if (info) return info;
+  if (process.env.KIT_ALLOW_TEST_PAGES === 'true' && pageId.startsWith('kit-')) {
+    return { id: pageId, title: pageId, family: 'Quality / QMS', order: 9999 };
+  }
+  return undefined;
 }
 
 export function profileOf(pageId: string): PageProfile | undefined {

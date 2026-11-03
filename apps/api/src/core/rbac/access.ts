@@ -7,6 +7,7 @@ import { prisma } from '../db/prisma';
 import { asyncHandler } from '../http/async-handler';
 import { Errors } from '../http/errors';
 import { ADMIN_FAMILY, pageInfo, registry } from '../registry';
+import { TYPED_PAGES } from '../../engine/kinds';
 import {
   ACTIONS,
   ALLOW_FLAG_FOR,
@@ -101,8 +102,14 @@ export function decide(
   const page = pageInfo(pageId);
   if (!page) return false;
 
+  const isKitTestPage = process.env.KIT_ALLOW_TEST_PAGES === 'true' && pageId.startsWith('kit-');
+
   // 2. Disabled module: hidden from everyone; SUPER_ADMIN keeps only `controls` to re-enable it.
-  const control = data.controls.get(pageId);
+  const control =
+    data.controls.get(pageId) ??
+    (isKitTestPage
+      ? { enabled: true, allowAdd: true, allowEdit: true, allowDelete: true, allowExport: true }
+      : undefined);
   if (!control || !control.enabled) return user.role === 'SUPER_ADMIN' && action === 'controls';
 
   // 3. allow_* switches are business rules and bind SUPER_ADMIN too.
@@ -119,8 +126,8 @@ export function decide(
   const row = resolvePermission(pageId, page.family, data.rows);
   if (!row.hasRow) return false;
 
-  // 5. Department gate, skipped for scope ALL and for admin-users.
-  if (row.scope !== 'ALL' && !ADMIN_ONLY_PAGES.has(pageId)) {
+  // 5. Department gate, skipped for scope ALL, admin-users, and kit test pages.
+  if (row.scope !== 'ALL' && !ADMIN_ONLY_PAGES.has(pageId) && !isKitTestPage) {
     if (!data.departmentFamilies.has(page.family)) return false;
   }
 
@@ -134,7 +141,8 @@ export function decide(
 
 export function buildProfile(user: AccessUser, data: AccessData): Map<string, PageAccess> {
   const profile = new Map<string, PageAccess>();
-  for (const pageId of registry.pages.keys()) {
+  const pageIds = new Set<string>([...registry.pages.keys(), ...TYPED_PAGES]);
+  for (const pageId of pageIds) {
     const actions = noActions();
     for (const action of ACTIONS) actions[action] = decide(user, pageId, action, data);
     profile.set(pageId, { actions, scope: decideScope(user, pageId, data) });
@@ -207,11 +215,17 @@ export async function accessProfile(user: AccessUser): Promise<Map<string, PageA
 }
 
 export async function can(user: AccessUser, pageId: string, action: Action): Promise<boolean> {
-  return (await accessProfile(user)).get(pageId)?.actions[action] ?? false;
+  const prof = await accessProfile(user);
+  const entry = prof.get(pageId);
+  if (entry) return entry.actions[action];
+  return decide(user, pageId, action, await loadAccessData(user));
 }
 
 export async function scopeFor(user: AccessUser, pageId: string): Promise<Scope> {
-  return (await accessProfile(user)).get(pageId)?.scope ?? 'OWN';
+  const prof = await accessProfile(user);
+  const entry = prof.get(pageId);
+  if (entry) return entry.scope;
+  return decideScope(user, pageId, await loadAccessData(user));
 }
 
 /** Route guard for page-level permissions (used by Phase 2 admin endpoints and Phase 4 records). */

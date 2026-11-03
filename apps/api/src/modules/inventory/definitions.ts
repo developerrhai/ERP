@@ -4,6 +4,8 @@
 // generic engine (kind "typed"), so GenericModulePage renders them.
 import type { FieldMeta, FieldType } from '../../engine/field-types';
 import type { SchemaAction } from '../../engine/field-schema';
+import { kitSchemaFor } from '../../kit/registry';
+import type { FilterType, KitSchemaExtras, Requires } from '../../kit/types';
 
 export const ITEM_TYPES = [
   'Raw Material',
@@ -33,12 +35,12 @@ export type InventoryPageId = (typeof INVENTORY_PAGES)[number];
 export interface SchemaFilter {
   key: string;
   label: string;
-  type: 'bool' | 'select';
+  type: FilterType;
   /** Query parameter name. */
   param: string;
   options?: string[];
   /** A select whose options come from a lookup. */
-  lookup?: 'items' | 'warehouses';
+  lookup?: string;
 }
 
 export interface SchemaTotal {
@@ -60,11 +62,12 @@ export interface SchemaView {
   columns?: ViewColumn[];
 }
 
-export interface TypedSchema {
-  pageId: InventoryPageId;
+export interface TypedSchema extends KitSchemaExtras {
+  pageId: string;
   title: string;
   family: string;
   purpose: string;
+  department?: string;
   kind: 'typed';
   /** True for pages that only list (Stock Balance). */
   readOnly: boolean;
@@ -118,7 +121,7 @@ const action = (
   variant: string,
   confirm: string | null,
   allowedFrom: string[],
-  requires: 'edit' | 'delete' = 'edit',
+  requires: Requires = 'edit',
   requiresFrom?: string[],
 ): SchemaAction => ({
   key,
@@ -446,5 +449,6 @@ export const TYPED_SCHEMAS: Readonly<Record<InventoryPageId, TypedSchema>> = {
 };
 
 export function typedSchema(pageId: string): TypedSchema | null {
-  return (TYPED_SCHEMAS as Record<string, TypedSchema | undefined>)[pageId] ?? null;
+  const built = (TYPED_SCHEMAS as Record<string, TypedSchema | undefined>)[pageId];
+  return built ?? kitSchemaFor(pageId);
 }

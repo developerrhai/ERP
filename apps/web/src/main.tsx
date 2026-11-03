@@ -10,6 +10,8 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/login.css';
 import './styles/app.css';
+import './styles/panels.css';
+import './pages/generic/kit/modules';
 
 const rootEl = document.getElementById('root');
 if (!rootEl) throw new Error('Missing #root element');

@@ -17,6 +17,7 @@ import { RecordDrawer } from './RecordDrawer';
 import { RecordFormModal } from './RecordFormModal';
 import { PAGE_SIZES, RegisterTab, type QueryPatch, type RegisterQuery } from './RegisterTab';
 import { AuditTab, DashboardTab, DataQualityTab, PhaseNotice, ReportsTab } from './ModuleTabs';
+import { PanelView } from './kit/PanelView';
 import {
   deleteRecord,
   exportXlsx,
@@ -168,9 +169,24 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
   );
 
   const readOnly = !!schema.readOnly;
-  const canAdd = perms.add && !readOnly;
+  const canAdd = perms.add && !readOnly && !schema.readOnlyCreate;
   const canEditPerm = perms.edit && !readOnly;
   const canDeletePerm = perms.delete && !readOnly;
+
+  const openWorkspace = (row: RecordRow): void => {
+    const recordPanel = schema.tabPanels?.find((tp) => tp.scope === 'record');
+    if (!recordPanel) return;
+    setDrawerRow(null);
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('tab', recordPanel.tab);
+        next.set('rec', row.id);
+        return next;
+      },
+      { replace: false },
+    );
+  };
 
   const afterSave = (row: RecordRow, verb: string): void => {
     setForm(null);
@@ -325,6 +341,7 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
             onDelete={setDeleteRow}
             onAction={startAction}
             onNotify={toast}
+            onOpenWorkspace={openWorkspace}
           />
         ) : tab === 'Data Quality' ? (
           <DataQualityTab schema={schema} reloadToken={reloadToken} />
@@ -334,6 +351,16 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
           <AuditTab schema={schema} variant="table" reloadToken={reloadToken} />
         ) : tab === 'Reports' ? (
           <ReportsTab schema={viewSchema} perms={perms} query={query} reloadToken={reloadToken} />
+        ) : schema.tabPanels?.some((tp) => tp.tab === tab) ? (
+          <PanelView
+            pageId={schema.pageId}
+            tab={schema.tabPanels.find((tp) => tp.tab === tab)!}
+            recId={params.get('rec') ?? undefined}
+            schema={schema}
+            perms={perms}
+            reloadToken={reloadToken}
+            onChanged={changed}
+          />
         ) : !isLiveTab(tab, schema) ? (
           <PhaseNotice tab={tab} phase={phaseForTab(tab, schema.family)} />
         ) : null}
@@ -367,6 +394,7 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
             setDrawerRow(null);
             startAction(row, action);
           }}
+          onOpenWorkspace={openWorkspace}
           onClose={() => setDrawerRow(null)}
         />
       ) : null}

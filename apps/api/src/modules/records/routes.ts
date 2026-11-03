@@ -17,6 +17,8 @@ import {
   actionParamsSchema,
   auditQuerySchema,
   bulkBodySchema,
+  buildTypedExportQuery,
+  buildTypedListQuery,
   exportRecordsQuerySchema,
   listRecordsQuerySchema,
   pageParamsSchema,
@@ -28,6 +30,7 @@ import {
   typedExportQuerySchema,
   typedListQuerySchema,
 } from './schemas';
+import { typedSchema } from '../inventory/definitions';
 
 /** 404 NOT_GENERIC for pages served by neither engine (after the id was validated). */
 const requireServedPage: RequestHandler = (req, _res, next) => {
@@ -41,12 +44,19 @@ const requireServedPage: RequestHandler = (req, _res, next) => {
 
 /** Validates the list / export query with the schema of the engine that serves the page. */
 const byEngine =
-  (
-    generic: Parameters<typeof validate>[0]['query'],
-    typed: Parameters<typeof validate>[0]['query'],
-  ): RequestHandler =>
-  (req, res, next) =>
-    validate({ query: typedHandlerFor(req.params.pageId ?? '') ? typed : generic })(req, res, next);
+  (kind: 'list' | 'export'): RequestHandler =>
+  (req, res, next) => {
+    const pageId = req.params.pageId ?? '';
+    const typed = typedHandlerFor(pageId);
+    if (!typed) {
+      const generic = kind === 'list' ? listRecordsQuerySchema : exportRecordsQuerySchema;
+      return validate({ query: generic })(req, res, next);
+    }
+    const schema = typedSchema(pageId);
+    const typedQuery =
+      kind === 'list' ? buildTypedListQuery(schema) : buildTypedExportQuery(schema);
+    return validate({ query: typedQuery })(req, res, next);
+  };
 
 type Action = Parameters<typeof requireParamPageAction>[0];
 
@@ -89,7 +99,7 @@ export function createPagesRouter(): Router {
   records.get(
     '/',
     ...guard('view', false),
-    byEngine(listRecordsQuerySchema, typedListQuerySchema),
+    byEngine('list'),
     asyncHandler(recordsController.list),
   );
   records.post(
@@ -101,7 +111,7 @@ export function createPagesRouter(): Router {
   records.get(
     '/export.xlsx',
     ...guard('export', false),
-    byEngine(exportRecordsQuerySchema, typedExportQuerySchema),
+    byEngine('export'),
     asyncHandler(recordsController.export),
   );
   records.post(
@@ -146,11 +156,11 @@ export function createPagesRouter(): Router {
     validate({ params: recordParamsSchema, body: statusBodySchema }),
     asyncHandler(recordsController.status),
   );
-  // Typed Inventory actions: post | cancel | dispatch | receive (| activate | deactivate). The
-  // permission is `edit` (the module's allow_edit switch applies); a concrete unit is needed.
+  // Typed actions: requires a concrete unit; the specific permission (edit, delete, approve, add)
+  // is checked dynamically by the controller against actionDef.requires and requiresFrom.
   records.post(
     '/:id/actions/:action',
-    ...guard('edit', true),
+    requireConcreteUnit,
     validate({ params: actionParamsSchema, body: actionBodySchema }),
     asyncHandler(recordsController.action),
   );
