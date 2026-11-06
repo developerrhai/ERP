@@ -3,7 +3,7 @@
   "private": true,
   "description": "Sawant Group Enterprise ERP (Unit 1: Talwade, Unit 2: Sawardari, Unit 3: Varale)",
   "engines": {
-    "node": ">=20"
+    "node": "26.x"
   },
   "scripts": {
     "install:all": "npm --prefix packages/registry install && npm --prefix packages/calc install && npm --prefix packages/statutory install && npm --prefix apps/api install && npm --prefix apps/web install && npm install",
