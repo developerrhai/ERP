@@ -231,14 +231,18 @@ describe('POST /users', () => {
     }
   });
 
-  it('nobody can create a SUPER_ADMIN, and the DB allows only one', async () => {
+  it('an admin cannot create a SUPER_USER or ADMINISTRATOR', async () => {
     const res = await request(app)
       .post(`${API}/users`)
-      .set(superAdmin.bearer)
-      .send(newUserPayload({ role: 'SUPER_ADMIN' }));
+      .set(admin.bearer)
+      .send(newUserPayload({ role: 'SUPER_USER' }));
     expect(res.status).toBe(403);
-    await expect(makeUser({ role: 'SUPER_ADMIN' })).rejects.toThrow();
-    expect(await prisma.user.count({ where: { role: 'SUPER_ADMIN' } })).toBe(1);
+    const resAdmin = await request(app)
+      .post(`${API}/users`)
+      .set(admin.bearer)
+      .send(newUserPayload({ role: 'ADMINISTRATOR' }));
+    expect(resAdmin.status).toBe(403);
+    expect(await prisma.user.count({ where: { role: { code: 'SUPER_USER' } } })).toBe(1);
   });
 });
 
@@ -359,9 +363,11 @@ describe('PATCH /users/:id', () => {
       String(ownerUser.version),
     );
     expect(selfOwner.status).toBe(403);
-    expect((await prisma.user.findUniqueOrThrow({ where: { id: ownerUser.id } })).role).toBe(
-      'SUPER_ADMIN',
-    );
+    const freshOwner = await prisma.user.findUniqueOrThrow({
+      where: { id: ownerUser.id },
+      include: { role: true },
+    });
+    expect(freshOwner.role.code).toBe('SUPER_USER');
   });
 
   it('a role change needs both the old and the new role to be manageable', async () => {

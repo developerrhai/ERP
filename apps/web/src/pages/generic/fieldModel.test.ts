@@ -48,12 +48,12 @@ describe('tabs', () => {
   });
 
   it('maps tabs to roadmap phases', () => {
-    expect(phaseForTab('Approvals', 'CRM')).toBe(6);
-    expect(phaseForTab('Documents', 'CRM')).toBe(5);
+    expect(phaseForTab('Approvals', 'CRM')).toBe(5);
+    expect(phaseForTab('Documents', 'CRM')).toBe(8);
     expect(phaseForTab('AI Decision Center', 'CRM')).toBe(19);
-    expect(phaseForTab('Lead Scoring', 'CRM')).toBe(11);
-    expect(phaseForTab('Costing', 'Finance & Accounts')).toBe(8);
-    expect(phaseForTab('Shifts', 'Payroll')).toBe(14);
+    expect(phaseForTab('Lead Scoring', 'CRM')).toBe(10);
+    expect(phaseForTab('Costing', 'Finance & Accounts')).toBe(7);
+    expect(phaseForTab('Shifts', 'Payroll')).toBe(16);
   });
 });
 

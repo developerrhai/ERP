@@ -47,13 +47,24 @@ export function AuditTrailPage() {
   const [search, setSearch] = useState('');
   const q = useDebounced(search, 300);
   const [page, setPage] = useState(1);
+  const [preset, setPreset] = useState<'all' | 'login_events'>('all');
   const [selected, setSelected] = useState<AuditLog | null>(null);
   // From GET /audit-logs/actions; the static list covers a 404 or any load failure.
   const actionList = useLoad(listAuditActions, []);
   const actions: readonly string[] = actionList.data ?? AUDIT_ACTIONS;
   const { data, loading, error } = useLoad(
-    () => listAuditLogs({ from, to, action, actorId, q, page, size: PAGE_SIZE }),
-    [from, to, action, actorId, q, page],
+    () =>
+      listAuditLogs({
+        from,
+        to,
+        action,
+        preset: preset === 'login_events' ? 'login_events' : undefined,
+        actorId,
+        q,
+        page,
+        size: PAGE_SIZE,
+      }),
+    [from, to, action, preset, actorId, q, page],
   );
   const reset =
     <T,>(setter: (v: T) => void) =>
@@ -76,6 +87,28 @@ export function AuditTrailPage() {
         </div>
       ) : null}
       <div className="card">
+        <div style={{ display: 'flex', gap: '0.5rem', padding: '0.75rem 1rem 0' }}>
+          <button
+            type="button"
+            className={`btn sm ${preset === 'all' ? 'primary' : ''}`}
+            onClick={() => {
+              setPreset('all');
+              setPage(1);
+            }}
+          >
+            All Events
+          </button>
+          <button
+            type="button"
+            className={`btn sm ${preset === 'login_events' ? 'primary' : ''}`}
+            onClick={() => {
+              setPreset('login_events');
+              setPage(1);
+            }}
+          >
+            Login Events
+          </button>
+        </div>
         <div className="v8-table-toolbar">
           <label className="audit-date">
             From

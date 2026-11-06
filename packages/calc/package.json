@@ -1,0 +1,24 @@
+{
+  "name": "@rhai/calc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pure calculation engine (tax, payroll, depreciation, valuation) — no DB, 100% unit-tested",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "engines": {
+    "node": ">=20 <21"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "verify": "npm run typecheck && npm run test"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "sawant-group-erp": "file:../.."
+  }
+}

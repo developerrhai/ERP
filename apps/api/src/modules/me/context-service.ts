@@ -36,7 +36,7 @@ export const contextService = {
     return {
       company: { id: company.id, code: company.code, tradeName: company.tradeName },
       units: units.map((u) => ({ id: u.id, code: u.code, name: u.name })),
-      allUnitsAllowed: hasAllUnits(user.role),
+      allUnitsAllowed: hasAllUnits(user),
       fys: fys.map((f) => ({
         id: f.id,
         code: f.code,

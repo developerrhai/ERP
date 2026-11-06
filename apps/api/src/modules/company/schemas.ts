@@ -21,6 +21,12 @@ export const updateCompanySchema = z
     cin: cinSchema.optional(),
     gstin: gstinSchema.optional(),
     address: nullableText(300).optional(),
+    city: nullableText(100).optional(),
+    stateCode: z.string().trim().regex(/^\d{2}$/, 'State code must be 2 digits.').nullable().optional(),
+    pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits.').nullable().optional(),
+    email: z.string().trim().email('Invalid email address.').nullable().optional(),
+    phone: nullableText(30).optional(),
+    website: nullableText(200).optional(),
   })
   .strict()
   .refine((v) => Object.values(v).some((x) => x !== undefined), {

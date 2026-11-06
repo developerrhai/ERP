@@ -43,6 +43,14 @@ export const letterheadSchema = z
     cin: upperPattern(CIN_PATTERN, 'Enter a valid 21-character CIN or leave it empty.'),
     footer: optionalText(200),
     signatory: optionalText(100),
+    version: z.number().int().default(2),
+    logoFileId: z.string().uuid('Invalid logo file id.').nullable().optional().default(null),
+    headerHeightMm: z.number().int().min(10).max(100).default(30),
+    footerHeightMm: z.number().int().min(10).max(100).default(20),
+    primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Enter a valid 6-character hex color code').default('#0f172a'),
+    showGstin: z.boolean().default(true),
+    showPan: z.boolean().default(true),
+    showCin: z.boolean().default(true),
   })
   .strict();
 export type Letterhead = z.output<typeof letterheadSchema>;

@@ -8,6 +8,7 @@ import { emailSchema, loginIdSchema, nameSchema } from '../../modules/users/sche
 import { seedPhase2Defaults } from './defaults';
 import type { SeedReport } from './defaults';
 import { seedPhase3Defaults } from './phase3-defaults';
+import { seedApprovalDefaults } from './approval-defaults';
 import { seedPhase5Defaults } from './phase5-defaults';
 import type { Phase5SeedReport } from './phase5-defaults';
 import type { Phase3SeedReport } from './phase3-defaults';
@@ -49,8 +50,12 @@ export interface SeedResult {
 export async function runSeed(db: PrismaClient, source: NodeJS.ProcessEnv): Promise<SeedResult> {
   const phase2 = await seedPhase2Defaults(db);
   const phase3 = await seedPhase3Defaults(db);
+  await seedApprovalDefaults(db); // Phase 05 prototype matrix (insert-if-missing)
 
-  const existing = await db.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
+  const superUserRole = await db.role.findUnique({ where: { code: 'SUPER_USER' } });
+  const existing = superUserRole
+    ? await db.user.findFirst({ where: { roleId: superUserRole.id } })
+    : null;
   if (existing) {
     const phase5 = await seedPhase5Defaults(db);
     return {
@@ -75,13 +80,16 @@ export async function runSeed(db: PrismaClient, source: NodeJS.ProcessEnv): Prom
   if (clash) {
     throw new Error('SUPERADMIN_LOGIN_ID or SUPERADMIN_EMAIL is already used by another user');
   }
+  if (!superUserRole) {
+    throw new Error('SUPER_USER role does not exist');
+  }
   const user = await db.user.create({
     data: {
       loginId: cfg.SUPERADMIN_LOGIN_ID,
       email,
       name: cfg.SUPERADMIN_NAME,
-      role: 'SUPER_ADMIN',
-      department: 'Administration',
+      roleId: superUserRole.id,
+      department: null,
       passwordHash: await hashPassword(cfg.SUPERADMIN_PASSWORD),
       mustChangePassword: true,
     },

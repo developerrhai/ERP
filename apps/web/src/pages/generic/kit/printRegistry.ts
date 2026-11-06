@@ -36,10 +36,7 @@ export function registerPrintTemplate(
   TEMPLATE_REGISTRY.set(`${pageId}:${key}`, Component);
 }
 
-export function getPrintTemplate(
-  pageId: string,
-  key: string,
-): PrintTemplateComponent | undefined {
+export function getPrintTemplate(pageId: string, key: string): PrintTemplateComponent | undefined {
   return TEMPLATE_REGISTRY.get(`${pageId}:${key}`);
 }
 

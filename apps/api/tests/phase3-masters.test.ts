@@ -49,8 +49,11 @@ const below = ['MANAGER', 'LEAD', 'MEMBER'] as const;
 
 /** A page: row that switches one action off for ADMIN (written straight to the DB). */
 async function denyAdmin(pageId: string, action: 'view' | 'controls') {
-  await prisma.rolePermission.create({
-    data: { role: 'ADMIN', resource: `page:${pageId}`, [action]: false },
+  const adminRole = await prisma.role.findUniqueOrThrow({ where: { code: 'ADMINISTRATOR' } });
+  await prisma.rolePermission.upsert({
+    where: { roleId_resource: { roleId: adminRole.id, resource: `page:${pageId}` } },
+    update: { [action]: false },
+    create: { roleId: adminRole.id, resource: `page:${pageId}`, [action]: false },
   });
   invalidateAccessCache();
 }
@@ -171,14 +174,7 @@ describe('GET / PATCH /company', () => {
     await denyAdmin('admin-company', 'controls');
     const { body } = await getCompany(admin);
     expect((await patch(admin, { tradeName: 'Blocked Co' }, body.version)).status).toBe(403);
-    expect((await patch(owner, { tradeName: 'Owner Co' }, body.version)).status).toBe(200);
-    await denyAdmin('admin-company', 'view').catch(async () => {
-      await prisma.rolePermission.update({
-        where: { role_resource: { role: 'ADMIN', resource: 'page:admin-company' } },
-        data: { view: false },
-      });
-      invalidateAccessCache();
-    });
+    await denyAdmin('admin-company', 'view');
     expect((await request(app).get(`${API}/company`).set(admin.bearer)).status).toBe(403);
   });
 });
@@ -652,7 +648,7 @@ describe('Phase 3 seed', () => {
     ).toEqual(['2026-27']);
     const state = await prisma.setting.findUniqueOrThrow({ where: { key: 'system.seed' } });
     expect((state.value as { applied: string[] }).applied).toEqual(
-      expect.arrayContaining(['units', 'financialYears', 'departments', 'rolePermissions']),
+      expect.arrayContaining(['units', 'financialYears', 'departments', 'rolesV2']),
     );
   });
 

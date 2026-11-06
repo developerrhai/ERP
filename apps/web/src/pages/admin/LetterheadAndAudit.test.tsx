@@ -54,8 +54,7 @@ describe('LetterheadPage', () => {
       expect(screen.getByLabelText(l)).toBeInTheDocument();
     }
     const testPdf = screen.getByRole('button', { name: 'Test PDF' });
-    expect(testPdf).toBeDisabled();
-    expect(testPdf).toHaveAttribute('title', 'PDF generation arrives in Phase 4');
+    expect(testPdf).toBeEnabled();
     const preview = screen.getByTestId('letterhead-preview');
     const ue = userEvent.setup();
     await ue.type(screen.getByLabelText('GSTIN'), '27abcde1234f1z5');

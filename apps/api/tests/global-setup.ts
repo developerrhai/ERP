@@ -5,6 +5,7 @@ import { resetTestDatabase } from '../scripts/reset-test-db';
 import { hashPassword } from '../src/core/auth/password';
 import { seedPhase2Defaults } from '../src/core/seed/defaults';
 import { seedPhase3Defaults } from '../src/core/seed/phase3-defaults';
+import { seedApprovalDefaults } from '../src/core/seed/approval-defaults';
 import { seedPhase5Defaults } from '../src/core/seed/phase5-defaults';
 import { TEST_ENV, TEST_OWNER } from './test-env';
 
@@ -15,13 +16,16 @@ export default async function setup(): Promise<void> {
   try {
     await seedPhase2Defaults(prisma);
     await seedPhase3Defaults(prisma);
+    await seedApprovalDefaults(prisma);
+    const superUserRole = await prisma.role.findUniqueOrThrow({ where: { code: 'SUPER_USER' } });
     await prisma.user.create({
       data: {
         loginId: TEST_OWNER.loginId,
         email: TEST_OWNER.email,
         name: TEST_OWNER.name,
-        role: 'SUPER_ADMIN',
-        department: 'Administration',
+        roleId: superUserRole.id,
+        department: null,
+        approvalLimit: null,
         passwordHash: await hashPassword(TEST_OWNER.password),
         mustChangePassword: false,
       },

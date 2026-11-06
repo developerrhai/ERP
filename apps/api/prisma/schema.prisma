@@ -16,14 +16,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  SUPER_ADMIN
-  ADMIN
-  MANAGER
-  LEAD
-  MEMBER
-}
-
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -47,47 +39,90 @@ enum FinancialYearStatus {
 enum DataScope {
   OWN
   DEPARTMENT
+  UNIT
   ALL
 }
 
-model User {
-  id                 String           @id @default(uuid()) @db.Uuid
-  loginId            String           @unique @map("login_id") @db.VarChar(64)
-  email              String?          @unique @db.VarChar(254)
-  name               String           @db.VarChar(100)
-  role               Role
-  /// FK to departments.name (ON UPDATE CASCADE, ON DELETE RESTRICT); null only for SUPER_ADMIN.
-  department         String?          @db.VarChar(60)
-  departmentRef      Department?      @relation("UserDepartment", fields: [department], references: [name], onUpdate: Cascade, onDelete: Restrict)
-  status             UserStatus       @default(ACTIVE)
-  passwordHash       String           @map("password_hash")
-  mustChangePassword Boolean          @default(true) @map("must_change_password")
-  failedLoginCount   Int              @default(0) @map("failed_login_count")
-  lockedUntil        DateTime?        @map("locked_until") @db.Timestamptz(3)
-  lastLoginAt        DateTime?        @map("last_login_at") @db.Timestamptz(3)
-  createdById        String?          @map("created_by_id") @db.Uuid
-  createdBy          User?            @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdUsers       User[]           @relation("UserCreatedBy")
-  sessions           Session[]
-  auditEntries       AuditLog[]       @relation("AuditActor")
-  createdDepartments Department[]     @relation("DepartmentCreatedBy")
-  permissionEdits    RolePermission[] @relation("PermissionUpdatedBy")
-  controlEdits       ModuleControl[]  @relation("ModuleControlUpdatedBy")
-  settingEdits       Setting[]        @relation("SettingUpdatedBy")
-  /// Phase 3: the unit the user starts in (must be one of their units; ADMIN+ may pick any).
-  defaultUnitId      String?          @map("default_unit_id") @db.Uuid
-  defaultUnit        Unit?            @relation("UserDefaultUnit", fields: [defaultUnitId], references: [id], onDelete: Restrict)
-  /// Phase 3: units a MANAGER/LEAD/MEMBER may work in. ADMIN+ implicitly have all units.
-  units              UserUnit[]
-  preference         UserPreference?
-  createdRecords     GenericRecord[]  @relation("RecordCreatedBy")
-  updatedRecords     GenericRecord[]  @relation("RecordUpdatedBy")
-  deletedRecords     GenericRecord[]  @relation("RecordDeletedBy")
-  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
-  version            Int              @default(1)
+model Role {
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique @db.VarChar(30)
+  name        String           @unique @db.VarChar(60)
+  description String?          @db.VarChar(300)
+  level       Int
+  isSystem    Boolean          @default(false) @map("is_system")
+  allUnits    Boolean          @default(false) @map("all_units")
+  status      UserStatus       @default(ACTIVE)
+  version     Int              @default(1)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById String?          @map("created_by_id") @db.Uuid
+  createdBy   User?            @relation("RoleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?          @map("updated_by_id") @db.Uuid
+  updatedBy   User?            @relation("RoleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  users       User[]
+  permissions RolePermission[]
 
-  @@index([role])
+  @@index([level])
+  @@map("roles")
+}
+
+model User {
+  id                  String                @id @default(uuid()) @db.Uuid
+  loginId             String                @unique @map("login_id") @db.VarChar(64)
+  email               String?               @unique @db.VarChar(254)
+  name                String                @db.VarChar(100)
+  roleId              String                @map("role_id") @db.Uuid
+  role                Role                  @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  /// FK to departments.name (ON UPDATE CASCADE, ON DELETE RESTRICT); null only for SUPER_USER.
+  department          String?               @db.VarChar(60)
+  departmentRef       Department?           @relation("UserDepartment", fields: [department], references: [name], onUpdate: Cascade, onDelete: Restrict)
+  extraDepartments    UserDepartment[]
+  approvalLimit       Decimal?              @map("approval_limit") @db.Decimal(18, 2)
+  status              UserStatus            @default(ACTIVE)
+  passwordHash        String                @map("password_hash")
+  mustChangePassword  Boolean               @default(true) @map("must_change_password")
+  failedLoginCount    Int                   @default(0) @map("failed_login_count")
+  lockedUntil         DateTime?             @map("locked_until") @db.Timestamptz(3)
+  lastLoginAt         DateTime?             @map("last_login_at") @db.Timestamptz(3)
+  passwordChangedAt   DateTime?             @default(now()) @map("password_changed_at") @db.Timestamptz(3)
+  previousLoginAt     DateTime?             @map("previous_login_at") @db.Timestamptz(3)
+  previousLoginIp     String?               @map("previous_login_ip") @db.VarChar(64)
+  lastLoginIp         String?               @map("last_login_ip") @db.VarChar(64)
+  mfaEnabled          Boolean               @default(false) @map("mfa_enabled")
+  mfaSecretEnc        String?               @map("mfa_secret_enc") @db.Text
+  mfaPendingSecretEnc String?               @map("mfa_pending_secret_enc") @db.Text
+  mfaEnrolledAt       DateTime?             @map("mfa_enrolled_at") @db.Timestamptz(3)
+  mfaLastStep         BigInt?               @map("mfa_last_step")
+  createdById         String?               @map("created_by_id") @db.Uuid
+  createdBy           User?                 @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers        User[]                @relation("UserCreatedBy")
+  sessions            Session[]
+  revokedSessions     Session[]             @relation("SessionRevokedBy")
+  recoveryCodes       UserMfaRecoveryCode[]
+  mfaChallenges       MfaChallenge[]
+  passwordResetTokens PasswordResetToken[]
+  auditEntries        AuditLog[]            @relation("AuditActor")
+  createdDepartments  Department[]          @relation("DepartmentCreatedBy")
+  permissionEdits     RolePermission[]      @relation("PermissionUpdatedBy")
+  controlEdits        ModuleControl[]       @relation("ModuleControlUpdatedBy")
+  settingEdits        Setting[]             @relation("SettingUpdatedBy")
+  createdRoles        Role[]                @relation("RoleCreatedBy")
+  updatedRoles        Role[]                @relation("RoleUpdatedBy")
+  createdUserDepartments UserDepartment[]   @relation("UserDepartmentCreatedBy")
+  /// Phase 3: the unit the user starts in (must be one of their units; ADMIN+ may pick any).
+  defaultUnitId       String?               @map("default_unit_id") @db.Uuid
+  defaultUnit         Unit?                 @relation("UserDefaultUnit", fields: [defaultUnitId], references: [id], onDelete: Restrict)
+  /// Phase 3: units a MANAGER/LEAD/MEMBER may work in. ADMIN+ implicitly have all units.
+  units               UserUnit[]
+  preference          UserPreference?
+  createdRecords      GenericRecord[]       @relation("RecordCreatedBy")
+  updatedRecords      GenericRecord[]       @relation("RecordUpdatedBy")
+  deletedRecords      GenericRecord[]       @relation("RecordDeletedBy")
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  version             Int                   @default(1)
+
+  @@index([roleId])
   @@index([status])
   @@index([department])
   @@index([defaultUnitId])
@@ -99,20 +134,67 @@ model Session {
   userId           String    @map("user_id") @db.Uuid
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   familyId         String    @map("family_id") @db.Uuid
+  familyStartedAt  DateTime  @default(now()) @map("family_started_at") @db.Timestamptz(3)
   refreshTokenHash String    @unique @map("refresh_token_hash") @db.Char(64)
   userAgent        String?   @map("user_agent") @db.VarChar(512)
   ip               String?   @db.VarChar(64)
+  mfaVerified      Boolean?  @default(false) @map("mfa_verified")
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   lastUsedAt       DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(3)
   expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
   revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
   revokedReason    String?   @map("revoked_reason") @db.VarChar(40)
+  revokedById      String?   @map("revoked_by_id") @db.Uuid
+  revokedBy        User?     @relation("SessionRevokedBy", fields: [revokedById], references: [id], onDelete: SetNull)
   /// Set the one time a rotated token is accepted as a tab race (409 REFRESH_RACE); a second replay is reuse.
   graceUsedAt      DateTime? @map("grace_used_at") @db.Timestamptz(3)
 
   @@index([userId])
   @@index([familyId])
   @@map("sessions")
+}
+
+model UserMfaRecoveryCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String    @map("code_hash") @db.Char(64)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([userId, codeHash], map: "user_mfa_recovery_codes_user_hash_unique")
+  @@index([userId])
+  @@map("user_mfa_recovery_codes")
+}
+
+model MfaChallenge {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempts   Int       @default(0)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(3)
+  ip         String?   @db.VarChar(64)
+  userAgent  String?   @map("user_agent") @db.VarChar(512)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("mfa_challenges")
+}
+
+model PasswordResetToken {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique @map("token_hash") @db.VarChar(64)
+  expiresAt   DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt      DateTime? @map("used_at") @db.Timestamptz(3)
+  requestedIp String?   @map("requested_ip") @db.VarChar(64)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model AuditLog {
@@ -134,28 +216,31 @@ model AuditLog {
 }
 
 model Department {
-  id          String             @id @default(uuid()) @db.Uuid
-  code        String             @unique @db.VarChar(10)
-  name        String             @unique @db.VarChar(60)
-  head        String?            @db.VarChar(100)
-  status      DepartmentStatus   @default(ACTIVE)
-  version     Int                @default(1)
-  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
-  createdById String?            @map("created_by_id") @db.Uuid
-  createdBy   User?              @relation("DepartmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  users       User[]             @relation("UserDepartment")
-  families    DepartmentFamily[]
-  modules     ModuleControl[]
+  id              String             @id @default(uuid()) @db.Uuid
+  code            String             @unique @db.VarChar(10)
+  name            String             @unique @db.VarChar(60)
+  head            String?            @db.VarChar(100)
+  status          DepartmentStatus   @default(ACTIVE)
+  version         Int                @default(1)
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById     String?            @map("created_by_id") @db.Uuid
+  createdBy       User?              @relation("DepartmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  users           User[]             @relation("UserDepartment")
+  userDepartments UserDepartment[]
+  families        DepartmentFamily[]
+  modules         ModuleControl[]
+  designations    Designation[]
 
   @@map("departments")
 }
 
-/// One row per (role, resource). Never rows for SUPER_ADMIN (CHECK in SQL). resource: "*", "family:<name>" or "page:<id>".
+/// One row per (role_id, resource). Never rows for SUPER_USER (trigger in SQL). resource: "*", "family:<name>" or "page:<id>".
 /// On family/page rows a null action or scope means "inherit" (page -> family -> "*"); "*" rows are never null (CHECK).
 model RolePermission {
   id          String     @id @default(uuid()) @db.Uuid
-  role        Role
+  roleId      String     @map("role_id") @db.Uuid
+  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   resource    String     @db.VarChar(120)
   view        Boolean?
   add         Boolean?
@@ -164,6 +249,11 @@ model RolePermission {
   approve     Boolean?
   export      Boolean?
   controls    Boolean?
+  submit      Boolean?
+  post        Boolean?
+  cancel      Boolean?
+  print       Boolean?
+  import      Boolean?   @map("import")
   scope       DataScope?
   version     Int        @default(1)
   updatedById String?    @map("updated_by_id") @db.Uuid
@@ -171,8 +261,22 @@ model RolePermission {
   createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  @@unique([role, resource])
+  @@unique([roleId, resource])
   @@map("role_permissions")
+}
+
+model UserDepartment {
+  userId         String     @map("user_id") @db.Uuid
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentName String     @map("department_name") @db.VarChar(60)
+  department     Department @relation(fields: [departmentName], references: [name], onUpdate: Cascade, onDelete: Restrict)
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById    String?    @map("created_by_id") @db.Uuid
+  createdBy      User?      @relation("UserDepartmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@id([userId, departmentName])
+  @@index([departmentName])
+  @@map("user_departments")
 }
 
 /// Which menu families a department sees (prototype DEPT_FAMILIES).
@@ -231,6 +335,13 @@ model Company {
   cin       String?  @db.VarChar(21)
   gstin     String?  @db.VarChar(15)
   address   String?  @db.VarChar(300)
+  city      String?  @db.VarChar(100)
+  state     String?  @db.VarChar(100)
+  pincode   String?  @db.VarChar(10)
+  stateCode String?  @map("state_code") @db.VarChar(2)
+  email     String?  @db.VarChar(254)
+  phone     String?  @db.VarChar(30)
+  website   String?  @db.VarChar(200)
   currency  String   @default("INR") @db.VarChar(3)
   timezone  String   @default("Asia/Kolkata") @db.VarChar(64)
   version   Int      @default(1)
@@ -246,6 +357,12 @@ model Unit {
   code        String           @unique @db.VarChar(10)
   name        String           @unique @db.VarChar(100)
   address     String?          @db.VarChar(300)
+  city        String?          @db.VarChar(100)
+  state       String?          @db.VarChar(100)
+  pincode     String?          @db.VarChar(10)
+  stateCode   String?          @map("state_code") @db.VarChar(2)
+  phone       String?          @db.VarChar(30)
+  email       String?          @db.VarChar(254)
   gstin       String?          @db.VarChar(15)
   status      UnitStatus       @default(ACTIVE)
   version     Int              @default(1)
@@ -265,22 +382,46 @@ model Unit {
 
 /// Phase 3: Indian financial years (1 Apr - 31 Mar). At most one is_current (partial unique index).
 model FinancialYear {
-  id          String              @id @default(uuid()) @db.Uuid
-  code        String              @unique @db.VarChar(7)
-  label       String              @db.VarChar(40)
-  startDate   DateTime            @unique @map("start_date") @db.Date
-  endDate     DateTime            @map("end_date") @db.Date
-  status      FinancialYearStatus @default(OPEN)
-  isCurrent   Boolean             @default(false) @map("is_current")
-  version     Int                 @default(1)
-  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id          String                @id @default(uuid()) @db.Uuid
+  code        String                @unique @db.VarChar(7)
+  label       String                @db.VarChar(40)
+  startDate   DateTime              @unique @map("start_date") @db.Date
+  endDate     DateTime              @map("end_date") @db.Date
+  status      FinancialYearStatus   @default(OPEN)
+  isCurrent   Boolean               @default(false) @map("is_current")
+  version     Int                   @default(1)
+  createdAt   DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
   preferences UserPreference[]
   records     GenericRecord[]
   series      NumberSeries[]
   vouchers    StockVoucher[]
+  periods     FinancialYearPeriod[]
 
   @@map("financial_years")
+}
+
+model FinancialYearPeriod {
+  id         String        @id @default(uuid()) @db.Uuid
+  fyId       String        @map("fy_id") @db.Uuid
+  fy         FinancialYear @relation(fields: [fyId], references: [id], onDelete: Cascade)
+  periodNo   Int           @map("period_no")
+  code       String        @db.VarChar(10)
+  label      String        @db.VarChar(40)
+  startDate  DateTime      @map("start_date") @db.Date
+  endDate    DateTime      @map("end_date") @db.Date
+  status     String        @default("OPEN") @db.VarChar(10)
+  closedAt   DateTime?     @map("closed_at") @db.Timestamptz(3)
+  closedById String?       @map("closed_by_id") @db.Uuid
+  version    Int           @default(1)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([fyId, periodNo], map: "financial_year_periods_fy_period_no_unique")
+  @@unique([fyId, code], map: "financial_year_periods_fy_code_unique")
+  @@index([fyId, startDate, endDate], map: "financial_year_periods_fy_dates_idx")
+  @@index([status], map: "financial_year_periods_status_idx")
+  @@map("financial_year_periods")
 }
 
 /// Phase 3: which units a user may work in.
@@ -347,26 +488,41 @@ model GenericRecord {
 /// Phase 4: gap-free numbering per (page, unit, FY); next_value is read FOR UPDATE inside the
 /// create transaction, so a rolled-back create gives its number back.
 model NumberSeries {
-  pageId    String        @map("page_id") @db.VarChar(80)
-  unitId    String        @map("unit_id") @db.Uuid
-  unit      Unit          @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  fyId      String        @map("fy_id") @db.Uuid
-  fy        FinancialYear @relation(fields: [fyId], references: [id], onDelete: Restrict)
-  nextValue Int           @default(1) @map("next_value")
+  pageId         String        @map("page_id") @db.VarChar(80)
+  unitId         String        @map("unit_id") @db.Uuid
+  unit           Unit          @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  fyId           String        @map("fy_id") @db.Uuid
+  fy             FinancialYear @relation(fields: [fyId], references: [id], onDelete: Restrict)
+  nextValue      Int           @default(1) @map("next_value")
+  prefix         String?       @db.VarChar(20)
+  suffix         String?       @db.VarChar(20)
+  pattern        String?       @default("{prefix}/{unit}/{fy}/{number:4}") @db.VarChar(100)
+  padding        Int           @default(4)
+  resetFrequency String        @default("YEARLY") @map("reset_frequency") @db.VarChar(20)
+  description    String?       @db.VarChar(200)
+  updatedAt      DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedById    String?       @map("updated_by_id") @db.Uuid
 
   @@id([pageId, unitId, fyId])
+  @@index([pageId, unitId], map: "number_series_page_unit_idx")
   @@map("number_series")
 }
 
 /// Phase 4: Idempotency-Key replay store for POST /pages/:pageId/records.
 model IdempotencyKey {
-  userId      String   @map("user_id") @db.Uuid
-  key         String   @db.VarChar(128)
-  requestHash String   @map("request_hash") @db.Char(64)
-  recordId    String   @map("record_id") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  userId       String   @map("user_id") @db.Uuid
+  scope        String   @default("records:create") @db.VarChar(160)
+  key          String   @db.VarChar(128)
+  requestHash  String   @map("request_hash") @db.Char(64)
+  recordId     String?  @map("record_id") @db.Uuid
+  state        String   @default("DONE") @db.VarChar(12)
+  responseCode Int?     @map("response_code")
+  responseBody Json?    @map("response_body")
+  expiresAt    DateTime @default(dbgenerated("(CURRENT_TIMESTAMP + interval '24 hours')")) @map("expires_at") @db.Timestamptz(3)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  @@id([userId, key])
+  @@id([userId, scope, key])
+  @@index([expiresAt], map: "idempotency_keys_expires_idx")
   @@map("idempotency_keys")
 }
 
@@ -391,18 +547,22 @@ model Item {
   barcode       String?        @db.VarChar(60)
   batchTracked  Boolean        @default(false) @map("batch_tracked")
   serialTracked Boolean        @default(false) @map("serial_tracked")
-  shelfLifeDays Int?           @map("shelf_life_days")
-  standardCost  Decimal?       @map("standard_cost") @db.Decimal(18, 2)
-  sellingPrice  Decimal?       @map("selling_price") @db.Decimal(18, 2)
-  reorderLevel  Decimal?       @map("reorder_level") @db.Decimal(18, 3)
-  status        MasterStatus   @default(ACTIVE)
-  version       Int            @default(1)
-  createdById   String         @map("created_by_id") @db.Uuid
-  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedById   String?        @map("updated_by_id") @db.Uuid
-  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedById   String?        @map("deleted_by_id") @db.Uuid
-  deletedAt     DateTime?      @map("deleted_at") @db.Timestamptz(3)
+  shelfLifeDays   Int?           @map("shelf_life_days")
+  standardCost    Decimal?       @map("standard_cost") @db.Decimal(18, 2)
+  sellingPrice    Decimal?       @map("selling_price") @db.Decimal(18, 2)
+  reorderLevel    Decimal?       @map("reorder_level") @db.Decimal(18, 3)
+  valuationMethod String         @default("MOVING_AVG") @map("valuation_method") @db.VarChar(12)
+  qcRequired      Boolean        @default(false) @map("qc_required")
+  unitWeightKg    Decimal?       @map("unit_weight_kg") @db.Decimal(18, 3)
+  storageUnits    Decimal        @default(1) @map("storage_units") @db.Decimal(18, 6)
+  status          MasterStatus   @default(ACTIVE)
+  version         Int            @default(1)
+  createdById     String         @map("created_by_id") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedById     String?        @map("updated_by_id") @db.Uuid
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedById     String?        @map("deleted_by_id") @db.Uuid
+  deletedAt       DateTime?      @map("deleted_at") @db.Timestamptz(3)
   balances      StockBalance[]
   ledger        StockLedger[]
   vouchers      StockVoucher[]
@@ -423,6 +583,9 @@ model Warehouse {
   dockDoors       Int?           @map("dock_doors")
   operatingHours  String?        @map("operating_hours") @db.VarChar(100)
   temperatureZone String?        @map("temperature_zone") @db.VarChar(20)
+  binManaged      Boolean        @default(false) @map("bin_managed")
+  putawayRequired Boolean        @default(false) @map("putaway_required")
+  pickMethod      String         @default("FEFO") @map("pick_method") @db.VarChar(6)
   status          MasterStatus   @default(ACTIVE)
   version         Int            @default(1)
   createdById     String         @map("created_by_id") @db.Uuid
@@ -456,13 +619,20 @@ model StockLedger {
   rate         Decimal   @db.Decimal(18, 6)
   value        Decimal   @db.Decimal(18, 2)
   balanceQty   Decimal   @map("balance_qty") @db.Decimal(18, 3)
-  balanceValue Decimal   @map("balance_value") @db.Decimal(18, 2)
-  voucherType  String    @map("voucher_type") @db.VarChar(20)
-  voucherId    String    @map("voucher_id") @db.Uuid
-  voucherNo    String    @map("voucher_no") @db.VarChar(60)
+  balanceValue    Decimal   @map("balance_value") @db.Decimal(18, 2)
+  voucherType     String    @map("voucher_type") @db.VarChar(20)
+  voucherId       String    @map("voucher_id") @db.Uuid
+  voucherNo       String    @map("voucher_no") @db.VarChar(60)
+  batchId         String?   @map("batch_id") @db.Uuid
+  binId           String?   @map("bin_id") @db.Uuid
+  uom             String?   @db.VarChar(20)
+  uomFactor       Decimal?  @map("uom_factor") @db.Decimal(18, 6)
+  ppv             Decimal   @default(0) @db.Decimal(18, 2)
+  reasonCode      String?   @map("reason_code") @db.VarChar(30)
+  negativeAllowed Boolean   @default(false) @map("negative_allowed")
   /// For REVERSAL entries: the ledger row they undo.
-  reversesId   String?   @map("reverses_id") @db.Uuid
-  createdById  String    @map("created_by_id") @db.Uuid
+  reversesId      String?   @map("reverses_id") @db.Uuid
+  createdById     String    @map("created_by_id") @db.Uuid
 
   @@index([itemId, warehouseId, postedAt])
   @@index([unitId, postingDate])
@@ -476,10 +646,12 @@ model StockBalance {
   item        Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
   warehouseId String    @map("warehouse_id") @db.Uuid
   warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  onHand      Decimal   @default(0) @map("on_hand") @db.Decimal(18, 3)
-  value       Decimal   @default(0) @db.Decimal(18, 2)
-  avgRate     Decimal   @default(0) @map("avg_rate") @db.Decimal(18, 6)
-  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  onHand          Decimal   @default(0) @map("on_hand") @db.Decimal(18, 3)
+  reservedQty     Decimal   @default(0) @map("reserved_qty") @db.Decimal(18, 3)
+  negativeAllowed Boolean   @default(false) @map("negative_allowed")
+  value           Decimal   @default(0) @db.Decimal(18, 2)
+  avgRate         Decimal   @default(0) @map("avg_rate") @db.Decimal(18, 6)
+  updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
 
   @@id([itemId, warehouseId])
   @@index([warehouseId])
@@ -517,25 +689,396 @@ model StockVoucher {
   value           Decimal?      @db.Decimal(18, 2)
   systemQty       Decimal?      @map("system_qty") @db.Decimal(18, 3)
   varianceQty     Decimal?      @map("variance_qty") @db.Decimal(18, 3)
-  reasonCode      String?       @map("reason_code") @db.VarChar(30)
-  approver        String?       @db.VarChar(100)
-  vehicleRef      String?       @map("vehicle_ref") @db.VarChar(60)
-  expectedReceipt DateTime?     @map("expected_receipt") @db.Date
-  dispatchRate    Decimal?      @map("dispatch_rate") @db.Decimal(18, 6)
-  dispatchValue   Decimal?      @map("dispatch_value") @db.Decimal(18, 2)
-  department      String        @db.VarChar(60)
-  postedAt        DateTime?     @map("posted_at") @db.Timestamptz(3)
-  postedById      String?       @map("posted_by_id") @db.Uuid
-  version         Int           @default(1)
-  createdById     String        @map("created_by_id") @db.Uuid
-  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedById     String?       @map("updated_by_id") @db.Uuid
-  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedById     String?       @map("deleted_by_id") @db.Uuid
-  deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz(3)
+  reasonCode       String?       @map("reason_code") @db.VarChar(30)
+  approver         String?       @db.VarChar(100)
+  vehicleRef       String?       @map("vehicle_ref") @db.VarChar(60)
+  expectedReceipt  DateTime?     @map("expected_receipt") @db.Date
+  dispatchRate     Decimal?      @map("dispatch_rate") @db.Decimal(18, 6)
+  dispatchValue    Decimal?      @map("dispatch_value") @db.Decimal(18, 2)
+  enteredQty       Decimal?      @map("entered_qty") @db.Decimal(18, 3)
+  uom              String?       @db.VarChar(20)
+  uomFactor        Decimal?      @map("uom_factor") @db.Decimal(18, 6)
+  mfgDate          DateTime?     @map("mfg_date") @db.Date
+  expiryDate       DateTime?     @map("expiry_date") @db.Date
+  serialNos        Json?         @map("serial_nos")
+  approvedById     String?       @map("approved_by_id") @db.Uuid
+  reasonNote       String?       @map("reason_note") @db.VarChar(300)
+  uploadBatch      String?       @map("upload_batch") @db.VarChar(40)
+  validationStatus String?       @map("validation_status") @db.VarChar(8)
+  department       String        @db.VarChar(60)
+  postedAt         DateTime?     @map("posted_at") @db.Timestamptz(3)
+  postedById       String?       @map("posted_by_id") @db.Uuid
+  version          Int           @default(1)
+  createdById      String        @map("created_by_id") @db.Uuid
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedById      String?       @map("updated_by_id") @db.Uuid
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedById      String?       @map("deleted_by_id") @db.Uuid
+  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz(3)
 
   @@unique([kind, number])
   @@index([kind, unitId, deletedAt])
   @@index([itemId, warehouseId])
   @@map("stock_vouchers")
+}
+
+model Uom {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String?   @map("company_id") @db.Uuid
+  code        String    @db.VarChar(20)
+  name        String    @db.VarChar(60)
+  uomClass    String    @default("Count") @map("uom_class") @db.VarChar(12)
+  decimals    Int       @default(3) @db.SmallInt
+  status      String    @default("Active") @db.VarChar(10)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  version     Int       @default(1)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  @@unique([code])
+  @@map("uoms")
+}
+
+model UomConversion {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String?   @map("company_id") @db.Uuid
+  itemId      String?   @map("item_id") @db.Uuid
+  fromUomId   String    @map("from_uom_id") @db.Uuid
+  toUomId     String    @map("to_uom_id") @db.Uuid
+  factor      Decimal   @db.Decimal(18, 6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById String    @map("created_by_id") @db.Uuid
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  version     Int       @default(1)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  @@index([itemId])
+  @@index([fromUomId])
+  @@index([toUomId])
+  @@map("uom_conversions")
+}
+
+model AccountingEventQueue {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyId   String    @map("company_id") @db.Uuid
+  event       String    @db.VarChar(40)
+  docType     String    @map("doc_type") @db.VarChar(30)
+  docId       String    @map("doc_id") @db.Uuid
+  docDate     DateTime  @map("doc_date") @db.Date
+  unitId      String?   @map("unit_id") @db.Uuid
+  payload     Json
+  status      String    @default("PENDING") @db.VarChar(8)
+  journalId   String?   @map("journal_id") @db.Uuid
+  error       String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(3)
+
+  @@unique([event, docType, docId])
+  @@index([status, createdAt])
+  @@index([unitId])
+  @@map("accounting_event_queue")
+}
+
+model Designation {
+  id           String      @id @default(uuid()) @db.Uuid
+  code         String      @db.VarChar(20)
+  name         String      @db.VarChar(100)
+  departmentId String?     @map("department_id") @db.Uuid
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  level        Int         @default(10)
+  status       String      @default("ACTIVE") @db.VarChar(10)
+  version      Int         @default(1)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById  String?     @map("created_by_id") @db.Uuid
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedById  String?     @map("updated_by_id") @db.Uuid
+  deletedAt    DateTime?   @map("deleted_at") @db.Timestamptz(3)
+  deletedById  String?     @map("deleted_by_id") @db.Uuid
+
+  @@index([departmentId])
+  @@index([status])
+  @@map("designations")
+}
+
+model Currency {
+  id            String    @id @default(uuid()) @db.Uuid
+  code          String    @db.VarChar(3)
+  name          String    @db.VarChar(60)
+  symbol        String    @db.VarChar(10)
+  decimalPlaces Int       @default(2) @map("decimal_places")
+  isBase        Boolean   @default(false) @map("is_base")
+  exchangeRate  Decimal   @default(1.000000) @map("exchange_rate") @db.Decimal(18, 6)
+  status        String    @default("ACTIVE") @db.VarChar(10)
+  version       Int       @default(1)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById   String?   @map("created_by_id") @db.Uuid
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedById   String?   @map("updated_by_id") @db.Uuid
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedById   String?   @map("deleted_by_id") @db.Uuid
+
+  @@index([status])
+  @@map("currencies")
+}
+
+model StoredFile {
+  id               String    @id @default(uuid()) @db.Uuid
+  filename         String    @db.VarChar(255)
+  originalFilename String    @map("original_filename") @db.VarChar(255)
+  mimeType         String    @map("mime_type") @db.VarChar(100)
+  fileSize         BigInt    @map("file_size")
+  storagePath      String    @map("storage_path") @db.VarChar(500)
+  sha256Hash       String    @map("sha256_hash") @db.Char(64)
+  scanStatus       String    @default("PENDING") @map("scan_status") @db.VarChar(12)
+  scanDetail       String?   @map("scan_detail") @db.VarChar(200)
+  scannedAt        DateTime? @map("scanned_at") @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById      String?   @map("created_by_id") @db.Uuid
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedById      String?   @map("deleted_by_id") @db.Uuid
+
+  @@index([sha256Hash], map: "stored_files_hash_idx")
+  @@index([createdById], map: "stored_files_created_by_idx")
+  @@index([deletedAt], map: "stored_files_deleted_at_idx")
+  @@map("stored_files")
+}
+
+/// Phase 4: attachment of a stored file to a generic record.
+model RecordDocument {
+  id          String    @id @default(uuid()) @db.Uuid
+  pageId      String    @map("page_id") @db.VarChar(80)
+  recordId    String    @map("record_id") @db.Uuid
+  fileId      String    @map("file_id") @db.Uuid
+  docType     String    @default("GENERAL") @map("doc_type") @db.VarChar(40)
+  title       String    @db.VarChar(200)
+  createdById String?   @map("created_by_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  @@index([pageId, createdAt], map: "record_documents_page_idx")
+  @@map("record_documents")
+}
+
+/// Phase 4: async export / import jobs (queued through pg-boss).
+model DataJob {
+  id           String    @id @default(uuid()) @db.Uuid
+  kind         String    @db.VarChar(20)
+  pageId       String    @map("page_id") @db.VarChar(80)
+  unitId       String    @map("unit_id") @db.Uuid
+  fyId         String    @map("fy_id") @db.Uuid
+  status       String    @default("QUEUED") @db.VarChar(12)
+  params       Json      @default("{}")
+  inputFileId  String?   @map("input_file_id") @db.Uuid
+  outputFileId String?   @map("output_file_id") @db.Uuid
+  totalRows    Int?      @map("total_rows")
+  okRows       Int?      @map("ok_rows")
+  errorRows    Int?      @map("error_rows")
+  errorSummary Json?     @map("error_summary")
+  createdById  String    @map("created_by_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  startedAt    DateTime? @map("started_at") @db.Timestamptz(3)
+  finishedAt   DateTime? @map("finished_at") @db.Timestamptz(3)
+  expiresAt    DateTime? @map("expires_at") @db.Timestamptz(3)
+
+  @@index([createdById, createdAt(sort: Desc)], map: "data_jobs_user_idx")
+  @@map("data_jobs")
+}
+
+// ---------------------------------------------------------------------------------------------
+// Phase 05: approval engine + notifications (docs/phases/PHASE-05.md §4). The hand-written SQL
+// migrations 20261111000000_phase05_approval_engine and 20261111010000_phase05_notifications own
+// what Prisma cannot express (UNIQUE NULLS NOT DISTINCT, partial unique indexes, the gist
+// exclusion constraint, the append-only trigger). The models below carry plain uuid columns.
+// ---------------------------------------------------------------------------------------------
+
+model ApprovalRuleSet {
+  id             String         @id @default(uuid()) @db.Uuid
+  departmentId   String         @map("department_id") @db.Uuid
+  docType        String?        @map("doc_type") @db.VarChar(80)
+  unitId         String?        @map("unit_id") @db.Uuid
+  noAmountLevels Int            @default(1) @map("no_amount_levels")
+  active         Boolean        @default(true)
+  version        Int            @default(1)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById    String?        @map("created_by_id") @db.Uuid
+  updatedAt      DateTime       @default(now()) @map("updated_at") @db.Timestamptz(3)
+  updatedById    String?        @map("updated_by_id") @db.Uuid
+  rules          ApprovalRule[]
+
+  @@index([departmentId])
+  @@map("approval_rule_sets")
+}
+
+model ApprovalRule {
+  id             String          @id @default(uuid()) @db.Uuid
+  ruleSetId      String          @map("rule_set_id") @db.Uuid
+  ruleSet        ApprovalRuleSet @relation(fields: [ruleSetId], references: [id], onDelete: Cascade)
+  level          Int
+  threshold      Decimal         @db.Decimal(18, 2)
+  approverRoleId String?         @map("approver_role_id") @db.Uuid
+  approverUserId String?         @map("approver_user_id") @db.Uuid
+  slaHours       Int             @default(48) @map("sla_hours")
+  escalateRoleId String?         @map("escalate_role_id") @db.Uuid
+  escalateUserId String?         @map("escalate_user_id") @db.Uuid
+
+  @@unique([ruleSetId, level])
+  @@map("approval_rules")
+}
+
+model ApprovalRequest {
+  id             String           @id @default(uuid()) @db.Uuid
+  docType        String           @map("doc_type") @db.VarChar(80)
+  docId          String           @map("doc_id") @db.Uuid
+  docCode        String           @map("doc_code") @db.VarChar(60)
+  docTitle       String           @map("doc_title") @db.VarChar(200)
+  unitId         String           @map("unit_id") @db.Uuid
+  departmentId   String           @map("department_id") @db.Uuid
+  amount         Decimal?         @db.Decimal(18, 2)
+  ruleSetId      String?          @map("rule_set_id") @db.Uuid
+  ruleSetVersion Int?             @map("rule_set_version")
+  cycle          Int              @default(1)
+  status         String           @default("PENDING") @db.VarChar(12)
+  currentLevel   Int              @default(1) @map("current_level")
+  totalLevels    Int              @default(1) @map("total_levels")
+  requestedBy    String           @map("requested_by") @db.Uuid
+  createdById    String?          @map("created_by_id") @db.Uuid
+  requestedAt    DateTime         @default(now()) @map("requested_at") @db.Timestamptz(3)
+  decidedAt      DateTime?        @map("decided_at") @db.Timestamptz(3)
+  docVersion     Int?             @map("doc_version")
+  version        Int              @default(1)
+  steps          ApprovalStep[]
+  actions        ApprovalAction[]
+
+  @@index([docType, docId])
+  @@map("approval_requests")
+}
+
+model ApprovalStep {
+  id             String                 @id @default(uuid()) @db.Uuid
+  requestId      String                 @map("request_id") @db.Uuid
+  request        ApprovalRequest        @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  level          Int
+  ruleId         String?                @map("rule_id") @db.Uuid
+  threshold      Decimal                @default(0) @db.Decimal(18, 2)
+  approverRoleId String?                @map("approver_role_id") @db.Uuid
+  approverUserId String?                @map("approver_user_id") @db.Uuid
+  limitRequired  Decimal?               @map("limit_required") @db.Decimal(18, 2)
+  slaHours       Int                    @default(48) @map("sla_hours")
+  status         String                 @default("WAITING") @db.VarChar(12)
+  activatedAt    DateTime?              @map("activated_at") @db.Timestamptz(3)
+  dueAt          DateTime?              @map("due_at") @db.Timestamptz(3)
+  escalatedAt    DateTime?              @map("escalated_at") @db.Timestamptz(3)
+  escalateRoleId String?                @map("escalate_role_id") @db.Uuid
+  escalateUserId String?                @map("escalate_user_id") @db.Uuid
+  actedBy        String?                @map("acted_by") @db.Uuid
+  onBehalfOf     String?                @map("on_behalf_of") @db.Uuid
+  actedAt        DateTime?              @map("acted_at") @db.Timestamptz(3)
+  comment        String?                @db.VarChar(1000)
+  assignees      ApprovalStepAssignee[]
+
+  @@unique([requestId, level])
+  @@index([status, dueAt])
+  @@map("approval_steps")
+}
+
+model ApprovalStepAssignee {
+  stepId     String       @map("step_id") @db.Uuid
+  step       ApprovalStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  userId     String       @map("user_id") @db.Uuid
+  via        String       @db.VarChar(12)
+  onBehalfOf String?      @map("on_behalf_of") @db.Uuid
+
+  @@id([stepId, userId])
+  @@index([userId])
+  @@map("approval_step_assignees")
+}
+
+model ApprovalAction {
+  id             String          @id @default(uuid()) @db.Uuid
+  requestId      String          @map("request_id") @db.Uuid
+  request        ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  stepId         String?         @map("step_id") @db.Uuid
+  action         String          @db.VarChar(16)
+  actorId        String?         @map("actor_id") @db.Uuid
+  onBehalfOf     String?         @map("on_behalf_of") @db.Uuid
+  comment        String?         @db.VarChar(1000)
+  fromStatus     String?         @map("from_status") @db.VarChar(30)
+  toStatus       String?         @map("to_status") @db.VarChar(30)
+  at             DateTime        @default(now()) @db.Timestamptz(3)
+  idempotencyKey String?         @map("idempotency_key") @db.VarChar(128)
+
+  @@index([requestId, at])
+  @@map("approval_actions")
+}
+
+model ApprovalDelegation {
+  id           String   @id @default(uuid()) @db.Uuid
+  fromUserId   String   @map("from_user_id") @db.Uuid
+  toUserId     String   @map("to_user_id") @db.Uuid
+  departmentId String?  @map("department_id") @db.Uuid
+  fromDate     DateTime @map("from_date") @db.Date
+  toDate       DateTime @map("to_date") @db.Date
+  reason       String?  @db.VarChar(300)
+  status       String   @default("ACTIVE") @db.VarChar(10)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById  String?  @map("created_by_id") @db.Uuid
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
+  updatedById  String?  @map("updated_by_id") @db.Uuid
+
+  @@index([toUserId, status])
+  @@map("approval_delegations")
+}
+
+model Notification {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  type       String    @db.VarChar(40)
+  severity   String    @default("INFO") @db.VarChar(8)
+  title      String    @db.VarChar(200)
+  body       String    @default("") @db.VarChar(1000)
+  link       String?   @db.VarChar(300)
+  entityType String?   @map("entity_type") @db.VarChar(40)
+  entityId   String?   @map("entity_id") @db.VarChar(64)
+  dedupeKey  String?   @map("dedupe_key") @db.VarChar(120)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  readAt     DateTime? @map("read_at") @db.Timestamptz(3)
+  emailedAt  DateTime? @map("emailed_at") @db.Timestamptz(3)
+  digestedAt DateTime? @map("digested_at") @db.Timestamptz(3)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  userId String  @map("user_id") @db.Uuid
+  type   String  @db.VarChar(40)
+  inApp  Boolean @default(true) @map("in_app")
+  email  String  @default("INSTANT") @db.VarChar(8)
+
+  @@id([userId, type])
+  @@map("notification_preferences")
+}
+
+model EmailOutbox {
+  id            String    @id @default(uuid()) @db.Uuid
+  toEmail       String    @map("to_email") @db.VarChar(254)
+  subject       String    @db.VarChar(300)
+  html          String
+  text          String
+  status        String    @default("QUEUED") @db.VarChar(8)
+  attempts      Int       @default(0)
+  lastError     String?   @map("last_error") @db.VarChar(500)
+  nextAttemptAt DateTime  @default(now()) @map("next_attempt_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  sentAt        DateTime? @map("sent_at") @db.Timestamptz(3)
+
+  @@index([status, nextAttemptAt])
+  @@map("email_outbox")
 }

@@ -23,30 +23,36 @@ const identity = { loginId: 'john.doe', email: 'john@example.com' };
 
 describe('password policy', () => {
   it.each([
-    ['Ab1!', 'at least 10'],
-    ['abcdefghijk', '3 of'],
-    ['abcdefghij1', '3 of'],
-    ['ABCDEFGHIJ!', '3 of'],
+    ['Ab1!short', 'at least 12'],
+    ['password12345', 'too common'],
+    ['qwerty12345678', 'too common'],
+    ['baseball12345', 'too common'],
   ])('rejects %s', (password, message) => {
     expect(checkPasswordPolicy(password, identity)).toContain(message);
   });
 
-  it.each(['abcdefgh1!', 'Abcdefghij1', 'ABCDEFGH1!', 'Abcdefghi!', 'pass word 9X'])(
-    'accepts %s',
-    (password) => {
-      expect(checkPasswordPolicy(password, identity)).toBeNull();
-    },
-  );
+  it.each([
+    'correct horse battery',
+    'my-uncommon-passphrase-here',
+    'brand-new-secret-phrase',
+    'pass word 9X extra length',
+  ])('accepts %s', (password) => {
+    expect(checkPasswordPolicy(password, identity)).toBeNull();
+  });
 
-  it('rejects a password equal to the login ID or email', () => {
-    expect(checkPasswordPolicy('John.Doe.1A', { loginId: 'john.doe.1a' })).toContain('login ID');
+  it('rejects a password equal to or containing login ID or email or company context', () => {
+    expect(checkPasswordPolicy('john.doe.12345', { loginId: 'john.doe' })).toContain(
+      'login ID',
+    );
     expect(
-      checkPasswordPolicy('Me@Example.com1', { loginId: 'someone', email: 'me@example.com1' }),
+      checkPasswordPolicy('john@example.com-extra', { loginId: 'someone', email: 'john@example.com' }),
     ).toContain('email');
+    expect(checkPasswordPolicy('sawant-group-123', identity)).toContain('company');
+    expect(checkPasswordPolicy('readyhand-security', identity)).toContain('company');
   });
 
   it('rejects a password longer than 128 characters', () => {
-    expect(checkPasswordPolicy(`Aa1!${'x'.repeat(130)}`, identity)).toContain('at most');
+    expect(checkPasswordPolicy(`Aa1!${'x'.repeat(130)}`, identity)).toContain('at most 128');
   });
 });
 
@@ -127,7 +133,7 @@ describe('POST /auth/change-password', () => {
     const s = await signIn(app, user);
     const weak = await change(s.bearer, { currentPassword: PASSWORD, newPassword: 'short' });
     expect(weak.status).toBe(422);
-    expect(errorOf(weak).fields?.newPassword).toContain('at least 10');
+    expect(errorOf(weak).fields?.newPassword).toContain('at least 12');
     const same = await change(s.bearer, { currentPassword: PASSWORD, newPassword: PASSWORD });
     expect(same.status).toBe(422);
     const asLogin = await change(s.bearer, {

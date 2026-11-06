@@ -2,17 +2,27 @@
   "name": "sawant-group-erp",
   "private": true,
   "description": "Sawant Group Enterprise ERP (Unit 1: Talwade, Unit 2: Sawardari, Unit 3: Varale)",
+  "engines": {
+    "node": ">=20 <21"
+  },
   "scripts": {
-    "install:all": "npm --prefix packages/registry install && npm --prefix apps/api install && npm --prefix apps/web install && npm install",
+    "install:all": "npm --prefix packages/registry install && npm --prefix packages/calc install && npm --prefix packages/statutory install && npm --prefix apps/api install && npm --prefix apps/web install && npm install",
     "dev": "concurrently -n api,web -c blue,green \"npm --prefix apps/api run dev\" \"npm --prefix apps/web run dev\"",
     "build": "npm --prefix apps/api run build && npm --prefix apps/web run build",
     "build:web": "npm --prefix packages/registry install && npm --prefix apps/web install && npm --prefix apps/web run build",
-    "verify": "npm --prefix packages/registry run verify && npm --prefix apps/api run verify && npm --prefix apps/web run verify",
+    "secrets:scan": "node scripts/secrets-scan.cjs",
+    "status:pages": "node scripts/status-pages.cjs",
+    "lint": "npm --prefix packages/registry run lint && npm --prefix apps/api run lint && npm --prefix apps/web run lint",
+    "typecheck": "npm --prefix packages/registry run typecheck && npm --prefix packages/calc run typecheck && npm --prefix packages/statutory run typecheck && npm --prefix apps/api run typecheck && npm --prefix apps/web run typecheck",
+    "test": "npm --prefix packages/registry run test && npm --prefix packages/calc run test && npm --prefix packages/statutory run test && npm --prefix apps/api run test && npm --prefix apps/web run test",
+    "verify": "npm run secrets:scan && npm run lint && npm run typecheck && npm run test",
+    "db:reset:test": "npm --prefix apps/api run db:reset:test",
     "e2e": "playwright test -c tests/e2e/playwright.config.ts",
     "deploy:backend": "powershell -ExecutionPolicy Bypass -File ./deploy_to_ec2.ps1"
   },
   "devDependencies": {
     "@playwright/test": "1.61.1",
-    "concurrently": "9.1.0"
+    "concurrently": "9.1.0",
+    "tsx": "4.23.15"
   }
 }

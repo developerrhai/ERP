@@ -3,7 +3,7 @@
 
 import type { TypedSchema } from '../modules/inventory/definitions';
 
-type Overridable = 'readOnly' | 'master' | 'filters' | 'totals' | 'views' | 'transitions' | 'listColumns';
+type Overridable = 'readOnly' | 'master' | 'filters' | 'totals' | 'views' | 'transitions' | 'listColumns' | 'actions';
 
 export type KitSchemaInput = Omit<TypedSchema, 'kind' | Overridable> &
   Partial<Pick<TypedSchema, Overridable>>;
@@ -27,6 +27,7 @@ export function defineKitSchema(def: KitSchemaInput): TypedSchema {
     totals: [],
     views: [],
     transitions: {},
+    actions: [],
     ...def,
     kind: 'typed',
     listColumns: def.listColumns ?? defaultListColumns,

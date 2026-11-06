@@ -16,7 +16,7 @@ import type { Signed } from './helpers';
 const app = newApp();
 
 /** Written out by hand from CONTRACT §1.2, so a wrong edit to role-rules.ts fails here. */
-const EXPECTED: Record<RoleCode, RoleCode[]> = {
+const EXPECTED: Record<string, string[]> = {
   SUPER_ADMIN: ['ADMIN', 'MANAGER', 'LEAD', 'MEMBER'],
   ADMIN: ['MANAGER', 'LEAD', 'MEMBER'],
   MANAGER: [],
@@ -27,9 +27,9 @@ const EXPECTED: Record<RoleCode, RoleCode[]> = {
 describe('role-rules.ts', () => {
   it('matches the contract table', () => {
     for (const actor of ROLES) {
-      expect([...MANAGEABLE_ROLES[actor]].sort()).toEqual([...EXPECTED[actor]].sort());
+      expect([...(MANAGEABLE_ROLES[actor] ?? [])].sort()).toEqual([...(EXPECTED[actor] ?? [])].sort());
       for (const target of ROLES) {
-        expect(canManage(actor, target)).toBe(EXPECTED[actor].includes(target));
+        expect(canManage(actor, target)).toBe((EXPECTED[actor] ?? []).includes(target));
       }
     }
   });
@@ -57,24 +57,26 @@ describe('role-rules.ts', () => {
 });
 
 describe('API matrix: actor x target x operation', () => {
-  const actors = {} as Record<RoleCode, Signed>;
+  const actors = {} as Record<string, Signed>;
 
   beforeAll(async () => {
     for (const role of ROLES) actors[role] = await signInAs(app, role);
   });
 
   /** An existing user to act on; for SUPER_ADMIN that is the one owner. */
-  async function targetOf(role: RoleCode) {
+  async function targetOf(role: string) {
     return role === 'SUPER_ADMIN' ? owner() : makeUser({ role });
   }
 
-  const cases = ROLES.flatMap((actor) => ROLES.map((target) => [actor, target] as const));
+  const cases: [string, string][] = (ROLES as readonly string[]).flatMap((actor) =>
+    (ROLES as readonly string[]).map((target) => [actor, target] as [string, string]),
+  );
 
   it.each(cases)('%s creating %s', async (actor, target) => {
     const loginId = uniqueLoginId('mx');
     const res = await request(app)
       .post(`${API}/users`)
-      .set(actors[actor].bearer)
+      .set(actors[actor]!.bearer)
       .send({
         loginId,
         name: 'Matrix User',
@@ -83,47 +85,47 @@ describe('API matrix: actor x target x operation', () => {
         temporaryPassword: 'Matrix-Passw0rd!',
         unitIds: await unitIds(),
       });
-    expect(res.status).toBe(EXPECTED[actor].includes(target) ? 201 : 403);
+    expect(res.status).toBe((EXPECTED[actor] ?? []).includes(target) ? 201 : 403);
   });
 
   it.each(cases)('%s updating %s', async (actor, target) => {
     const user = await targetOf(target);
     const res = await request(app)
       .patch(`${API}/users/${user.id}`)
-      .set(actors[actor].bearer)
+      .set(actors[actor]!.bearer)
       .set('If-Match', String(user.version))
       .send({ name: `Renamed ${uniqueLoginId('n')}` });
-    expect(res.status).toBe(EXPECTED[actor].includes(target) ? 200 : 403);
+    expect(res.status).toBe((EXPECTED[actor] ?? []).includes(target) ? 200 : 403);
   });
 
   it.each(cases)('%s resetting the password of %s', async (actor, target) => {
     const user = await targetOf(target);
     const res = await request(app)
       .post(`${API}/users/${user.id}/reset-password`)
-      .set(actors[actor].bearer)
+      .set(actors[actor]!.bearer)
       .send({ temporaryPassword: 'Matrix-Reset-Passw0rd!' });
-    expect(res.status).toBe(EXPECTED[actor].includes(target) ? 204 : 403);
+    expect(res.status).toBe((EXPECTED[actor] ?? []).includes(target) ? 204 : 403);
   });
 
   it.each(cases)('%s deactivating %s', async (actor, target) => {
     const user = await targetOf(target);
     const res = await request(app)
       .patch(`${API}/users/${user.id}`)
-      .set(actors[actor].bearer)
+      .set(actors[actor]!.bearer)
       .set('If-Match', String(user.version))
       .send({ status: 'INACTIVE' });
-    expect(res.status).toBe(EXPECTED[actor].includes(target) ? 200 : 403);
+    expect(res.status).toBe((EXPECTED[actor] ?? []).includes(target) ? 200 : 403);
   });
 
   it.each(cases)('%s changing a MEMBER into %s', async (actor, newRole) => {
     const user = await makeUser({ role: 'MEMBER' });
     const res = await request(app)
       .patch(`${API}/users/${user.id}`)
-      .set(actors[actor].bearer)
+      .set(actors[actor]!.bearer)
       .set('If-Match', String(user.version))
       .send({ role: newRole });
     const allowed =
-      canManage(actor, 'MEMBER') && (newRole === 'MEMBER' || EXPECTED[actor].includes(newRole));
+      canManage(actor, 'MEMBER') && (newRole === 'MEMBER' || (EXPECTED[actor] ?? []).includes(newRole));
     expect(res.status).toBe(allowed ? 200 : 403);
   });
 });

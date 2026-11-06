@@ -10,7 +10,7 @@ import { resolveContext } from '../core/context/resolve-context';
 import { prisma, type Db } from '../core/db/prisma';
 import { asyncHandler } from '../core/http/async-handler';
 import { Errors } from '../core/http/errors';
-import { can } from '../core/rbac/access';
+import { accessUserOf, can } from '../core/rbac/access';
 import type { Caller } from '../modules/records/service';
 
 export interface LookupItem {
@@ -68,7 +68,7 @@ export function createKitLookupsRouter(): Router {
       if (!req.auth) throw Errors.unauthenticated();
       const user = req.auth.user;
       const allowed = await can(
-        { id: user.id, role: user.role, department: user.department },
+        accessUserOf(req.auth),
         def.pageId,
         'view',
       );

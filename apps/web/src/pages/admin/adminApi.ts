@@ -1,6 +1,6 @@
 // Typed wrappers for the Phase 2 admin endpoints (docs/phase2/CONTRACT.md §3). Every PATCH/PUT of
 // a versioned row sends If-Match (PUT /permissions/:role uses the role's highest row version).
-import { api, ApiError, request } from '../../lib/api';
+import { api, ApiError, download, request } from '../../lib/api';
 import type {
   AuditLog,
   Department,
@@ -8,7 +8,6 @@ import type {
   ModuleControl,
   PageMeta,
   PermissionRow,
-  RoleCode,
   RoleInfo,
   RolePermissions,
   UserStatus,
@@ -58,6 +57,42 @@ export function listRoles(): Promise<RoleInfo[]> {
   return api<RoleInfo[]>('/roles');
 }
 
+export interface RoleCreateInput {
+  code: string;
+  name: string;
+  level: number;
+  description?: string | null;
+  allUnits?: boolean;
+  copyFromRoleId?: string;
+}
+
+export function createRole(input: RoleCreateInput): Promise<RoleInfo> {
+  return api<RoleInfo>('/roles', { method: 'POST', body: input });
+}
+
+export interface RoleUpdateInput {
+  name?: string;
+  level?: number;
+  description?: string | null;
+  allUnits?: boolean;
+  status?: UserStatus;
+}
+
+export function updateRole(id: string, version: number, patch: RoleUpdateInput): Promise<RoleInfo> {
+  return api<RoleInfo>(`/roles/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: patch,
+    headers: ifMatch(version),
+  });
+}
+
+export function deleteRole(id: string, version: number): Promise<void> {
+  return api<undefined>(`/roles/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: ifMatch(version),
+  });
+}
+
 export interface PermissionsData {
   roles: RolePermissions[];
   families: string[];
@@ -68,26 +103,33 @@ export function getPermissions(): Promise<PermissionsData> {
 }
 
 /**
- * If-Match for PUT /permissions/:role is the highest version among that role's rows
- * (CONTRACT §3 lets the API choose "max version" or a role-level version; this client uses max).
+ * If-Match for PUT /permissions/:roleId is the role's version (or highest row version).
  */
 export function roleVersion(rows: PermissionRow[]): number {
   return rows.reduce((max, r) => Math.max(max, r.version ?? 0), 0);
 }
 
-/** Row body for PUT /permissions/:role; null cells/scope mean inherit. */
+/** Row body for PUT /permissions/:roleId; null cells/scope mean inherit. */
 export type PermissionRowInput = Omit<PermissionRow, 'version'>;
 
 export function savePermissions(
-  role: RolePermissions['role'],
+  roleId: string,
   version: number,
   rows: PermissionRowInput[],
 ): Promise<unknown> {
-  return api<unknown>(`/permissions/${role}`, {
+  return api<unknown>(`/permissions/${encodeURIComponent(roleId)}`, {
     method: 'PUT',
     body: { rows },
     headers: ifMatch(version),
   });
+}
+
+export function getEffectiveAccess(
+  userId: string,
+  family?: string,
+): Promise<{ user: any; pages: any[] }> {
+  const qs = family ? `?family=${encodeURIComponent(family)}` : '';
+  return api<{ user: any; pages: any[] }>(`/users/${encodeURIComponent(userId)}/effective-access${qs}`);
 }
 
 export interface DepartmentAccessData {
@@ -168,7 +210,7 @@ export interface LetterheadData {
 
 /** Fixed API shape: `{data:{value:{…11 fields}, version}}`. Missing fields show as empty inputs. */
 function withAllFields(data: LetterheadData): LetterheadData {
-  const value = {} as Letterhead;
+  const value = { ...data.value } as Letterhead;
   for (const k of LETTERHEAD_KEYS) value[k] = data.value[k] ?? '';
   return { value, version: data.version };
 }
@@ -186,6 +228,34 @@ export async function saveLetterhead(version: number, value: Letterhead): Promis
   return withAllFields(saved);
 }
 
+export async function downloadLetterheadTestPdf(): Promise<Blob> {
+  const res = await download('/settings/letterhead/test-pdf', { method: 'POST' });
+  return res.blob;
+}
+
+export async function uploadFile(
+  file: File,
+): Promise<{ id: string; filename: string; mimeType: string; size: number }> {
+  const base64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const data = result.split(',')[1] ?? '';
+      resolve(data);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  return api<{ id: string; filename: string; mimeType: string; size: number }>('/files', {
+    method: 'POST',
+    body: {
+      filename: file.name,
+      contentType: file.type || 'application/octet-stream',
+      dataBase64: base64,
+    },
+  });
+}
+
 // ---- audit -------------------------------------------------------------------
 
 export interface AuditQuery {
@@ -193,6 +263,7 @@ export interface AuditQuery {
   to: string;
   actorId: string;
   action: string;
+  preset?: string;
   q: string;
   page: number;
   size: number;
@@ -241,6 +312,7 @@ export async function listAuditLogs(
   if (query.to) params.set('to', dayBoundary(query.to, true));
   if (query.actorId) params.set('actorId', query.actorId);
   if (query.action) params.set('action', query.action);
+  if (query.preset) params.set('preset', query.preset);
   if (query.q.trim()) params.set('q', query.q.trim());
   params.set('page', String(query.page));
   params.set('size', String(query.size));
@@ -264,21 +336,49 @@ export const AUDIT_ACTIONS = [
   'USER_CREATED',
   'USER_UPDATED',
   'USER_PASSWORD_RESET',
+  'USER_ROLE_CHANGED',
+  'USER_DEPARTMENTS_UPDATED',
+  'USER_APPROVAL_LIMIT_CHANGED',
+  'ACCESS_DENIED_SELF_ESCALATION',
+  'ROLE_CREATED',
+  'ROLE_UPDATED',
+  'ROLE_DELETED',
+  'ROLES_MIGRATED',
+  'PERMISSIONS_UPDATED',
   'DEPARTMENT_CREATED',
   'DEPARTMENT_UPDATED',
   'DEPARTMENT_DELETED',
-  'PERMISSIONS_UPDATED',
   'DEPARTMENT_ACCESS_UPDATED',
   'MODULE_CONTROL_UPDATED',
   'SETTINGS_UPDATED',
+  'APPROVAL_SUBMITTED',
+  'APPROVAL_APPROVED_LEVEL',
+  'APPROVAL_APPROVED',
+  'APPROVAL_REJECTED',
+  'APPROVAL_RETURNED',
+  'APPROVAL_WITHDRAWN',
+  'APPROVAL_ESCALATED',
+  'APPROVAL_REASSIGNED',
+  'APPROVAL_MATRIX_CHANGED',
+  'DELEGATION_CREATED',
+  'DELEGATION_REVOKED',
 ] as const;
 
-export const ROLE_CREATED_BY: Record<RoleCode, string> = {
+export const ROLE_CREATED_BY: Record<string, string> = {
   SUPER_ADMIN: 'Nobody (the owner, created by setup)',
   ADMIN: 'Super Admin',
   MANAGER: 'Super Admin, Admin',
   LEAD: 'Super Admin, Admin',
   MEMBER: 'Super Admin, Admin',
+  SUPER_USER: 'Nobody (the owner, created by setup)',
+  ADMINISTRATOR: 'Super User',
+  DIRECTOR: 'Super User, Administrator',
+  CFO: 'Super User, Administrator',
+  GENERAL_MANAGER: 'Super User, Administrator',
+  DEPT_HEAD: 'Super User, Administrator',
+  DEPT_MANAGER: 'Super User, Administrator',
+  SUPERVISOR: 'Super User, Administrator',
+  EMPLOYEE: 'Super User, Administrator',
 };
 
 /**

@@ -41,22 +41,23 @@ export function registerTabName(schema: Pick<PageSchema, 'tabs'>): string {
   return schema.tabs.find((t) => REGISTER_RE.test(t)) ?? schema.tabs[0] ?? 'Register';
 }
 
+/** Build phase of each menu family (docs/phases/ROADMAP.md §2). */
 const FAMILY_PHASE: Record<string, number> = {
   Executive: 19,
-  CRM: 11,
-  Sales: 11,
-  'Procurement / SCM': 10,
-  Inventory: 9,
-  'Warehouse / WMS': 9,
-  Manufacturing: 15,
-  'Quality / QMS': 15,
-  Maintenance: 16,
-  'Finance & Accounts': 8,
-  'Indian Taxation': 12,
-  HRMS: 13,
-  Payroll: 14,
+  CRM: 10,
+  Sales: 10,
+  'Procurement / SCM': 9,
+  Inventory: 8,
+  'Warehouse / WMS': 8,
+  Manufacturing: 13,
+  'Quality / QMS': 12,
+  Maintenance: 14,
+  'Finance & Accounts': 7,
+  'Indian Taxation': 11,
+  HRMS: 15,
+  Payroll: 16,
   Projects: 17,
-  Assets: 16,
+  Assets: 14,
   'Service / Support': 17,
   'Logistics / Fleet': 18,
   'Document Management': 18,
@@ -66,10 +67,11 @@ const FAMILY_PHASE: Record<string, number> = {
   Administration: 20,
 };
 
-/** Phase (docs/plan/13-roadmap.md) that builds a tab that is not live yet. */
+/** Phase (docs/phases/ROADMAP.md) that builds a tab that is not live yet. */
 export function phaseForTab(tab: string, family: string): number {
-  if (tab === 'Approvals') return 6;
-  if (tab === 'Documents') return 5;
+  if (tab === 'Approvals') return 5;
+  // Documents are live on generic pages; typed Inventory pages get them with Inventory v2.
+  if (tab === 'Documents') return 8;
   if (tab === 'AI Decision Center' || tab === 'Automation Studio' || tab === 'Analytics & Graphs') {
     return 19;
   }
@@ -87,7 +89,9 @@ export function isLiveTab(tab: string, schema: PageSchema): boolean {
     tab === 'Data Quality' ||
     tab === 'Activity Timeline' ||
     tab === 'Audit Trail' ||
-    tab === 'Reports'
+    tab === 'Reports' ||
+    (tab === 'Documents' && schema.kind === 'generic') ||
+    (tab === 'Approvals' && schema.kind === 'generic')
   );
 }
 
@@ -305,6 +309,20 @@ export function canChangeRecord(schema: PageSchema, row: RecordRow): boolean {
   if (schema.editableStatuses) return schema.editableStatuses.includes(row.status);
   if (schema.kind === 'typed' && schema.actions.length > 0) return row.status === 'Draft';
   return true;
+}
+
+/** Edit is offered when the server's lock matrix allows `update` for the row's status. */
+export function canEditRecord(schema: PageSchema, row: RecordRow): boolean {
+  if (schema.readOnly) return false;
+  if (schema.lock) return schema.lock[row.status]?.update === true;
+  return canChangeRecord(schema, row);
+}
+
+/** Delete is offered when the lock matrix allows `remove` (transactional pages: Draft only). */
+export function canRemoveRecord(schema: PageSchema, row: RecordRow): boolean {
+  if (schema.readOnly) return false;
+  if (schema.lock) return schema.lock[row.status]?.remove === true;
+  return canChangeRecord(schema, row);
 }
 
 export function confirmText(

@@ -1,20 +1,30 @@
-// Serves reference data the web app needs to render forms: the role list with canManage for the
-// caller (from role-rules.ts, so the UI never re-implements §1.2) and the active departments from the DB
-// (Phase 2 §3), still as an array of names.
+// Serves reference data for web forms (Phase 02 §6).
 import type { Request, Response } from 'express';
 import { requireAuth } from '../../core/auth/auth-context';
+import { Errors } from '../../core/http/errors';
 import { departmentService } from '../departments/service';
-import { ROLES, ROLE_LABELS, ROLE_LEVELS, canManage } from '../../core/rbac/role-rules';
+import { roleRepository } from '../roles/repository';
 
 export const metaController = {
-  roles: (req: Request, res: Response): void => {
-    const { role } = requireAuth(req);
+  roles: async (req: Request, res: Response): Promise<void> => {
+    const auth = requireAuth(req);
+    if (auth.level < 95) {
+      throw Errors.forbidden();
+    }
+    const allRoles = await roleRepository.findAll();
+    const activeRoles = allRoles.filter((r) => r.status === 'ACTIVE');
+    const assignable = activeRoles.filter(
+      (r) => auth.level >= 99 || r.level < auth.level,
+    );
     res.json({
-      data: ROLES.map((code) => ({
-        code,
-        label: ROLE_LABELS[code],
-        level: ROLE_LEVELS[code],
-        canManage: canManage(role, code),
+      data: assignable.map((r) => ({
+        id: r.id,
+        code: r.code,
+        name: r.name,
+        label: r.name,
+        level: r.level,
+        allUnits: r.allUnits,
+        canManage: auth.level > r.level,
       })),
     });
   },

@@ -194,6 +194,9 @@ function UnitFormModal({ unit, onReload, onClose, onSaved }: FormProps) {
   const [code, setCode] = useState(unit?.code ?? '');
   const [name, setName] = useState(unit?.name ?? '');
   const [address, setAddress] = useState(unit?.address ?? '');
+  const [city, setCity] = useState(unit?.city ?? '');
+  const [stateCode, setStateCode] = useState(unit?.stateCode ?? '');
+  const [pincode, setPincode] = useState(unit?.pincode ?? '');
   const [gstin, setGstin] = useState(unit?.gstin ?? '');
   const [status, setStatus] = useState<UserStatus>(unit?.status ?? 'ACTIVE');
   const [err, setErr] = useState<UiError | null>(null);
@@ -206,6 +209,13 @@ function UnitFormModal({ unit, onReload, onClose, onSaved }: FormProps) {
     const n = name.trim();
     if (n.length < 2 || n.length > 60) f.name = 'Name must be 2–60 characters.';
     if (address.trim().length > 300) f.address = 'At most 300 characters.';
+    if (city.trim().length > 100) f.city = 'At most 100 characters.';
+    if (stateCode.trim() && !/^\d{2}$/.test(stateCode.trim())) {
+      f.stateCode = 'State code must be 2 digits (e.g. 27).';
+    }
+    if (pincode.trim() && !/^\d{6}$/.test(pincode.trim())) {
+      f.pincode = 'Pincode must be 6 digits.';
+    }
     const g = taxIdError('gstin', gstin);
     if (g) f.gstin = g;
     return f;
@@ -224,6 +234,9 @@ function UnitFormModal({ unit, onReload, onClose, onSaved }: FormProps) {
       name: name.trim(),
       address: address.trim() || null,
       gstin: gstin.trim() || null,
+      ...(city.trim() ? { city: city.trim() } : {}),
+      ...(stateCode.trim() ? { stateCode: stateCode.trim() } : {}),
+      ...(pincode.trim() ? { pincode: pincode.trim() } : {}),
     };
     inFlight.current = true;
     setPending(true);
@@ -237,6 +250,9 @@ function UnitFormModal({ unit, onReload, onClose, onSaved }: FormProps) {
       if (input.code !== unit.code) patch.code = input.code;
       if (input.name !== unit.name) patch.name = input.name;
       if ((input.address ?? null) !== (unit.address ?? null)) patch.address = input.address;
+      if ((input.city ?? null) !== (unit.city ?? null)) patch.city = input.city ?? null;
+      if ((input.stateCode ?? null) !== (unit.stateCode ?? null)) patch.stateCode = input.stateCode ?? null;
+      if ((input.pincode ?? null) !== (unit.pincode ?? null)) patch.pincode = input.pincode ?? null;
       if ((input.gstin ?? null) !== (unit.gstin ?? null)) patch.gstin = input.gstin;
       if (status !== unit.status) patch.status = status;
       if (Object.keys(patch).length === 0) {
@@ -304,6 +320,30 @@ function UnitFormModal({ unit, onReload, onClose, onSaved }: FormProps) {
             autoComplete="off"
             error={err?.fields.address}
             onChange={(e) => setAddress(e.target.value)}
+          />
+          <Field
+            label="City"
+            value={city}
+            maxLength={100}
+            autoComplete="off"
+            error={err?.fields.city}
+            onChange={(e) => setCity(e.target.value)}
+          />
+          <Field
+            label="State Code"
+            value={stateCode}
+            maxLength={2}
+            autoComplete="off"
+            error={err?.fields.stateCode}
+            onChange={(e) => setStateCode(e.target.value.toUpperCase())}
+          />
+          <Field
+            label="Pincode"
+            value={pincode}
+            maxLength={6}
+            autoComplete="off"
+            error={err?.fields.pincode}
+            onChange={(e) => setPincode(e.target.value)}
           />
           <Field
             label="GSTIN"

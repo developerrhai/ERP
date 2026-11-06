@@ -224,14 +224,18 @@ describe('GET /users?unitId=', () => {
     expect(ids).toContain(inUnit.id);
     expect(ids).not.toContain(elsewhere.id);
     expect(
-      body.data.every((u) => ['SUPER_ADMIN', 'ADMIN'].includes(u.role) || u.id === inUnit.id),
+      body.data.every(
+        (u) =>
+          ['SUPER_ADMIN', 'ADMIN', 'SUPER_USER', 'ADMINISTRATOR'].includes(u.role) ||
+          u.id === inUnit.id,
+      ),
     ).toBe(true);
     expect(body.meta.total).toBe(
       await prisma.user.count({
         where: {
           OR: [
             { units: { some: { unitId: unit.id } } },
-            { role: { in: ['SUPER_ADMIN', 'ADMIN'] } },
+            { role: { code: { in: ['SUPER_ADMIN', 'ADMIN', 'SUPER_USER', 'ADMINISTRATOR'] } } },
           ],
         },
       }),

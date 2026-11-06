@@ -7,8 +7,8 @@ const FEATURES: ReadonlyArray<{ title: string; text: string }> = [
     title: '🔐 Secure Sign-In',
     text: 'Server-side authentication with account lockout and session control.',
   },
-  { title: '🏢 Role Hierarchy', text: 'Super Admin, Admin, Manager, Lead and Member levels.' },
-  { title: '✅ Approval Matrix', text: 'Department + amount + role-based approvals.' },
+  { title: '🏢 Access Control', text: 'Department and permission-based access boundaries.' },
+  { title: '✅ Approval Matrix', text: 'Department + amount + rule-based approvals.' },
   {
     title: '⚙ System Controls',
     text: 'Module enable/edit/delete/approval settings from one master.',

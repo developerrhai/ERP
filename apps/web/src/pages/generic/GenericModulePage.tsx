@@ -1,6 +1,7 @@
 // GenericModulePage (prototype renderModule): /m/:pageId for every page the engine serves (schema kind
 // generic or typed) — head, context chips, the 16-tab strip, the register with its dialogs, and the
 // tabs that have real data. Pages the engine does not serve fall back to the placeholder.
+import { ApprovalsTab } from '../approvals/ApprovalsTab';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ContextChips } from '../../components/ContextChips';
@@ -17,12 +18,16 @@ import { RecordDrawer } from './RecordDrawer';
 import { RecordFormModal } from './RecordFormModal';
 import { PAGE_SIZES, RegisterTab, type QueryPatch, type RegisterQuery } from './RegisterTab';
 import { AuditTab, DashboardTab, DataQualityTab, PhaseNotice, ReportsTab } from './ModuleTabs';
+import { DocumentsTab } from './DocumentsPanel';
+import { openListPdf } from './phase4Api';
+import { ServerQualityTab } from './Phase4Tabs';
 import { CommandBar } from './kit/CommandBar';
 import { PrintMenu } from './kit/PrintMenu';
 import { PanelView } from './kit/PanelView';
 import {
   deleteRecord,
   exportXlsx,
+  getRecord,
   getSchema,
   restoreRecord,
   runAction,
@@ -33,7 +38,8 @@ import {
 } from './engineApi';
 import {
   activeViewOf,
-  canChangeRecord,
+  canEditRecord,
+  canRemoveRecord,
   confirmText,
   DASHBOARD_TAB,
   isLiveTab,
@@ -268,6 +274,22 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
               Excel
             </button>
           ) : null}
+          {schema.kind === 'generic' && perms.export ? (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setHeadError('');
+                void openListPdf(schema.pageId, {
+                  ...(query.q ? { q: query.q } : {}),
+                  ...(query.status ? { status: query.status } : {}),
+                  ...(query.sort ? { sort: query.sort } : {}),
+                }).catch((err: unknown) => setHeadError(toUiError(err).message));
+              }}
+            >
+              PDF
+            </button>
+          ) : null}
           {schema.printTemplates && schema.printTemplates.some((t) => t.scope === 'page') ? (
             <PrintMenu
               pageId={schema.pageId ?? ''}
@@ -356,7 +378,15 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
             onOpenWorkspace={openWorkspace}
           />
         ) : tab === 'Data Quality' ? (
-          <DataQualityTab schema={schema} reloadToken={reloadToken} />
+          schema.kind === 'generic' ? (
+            <ServerQualityTab schema={schema} reloadToken={reloadToken} />
+          ) : (
+            <DataQualityTab schema={schema} reloadToken={reloadToken} />
+          )
+        ) : tab === 'Documents' && schema.kind === 'generic' ? (
+          <DocumentsTab schema={schema} canEdit={canEditPerm} />
+        ) : tab === 'Approvals' && schema.kind === 'generic' ? (
+          <ApprovalsTab pageId={schema.pageId} reloadToken={reloadToken} />
         ) : tab === 'Activity Timeline' ? (
           <AuditTab schema={schema} variant="timeline" reloadToken={reloadToken} />
         ) : tab === 'Audit Trail' ? (
@@ -392,8 +422,19 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
           schema={drawerSchema}
           row={drawerRow}
           perms={perms}
-          canEdit={canEditPerm && canChangeRecord(drawerSchema, drawerRow)}
-          canDelete={canDeletePerm && canChangeRecord(drawerSchema, drawerRow)}
+          canEdit={canEditPerm && canEditRecord(drawerSchema, drawerRow)}
+          canDelete={canDeletePerm && canRemoveRecord(drawerSchema, drawerRow)}
+          onSubmitted={(saved) => {
+            setDrawerRow(saved);
+            changed();
+            toast(`${saved.code} submitted.`);
+          }}
+          onApprovalChanged={() => {
+            void getRecord(drawerSchema.pageId, drawerRow.id)
+              .then((fresh) => setDrawerRow(fresh))
+              .catch(() => undefined);
+            changed();
+          }}
           onEdit={(row) => {
             setDrawerRow(null);
             setForm({ row });

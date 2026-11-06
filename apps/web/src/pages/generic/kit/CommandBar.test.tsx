@@ -40,6 +40,11 @@ describe('T-KIT-10: CommandBar', () => {
     approve: false,
     export: true,
     controls: false,
+    submit: true,
+    post: false,
+    cancel: false,
+    print: true,
+    import: false,
   };
 
   const managerPerms: ActionSet = {

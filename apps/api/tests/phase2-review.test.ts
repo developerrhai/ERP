@@ -8,9 +8,10 @@ import { loadEnv, parseOrigins } from '../src/config/env';
 import { AUDIT_ACTIONS } from '../src/core/audit/audit-service';
 import { AppError } from '../src/core/http/errors';
 import { escapeLike } from '../src/core/http/query-safety';
-import { decide, invalidateAccessCache } from '../src/core/rbac/access';
-import type { AccessData, ControlFlags } from '../src/core/rbac/access';
+import { accessUserOf, decide, invalidateAccessCache } from '../src/core/rbac/access';
+import type { AccessData, ControlFlags, PermissionRow } from '../src/core/rbac/access';
 import { DEFAULT_ROLE_ROWS, noActions } from '../src/core/rbac/permission-model';
+import type { ActionFlags, Scope } from '../src/core/rbac/permission-model';
 import { registry } from '../src/core/registry';
 import { runSeed, superAdminConfigFromEnv } from '../src/core/seed/run-seed';
 import { mapOwnerFkError } from '../src/modules/module-controls/service';
@@ -214,30 +215,42 @@ describe('3/4. Administration is ADMIN+ only, enforced in code and on PUT', () =
         allowExport: true,
       });
     }
-    const grantAll = {
+    const grantAll: PermissionRow = {
       ...noActions(),
       view: true,
       add: true,
       edit: true,
       controls: true,
-      scope: 'ALL' as const,
+      scope: 'ALL',
     };
     const data: AccessData = {
       controls,
-      rows: new Map([
-        ['*', { ...DEFAULT_ROLE_ROWS.MANAGER }],
+      rows: new Map<string, PermissionRow>([
+        ['*', { ...(DEFAULT_ROLE_ROWS.DEPT_MANAGER as ActionFlags & { scope: Scope }) }],
         ['family:Administration', grantAll],
         ['page:admin-departments', grantAll],
       ]),
       departmentFamilies: new Set(['Administration', 'CRM']),
+      roleVersion: 1,
+      unitIds: 'tal',
     };
     for (const role of ['MANAGER', 'LEAD', 'MEMBER'] as const) {
       expect(
-        decide({ id: 'x', role, department: 'Administration' }, 'admin-departments', 'view', data),
+        decide(
+          accessUserOf({ id: 'x', role, department: 'Administration' }),
+          'admin-departments',
+          'view',
+          data,
+        ),
       ).toBe(false);
     }
     expect(
-      decide({ id: 'x', role: 'MANAGER', department: 'Administration' }, 'crm-leads', 'view', data),
+      decide(
+        accessUserOf({ id: 'x', role: 'MANAGER', department: 'Administration' }),
+        'crm-leads',
+        'view',
+        data,
+      ),
     ).toBe(true);
   });
 
@@ -255,11 +268,12 @@ describe('3/4. Administration is ADMIN+ only, enforced in code and on PUT', () =
   });
 
   it('PUT keeps (re-inserts) the explicit deny row when omitted or left as inherit', async () => {
+    const leadRole = await prisma.role.findUniqueOrThrow({ where: { code: 'SUPERVISOR' } });
     const base = (await rowsFor('LEAD')).filter((r) => r.resource !== 'family:Administration');
     const omitted = await put(admin, 'LEAD', base);
     expect(omitted.status).toBe(200);
     const stored = await prisma.rolePermission.findUniqueOrThrow({
-      where: { role_resource: { role: 'LEAD', resource: 'family:Administration' } },
+      where: { roleId_resource: { roleId: leadRole.id, resource: 'family:Administration' } },
     });
     expect([stored.view, stored.add, stored.edit, stored.controls]).toEqual([
       false,
@@ -274,7 +288,7 @@ describe('3/4. Administration is ADMIN+ only, enforced in code and on PUT', () =
     ]);
     expect(inherited.status).toBe(200);
     const again = await prisma.rolePermission.findUniqueOrThrow({
-      where: { role_resource: { role: 'LEAD', resource: 'family:Administration' } },
+      where: { roleId_resource: { roleId: leadRole.id, resource: 'family:Administration' } },
     });
     expect(again.view).toBe(false);
   });

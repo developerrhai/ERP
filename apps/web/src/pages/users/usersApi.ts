@@ -4,13 +4,13 @@ import { api, request } from '../../lib/api';
 import type { PageMeta, RoleCode, RoleMeta, UnitRef, User, UserStatus } from '../../types';
 
 export interface UserQuery {
-  q: string;
-  role: RoleCode | '';
-  status: UserStatus | '';
+  q?: string;
+  role?: RoleCode | '';
+  status?: UserStatus | '';
   /** Phase 3: only users who may work in this unit ('' = any). */
   unitId?: string;
-  page: number;
-  size: number;
+  page?: number;
+  size?: number;
 }
 
 export interface UserPage {
@@ -20,17 +20,19 @@ export interface UserPage {
 
 export async function listUsers(query: UserQuery): Promise<UserPage> {
   const params = new URLSearchParams();
-  if (query.q.trim()) params.set('q', query.q.trim());
+  if (query.q && query.q.trim()) params.set('q', query.q.trim());
   if (query.role) params.set('role', query.role);
   if (query.status) params.set('status', query.status);
   if (query.unitId) params.set('unitId', query.unitId);
-  params.set('page', String(query.page));
-  params.set('size', String(query.size));
+  const page = query.page ?? 1;
+  const size = query.size ?? 20;
+  params.set('page', String(page));
+  params.set('size', String(size));
   params.set('sort', 'name');
   const res = await request<User[]>(`/users?${params.toString()}`);
   return {
     users: res.data,
-    meta: res.meta ?? { page: query.page, size: query.size, total: res.data.length },
+    meta: res.meta ?? { page, size, total: res.data.length },
   };
 }
 
@@ -38,8 +40,11 @@ export interface CreateUserInput {
   loginId: string;
   email?: string;
   name: string;
-  role: RoleCode;
-  department?: string;
+  roleId?: string;
+  role?: string;
+  department?: string | null;
+  extraDepartments?: string[];
+  approvalLimit?: string | null;
   temporaryPassword: string;
   unitIds?: string[];
   defaultUnitId?: string | null;
@@ -52,8 +57,11 @@ export function createUser(input: CreateUserInput): Promise<User> {
 export type UserPatch = Partial<{
   email: string | null;
   name: string;
-  role: RoleCode;
+  roleId: string;
+  role: string;
   department: string | null;
+  extraDepartments: string[];
+  approvalLimit: string | null;
   status: UserStatus;
   unitIds: string[];
   defaultUnitId: string | null;
@@ -89,19 +97,26 @@ export function manageableRoles(roles: RoleMeta[]): RoleMeta[] {
 
 export function canManageUser(row: User, actor: User, roles: RoleMeta[]): boolean {
   if (row.id === actor.id) return false;
-  return roles.some((r) => r.code === row.role && r.canManage);
+  const targetRole = roles.find((r) => r.id === row.roleId || r.code === row.role);
+  if (targetRole) return targetRole.canManage;
+  return (actor.roleLevel ?? 0) > (row.roleLevel ?? 10);
 }
 
 export const VERSION_CONFLICT_MESSAGE =
   'This user was changed by someone else. Reload and try again.';
 
-// ---- Phase 3: units per user -------------------------------------------------------
+// ---- units per user -------------------------------------------------------
 
-/** Roles that need at least one unit; ADMIN+ work in every unit implicitly. */
-export const UNIT_SCOPED_ROLES: readonly RoleCode[] = ['MANAGER', 'LEAD', 'MEMBER'];
-
-export function needsUnits(role: RoleCode | ''): boolean {
-  return role !== '' && UNIT_SCOPED_ROLES.includes(role);
+export function needsUnits(roleCode: string, roles: RoleMeta[] = []): boolean {
+  if (!roleCode) return false;
+  const role = roles.find((r) => r.code === roleCode || r.id === roleCode);
+  if (role) return !role.allUnits;
+  return (
+    roleCode !== 'SUPER_USER' &&
+    roleCode !== 'SUPER_ADMIN' &&
+    roleCode !== 'ADMINISTRATOR' &&
+    roleCode !== 'ADMIN'
+  );
 }
 
 /** The user's unit ids, whether the API sends `units` objects or plain `unitIds`. */
@@ -110,8 +125,8 @@ export function userUnitIds(user: Pick<User, 'units' | 'unitIds'>): string[] {
 }
 
 /** Table text for the Units column. */
-export function unitsLabel(user: User, known: UnitRef[]): string {
-  if (!needsUnits(user.role)) return 'All units';
+export function unitsLabel(user: User, known: UnitRef[], roles: RoleMeta[] = []): string {
+  if (!needsUnits(user.role, roles)) return 'All units';
   const names =
     user.units?.map((u) => u.name) ??
     userUnitIds(user).map((id) => known.find((k) => k.id === id)?.name ?? id);

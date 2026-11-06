@@ -11,7 +11,7 @@ import { resolveContext } from '../../core/context/resolve-context';
 import { prisma } from '../../core/db/prisma';
 import { asyncHandler } from '../../core/http/async-handler';
 import { AppError, Errors } from '../../core/http/errors';
-import { can } from '../../core/rbac/access';
+import { accessUserOf, can } from '../../core/rbac/access';
 import type { Action } from '../../core/rbac/permission-model';
 import { typedHandlerFor } from '../../modules/inventory/typed-pages';
 import type { Caller } from '../../modules/records/service';
@@ -54,7 +54,7 @@ export function createKitPanelsRouter(): Router {
       const user = req.auth.user;
       const requiredPerm: Action = (def.opts?.requires as Action) ?? 'view';
       const allowed = await can(
-        { id: user.id, role: user.role, department: user.department },
+        accessUserOf(req.auth),
         pageId,
         requiredPerm,
       );
@@ -109,7 +109,7 @@ export function createKitPanelsRouter(): Router {
       const user = req.auth.user;
       const requiredPerm: Action = (def.opts?.requires as Action) ?? 'view';
       const allowed = await can(
-        { id: user.id, role: user.role, department: user.department },
+        accessUserOf(req.auth),
         pageId,
         requiredPerm,
       );

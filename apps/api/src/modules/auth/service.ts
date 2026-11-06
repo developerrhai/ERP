@@ -1,7 +1,9 @@
-// Authentication rules (CONTRACT §6): generic login failures, lockout, session creation, refresh-token
-// rotation with family-wide reuse detection, logout, logout-all and change-password.
-import { randomUUID } from 'node:crypto';
+// Authentication rules (CONTRACT §6, Phase 01): generic login failures, lockout, session creation,
+// MFA challenge-response, refresh-token rotation with family-wide reuse detection, session cap,
+// my sessions, password reset, logout and change-password.
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { User } from '@prisma/client';
+import * as OTPAuth from 'otpauth';
 import { env } from '../../config/env';
 import type { AuthContext, RequestMeta } from '../../core/auth/auth-context';
 import {
@@ -10,6 +12,8 @@ import {
   hashPassword,
   verifyPassword,
 } from '../../core/auth/password';
+import { getSecurityPolicy } from '../../core/auth/security-policy';
+import { decryptMfaSecret } from '../../core/auth/mfa-crypto';
 import { isSessionLive, sessionRepository } from '../../core/auth/session-repository';
 import { generateRefreshToken, hashRefreshToken, signAccessToken } from '../../core/auth/tokens';
 import { unknownIdentifierFailures } from '../../core/auth/unknown-identifier-lockout';
@@ -18,14 +22,18 @@ import { prisma } from '../../core/db/prisma';
 import type { Db } from '../../core/db/prisma';
 import { Errors } from '../../core/http/errors';
 import { logger } from '../../core/logger';
+import { mailService } from '../../core/mail/mail-service';
 import { toUserDto } from '../users/dto';
 import type { UserDto } from '../users/dto';
 import { userRepository } from '../users/repository';
 import { emailSchema, loginIdSchema } from '../users/schemas';
-import type { ChangePasswordInput, LoginInput } from './schemas';
-
-export const MAX_FAILED_LOGINS = 10;
-export const LOCKOUT_MINUTES = 15;
+import type {
+  ChangePasswordInput,
+  LoginInput,
+  MfaVerifyInput,
+  PasswordResetConfirmInput,
+  PasswordResetRequestInput,
+} from './schemas';
 
 export interface IssuedSession {
   accessToken: string;
@@ -35,6 +43,10 @@ export interface IssuedSession {
   refreshExpiresAt: Date;
 }
 
+export type LoginResult =
+  | IssuedSession
+  | { mfaRequired: true; challengeId: string; expiresIn: number };
+
 function minutesUntil(date: Date): number {
   return Math.max(1, Math.ceil((date.getTime() - Date.now()) / 60_000));
 }
@@ -42,46 +54,68 @@ function minutesUntil(date: Date): number {
 async function issueSession(
   user: User,
   meta: RequestMeta,
-  family: { familyId: string; expiresAt: Date } | null,
+  family: { familyId: string; familyStartedAt: Date } | null,
   db: Db,
 ): Promise<IssuedSession> {
+  const policy = await getSecurityPolicy(db);
+  const now = Date.now();
+  const maxFamilyDuration = policy.absoluteHours * 3600_000;
+  const familyStartedAt = family?.familyStartedAt ?? new Date(now);
+  const familyEnd = familyStartedAt.getTime() + maxFamilyDuration;
+  const twelveHours = now + 12 * 3600_000;
+  const expiresAt = new Date(Math.min(familyEnd, twelveHours));
+
   const refreshToken = generateRefreshToken();
-  const expiresAt =
-    family?.expiresAt ?? new Date(Date.now() + env.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60_000);
   const session = await sessionRepository.create(
     {
       userId: user.id,
       familyId: family?.familyId ?? randomUUID(),
+      familyStartedAt,
       refreshTokenHash: hashRefreshToken(refreshToken),
       userAgent: meta.userAgent,
       ip: meta.ip,
+      mfaVerified: user.mfaEnabled,
       expiresAt,
     },
     db,
   );
+
+  const roleCode =
+    typeof (user as any).role === 'string'
+      ? (user as any).role
+      : ((user as any).role?.code ?? (user as any).roleCode ?? 'EMPLOYEE');
+
   const { accessToken, expiresIn } = signAccessToken({
     sub: user.id,
     sid: session.id,
-    role: user.role,
+    role: roleCode,
   });
+
+  const mfaSetupRequired = Boolean(
+    policy.mfaRequiredForAdmins &&
+    (roleCode === 'SUPER_ADMIN' || roleCode === 'ADMIN' || roleCode === 'SUPER_USER' || roleCode === 'ADMINISTRATOR') &&
+    !user.mfaEnabled,
+  );
+
   return {
     accessToken,
     expiresIn,
-    user: toUserDto(await userRepository.withUnits(user, db)),
+    user: toUserDto(await userRepository.withUnits(user, db), { mfaSetupRequired }),
     refreshToken,
     refreshExpiresAt: expiresAt,
   };
 }
 
 /**
- * Counts a failed password atomically and locks at the threshold (see the repository). Writes
- * ACCOUNT_LOCKED once, by the attempt that set the lock. Returns the lock expiry if locked.
+ * Counts a failed password atomically and locks at the threshold per security policy.
+ * Writes ACCOUNT_LOCKED once, by the attempt that set the lock. Returns the lock expiry if locked.
  */
 async function registerFailure(user: User, meta: RequestMeta): Promise<Date | null> {
+  const policy = await getSecurityPolicy();
   const result = await userRepository.registerFailedLogin(
     user.id,
-    MAX_FAILED_LOGINS,
-    LOCKOUT_MINUTES,
+    policy.maxFailedLogins,
+    policy.lockoutMinutes,
   );
   if (result.justLocked && result.lockedUntil) {
     await recordAudit({
@@ -164,12 +198,19 @@ async function handleReuse(familyId: string, userId: string, meta: RequestMeta):
   logger.warn({ userId, familyId }, 'Refresh token reuse detected; session family revoked');
 }
 
+/** Enforces the maxSessionsPerUser cap by revoking the oldest live family in tx. */
+async function enforceSessionCap(userId: string, tx: Db): Promise<void> {
+  const policy = await getSecurityPolicy(tx);
+  const liveSessions = await sessionRepository.findLiveForUser(userId, tx);
+  if (liveSessions.length >= policy.maxSessionsPerUser && liveSessions[0]) {
+    await sessionRepository.revokeFamily(liveSessions[0].familyId, 'session_cap', null, tx);
+  }
+}
+
 export const authService = {
-  async login(input: LoginInput, meta: RequestMeta): Promise<IssuedSession> {
+  async login(input: LoginInput, meta: RequestMeta): Promise<LoginResult> {
     const user = await userRepository.findByIdentifier(input.identifier);
     if (!user) {
-      // Same Argon2 cost and the same lockout behaviour as a real account, so neither timing nor
-      // a 423 reveals whether the identifier exists.
       await dummyVerify(input.password);
       const unknown = unknownIdentifierFailures.registerFailure(input.identifier);
       await auditLoginFailed(
@@ -179,12 +220,11 @@ export const authService = {
         meta,
       );
       if (unknown.locked && unknown.lockedUntil) {
-        throw Errors.accountLocked(minutesUntil(unknown.lockedUntil));
+        throw Errors.accountLocked(minutesUntil(unknown.lockedUntil), false);
       }
       throw Errors.invalidCredentials();
     }
-    // Always run the verify so every branch costs the same Argon2 time. Lock state is decided
-    // afterwards, atomically, so parallel attempts cannot race past the lockout.
+
     const passwordOk = await verifyPassword(user.passwordHash, input.password);
     if (user.status !== 'ACTIVE') {
       await auditLoginFailed(input.identifier, 'inactive', user, meta);
@@ -196,10 +236,45 @@ export const authService = {
       if (lockedUntil) throw Errors.accountLocked(minutesUntil(lockedUntil));
       throw Errors.invalidCredentials();
     }
+
+    if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+      await auditLoginFailed(input.identifier, 'locked', user, meta);
+      throw Errors.accountLocked(minutesUntil(user.lockedUntil));
+    }
+
+    // Step 2: If MFA is enabled on user account, issue challenge and require verification
+    if (user.mfaEnabled) {
+      const challengeId = randomUUID();
+      await prisma.mfaChallenge.create({
+        data: {
+          id: challengeId,
+          userId: user.id,
+          attempts: 0,
+          expiresAt: new Date(Date.now() + 300_000), // 5 minutes
+          ip: meta.ip,
+          userAgent: meta.userAgent,
+        },
+      });
+      await recordAudit({
+        action: 'MFA_CHALLENGE_ISSUED',
+        actorId: user.id,
+        targetType: 'User',
+        targetId: user.id,
+        meta,
+        detail: { challengeId },
+      });
+      return {
+        mfaRequired: true,
+        challengeId,
+        expiresIn: 300,
+      };
+    }
+
+    // Normal sign-in without MFA
     const issued = await prisma.$transaction(async (tx) => {
-      // Conditional: succeeds only if no lock is active; a correct password never clears a lock.
-      const fresh = await userRepository.recordSuccessfulLogin(user.id, new Date(), tx);
+      const fresh = await userRepository.recordSuccessfulLogin(user.id, new Date(), meta.ip, tx);
       if (!fresh) return null;
+      await enforceSessionCap(fresh.id, tx);
       const session = await issueSession(fresh, meta, null, tx);
       await recordAudit(
         {
@@ -214,14 +289,169 @@ export const authService = {
       );
       return session;
     });
+
     if (!issued) {
       await auditLoginFailed(input.identifier, 'locked', user, meta);
       const current = await userRepository.findById(user.id);
+      const policy = await getSecurityPolicy();
       throw Errors.accountLocked(
-        current?.lockedUntil ? minutesUntil(current.lockedUntil) : LOCKOUT_MINUTES,
+        current?.lockedUntil ? minutesUntil(current.lockedUntil) : policy.lockoutMinutes,
       );
     }
     return issued;
+  },
+
+  /**
+   * Verifies an MFA challenge with row-level locking (FOR UPDATE). Accepts 6-digit TOTP
+   * (with replay guard) or 8-char recovery code.
+   */
+  async verifyMfa(input: MfaVerifyInput, meta: RequestMeta): Promise<IssuedSession> {
+    const rawCode = input.code.trim();
+    const isRecoveryCode = /^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$/i.test(rawCode);
+    const isTotp = /^\d{6}$/.test(rawCode);
+
+    return prisma.$transaction(
+      async (tx) => {
+        const rows = await tx.$queryRaw<
+          Array<{
+            id: string;
+            user_id: string;
+            attempts: number;
+            expires_at: Date;
+            consumed_at: Date | null;
+          }>
+        >`SELECT id, user_id, attempts, expires_at, consumed_at FROM mfa_challenges WHERE id = ${input.challengeId}::uuid FOR UPDATE`;
+
+        const challenge = rows[0];
+        if (!challenge) {
+          throw Errors.mfaChallengeExpired();
+        }
+        if (challenge.consumed_at || challenge.expires_at.getTime() <= Date.now()) {
+          throw Errors.mfaChallengeExpired();
+        }
+        if (challenge.attempts >= 5) {
+          throw Errors.mfaChallengeExpired();
+        }
+
+        const user = await tx.user.findUniqueOrThrow({ where: { id: challenge.user_id } });
+        if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+          throw Errors.accountLocked(minutesUntil(user.lockedUntil));
+        }
+
+        let verified = false;
+        let usedRecovery = false;
+
+        if (isRecoveryCode) {
+          const formattedCode = rawCode.toUpperCase();
+          const codeHash = createHash('sha256').update(formattedCode).digest('hex');
+          const recoveryRow = await tx.userMfaRecoveryCode.findFirst({
+            where: { userId: user.id, codeHash, usedAt: null },
+          });
+          if (recoveryRow) {
+            await tx.userMfaRecoveryCode.update({
+              where: { id: recoveryRow.id },
+              data: { usedAt: new Date() },
+            });
+            verified = true;
+            usedRecovery = true;
+          }
+        } else if (isTotp && user.mfaSecretEnc) {
+          const secretBase32 = decryptMfaSecret(user.mfaSecretEnc);
+          const totp = new OTPAuth.TOTP({
+            issuer: 'Sawant Group ERP',
+            label: user.loginId,
+            algorithm: 'SHA1',
+            digits: 6,
+            period: 30,
+            secret: OTPAuth.Secret.fromBase32(secretBase32),
+          });
+          const delta = totp.validate({ token: rawCode, window: 1 });
+          if (delta !== null) {
+            const now = Date.now();
+            const currentStep = Math.floor(now / 30_000) + delta;
+            if (user.mfaLastStep !== null && BigInt(currentStep) <= user.mfaLastStep) {
+              // Replay detected
+              verified = false;
+            } else {
+              await tx.user.update({
+                where: { id: user.id },
+                data: { mfaLastStep: BigInt(currentStep) },
+              });
+              verified = true;
+            }
+          }
+        }
+
+        if (!verified) {
+          const nextAttempts = challenge.attempts + 1;
+          await tx.mfaChallenge.update({
+            where: { id: challenge.id },
+            data: { attempts: nextAttempts },
+          });
+          await recordAudit(
+            {
+              action: 'MFA_FAILED',
+              actorId: user.id,
+              targetType: 'User',
+              targetId: user.id,
+              meta,
+              detail: { challengeId: challenge.id, attempts: nextAttempts },
+            },
+            tx,
+          );
+          const lockedUntil = await registerFailure(user, meta);
+          if (lockedUntil) {
+            throw Errors.accountLocked(minutesUntil(lockedUntil));
+          }
+          if (nextAttempts >= 5) {
+            throw Errors.mfaChallengeExpired();
+          }
+          throw Errors.mfaCodeInvalid();
+        }
+
+        // Consume challenge
+        await tx.mfaChallenge.update({
+          where: { id: challenge.id },
+          data: { consumedAt: new Date() },
+        });
+
+        if (usedRecovery) {
+          await recordAudit(
+            {
+              action: 'MFA_RECOVERY_CODE_USED',
+              actorId: user.id,
+              targetType: 'User',
+              targetId: user.id,
+              meta,
+              detail: { challengeId: challenge.id },
+            },
+            tx,
+          );
+        }
+
+        await recordAudit(
+          {
+            action: 'MFA_SUCCESS',
+            actorId: user.id,
+            targetType: 'User',
+            targetId: user.id,
+            meta,
+            detail: { challengeId: challenge.id, method: usedRecovery ? 'recovery_code' : 'totp' },
+          },
+          tx,
+        );
+
+        const fresh = await userRepository.recordSuccessfulLogin(user.id, new Date(), meta.ip, tx);
+        if (!fresh) {
+          const policy = await getSecurityPolicy(tx);
+          throw Errors.accountLocked(policy.lockoutMinutes);
+        }
+
+        await enforceSessionCap(fresh.id, tx);
+        return issueSession(fresh, meta, null, tx);
+      },
+      { maxWait: 10_000, timeout: 10_000 },
+    );
   },
 
   async refresh(rawToken: string | undefined, meta: RequestMeta): Promise<IssuedSession> {
@@ -231,7 +461,6 @@ export const authService = {
 
     if (session.revokedAt) {
       if (session.revokedReason === 'rotated') {
-        // The grace is granted once per rotated token; a second replay is reuse even inside it.
         if (
           withinReuseGrace(session.revokedAt) &&
           (await sessionRepository.claimRaceGrace(session.id))
@@ -243,21 +472,22 @@ export const authService = {
       }
       throw Errors.sessionExpired();
     }
-    if (!isSessionLive(session) || session.user.status !== 'ACTIVE') throw Errors.sessionExpired();
+    const policy = await getSecurityPolicy();
+    if (!isSessionLive(session, new Date(), policy) || session.user.status !== 'ACTIVE') {
+      throw Errors.sessionExpired();
+    }
 
     const rotated = await prisma.$transaction(async (tx) => {
-      // Conditional revoke: if a concurrent refresh rotated this token a moment ago, we lost a race.
-      const won = await sessionRepository.revokeIfActive(session.id, 'rotated', tx);
+      const won = await sessionRepository.revokeIfActive(session.id, 'rotated', null, tx);
       if (!won) return null;
       return issueSession(
         session.user,
         meta,
-        { familyId: session.familyId, expiresAt: session.expiresAt },
+        { familyId: session.familyId, familyStartedAt: session.familyStartedAt },
         tx,
       );
     });
     if (!rotated) {
-      // Another request rotated it just now (inside the window by definition), but grace is once only.
       if (await sessionRepository.claimRaceGrace(session.id)) {
         await handleRace(session.familyId, session.id, session.userId, meta);
         throw Errors.refreshRace();
@@ -268,7 +498,6 @@ export const authService = {
     return rotated;
   },
 
-  /** Revokes the session named by the refresh cookie, or failing that by the Bearer token's sid. */
   async logout(
     rawToken: string | undefined,
     bearerSession: { sessionId: string; userId: string } | null,
@@ -281,7 +510,7 @@ export const authService = {
     }
     target ??= bearerSession;
     if (!target) return;
-    const revoked = await sessionRepository.revokeIfActive(target.sessionId, 'logout');
+    const revoked = await sessionRepository.revokeIfActive(target.sessionId, 'logout', target.userId);
     if (revoked) {
       await recordAudit({
         action: 'LOGOUT',
@@ -294,7 +523,7 @@ export const authService = {
   },
 
   async logoutAll(auth: AuthContext, meta: RequestMeta): Promise<void> {
-    const revoked = await sessionRepository.revokeAllForUser(auth.userId, 'logout_all');
+    const revoked = await sessionRepository.revokeAllForUser(auth.userId, 'logout_all', auth.userId);
     await recordAudit({
       action: 'LOGOUT_ALL',
       actorId: auth.userId,
@@ -306,19 +535,27 @@ export const authService = {
   },
 
   async me(auth: AuthContext): Promise<UserDto> {
-    return toUserDto(await userRepository.withUnits(auth.user));
+    const policy = await getSecurityPolicy();
+    const isAdmin =
+      auth.level >= 95 ||
+      auth.roleCode === 'SUPER_USER' ||
+      auth.roleCode === 'ADMINISTRATOR' ||
+      auth.roleCode === 'SUPER_ADMIN' ||
+      auth.roleCode === 'ADMIN';
+    const mfaSetupRequired = Boolean(
+      policy.mfaRequiredForAdmins &&
+      isAdmin &&
+      !auth.user.mfaEnabled,
+    );
+    const userWithUnits = await userRepository.withUnits(auth.user);
+    return toUserDto(userWithUnits, { mfaSetupRequired });
   },
 
-  /**
-   * Verifies the current password, applies the policy, clears mustChangePassword, revokes every
-   * existing session (so all OTHER devices are signed out) and issues a brand-new session for the caller.
-   */
   async changePassword(
     auth: AuthContext,
     input: ChangePasswordInput,
     meta: RequestMeta,
   ): Promise<IssuedSession> {
-    // Re-read: lock state may have changed since authenticate loaded the user.
     const user = await userRepository.findById(auth.userId);
     if (!user) throw Errors.sessionExpired();
     if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
@@ -340,10 +577,16 @@ export const authService = {
     return prisma.$transaction(async (tx) => {
       const updated = await userRepository.update(
         user.id,
-        { passwordHash, mustChangePassword: false, failedLoginCount: 0, lockedUntil: null },
+        {
+          passwordHash,
+          passwordChangedAt: new Date(),
+          mustChangePassword: false,
+          failedLoginCount: 0,
+          lockedUntil: null,
+        },
         tx,
       );
-      const revoked = await sessionRepository.revokeAllForUser(user.id, 'password_changed', tx);
+      const revoked = await sessionRepository.revokeAllForUser(user.id, 'password_changed', user.id, tx);
       const issued = await issueSession(updated, meta, null, tx);
       await recordAudit(
         {
@@ -356,7 +599,196 @@ export const authService = {
         },
         tx,
       );
+      if (user.email) {
+        void mailService.sendPasswordChanged(user.email);
+      }
       return issued;
+    });
+  },
+
+  /** My Sessions: list user's signed-in devices */
+  async listSessions(auth: AuthContext) {
+    const sessions = await sessionRepository.listForUser(auth.userId);
+    const policy = await getSecurityPolicy();
+    const now = new Date();
+    return sessions.map((s) => ({
+      id: s.id,
+      familyId: s.familyId,
+      userAgent: s.userAgent,
+      ip: s.ip,
+      createdAt: s.createdAt.toISOString(),
+      lastUsedAt: s.lastUsedAt.toISOString(),
+      isCurrent: s.id === auth.sessionId,
+      isLive: isSessionLive(s, now, policy),
+      mfaVerified: s.mfaVerified ?? false,
+    }));
+  },
+
+  /** Sign out a specific device family */
+  async revokeSession(auth: AuthContext, familyId: string, meta: RequestMeta): Promise<void> {
+    if (auth.familyId && auth.familyId === familyId) {
+      throw Errors.currentSession();
+    }
+    const count = await prisma.session.count({
+      where: { familyId, userId: auth.userId, revokedAt: null },
+    });
+    if (count === 0) {
+      throw Errors.notFound('Session not found.');
+    }
+    await sessionRepository.revokeFamily(familyId, 'user_revoked', auth.userId);
+    await recordAudit({
+      action: 'SESSION_REVOKED',
+      actorId: auth.userId,
+      targetType: 'Session',
+      targetId: familyId,
+      meta,
+      detail: { familyId },
+    });
+  },
+
+  /** Sign out all other devices */
+  async revokeOtherSessions(auth: AuthContext, meta: RequestMeta): Promise<{ revoked: number }> {
+    const keepFamilyId = auth.familyId ?? '';
+    const revoked = await sessionRepository.revokeOthers(
+      auth.userId,
+      keepFamilyId,
+      'user_revoked',
+      auth.userId,
+    );
+    await recordAudit({
+      action: 'SESSIONS_REVOKED_OTHERS',
+      actorId: auth.userId,
+      targetType: 'User',
+      targetId: auth.userId,
+      meta,
+      detail: { revoked },
+    });
+    return { revoked };
+  },
+
+  /** Public password policy info */
+  async getPasswordPolicy() {
+    const policy = await getSecurityPolicy();
+    return {
+      passwordMinLength: policy.passwordMinLength,
+      passwordMaxLength: 128,
+      emailResetAvailable: mailService.isConfigured(),
+    };
+  },
+
+  /** Request password reset email */
+  async requestPasswordReset(
+    input: PasswordResetRequestInput,
+    meta: RequestMeta,
+  ): Promise<void> {
+    if (!mailService.isConfigured()) {
+      throw Errors.featureDisabled(
+        'Password reset via email is disabled because SMTP is not configured.',
+      );
+    }
+
+    const start = Date.now();
+    const cleanEmail = input.email.trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: cleanEmail, mode: 'insensitive' }, status: 'ACTIVE' },
+    });
+
+    if (user && user.email) {
+      const rawToken = randomBytes(32).toString('hex');
+      const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 30 * 60_000); // 30 minutes
+
+      await prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          expiresAt,
+          requestedIp: meta.ip,
+        },
+      });
+
+      const resetUrl = `${env.APP_BASE_URL}/reset-password#token=${rawToken}`;
+      await mailService.sendPasswordReset(user.email, resetUrl);
+
+      const emailHash = createHash('sha256').update(cleanEmail).digest('hex');
+      await recordAudit({
+        action: 'PASSWORD_RESET_REQUESTED',
+        actorId: user.id,
+        targetType: 'User',
+        targetId: user.id,
+        meta,
+        detail: { emailHash },
+      });
+    }
+
+    // Always delay ~300ms to prevent timing side-channel attacks on whether email exists
+    const elapsed = Date.now() - start;
+    if (elapsed < 300) {
+      await new Promise((r) => setTimeout(r, 300 - elapsed));
+    }
+  },
+
+  /** Confirm password reset with token */
+  async confirmPasswordReset(
+    input: PasswordResetConfirmInput,
+    meta: RequestMeta,
+  ): Promise<void> {
+    const tokenHash = createHash('sha256').update(input.token.trim()).digest('hex');
+    const now = new Date();
+
+    await prisma.$transaction(async (tx) => {
+      const resetToken = await tx.passwordResetToken.findFirst({
+        where: { tokenHash, usedAt: null, expiresAt: { gt: now } },
+      });
+      if (!resetToken) {
+        throw Errors.resetLinkInvalid();
+      }
+
+      const user = await tx.user.findUniqueOrThrow({ where: { id: resetToken.userId } });
+      const problem = checkPasswordPolicy(input.newPassword, user);
+      if (problem) throw Errors.validation({ newPassword: problem });
+
+      const sameAsCurrent = await verifyPassword(user.passwordHash, input.newPassword);
+      if (sameAsCurrent) {
+        throw Errors.validation({
+          newPassword: 'New password must be different from the current one.',
+        });
+      }
+
+      const passwordHash = await hashPassword(input.newPassword);
+      await tx.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { usedAt: now },
+      });
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash,
+          passwordChangedAt: now,
+          mustChangePassword: false,
+          failedLoginCount: 0,
+          lockedUntil: null,
+        },
+      });
+
+      await sessionRepository.revokeAllForUser(user.id, 'password_reset', null, tx);
+
+      await recordAudit(
+        {
+          action: 'PASSWORD_RESET_COMPLETED',
+          actorId: user.id,
+          targetType: 'User',
+          targetId: user.id,
+          meta,
+          detail: {},
+        },
+        tx,
+      );
+
+      if (user.email) {
+        void mailService.sendPasswordChanged(user.email);
+      }
     });
   },
 };

@@ -54,12 +54,7 @@ describe('T-KIT-10: PayloadDialog', () => {
 
   it('renders enum dropdown and lookup combobox properly', () => {
     render(
-      <PayloadDialog
-        title="Sample Dialog"
-        fields={fields}
-        onClose={vi.fn()}
-        onSubmit={vi.fn()}
-      />,
+      <PayloadDialog title="Sample Dialog" fields={fields} onClose={vi.fn()} onSubmit={vi.fn()} />,
     );
 
     expect(screen.getByLabelText(/Priority/)).toBeInTheDocument();
@@ -116,9 +111,7 @@ describe('T-KIT-10: PayloadDialog', () => {
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
-      expect(screen.getByRole('alert')).toHaveTextContent(
-        'Reason must not contain profane words',
-      );
+      expect(screen.getByRole('alert')).toHaveTextContent('Reason must not contain profane words');
     });
   });
 });

@@ -96,10 +96,11 @@ export function CommandBar({ schema, perms, onDone }: CommandBarProps) {
         >
           <div className="modal" style={{ maxWidth: '420px', padding: '20px' }}>
             <h3 id="confirm-cmd-title">{confirmCmd.label}</h3>
-            <p style={{ margin: '12px 0 20px', fontSize: '13px' }}>
-              {confirmCmd.confirm}
-            </p>
-            <div className="actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <p style={{ margin: '12px 0 20px', fontSize: '13px' }}>{confirmCmd.confirm}</p>
+            <div
+              className="actions"
+              style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}
+            >
               <button
                 type="button"
                 className="btn"

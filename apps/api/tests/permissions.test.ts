@@ -80,8 +80,8 @@ describe('GET /roles', () => {
     expect(roles.find((r) => r.code === 'ADMIN')?.creatableBy).toEqual(['SUPER_ADMIN']);
     expect(roles.find((r) => r.code === 'SUPER_ADMIN')?.creatableBy).toEqual([]);
     expect(roles.find((r) => r.code === 'SUPER_ADMIN')?.userCount).toBe(1);
-    expect(roles.find((r) => r.code === 'MEMBER')?.userCount).toBe(
-      await prisma.user.count({ where: { role: 'MEMBER' } }),
+    expect(roles.find((r) => r.code === 'MEMBER' || r.code === 'EMPLOYEE')?.userCount).toBe(
+      await prisma.user.count({ where: { role: { code: 'EMPLOYEE' } } }),
     );
   });
 
@@ -139,7 +139,7 @@ describe('PUT /permissions/:role — hierarchy matrix (§2.6)', () => {
     const rows = target === 'SUPER_ADMIN' ? await rowsFor('MEMBER') : await rowsFor(target);
     const version = target === 'SUPER_ADMIN' ? 1 : await roleVersion(app, owner, target);
     const res = await put(s, target, rows, version);
-    expect(res.status).toBe(allowed[actor].includes(target) ? 200 : 403);
+    expect(res.status).toBe((allowed[actor] ?? []).includes(target) ? 200 : 403);
   });
 });
 

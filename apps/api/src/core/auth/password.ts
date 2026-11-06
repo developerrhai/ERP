@@ -12,7 +12,13 @@ const ARGON2_OPTIONS = {
   parallelism: 1,
 } as const;
 
-export const PASSWORD_MIN_LENGTH = 10;
+import {
+  checkPasswordPolicy as checkPolicy,
+  warmUpPasswordBlocklist,
+  type UserIdentityContext,
+} from './password-policy';
+
+export const PASSWORD_MIN_LENGTH = 12;
 /** Upper bound so a huge password cannot be used to burn CPU in Argon2. */
 export const PASSWORD_MAX_LENGTH = 128;
 
@@ -39,8 +45,9 @@ function getDummyHash(): Promise<string> {
   return dummyHash;
 }
 
-/** Computes the dummy hash at boot so the first unknown-user login is not slower than later ones. */
+/** Computes the dummy hash and preloads password blocklist at boot. */
 export async function warmUpDummyHash(): Promise<void> {
+  warmUpPasswordBlocklist();
   await getDummyHash();
 }
 
@@ -50,29 +57,12 @@ export async function dummyVerify(password: string): Promise<void> {
 }
 
 /**
- * Returns null when the password is acceptable, otherwise a human message.
- * Rule: >= 10 chars, >= 3 of {lowercase, uppercase, digit, symbol}, not equal to loginId or email.
+ * Returns null when the password is acceptable, otherwise the exact human message from §8.
  */
 export function checkPasswordPolicy(
   password: string,
-  identity: { loginId: string; email?: string | null },
+  identity?: UserIdentityContext | null,
 ): string | null {
-  if (password.length < PASSWORD_MIN_LENGTH) {
-    return `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`;
-  }
-  if (password.length > PASSWORD_MAX_LENGTH) {
-    return `Password must be at most ${PASSWORD_MAX_LENGTH} characters.`;
-  }
-  const classes = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter((re) => re.test(password));
-  if (classes.length < 3) {
-    return 'Password must contain at least 3 of: lowercase letter, uppercase letter, digit, symbol.';
-  }
-  const lowered = password.toLowerCase();
-  if (lowered === identity.loginId.toLowerCase()) {
-    return 'Password must not be the same as the login ID.';
-  }
-  if (identity.email && lowered === identity.email.toLowerCase()) {
-    return 'Password must not be the same as the email.';
-  }
-  return null;
+  return checkPolicy(password, identity);
 }
+

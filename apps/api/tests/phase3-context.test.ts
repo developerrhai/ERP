@@ -1,7 +1,6 @@
 // Phase 3 §A2: the resolveContext middleware (role x headers x unit access x inactive unit x closed
 // FY x missing headers -> preference / default / first unit; FY -> current), requireConcreteUnit,
 // that the Phase 2/3 routers mount it while /me does not, and GET / PUT /me/context.
-import type { Role } from '@prisma/client';
 import type { Express } from 'express';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -71,9 +70,9 @@ async function ctxOf(s: Signed, headers: Record<string, string> = {}) {
   return { res, ctx: (res.body as { data: Ctx }).data };
 }
 
-const ROLES: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'LEAD', 'MEMBER'];
-const ADMINS: Role[] = ['SUPER_ADMIN', 'ADMIN'];
-const NON_ADMINS: Role[] = ['MANAGER', 'LEAD', 'MEMBER'];
+const ROLES: string[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'LEAD', 'MEMBER'];
+const ADMINS: string[] = ['SUPER_ADMIN', 'ADMIN'];
+const NON_ADMINS: string[] = ['MANAGER', 'LEAD', 'MEMBER'];
 
 describe('resolveContext: missing headers', () => {
   it.each(ROLES)('%s: first accessible unit (TAL) and the current FY', async (role) => {
@@ -149,8 +148,8 @@ describe('resolveContext: missing headers', () => {
       .put(`${API}/me/context`)
       .set(s.bearer)
       .send({ unitId: null, fyId: FY2627 })
-      .expect(200);
-    await prisma.user.update({ where: { id: user.id }, data: { role: 'MEMBER' } });
+    const empRole = await prisma.role.findUniqueOrThrow({ where: { code: 'EMPLOYEE' } });
+    await prisma.user.update({ where: { id: user.id }, data: { roleId: empRole.id } });
     expect((await ctxOf(s)).ctx).toMatchObject({ unitId: VAR, allUnits: false });
   });
 

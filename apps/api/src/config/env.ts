@@ -89,6 +89,18 @@ const envSchema = z
     TRUST_PROXY: z.string().trim().min(1).default('loopback'),
     /** Max Argon2 hash/verify operations in flight; beyond that requests get 503 SERVER_BUSY. */
     ARGON2_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(256).default(8),
+    /** Optional previous JWT secret for verification during key rotation. */
+    JWT_ACCESS_SECRET_PREVIOUS: z.string().min(32).optional(),
+    /** AES-256-GCM encryption key for MFA secrets (32 bytes base64 or 64 hex chars). */
+    MFA_ENCRYPTION_KEY: z.string().optional(),
+    /** SMTP configuration for email password reset. */
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().int().optional(),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_FROM: z.string().optional(),
+    /** Base URL of the web client for email links. */
+    APP_BASE_URL: z.string().url().default('http://localhost:5173'),
   })
   .superRefine((value, ctx) => {
     for (const key of ['WEB_ORIGINS', 'CORS_ORIGINS', 'WEB_ORIGIN'] as const) {
@@ -101,12 +113,28 @@ const envSchema = z
         });
       }
     }
-    if (value.NODE_ENV === 'production' && value.JWT_ACCESS_SECRET.length < 48) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['JWT_ACCESS_SECRET'],
-        message: 'JWT_ACCESS_SECRET must be at least 48 characters in production',
-      });
+    if (value.NODE_ENV === 'production') {
+      if (value.JWT_ACCESS_SECRET.length < 48) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['JWT_ACCESS_SECRET'],
+          message: 'JWT_ACCESS_SECRET must be at least 48 characters in production',
+        });
+      }
+      if (new Set(value.JWT_ACCESS_SECRET).size < 16) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['JWT_ACCESS_SECRET'],
+          message: 'JWT_ACCESS_SECRET must have at least 16 distinct characters in production',
+        });
+      }
+      if (!value.MFA_ENCRYPTION_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['MFA_ENCRYPTION_KEY'],
+          message: 'MFA_ENCRYPTION_KEY is required in production',
+        });
+      }
     }
     if (value.RATE_LIMIT_DISABLED && value.NODE_ENV !== 'test') {
       ctx.addIssue({

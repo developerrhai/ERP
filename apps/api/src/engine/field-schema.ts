@@ -8,6 +8,8 @@ import type { FieldMeta, FieldType } from './field-types';
 import { uniqueKeys } from './keys';
 import { kindOf } from './kinds';
 import type { PageKind } from './kinds';
+import { lockTable } from './lock-matrix';
+import type { LockOp } from './lock-matrix';
 import { enumOptionsFor } from './overrides';
 import { AADHAAR_RE, DATE_RE, HSN_RE, IFSC_RE, PAN_RE, PHONE_RE, UAN_RE } from './validators';
 
@@ -41,17 +43,27 @@ export interface PageSchema {
   editableStatuses: string[];
   /** Allowed status changes: from -> [to, ...] (POST /records/:id/status). */
   transitions: Record<string, string[]>;
+  /** status → operations the lock matrix allows (engine/lock-matrix.ts); the web hides buttons from it. */
+  lock: Record<string, Record<LockOp, boolean>>;
   actions: SchemaAction[];
   listColumns: string[];
 }
 
 export const MASTER_STATUSES = ['Active', 'Inactive'];
-export const EDITABLE_STATUSES = ['Draft', 'Active', 'Inactive', 'Open', 'Pending'];
-export const TRANSACTIONAL_STATUSES = ['Draft', 'Active', 'Inactive', 'Cancelled'];
+export const EDITABLE_STATUSES = ['Draft', 'Active', 'Inactive', 'Open', 'Pending', 'Rejected'];
+export const TRANSACTIONAL_STATUSES = [
+  'Draft',
+  'Pending Approval',
+  'Approved',
+  'Rejected',
+  'Active',
+  'Inactive',
+  'Cancelled',
+];
 
 /**
  * Status changes the generic engine allows (docs/phase3-4 B3). Approved / Rejected belong to the
- * approval workflow (Phase 6) and are never a target here. Pending and Open are never set by this
+ * approval workflow (Phase 5) and are never a target here. Pending and Open are never set by this
  * engine; they are listed so rows created by later phases can still move on.
  */
 export const STATUS_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
@@ -184,6 +196,7 @@ export function buildPageSchema(pageId: string): PageSchema | null {
     transitions: Object.fromEntries(
       Object.entries(STATUS_TRANSITIONS).map(([from, to]) => [from, [...to]]),
     ),
+    lock: lockTable(master),
     actions: [],
     listColumns: fields.slice(0, 12).map((f) => f.key),
   };

@@ -19,10 +19,26 @@ export const PrintLayout: React.FC<PrintLayoutProps> = ({ dto, Component, onClos
   }, []);
 
   return (
-    <div className="print-layout" style={{ background: '#fff', color: '#000', padding: '24px', fontFamily: 'sans-serif' }}>
+    <div
+      className="print-layout"
+      style={{ background: '#fff', color: '#000', padding: '24px', fontFamily: 'sans-serif' }}
+    >
       {/* Screen toolbar (hidden during actual @media print) */}
-      <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid #ccc', paddingBottom: '8px' }}>
-        <button type="button" className="btn btn-secondary" onClick={onClose ?? (() => window.history.back())}>
+      <div
+        className="no-print"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: '16px',
+          borderBottom: '1px solid #ccc',
+          paddingBottom: '8px',
+        }}
+      >
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={onClose ?? (() => window.history.back())}
+        >
           ✕ Close
         </button>
         <button type="button" className="btn btn-primary" onClick={() => window.print()}>
@@ -31,7 +47,10 @@ export const PrintLayout: React.FC<PrintLayoutProps> = ({ dto, Component, onClos
       </div>
 
       {/* Letterhead Header */}
-      <div className="print-letterhead" style={{ borderBottom: '2px solid #000', paddingBottom: '12px', marginBottom: '16px' }}>
+      <div
+        className="print-letterhead"
+        style={{ borderBottom: '2px solid #000', paddingBottom: '12px', marginBottom: '16px' }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 'bold' }}>
@@ -41,28 +60,27 @@ export const PrintLayout: React.FC<PrintLayoutProps> = ({ dto, Component, onClos
               {dto.letterhead['address'] || dto.unit.address || ''}
             </div>
             {dto.unit.gstin && (
-              <div style={{ fontSize: '12px', fontWeight: '600' }}>
-                GSTIN: {dto.unit.gstin}
-              </div>
+              <div style={{ fontSize: '12px', fontWeight: '600' }}>GSTIN: {dto.unit.gstin}</div>
             )}
             <div style={{ fontSize: '12px', color: '#555' }}>
               Unit: {dto.unit.name} ({dto.unit.code})
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <h1 style={{ margin: '0 0 6px 0', fontSize: '18px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <h1
+              style={{
+                margin: '0 0 6px 0',
+                fontSize: '18px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}
+            >
               {dto.title}
             </h1>
-            <div style={{ fontSize: '13px', fontWeight: 'bold' }}>
-              Doc No: {dto.docNo}
-            </div>
-            <div style={{ fontSize: '12px', color: '#444' }}>
-              Date: {dto.docDate}
-            </div>
+            <div style={{ fontSize: '13px', fontWeight: 'bold' }}>Doc No: {dto.docNo}</div>
+            <div style={{ fontSize: '12px', color: '#444' }}>Date: {dto.docDate}</div>
             {dto.revision && (
-              <div style={{ fontSize: '12px', color: '#666' }}>
-                Rev: {dto.revision}
-              </div>
+              <div style={{ fontSize: '12px', color: '#666' }}>Rev: {dto.revision}</div>
             )}
           </div>
         </div>
@@ -70,7 +88,15 @@ export const PrintLayout: React.FC<PrintLayoutProps> = ({ dto, Component, onClos
 
       {/* Parties Block */}
       {dto.parties.length > 0 && (
-        <div style={{ display: 'flex', gap: '24px', marginBottom: '16px', borderBottom: '1px solid #eee', paddingBottom: '12px' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '24px',
+            marginBottom: '16px',
+            borderBottom: '1px solid #eee',
+            paddingBottom: '12px',
+          }}
+        >
           {dto.parties.map((p, idx) => (
             <div key={idx} style={{ flex: 1, fontSize: '12px' }}>
               <strong style={{ textTransform: 'uppercase', color: '#666' }}>{p.role}</strong>
@@ -85,7 +111,15 @@ export const PrintLayout: React.FC<PrintLayoutProps> = ({ dto, Component, onClos
 
       {/* Facts Key-Values */}
       {dto.facts.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '16px', fontSize: '12px' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '16px',
+            marginBottom: '16px',
+            fontSize: '12px',
+          }}
+        >
           {dto.facts.map((f, idx) => (
             <div key={idx} style={{ minWidth: '140px' }}>
               <span style={{ color: '#666' }}>{f.label}: </span>
@@ -102,7 +136,15 @@ export const PrintLayout: React.FC<PrintLayoutProps> = ({ dto, Component, onClos
         <div className="print-body">
           {/* Lines Table */}
           {dto.lines && dto.lines.columns.length > 0 && (
-            <table className="v9-line-table" style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px', fontSize: '12px' }}>
+            <table
+              className="v9-line-table"
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                marginBottom: '16px',
+                fontSize: '12px',
+              }}
+            >
               <thead>
                 <tr style={{ borderBottom: '1px solid #000', borderTop: '1px solid #000' }}>
                   {dto.lines.columns.map((col) => (
@@ -210,7 +252,9 @@ export const PrintLayout: React.FC<PrintLayoutProps> = ({ dto, Component, onClos
         >
           {dto.signatures.map((sig, idx) => (
             <div key={idx} style={{ textAlign: 'center', minWidth: '140px', fontSize: '12px' }}>
-              <div style={{ borderBottom: '1px solid #000', marginBottom: '4px', height: '32px' }} />
+              <div
+                style={{ borderBottom: '1px solid #000', marginBottom: '4px', height: '32px' }}
+              />
               <strong>{sig.label}</strong>
               {sig.name && <div style={{ color: '#555' }}>({sig.name})</div>}
             </div>

@@ -16,9 +16,17 @@ export const UNIT_ORDER: Prisma.UnitOrderByWithRelationInput[] = [
 /** Newest year first. */
 export const FY_ORDER: Prisma.FinancialYearOrderByWithRelationInput[] = [{ startDate: 'desc' }];
 
-/** ADMIN and SUPER_ADMIN implicitly have every unit and may choose "All units". */
-export function hasAllUnits(role: RoleCode): boolean {
-  return hasMinRole(role, 'ADMIN');
+/** Role.all_units determines if all units are accessible (Phase 02 §5.3). */
+export function hasAllUnits(source: any): boolean {
+  if (typeof source === 'boolean') return source;
+  if (!source) return false;
+  if (typeof source === 'object') {
+    if (typeof source.allUnits === 'boolean') return source.allUnits;
+    if (source.role && typeof source.role === 'object' && typeof source.role.allUnits === 'boolean') {
+      return source.role.allUnits;
+    }
+  }
+  return false;
 }
 
 export const contextRepository = {
@@ -27,9 +35,9 @@ export const contextRepository = {
   },
 
   /** ACTIVE units the user may work in. */
-  accessibleUnits(user: { id: string; role: RoleCode }, db: Db = prisma): Promise<Unit[]> {
+  accessibleUnits(user: { id: string; allUnits?: boolean; role?: any }, db: Db = prisma): Promise<Unit[]> {
     return db.unit.findMany({
-      where: hasAllUnits(user.role)
+      where: hasAllUnits(user)
         ? { status: 'ACTIVE' }
         : { status: 'ACTIVE', userUnits: { some: { userId: user.id } } },
       orderBy: UNIT_ORDER,

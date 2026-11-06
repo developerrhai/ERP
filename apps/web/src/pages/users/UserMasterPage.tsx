@@ -6,8 +6,10 @@ import { ApiError } from '../../lib/api';
 import { useAppContext } from '../../lib/context';
 import { formatDateTime } from '../../lib/format';
 import type { ActionSet, RoleCode, RoleMeta, User, UserStatus } from '../../types';
+import { EffectiveAccessDrawer } from './EffectiveAccessDrawer';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { StatusConfirmModal } from './StatusConfirmModal';
+import { UserDrawer } from './UserDrawer';
 import { UserFormModal } from './UserFormModal';
 import {
   canManageUser,
@@ -66,6 +68,8 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [drawerUser, setDrawerUser] = useState<User | null>(null);
+  const [effectiveAccessUser, setEffectiveAccessUser] = useState<User | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -216,11 +220,11 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
                 return (
                   <tr key={u.id}>
                     <td>{u.name}</td>
-                    <td>{u.loginId}</td>
+                    <td><code>{u.loginId}</code></td>
                     <td>{u.email ?? '—'}</td>
                     <td>{u.department ?? '—'}</td>
                     <td>{u.roleLabel}</td>
-                    <td>{unitsLabel(u, units)}</td>
+                    <td>{unitsLabel(u, units, roles)}</td>
                     <td>
                       <span className={`status ${u.status.toLowerCase()}`}>
                         {u.status === 'ACTIVE' ? 'Active' : 'Inactive'}
@@ -230,6 +234,14 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
                     <td>
                       {manageable ? (
                         <div className="actions">
+                          <button
+                            type="button"
+                            className="btn sm"
+                            aria-label={`Check access for ${u.name}`}
+                            onClick={() => setEffectiveAccessUser(u)}
+                          >
+                            Check access
+                          </button>
                           <button
                             type="button"
                             className="btn sm"
@@ -255,9 +267,7 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
                             {u.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                           </button>
                         </div>
-                      ) : (
-                        <span className="v8-sub">—</span>
-                      )}
+                      ) : null}
                     </td>
                   </tr>
                 );
@@ -342,6 +352,23 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
             reload();
             toast(`${u.loginId} is now ${u.status === 'ACTIVE' ? 'active' : 'inactive'}.`);
           }}
+        />
+      ) : null}
+      {drawerUser ? (
+        <UserDrawer
+          user={drawerUser}
+          currentUser={currentUser}
+          onClose={() => setDrawerUser(null)}
+          onReload={() => {
+            setDrawerUser(null);
+            reload();
+          }}
+        />
+      ) : null}
+      {effectiveAccessUser ? (
+        <EffectiveAccessDrawer
+          user={effectiveAccessUser}
+          onClose={() => setEffectiveAccessUser(null)}
         />
       ) : null}
     </>

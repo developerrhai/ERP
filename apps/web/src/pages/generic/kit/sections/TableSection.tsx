@@ -36,7 +36,15 @@ export function TableSection({
 
   return (
     <div className="v9-section table-section">
-      <div className="table-header-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+      <div
+        className="table-header-bar"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '8px',
+        }}
+      >
         {title ? <h3>{title}</h3> : <span />}
         {headerActions && headerActions.length > 0 ? (
           <div className="actions">
@@ -70,7 +78,9 @@ export function TableSection({
                   </th>
                 );
               })}
-              {rowActions && rowActions.length > 0 ? <th style={{ textAlign: 'right' }}>Actions</th> : null}
+              {rowActions && rowActions.length > 0 ? (
+                <th style={{ textAlign: 'right' }}>Actions</th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
@@ -158,7 +168,12 @@ export function TableSection({
       {meta && totalPages > 1 ? (
         <div
           className="pagination"
-          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '10px',
+          }}
         >
           <span className="muted" style={{ fontSize: '11px' }}>
             Page {meta.page} of {totalPages} ({meta.total} rows)

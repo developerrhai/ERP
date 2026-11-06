@@ -8,6 +8,7 @@ import { Pager } from '../../components/Pager';
 import { ApiError } from '../../lib/api';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
+import { submitBulk } from './phase4Api';
 import {
   bulkDelete,
   exportXlsx,
@@ -23,7 +24,8 @@ import {
 import { ActionButtons } from './RecordActions';
 import { FilterControl } from './kit/FilterBar';
 import {
-  canChangeRecord,
+  canEditRecord,
+  canRemoveRecord,
   displayValue,
   formatMoney,
   formatQty,
@@ -167,6 +169,30 @@ export function RegisterTab({
       return next;
     });
 
+  // Submit Selected (generic transactional pages): only Drafts can be submitted; the server reports each id.
+  const canSubmit =
+    schema.kind === 'generic' && perms.submit === true && schema.lock?.Draft?.submit === true;
+  const [submitting, setSubmitting] = useState(false);
+  const submitSelected = async (): Promise<void> => {
+    setSubmitting(true);
+    try {
+      const report = await submitBulk(schema.pageId, [...selected]);
+      const okIds = report.filter((r) => r.ok).map((r) => r.id);
+      setSelected((prev) => new Set([...prev].filter((id) => !okIds.includes(id))));
+      onChanged();
+      const failed = report.filter((r) => !r.ok);
+      onNotify(
+        failed.length
+          ? `Submitted ${okIds.length}; ${failed.length} could not be submitted${failed[0]?.error ? ` (${failed[0].error.message})` : ''}.`
+          : `Submitted ${okIds.length} record${okIds.length === 1 ? '' : 's'}.`,
+      );
+    } catch (err) {
+      setExportError(err instanceof ApiError ? err.message : 'Submit failed.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const exportSelected = async (): Promise<void> => {
     setBusy(true);
     setExportError('');
@@ -305,6 +331,16 @@ export function RegisterTab({
             onClick={() => void exportSelected()}
           >
             Export Selected
+          </button>
+        ) : null}
+        {canSubmit ? (
+          <button
+            type="button"
+            className="btn"
+            disabled={selected.size === 0 || submitting}
+            onClick={() => void submitSelected()}
+          >
+            {submitting ? 'Submitting…' : 'Submit Selected'}
           </button>
         ) : null}
         {canDelete ? (
@@ -469,7 +505,8 @@ function RegisterRow({
   onAction: (row: RecordRow, action: PageAction) => void;
   onOpenWorkspace?: (row: RecordRow) => void;
 }) {
-  const changeable = canChangeRecord(schema, row);
+  const editable = canEditRecord(schema, row);
+  const removable = canRemoveRecord(schema, row);
   const hasRecordPanels = schema.tabPanels?.some((tp) => tp.scope === 'record');
   return (
     <tr className={isLowRow(row) ? 'row-low' : undefined}>
@@ -518,7 +555,7 @@ function RegisterRow({
             <span aria-hidden="true">👁</span>
           </button>
           <ActionButtons schema={schema} row={row} small perms={perms} onAction={onAction} />
-          {perms.edit && changeable ? (
+          {perms.edit && editable ? (
             <button
               type="button"
               className="btn sm"
@@ -528,14 +565,34 @@ function RegisterRow({
             >
               <span aria-hidden="true">✎</span>
             </button>
+          ) : perms.edit && row.status === 'Pending Approval' ? (
+            <button
+              type="button"
+              className="btn sm"
+              aria-label={`Edit ${row.code}`}
+              title="Locked while pending approval"
+              disabled
+            >
+              <span aria-hidden="true">✎</span>
+            </button>
           ) : null}
-          {perms.delete && changeable ? (
+          {perms.delete && removable ? (
             <button
               type="button"
               className="btn sm danger"
               aria-label={`Delete ${row.code}`}
               title="Delete"
               onClick={() => onDelete(row)}
+            >
+              <span aria-hidden="true">🗑</span>
+            </button>
+          ) : perms.delete && row.status === 'Pending Approval' ? (
+            <button
+              type="button"
+              className="btn sm danger"
+              aria-label={`Delete ${row.code}`}
+              title="Locked while pending approval"
+              disabled
             >
               <span aria-hidden="true">🗑</span>
             </button>

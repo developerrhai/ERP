@@ -247,7 +247,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
           department: 'Quality',
           createdAt: new Date().toISOString(),
           status: 'Active',
-        };
+        } as any;
       },
       async create() {
         throw new Error('not implemented');
@@ -302,7 +302,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
           department: 'Quality',
           createdAt: new Date().toISOString(),
           status: 'Active',
-        };
+        } as any;
       },
       async create() {
         throw new Error('not implemented');
@@ -369,7 +369,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
           department: 'Quality',
           createdAt: new Date().toISOString(),
           status: 'Active',
-        };
+        } as any;
       },
       async create() {
         throw new Error('not implemented');
@@ -424,7 +424,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
           department: 'Quality',
           createdAt: new Date().toISOString(),
           status: 'Active',
-        };
+        } as any;
       },
       async create() {
         throw new Error('not implemented');

@@ -4,6 +4,7 @@ import { initials, roleLine } from '../lib/format';
 import type { User } from '../types';
 import { ContextSelectors } from './ContextSelectors';
 import { HealthPill } from './HealthPill';
+import { NotificationBell } from './NotificationBell';
 
 const LATER = 'Available in a later phase';
 
@@ -40,9 +41,7 @@ export function Topbar({ user, sidebarOpen, onToggleSidebar, onOpenAccount }: To
         <button type="button" className="icon" aria-label="Quick add" title={LATER} disabled>
           ＋
         </button>
-        <button type="button" className="icon" aria-label="Notifications" title={LATER} disabled>
-          🔔
-        </button>
+        <NotificationBell />
         <button
           type="button"
           className="user"

@@ -11,6 +11,8 @@ import { prisma } from '../../../core/db/prisma';
 import type { Db } from '../../../core/db/prisma';
 import { Errors } from '../../../core/http/errors';
 import type { FieldErrors } from '../../../core/http/errors';
+import { assertCanPost } from '../../../core/posting';
+import { NumberingService } from '../../../core/numbering';
 import { accessUserOf, can, scopeFor } from '../../../core/rbac/access';
 import type { PageSchema } from '../../../engine/field-schema';
 import { validateRecordInput } from '../../../engine/record-input';
@@ -434,9 +436,6 @@ function orderBy(info: KindInfo, sort: string): Prisma.StockVoucherOrderByWithRe
 // ---------------------------------------------------------------------------------------------
 // The handler (list / get / create / patch / delete / restore)
 // ---------------------------------------------------------------------------------------------
-function numbered(info: KindInfo, unitCode: string, fyCode: string, n: number): string {
-  return `${info.prefix}/${unitCode}/${fyCode.slice(2)}/${String(n).padStart(4, '0')}`;
-}
 
 function columnsOf(info: KindInfo, p: Parsed, extra: { toUnitId: string | null }) {
   return {
@@ -498,8 +497,13 @@ function makeHandler(pageId: string): TypedHandler {
       const unit = await prisma.unit.findUniqueOrThrow({ where: { id: unitId } });
       const user = caller.auth.user;
       const created = await prisma.$transaction(async (tx) => {
-        const n = await recordRepository.nextNumber(pageId, unitId, fy.id, tx);
-        const number = numbered(info, unit.code, fy.code, n);
+        const number = await NumberingService.allocate(tx, {
+          pageId,
+          unitId,
+          fyId: fy.id,
+          prefix: info.prefix,
+          padding: 4,
+        });
         const row = await repo.create(
           {
             ...columnsOf(info, parsed, { toUnitId: found.toWarehouse?.unitId ?? null }),
@@ -730,6 +734,14 @@ async function doPost(c: Ctx): Promise<void> {
   if (v.status !== 'Draft') notAllowed(v, 'post');
   assertUnit(c.caller, v);
   assertUsable(v);
+  await assertCanPost(tx, {
+    unitId: v.unitId,
+    fyId: v.fyId,
+    postingDate: v.postingDate,
+    documentStatus: v.status,
+    allowedStatuses: ['Draft'],
+    action: 'post',
+  });
   const date = isoOf(v.postingDate);
   const base = {
     unitId: v.unitId,
@@ -829,6 +841,14 @@ async function doDispatch(c: Ctx): Promise<void> {
   if (v.status !== 'Draft') notAllowed(v, 'dispatch');
   assertUnit(c.caller, v);
   assertUsable(v);
+  await assertCanPost(tx, {
+    unitId: v.unitId,
+    fyId: v.fyId,
+    postingDate: v.postingDate,
+    documentStatus: v.status,
+    allowedStatuses: ['Draft'],
+    action: 'dispatch',
+  });
   const requested = v.qty;
   const qty = body.dispatchedQty !== undefined ? round3(D(body.dispatchedQty)) : requested;
   if (qty.lessThanOrEqualTo(0) || qty.greaterThan(requested)) {
@@ -868,6 +888,16 @@ async function doReceive(c: Ctx): Promise<void> {
   if (v.status !== 'Dispatched') notAllowed(v, 'receive');
   assertUnit(c.caller, v, true);
   assertUsable(v, { destination: true });
+  const destination = v.toWarehouse;
+  if (!destination || !v.toWarehouseId) throw Errors.notFound('Destination warehouse not found.');
+  await assertCanPost(tx, {
+    unitId: destination.unitId,
+    fyId: v.fyId,
+    postingDate: clampToFy(v.fy),
+    documentStatus: v.status,
+    allowedStatuses: ['Dispatched'],
+    action: 'receive',
+  });
   const dispatched = v.dispatchedQty ?? ZERO;
   const received = body.receivedQty !== undefined ? round3(D(body.receivedQty)) : dispatched;
   if (!received.equals(dispatched)) {
@@ -875,8 +905,6 @@ async function doReceive(c: Ctx): Promise<void> {
       receivedQty: `Received Qty must equal the dispatched ${str(dispatched)}.`,
     });
   }
-  const destination = v.toWarehouse;
-  if (!destination || !v.toWarehouseId) throw Errors.notFound('Destination warehouse not found.');
   // Received into the destination at the dispatch rate and value; dated today inside the voucher's FY.
   const e = await postMovement(tx, {
     unitId: destination.unitId,
@@ -904,6 +932,14 @@ async function doCancel(c: Ctx): Promise<void> {
     info.kind === 'TRANSFER' ? ['Draft', 'Dispatched'].includes(v.status) : v.status === 'Posted';
   if (!cancellable) notAllowed(v, 'cancel');
   assertUnit(c.caller, v);
+  await assertCanPost(tx, {
+    unitId: v.unitId,
+    fyId: v.fyId,
+    postingDate: clampToFy(v.fy),
+    documentStatus: v.status,
+    allowedStatuses: info.kind === 'TRANSFER' ? ['Draft', 'Dispatched'] : ['Posted'],
+    action: 'cancel',
+  });
   let reversed = 0;
   if (v.status !== 'Draft') {
     reversed = await reverseVoucher(tx, v.id, {

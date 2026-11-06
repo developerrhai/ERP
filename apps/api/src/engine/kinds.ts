@@ -65,9 +65,6 @@ export const CUSTOM_PAGES: ReadonlySet<string> = new Set([
  * Administration hard rule still applies). Every other Administration page is `custom`.
  */
 export const GENERIC_ADMIN_PAGES: ReadonlySet<string> = new Set([
-  'admin-designations',
-  'admin-currency',
-  'admin-uom',
   'admin-taxes',
 ]);
 

@@ -2,7 +2,7 @@
 // and read the `rt` cookie. Every user gets a unique login ID so test files never collide. Like the
 // Phase 3 migration, non-admin users get all seeded units unless the test says otherwise.
 import { randomUUID } from 'node:crypto';
-import type { Role, User, UserStatus } from '@prisma/client';
+import type { User, UserStatus } from '@prisma/client';
 import request from 'supertest';
 import type { Response } from 'supertest';
 import type { Express } from 'express';
@@ -38,41 +38,98 @@ export function uniqueLoginId(prefix = 'u'): string {
   return `${prefix}-${randomUUID().slice(0, 12)}`;
 }
 
+const ROLE_CODE_MAP: Record<string, string> = {
+  SUPER_ADMIN: 'SUPER_USER',
+  ADMIN: 'ADMINISTRATOR',
+  MANAGER: 'DEPT_MANAGER',
+  LEAD: 'SUPERVISOR',
+  MEMBER: 'EMPLOYEE',
+};
+
+let rolesCache: Map<string, string> | null = null;
+export async function resolveRoleId(roleOrCode: string = 'EMPLOYEE'): Promise<string> {
+  if (!rolesCache) {
+    const roles = await prisma.role.findMany();
+    rolesCache = new Map();
+    for (const r of roles) {
+      rolesCache.set(r.code, r.id);
+    }
+  }
+  const mappedCode = ROLE_CODE_MAP[roleOrCode] ?? roleOrCode;
+  const roleId = rolesCache.get(mappedCode);
+  if (!roleId) {
+    const role = await prisma.role.findFirst({
+      where: { OR: [{ code: mappedCode }, { id: roleOrCode }] },
+    });
+    if (role) {
+      rolesCache.set(role.code, role.id);
+      return role.id;
+    }
+    throw new Error(`Role not found: ${roleOrCode}`);
+  }
+  return roleId;
+}
+
 export async function makeUser(
   overrides: Partial<{
-    role: Role;
+    role: string;
+    roleCode: string;
+    roleId: string;
     department: string | null;
+    extraDepartments: string[];
+    approvalLimit: string | number | null;
     status: UserStatus;
     mustChangePassword: boolean;
     loginId: string;
     email: string | null;
     name: string;
-    /** Unit codes to assign. Default: all seeded units for MANAGER/LEAD/MEMBER, none for ADMIN+. */
     unitCodes: string[];
     defaultUnitCode: string | null;
   }> = {},
 ): Promise<User> {
-  const loginId = overrides.loginId ?? uniqueLoginId(overrides.role?.toLowerCase() ?? 'member');
-  const role = overrides.role ?? 'MEMBER';
+  const roleInput = overrides.roleId ?? overrides.roleCode ?? overrides.role ?? 'EMPLOYEE';
+  const roleId = await resolveRoleId(roleInput);
+  const roleRecord = await prisma.role.findUnique({ where: { id: roleId } });
+  const isSuperUser = roleRecord?.code === 'SUPER_USER';
+  const allUnits = roleRecord?.allUnits ?? false;
+  const loginId = overrides.loginId ?? uniqueLoginId(roleRecord?.code.toLowerCase() ?? 'user');
   const codes =
     overrides.unitCodes ??
-    (role === 'ADMIN' || role === 'SUPER_ADMIN' ? [] : [...SEEDED_UNIT_CODES]);
+    (allUnits ? [] : [...SEEDED_UNIT_CODES]);
   const ids = codes.length > 0 ? await unitIds(codes) : [];
   const defaultUnitId = overrides.defaultUnitCode
     ? ((await unitIds([overrides.defaultUnitCode]))[0] ?? null)
     : null;
+  const dept = isSuperUser
+    ? (overrides.department ?? null)
+    : (overrides.department === undefined ? 'Sales' : overrides.department);
   return prisma.user.create({
     data: {
       loginId,
       email: overrides.email === undefined ? `${loginId}@test.local` : overrides.email,
       name: overrides.name ?? `User ${loginId}`,
-      role,
-      department: overrides.department === undefined ? 'Sales' : overrides.department,
+      roleId,
+      department: dept,
+      approvalLimit:
+        overrides.approvalLimit !== undefined
+          ? overrides.approvalLimit === null
+            ? null
+            : overrides.approvalLimit.toString()
+          : isSuperUser
+            ? null
+            : '0',
       status: overrides.status ?? 'ACTIVE',
       mustChangePassword: overrides.mustChangePassword ?? false,
       passwordHash: await passwordHash(),
       defaultUnitId,
       units: { create: ids.map((unitId) => ({ unitId })) },
+      ...(overrides.extraDepartments && overrides.extraDepartments.length > 0
+        ? {
+            extraDepartments: {
+              create: overrides.extraDepartments.map((d) => ({ departmentName: d })),
+            },
+          }
+        : {}),
     },
   });
 }
@@ -121,10 +178,10 @@ export async function signIn(app: Express, user: User, password = PASSWORD): Pro
 
 export async function signInAs(
   app: Express,
-  role: Role,
+  role: string,
   overrides: Parameters<typeof makeUser>[0] = {},
 ): Promise<Signed> {
-  if (role === 'SUPER_ADMIN') return signInOwner(app);
+  if (role === 'SUPER_ADMIN' || role === 'SUPER_USER') return signInOwner(app);
   return signIn(app, await makeUser({ ...overrides, role }));
 }
 

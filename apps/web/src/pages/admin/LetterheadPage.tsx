@@ -17,7 +17,13 @@ import {
   PAN_RE,
 } from '../../lib/validators';
 import type { ActionSet, Letterhead } from '../../types';
-import { getLetterhead, LETTERHEAD_KEYS, saveLetterhead } from './adminApi';
+import {
+  downloadLetterheadTestPdf,
+  getLetterhead,
+  LETTERHEAD_KEYS,
+  saveLetterhead,
+  uploadFile,
+} from './adminApi';
 
 export const LETTERHEAD_LABELS: Record<keyof Letterhead, string> = {
   companyName: 'Company Name',
@@ -31,6 +37,14 @@ export const LETTERHEAD_LABELS: Record<keyof Letterhead, string> = {
   cin: 'CIN',
   footer: 'Footer',
   signatory: 'Signatory',
+  version: 'Version',
+  logoFileId: 'Logo File',
+  headerHeightMm: 'Header Height (mm)',
+  footerHeightMm: 'Footer Height (mm)',
+  primaryColor: 'Primary Color',
+  showGstin: 'Show GSTIN',
+  showPan: 'Show PAN',
+  showCin: 'Show CIN',
 };
 
 const MAX: Partial<Record<keyof Letterhead, number>> = {
@@ -58,7 +72,7 @@ export function validateLetterhead(v: Letterhead): Partial<Record<keyof Letterhe
   const e: Partial<Record<keyof Letterhead, string>> = {};
   if (!v.companyName.trim()) e.companyName = 'Company name is required.';
   for (const [k, max] of Object.entries(MAX) as [keyof Letterhead, number][]) {
-    if (!e[k] && v[k].length > max) e[k] = `At most ${max} characters.`;
+    if (!e[k] && v[k] && typeof v[k] === 'string' && v[k].length > max) e[k] = `At most ${max} characters.`;
   }
   if (v.email && !EMAIL_RE.test(v.email))
     e.email = 'Enter a valid email address or leave it empty.';
@@ -82,6 +96,8 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
   const [formError, setFormError] = useState('');
   const [conflict, setConflict] = useState(false);
   const [pending, setPending] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const inFlight = useRef(false);
   const canEdit = actions.controls;
 
@@ -92,7 +108,55 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
       setVersion(data.version);
     }
   }, [data]);
-  useUnsavedGuard(!!value && !!baseline && LETTERHEAD_KEYS.some((k) => value[k] !== baseline[k]));
+
+  const isDirty = (): boolean => {
+    if (!value || !baseline) return false;
+    if (LETTERHEAD_KEYS.some((k) => value[k] !== baseline[k])) return true;
+    if (value.logoFileId !== baseline.logoFileId) return true;
+    if (value.primaryColor !== baseline.primaryColor) return true;
+    if (value.showGstin !== baseline.showGstin) return true;
+    if (value.showPan !== baseline.showPan) return true;
+    if (value.showCin !== baseline.showCin) return true;
+    return false;
+  };
+
+  useUnsavedGuard(isDirty());
+
+  const onLogoSelected = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const file = e.target.files?.[0];
+    if (!file || !value) return;
+    setUploadingLogo(true);
+    try {
+      const res = await uploadFile(file);
+      setValue({ ...value, logoFileId: res.id });
+      toast(`Logo uploaded: ${file.name}`);
+    } catch {
+      toast('Failed to upload logo.');
+    } finally {
+      setUploadingLogo(false);
+      e.target.value = '';
+    }
+  };
+
+  const onRemoveLogo = (): void => {
+    if (!value) return;
+    setValue({ ...value, logoFileId: null });
+  };
+
+  const onTestPdf = async (): Promise<void> => {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
+    try {
+      const blob = await downloadLetterheadTestPdf();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      toast('Test PDF generated.');
+    } catch {
+      toast('Failed to generate test PDF.');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -164,6 +228,55 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
               </ErrorMessage>
             ) : null}
             <div className="form-grid">
+              <div className="field">
+                <label htmlFor="logo-upload">Company Logo</label>
+                {value.logoFileId ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+                    <img
+                      src={`/api/v1/files/${value.logoFileId}`}
+                      alt="Logo preview"
+                      style={{ height: 44, objectFit: 'contain', border: '1px solid var(--line)', borderRadius: 6, padding: 4 }}
+                    />
+                    {canEdit ? (
+                      <button type="button" className="btn sm danger" onClick={onRemoveLogo}>
+                        Remove Logo
+                      </button>
+                    ) : null}
+                  </div>
+                ) : canEdit ? (
+                  <input
+                    id="logo-upload"
+                    type="file"
+                    accept="image/*"
+                    disabled={uploadingLogo}
+                    onChange={(e) => void onLogoSelected(e)}
+                  />
+                ) : (
+                  <span className="v8-sub">No logo configured</span>
+                )}
+                {uploadingLogo ? <small>Uploading logo…</small> : null}
+              </div>
+              <div className="field">
+                <label htmlFor="primary-color">Primary Accent Color</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  <input
+                    id="primary-color"
+                    type="color"
+                    value={value.primaryColor || '#1B365D'}
+                    disabled={!canEdit}
+                    style={{ width: 44, height: 36, padding: 2, cursor: canEdit ? 'pointer' : 'default', border: '1px solid var(--line)', borderRadius: 6 }}
+                    onChange={(e) => setValue({ ...value, primaryColor: e.target.value })}
+                  />
+                  <input
+                    type="text"
+                    value={value.primaryColor || '#1B365D'}
+                    maxLength={7}
+                    readOnly={!canEdit}
+                    style={{ width: 100 }}
+                    onChange={(e) => setValue({ ...value, primaryColor: e.target.value })}
+                  />
+                </div>
+              </div>
               {LETTERHEAD_KEYS.map((k) => (
                 <Field
                   key={k}
@@ -180,6 +293,35 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
                   }}
                 />
               ))}
+              <div className="field" style={{ gridColumn: '1 / -1', display: 'flex', gap: 24, marginTop: 8 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={value.showGstin !== false}
+                    disabled={!canEdit}
+                    onChange={(e) => setValue({ ...value, showGstin: e.target.checked })}
+                  />
+                  Show GSTIN
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={value.showPan !== false}
+                    disabled={!canEdit}
+                    onChange={(e) => setValue({ ...value, showPan: e.target.checked })}
+                  />
+                  Show PAN
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={value.showCin !== false}
+                    disabled={!canEdit}
+                    onChange={(e) => setValue({ ...value, showCin: e.target.checked })}
+                  />
+                  Show CIN
+                </label>
+              </div>
             </div>
             <div className="actions letterhead-actions">
               {canEdit ? (
@@ -190,10 +332,10 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
               <button
                 type="button"
                 className="btn"
-                disabled
-                title="PDF generation arrives in Phase 4"
+                disabled={generatingPdf}
+                onClick={() => void onTestPdf()}
               >
-                Test PDF
+                {generatingPdf ? 'Generating…' : 'Test PDF'}
               </button>
             </div>
           </form>
@@ -206,9 +348,9 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
 
 export function LetterheadPreview({ value }: { value: Letterhead }) {
   const ids = [
-    value.gstin && `GSTIN: ${value.gstin}`,
-    value.pan && `PAN: ${value.pan}`,
-    value.cin && `CIN: ${value.cin}`,
+    value.showGstin !== false && value.gstin && `GSTIN: ${value.gstin}`,
+    value.showPan !== false && value.pan && `PAN: ${value.pan}`,
+    value.showCin !== false && value.cin && `CIN: ${value.cin}`,
   ].filter(Boolean);
   const contact = [value.phone, value.email, value.website].filter(Boolean);
   return (
@@ -218,7 +360,14 @@ export function LetterheadPreview({ value }: { value: Letterhead }) {
         <span className="v8-sub">How the header and footer will look on generated PDFs.</span>
       </div>
       <div className="v92-payslip-preview letterhead-preview" data-testid="letterhead-preview">
-        <div className="ph">
+        <div className="ph" style={{ borderTop: `4px solid ${value.primaryColor || '#1B365D'}` }}>
+          {value.logoFileId ? (
+            <img
+              src={`/api/v1/files/${value.logoFileId}`}
+              alt="Letterhead Logo"
+              style={{ maxHeight: 44, objectFit: 'contain', marginBottom: 8 }}
+            />
+          ) : null}
           <h2>{value.companyName || 'Company Name'}</h2>
           {value.legalName ? <small className="lh-line">{value.legalName}</small> : null}
           <small className="lh-line">{value.address || 'Registered address'}</small>

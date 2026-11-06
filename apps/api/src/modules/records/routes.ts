@@ -9,6 +9,8 @@ import { requireConcreteUnit, resolveContext } from '../../core/context/resolve-
 import { asyncHandler } from '../../core/http/async-handler';
 import { validate } from '../../core/http/validate';
 import { requireParamPageAction } from '../../core/rbac/access';
+import { docVerbHandler } from '../approvals/doc-verbs';
+import { decisionBodySchema } from '../approvals/schemas';
 import { typedHandlerFor } from '../inventory/typed-pages';
 import { recordsController } from './controller';
 import { assertServed } from './service';
@@ -26,9 +28,8 @@ import {
   recordBodySchema,
   recordParamsSchema,
   restoreBodySchema,
+  submitBulkBodySchema,
   statusBodySchema,
-  typedExportQuerySchema,
-  typedListQuerySchema,
 } from './schemas';
 import { typedSchema } from '../inventory/definitions';
 
@@ -96,12 +97,7 @@ export function createPagesRouter(): Router {
   const records = Router({ mergeParams: true });
   records.use(validate({ params: pageParamsSchema }), requireServedPage);
 
-  records.get(
-    '/',
-    ...guard('view', false),
-    byEngine('list'),
-    asyncHandler(recordsController.list),
-  );
+  records.get('/', ...guard('view', false), byEngine('list'), asyncHandler(recordsController.list));
   records.post(
     '/',
     ...guard('add', true),
@@ -114,6 +110,26 @@ export function createPagesRouter(): Router {
     byEngine('export'),
     asyncHandler(recordsController.export),
   );
+  records.get(
+    '/export.csv',
+    ...guard('export', false),
+    validate({ query: exportRecordsQuerySchema }),
+    asyncHandler(recordsController.exportCsv),
+  );
+  records.get(
+    '/export.pdf',
+    ...guard('export', false),
+    validate({ query: exportRecordsQuerySchema }),
+    asyncHandler(recordsController.listPdf),
+  );
+  records.get('/summary', ...guard('view', false), asyncHandler(recordsController.summary));
+  records.get('/quality', ...guard('view', false), asyncHandler(recordsController.quality));
+  records.post(
+    '/submit-bulk',
+    ...guard('submit', true),
+    validate({ body: submitBulkBodySchema }),
+    asyncHandler(recordsController.submitBulk),
+  );
   records.post(
     '/bulk',
     ...guard('delete', true),
@@ -125,6 +141,12 @@ export function createPagesRouter(): Router {
     ...guard('view', false),
     validate({ params: recordParamsSchema }),
     asyncHandler(recordsController.get),
+  );
+  records.get(
+    '/:id/pdf',
+    ...guard('export', false),
+    validate({ params: recordParamsSchema }),
+    asyncHandler(recordsController.recordPdf),
   );
   records.get(
     '/:id/audit',
@@ -149,6 +171,27 @@ export function createPagesRouter(): Router {
     ...guard('delete', true),
     validate({ params: recordParamsSchema, body: restoreBodySchema }),
     asyncHandler(recordsController.restore),
+  );
+  records.post(
+    '/:id/submit',
+    ...guard('submit', true),
+    validate({ params: recordParamsSchema }),
+    asyncHandler(recordsController.submit),
+  );
+  // Phase 5 (E-11): the approval verbs live on the same path as submit.
+  for (const verb of ['approve', 'reject', 'return'] as const) {
+    records.post(
+      `/:id/${verb}`,
+      ...guard('approve', true),
+      validate({ params: recordParamsSchema, body: decisionBodySchema }),
+      asyncHandler(docVerbHandler(verb)),
+    );
+  }
+  records.post(
+    '/:id/withdraw',
+    ...guard('submit', true),
+    validate({ params: recordParamsSchema }),
+    asyncHandler(docVerbHandler('withdraw')),
   );
   records.post(
     '/:id/status',

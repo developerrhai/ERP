@@ -1,49 +1,34 @@
-// The only code that touches the users table and its user_units rows (PLAN §6.3 layering). Used by
-// the users service and by the auth service for credential lookups and lockout counters.
-import type { Prisma, Role, User } from '@prisma/client';
+// The only code that touches the users table, its user_units and user_departments rows.
+import type { Prisma, User } from '@prisma/client';
 import { prisma } from '../../core/db/prisma';
 import type { Db } from '../../core/db/prisma';
 import { escapeLike } from '../../core/http/query-safety';
-import { USER_UNITS_INCLUDE } from './dto';
-import type { UserWithUnits } from './dto';
-import type { ListUsersQuery, UserSort } from './schemas';
+import { USER_INCLUDE } from './dto';
+import type { UserWithRelations } from './dto';
+import type { ListUsersQuery } from './schemas';
 
-function orderByFor(sort: UserSort): Prisma.UserOrderByWithRelationInput[] {
-  const desc = sort.startsWith('-');
-  const field = (desc ? sort.slice(1) : sort) as
-    | 'name'
-    | 'loginId'
-    | 'createdAt'
-    | 'lastLoginAt'
-    | 'role'
-    | 'department';
-  const direction: Prisma.SortOrder = desc ? 'desc' : 'asc';
-  const primary: Prisma.UserOrderByWithRelationInput =
-    field === 'lastLoginAt' || field === 'department'
-      ? { [field]: { sort: direction, nulls: 'last' } }
-      : { [field]: direction };
-  // A unique tiebreaker keeps pagination stable.
-  return [primary, { id: 'asc' }];
-}
+const LEGACY_ROLE_MAP: Record<string, string> = {
+  SUPER_ADMIN: 'SUPER_USER',
+  ADMIN: 'ADMINISTRATOR',
+  MANAGER: 'DEPT_MANAGER',
+  LEAD: 'SUPERVISOR',
+  MEMBER: 'EMPLOYEE',
+};
 
 function whereFor(query: ListUsersQuery): Prisma.UserWhereInput {
   const where: Prisma.UserWhereInput = {};
-  if (query.role) where.role = query.role;
+  if (query.roleId) where.roleId = query.roleId;
+  else if (query.role) {
+    const code = LEGACY_ROLE_MAP[query.role] ?? query.role;
+    where.role = { code };
+  }
+
   if (query.status) where.status = query.status;
   if (query.department) where.department = query.department;
   if (query.unitId) {
-    // Who may work in the unit: users assigned to it, plus ADMIN+ (every unit implicitly).
-    where.AND = [
-      {
-        OR: [
-          { units: { some: { unitId: query.unitId } } },
-          { role: { in: ['SUPER_ADMIN', 'ADMIN'] } },
-        ],
-      },
-    ];
+    where.units = { some: { unitId: query.unitId } };
   }
   if (query.q) {
-    // Wildcards in the search text match literally.
     const q = escapeLike(query.q);
     where.OR = [
       { name: { contains: q, mode: 'insensitive' } },
@@ -54,22 +39,32 @@ function whereFor(query: ListUsersQuery): Prisma.UserWhereInput {
   return where;
 }
 
+function orderByFor(sort?: string): Prisma.UserOrderByWithRelationInput[] {
+  if (!sort) return [{ createdAt: 'desc' }, { id: 'asc' }];
+  const desc = sort.startsWith('-');
+  const field = desc ? sort.slice(1) : sort;
+  const direction: Prisma.SortOrder = desc ? 'desc' : 'asc';
+  if (field === 'role') return [{ role: { code: direction } }, { id: 'asc' }];
+  return [{ [field]: direction }, { id: 'asc' }];
+}
+
 export const userRepository = {
   findById(id: string, db: Db = prisma): Promise<User | null> {
     return db.user.findUnique({ where: { id } });
   },
 
-  findWithUnits(id: string, db: Db = prisma): Promise<UserWithUnits | null> {
-    return db.user.findUnique({ where: { id }, include: USER_UNITS_INCLUDE });
+  findWithRelations(id: string, db: Db = prisma): Promise<UserWithRelations | null> {
+    return db.user.findUnique({ where: { id }, include: USER_INCLUDE });
   },
 
-  /** Adds the unit rows toUserDto needs to a user loaded without them. */
-  async withUnits(user: User, db: Db = prisma): Promise<UserWithUnits> {
-    const units = await db.userUnit.findMany({
-      where: { userId: user.id },
-      include: USER_UNITS_INCLUDE.units.include,
-    });
-    return { ...user, units };
+  findWithUnits(id: string, db: Db = prisma): Promise<UserWithRelations | null> {
+    return db.user.findUnique({ where: { id }, include: USER_INCLUDE });
+  },
+
+  async withUnits(user: User, db: Db = prisma): Promise<UserWithRelations> {
+    const loaded = await db.user.findUnique({ where: { id: user.id }, include: USER_INCLUDE });
+    if (!loaded) throw new Error('User not found');
+    return loaded;
   },
 
   async unitIdsOf(userId: string, db: Db = prisma): Promise<string[]> {
@@ -77,7 +72,6 @@ export const userRepository = {
     return rows.map((r) => r.unitId);
   },
 
-  /** Makes the user's unit rows exactly `unitIds`. */
   async replaceUnits(userId: string, unitIds: readonly string[], db: Db = prisma): Promise<void> {
     await db.userUnit.deleteMany({ where: { userId, unitId: { notIn: [...unitIds] } } });
     if (unitIds.length > 0) {
@@ -88,7 +82,25 @@ export const userRepository = {
     }
   },
 
-  /** identifier is already lowercased; loginId wins over email if both could match. */
+  async replaceExtraDepartments(
+    userId: string,
+    departments: readonly string[],
+    createdById?: string,
+    db: Db = prisma,
+  ): Promise<void> {
+    await db.userDepartment.deleteMany({ where: { userId } });
+    if (departments.length > 0) {
+      await db.userDepartment.createMany({
+        data: departments.map((departmentName) => ({
+          userId,
+          departmentName,
+          createdById,
+        })),
+        skipDuplicates: true,
+      });
+    }
+  },
+
   async findByIdentifier(identifier: string, db: Db = prisma): Promise<User | null> {
     return (
       (await db.user.findUnique({ where: { loginId: identifier } })) ??
@@ -96,10 +108,13 @@ export const userRepository = {
     );
   },
 
-  /**
-   * Users whose loginId or email collides with the given values. loginId and email share one
-   * namespace because login accepts either, so a loginId may not equal anyone's email and vice versa.
-   */
+  async findByIdentifierWithRelations(identifier: string, db: Db = prisma): Promise<UserWithRelations | null> {
+    return (
+      (await db.user.findUnique({ where: { loginId: identifier }, include: USER_INCLUDE })) ??
+      (await db.user.findUnique({ where: { email: identifier }, include: USER_INCLUDE }))
+    );
+  },
+
   findCollisions(
     values: { loginId?: string; email?: string | null },
     excludeId?: string,
@@ -118,12 +133,12 @@ export const userRepository = {
   async list(
     query: ListUsersQuery,
     db: Db = prisma,
-  ): Promise<{ users: UserWithUnits[]; total: number }> {
+  ): Promise<{ users: UserWithRelations[]; total: number }> {
     const where = whereFor(query);
     const [users, total] = await Promise.all([
       db.user.findMany({
         where,
-        include: USER_UNITS_INCLUDE,
+        include: USER_INCLUDE,
         orderBy: orderByFor(query.sort),
         skip: (query.page - 1) * query.size,
         take: query.size,
@@ -137,34 +152,23 @@ export const userRepository = {
     return db.user.create({ data });
   },
 
-  /**
-   * Optimistic-lock update: applies only if the row is still at `version` AND still has the role the
-   * permission check was made against. Bumps the version.
-   */
   async updateIfVersion(
     id: string,
     version: number,
-    expectedRole: Role,
     data: Prisma.UserUncheckedUpdateManyInput,
     db: Db = prisma,
   ): Promise<boolean> {
     const result = await db.user.updateMany({
-      where: { id, version, role: expectedRole },
+      where: { id, version },
       data: { ...data, version: { increment: 1 } },
     });
     return result.count === 1;
   },
 
-  /** Unconditional update that still bumps the version (password changes). */
   update(id: string, data: Prisma.UserUncheckedUpdateInput, db: Db = prisma): Promise<User> {
     return db.user.update({ where: { id }, data: { ...data, version: { increment: 1 } } });
   },
 
-  /**
-   * Counts one failed password atomically (row lock), and locks the account when the count reaches
-   * `maxFailures`. While a lock is active nothing is counted, so concurrent attempts cannot push past
-   * the threshold or extend the lock. Decided after the Argon2 verify, inside one transaction.
-   */
   async registerFailedLogin(
     id: string,
     maxFailures: number,
@@ -200,16 +204,30 @@ export const userRepository = {
     );
   },
 
-  /**
-   * Records a successful login only if the account is not locked (an active lock is never cleared
-   * by a correct password). Returns null when locked.
-   */
-  async recordSuccessfulLogin(id: string, at: Date, db: Db = prisma): Promise<User | null> {
-    const result = await db.user.updateMany({
-      where: { id, OR: [{ lockedUntil: null }, { lockedUntil: { lte: at } }] },
-      data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: at },
+  async recordSuccessfulLogin(
+    id: string,
+    at: Date,
+    ip: string | null = null,
+    db: Db = prisma,
+  ): Promise<User | null> {
+    const user = await db.user.findUnique({ where: { id } });
+    if (!user) return null;
+    if (user.lockedUntil && user.lockedUntil.getTime() > at.getTime()) return null;
+
+    const previousLoginAt = user.lastLoginAt;
+    const previousLoginIp = user.lastLoginIp;
+
+    await db.user.update({
+      where: { id },
+      data: {
+        failedLoginCount: 0,
+        lockedUntil: null,
+        lastLoginAt: at,
+        previousLoginAt,
+        previousLoginIp,
+        lastLoginIp: ip,
+      },
     });
-    if (result.count !== 1) return null;
     return db.user.findUnique({ where: { id } });
   },
 };

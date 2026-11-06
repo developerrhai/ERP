@@ -65,6 +65,14 @@ export function AccountDrawer({ user, onClose }: { user: User; onClose: () => vo
         </div>
       ) : null}
       <div className="drawer-actions">
+        <a
+          href="/account/security"
+          className="btn"
+          onClick={onClose}
+          style={{ textAlign: 'center', textDecoration: 'none' }}
+        >
+          Security & Devices
+        </a>
         <button type="button" className="btn" disabled={busy} onClick={() => void run(logoutAll)}>
           Sign out of all devices
         </button>

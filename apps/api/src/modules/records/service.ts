@@ -11,6 +11,7 @@ import { env } from '../../config/env';
 import { prisma } from '../../core/db/prisma';
 import type { Db } from '../../core/db/prisma';
 import { AppError, Errors } from '../../core/http/errors';
+import { NumberingService } from '../../core/numbering';
 import { accessUserOf, scopeFor } from '../../core/rbac/access';
 import { hasMinRole } from '../../core/rbac/role-rules';
 import {
@@ -24,12 +25,21 @@ import { assertDateOrder } from '../../engine/date-order';
 import { buildPageSchema, codePrefix } from '../../engine/field-schema';
 import type { PageSchema } from '../../engine/field-schema';
 import { kindOf } from '../../engine/kinds';
+import {
+  APPROVAL_LOCKED_STATUSES,
+  assertCanDo,
+  canDo,
+  PENDING_MANUAL_TARGETS,
+} from '../../engine/lock-matrix';
+import type { LockOp } from '../../engine/lock-matrix';
+import { approvalService } from '../approvals/service';
+import { naturalKeyField } from '../imports/rows';
 import { auditLogRepository } from '../audit-logs/repository';
 import { toAuditLogDto } from '../audit-logs/service';
-import { buildWorkbook } from './export';
+import { buildCsv, buildWorkbook } from './export';
 import { recordRepository as repo, orderSql } from './repository';
 import type { RecordRow, Visibility } from './repository';
-import { MAX_EXPORT_ROWS } from './schemas';
+import { SYNC_EXPORT_ROWS } from './schemas';
 import type { AuditQuery, ExportRecordsQuery, ListRecordsQuery } from './schemas';
 
 export interface Caller {
@@ -118,7 +128,8 @@ async function visibilityFor(
     scope,
     userId: user.id,
     department: user.department,
-    ownerIsMine: control !== null && control.ownerDepartment === user.department,
+    departments: access.departments,
+    ownerIsMine: control !== null && access.departments.includes(control.ownerDepartment),
     deleted: options.deleted ?? 'no',
   };
 }
@@ -141,6 +152,12 @@ function assertRowFyOpen(row: RecordRow): void {
   if (row.fyStatus !== 'OPEN') {
     throw Errors.periodClosed(`Financial year ${row.fyCode} is closed.`);
   }
+}
+
+/** Every write goes through the one lock matrix (engine/lock-matrix.ts). */
+function assertAllowed(op: LockOp, schema: PageSchema, row: RecordRow): void {
+  assertRowFyOpen(row);
+  assertCanDo(op, { status: row.status, master: schema.master, fyOpen: row.fyStatus === 'OPEN' });
 }
 
 function sortOrder(schema: PageSchema, sort: string) {
@@ -207,7 +224,31 @@ async function audit(
   );
 }
 
+export interface DocumentTarget {
+  id: string;
+  code: string;
+  status: string;
+  version: number;
+}
+
 export const recordService = {
+  /**
+   * The record a document belongs to, seen with the caller's unit / scope. With `op` the lock matrix
+   * (and a concrete unit) is enforced as well, so documents obey the same status rules as edits.
+   */
+  async documentTarget(
+    caller: Caller,
+    pageId: string,
+    id: string,
+    op: LockOp | null,
+  ): Promise<DocumentTarget> {
+    const schema = genericSchema(pageId);
+    if (op) requireConcreteUnit(caller);
+    const row = await load(caller, schema, id);
+    if (op) assertAllowed(op, schema, row);
+    return { id: row.id, code: row.code, status: row.status, version: row.version };
+  },
+
   async list(caller: Caller, pageId: string, query: ListRecordsQuery) {
     const schema = genericSchema(pageId);
     if (query.deleted) assertCanSeeDeleted(caller);
@@ -233,6 +274,67 @@ export const recordService = {
     return toDto(await load(caller, schema, id));
   },
 
+  /**
+   * One record created inside the caller's transaction (used by the import commit): same validation,
+   * gap-free code and audit row as create(); a rollback of `tx` gives every number back.
+   */
+  async insertInTx(
+    tx: Db,
+    p: {
+      pageId: string;
+      unitId: string;
+      fyId: string;
+      department: string;
+      userId: string;
+      values: Record<string, unknown>;
+      detail?: Prisma.InputJsonObject;
+    },
+  ): Promise<{ id: string; code: string }> {
+    const schema = genericSchema(p.pageId);
+    const validated = validateRecordInput(schema, p.values, 'create');
+    const data = applyAadhaar({ ...validated.values }, validated.aadhaar);
+    assertDateOrder(schema, data, new Set(Object.keys(validated.values)));
+    const derived = deriveColumns(schema, data);
+    const code = await NumberingService.allocate(tx, {
+      pageId: p.pageId,
+      unitId: p.unitId,
+      fyId: p.fyId,
+      prefix: codePrefix(schema.title),
+      padding: 5,
+    });
+    const created = await repo.create(
+      {
+        pageId: p.pageId,
+        unitId: p.unitId,
+        fyId: p.fyId,
+        department: p.department,
+        code,
+        status: schema.master ? 'Active' : 'Draft',
+        amount: derived.amount,
+        docDate: derived.docDate ? new Date(`${derived.docDate}T00:00:00Z`) : null,
+        data: data as Prisma.InputJsonObject,
+        createdById: p.userId,
+      },
+      tx,
+    );
+    await recordAudit(
+      {
+        action: 'RECORD_CREATED',
+        actorId: p.userId,
+        targetType: 'Record',
+        targetId: created.id,
+        detail: {
+          pageId: p.pageId,
+          code,
+          after: publicData(data) as Prisma.InputJsonObject,
+          ...(p.detail ?? {}),
+        },
+      },
+      tx,
+    );
+    return { id: created.id, code };
+  },
+
   async create(
     caller: Caller,
     pageId: string,
@@ -241,7 +343,7 @@ export const recordService = {
   ): Promise<{ record: RecordDto; replay: boolean }> {
     const schema = genericSchema(pageId);
     const unitId = requireConcreteUnit(caller);
-    const fy = await assertFyOpen(caller.ctx.fyId);
+    await assertFyOpen(caller.ctx.fyId);
     const validated = validateRecordInput(schema, input, 'create');
     const data = applyAadhaar({ ...validated.values }, validated.aadhaar);
     assertDateOrder(schema, data, new Set(Object.keys(validated.values)));
@@ -264,25 +366,32 @@ export const recordService = {
                 'This Idempotency-Key was already used for a different request.',
               );
             }
-            const row = await repo.find(
-              seen.recordId,
-              {
-                pageId,
-                unitId: null,
-                noUnit: false,
-                scope: 'ALL',
-                userId: user.id,
-                department: user.department,
-                ownerIsMine: true,
-                deleted: 'no',
-              },
-              tx,
-            );
+            const row = seen.recordId
+              ? await repo.find(
+                  seen.recordId,
+                  {
+                    pageId,
+                    unitId: null,
+                    noUnit: false,
+                    scope: 'ALL',
+                    userId: user.id,
+                    department: user.department,
+                    ownerIsMine: true,
+                    deleted: 'no',
+                  },
+                  tx,
+                )
+              : null;
             if (row) return { record: toDto(row), replay: true };
           }
         }
-        const number = await repo.nextNumber(pageId, unitId, caller.ctx.fyId, tx);
-        const code = `${codePrefix(schema.title)}/${unit.code}/${fy.code.slice(2)}/${String(number).padStart(5, '0')}`;
+        const code = await NumberingService.allocate(tx, {
+          pageId,
+          unitId,
+          fyId: caller.ctx.fyId,
+          prefix: codePrefix(schema.title),
+          padding: 5,
+        });
         const created = await repo.create(
           {
             pageId,
@@ -342,10 +451,7 @@ export const recordService = {
     const schema = genericSchema(pageId);
     requireConcreteUnit(caller);
     const current = await load(caller, schema, id);
-    assertRowFyOpen(current);
-    if (!schema.editableStatuses.includes(current.status)) {
-      throw Errors.recordLocked(`A ${current.status} record cannot be edited.`);
-    }
+    assertAllowed('update', schema, current);
     if (expectedVersion !== current.version) throw Errors.versionConflict();
     const validated = validateRecordInput(schema, input, 'patch');
     assertMaskedUnchanged(schema, validated.values, current.data);
@@ -399,7 +505,7 @@ export const recordService = {
     const schema = genericSchema(pageId);
     requireConcreteUnit(caller);
     const current = await load(caller, schema, id);
-    assertRowFyOpen(current);
+    assertAllowed('remove', schema, current);
     if (expectedVersion !== undefined && expectedVersion !== current.version) {
       throw Errors.versionConflict();
     }
@@ -428,7 +534,7 @@ export const recordService = {
     const schema = genericSchema(pageId);
     requireConcreteUnit(caller);
     const current = await load(caller, schema, id, 'only');
-    assertRowFyOpen(current);
+    assertAllowed('restore', schema, current);
     if (token !== undefined && current.deletedAt && token !== undoToken(id, current.deletedAt)) {
       throw Errors.validation({ undoToken: 'This undo token does not match the deleted record.' });
     }
@@ -454,15 +560,31 @@ export const recordService = {
     requireConcreteUnit(caller);
     const current = await load(caller, schema, id);
     assertRowFyOpen(current);
+    const lock = canDo('status', {
+      status: current.status,
+      master: schema.master,
+      fyOpen: current.fyStatus === 'OPEN',
+    });
+    if (!lock.ok) {
+      // Phase 5: the approval statuses and Cancelled answer 409 RECORD_LOCKED (docs/phases/PHASE-05.md §5).
+      if (APPROVAL_LOCKED_STATUSES.has(current.status) || current.status === 'Cancelled') {
+        throw Errors.recordLocked(`This document is ${current.status} and cannot be changed.`);
+      }
+      // Other terminal statuses keep the engine's long-standing 422 (a status change is a field problem).
+      throw Errors.validation({ to: `A record that is ${current.status} cannot change status.` });
+    }
     if (expectedVersion !== undefined && expectedVersion !== current.version) {
       throw Errors.versionConflict();
     }
-    if (to === 'Approved' || to === 'Rejected') {
+    if (['Approved', 'Rejected', 'Pending Approval', 'Posted'].includes(to)) {
       throw Errors.validation({
         to: 'Approval statuses are set by the approval workflow, not here.',
       });
     }
-    const allowed = schema.transitions[current.status] ?? [];
+    const allowed =
+      current.status === 'Pending'
+        ? PENDING_MANUAL_TARGETS.filter((t) => (schema.transitions.Pending ?? []).includes(t))
+        : (schema.transitions[current.status] ?? []);
     if (!allowed.includes(to)) {
       throw Errors.validation({
         to:
@@ -488,6 +610,80 @@ export const recordService = {
       return fresh;
     }, TX);
     return toDto(updated);
+  },
+
+  /**
+   * Draft / Rejected -> Pending Approval through the approval engine (docs/phases/PHASE-05.md §5).
+   * The engine re-reads amount, department and unit from the stored document; nothing comes from the client.
+   */
+  async submit(
+    caller: Caller,
+    pageId: string,
+    id: string,
+    expectedVersion: number | undefined,
+  ): Promise<RecordDto> {
+    const schema = genericSchema(pageId);
+    requireConcreteUnit(caller);
+    await load(caller, schema, id); // 404 when the record is not visible to the caller
+    await approvalService.submit(caller, pageId, id, { docVersion: expectedVersion });
+    return toDto(await load(caller, schema, id));
+  },
+
+  /** One report entry per id, in the order given; one failure never stops the others. */
+  async submitBulk(caller: Caller, pageId: string, ids: readonly string[]) {
+    genericSchema(pageId);
+    requireConcreteUnit(caller);
+    const report: { id: string; ok: boolean; error?: { code: string; message: string } }[] = [];
+    for (const id of ids) {
+      try {
+        await this.submit(caller, pageId, id, undefined);
+        report.push({ id, ok: true });
+      } catch (err) {
+        if (!(err instanceof AppError)) throw err;
+        report.push({ id, ok: false, error: { code: err.code, message: err.message } });
+      }
+    }
+    return report;
+  },
+
+  /** Counts per status for the page (server-side dashboard numbers; nothing is computed in the browser). */
+  async summary(caller: Caller, pageId: string) {
+    const schema = genericSchema(pageId);
+    const v = await visibilityFor(caller, schema, { fy: true });
+    const s = await repo.statusSummary(v);
+    const total = s.byStatus.reduce((n, r) => n + r.count, 0);
+    return {
+      pageId,
+      total,
+      amountTotal: s.byStatus.reduce((n, r) => n + r.amount, 0),
+      byStatus: s.byStatus,
+      createdThisMonth: s.createdThisMonth,
+      staleDrafts: s.staleDrafts,
+      hasAmount: schema.fields.some((f) => f.type === 'money'),
+    };
+  },
+
+  /** Data quality: blank required fields, duplicated natural key, Drafts older than 30 days. */
+  async quality(caller: Caller, pageId: string) {
+    const schema = genericSchema(pageId);
+    const v = await visibilityFor(caller, schema, { fy: true });
+    const required = schema.fields.filter((f) => f.required && !f.readOnly);
+    const keyField = naturalKeyField(schema);
+    const q = await repo.qualityStats(
+      v,
+      required.map((f) => f.key),
+      keyField?.key,
+    );
+    return {
+      pageId,
+      total: q.total,
+      staleDrafts: q.staleDrafts,
+      missingRequired: required
+        .map((f) => ({ field: f.key, label: f.label, count: q.missing[f.key] ?? 0 }))
+        .filter((m) => m.count > 0),
+      duplicateField: keyField ? { field: keyField.key, label: keyField.label } : null,
+      duplicates: q.duplicates,
+    };
   },
 
   /** One report entry per id, in the order given; one failure never stops the others. */
@@ -529,9 +725,42 @@ export const recordService = {
   },
 
   async exportXlsx(caller: Caller, pageId: string, query: ExportRecordsQuery) {
+    return this.exportFile(caller, pageId, query, 'xlsx');
+  },
+
+  /** Synchronous export (≤ SYNC_EXPORT_ROWS rows); bigger sets must use the background export. */
+  async exportFile(
+    caller: Caller,
+    pageId: string,
+    query: ExportRecordsQuery,
+    format: 'xlsx' | 'csv',
+  ) {
+    const spec = await this.exportSpec(caller, pageId, query);
+    const rows = await repo.exportRows(
+      spec.visibility,
+      spec.filters,
+      spec.order,
+      SYNC_EXPORT_ROWS + 1,
+    );
+    if (rows.length > SYNC_EXPORT_ROWS) {
+      throw Errors.validation({
+        _: `More than ${SYNC_EXPORT_ROWS} rows match. Use "Export in background" or narrow the filters.`,
+      });
+    }
+    const buffer =
+      format === 'csv' ? buildCsv(spec.schema, rows) : await buildWorkbook(spec.schema, rows);
+    await this.auditExport(caller, pageId, rows.length, query, format);
+    return {
+      buffer,
+      filename: `${pageId}-${new Date().toISOString().slice(0, 10)}.${format}`,
+    };
+  },
+
+  /** Everything a (possibly later, background) export needs, decided with the caller's permissions NOW. */
+  async exportSpec(caller: Caller, pageId: string, query: ExportRecordsQuery) {
     const schema = genericSchema(pageId);
     if (query.deleted) assertCanSeeDeleted(caller);
-    const v = await visibilityFor(caller, schema, {
+    const visibility = await visibilityFor(caller, schema, {
       fy: true,
       deleted: query.deleted ? 'only' : 'no',
     });
@@ -541,18 +770,30 @@ export const recordService = {
       ...(query.status ? { status: query.status } : {}),
       ...(query.ids ? { ids: query.ids } : {}),
     };
-    const rows = await repo.exportRows(
-      v,
-      filters,
-      sortOrder(schema, query.sort),
-      MAX_EXPORT_ROWS + 1,
-    );
-    if (rows.length > MAX_EXPORT_ROWS) {
-      throw Errors.validation({
-        _: `More than ${MAX_EXPORT_ROWS} rows match. Narrow the filters and try again.`,
-      });
-    }
-    const buffer = await buildWorkbook(schema, rows);
+    return { schema, visibility, filters, order: sortOrder(schema, query.sort) };
+  },
+
+  /** Rows for a stored export spec (the worker has no request, only the saved visibility). */
+  exportRowsFor(
+    pageId: string,
+    visibility: Visibility,
+    filters: { sort: string; q?: string; status?: string; ids?: string[] },
+    limit: number,
+  ) {
+    const schema = genericSchema(pageId);
+    return repo
+      .exportRows(visibility, filters, sortOrder(schema, filters.sort), limit)
+      .then((rows) => ({ schema, rows }));
+  },
+
+  async auditExport(
+    caller: Caller,
+    pageId: string,
+    count: number,
+    query: ExportRecordsQuery,
+    format: string,
+    extra: Prisma.InputJsonObject = {},
+  ) {
     await recordAudit({
       action: 'RECORDS_EXPORTED',
       actorId: caller.auth.userId,
@@ -561,7 +802,9 @@ export const recordService = {
       meta: caller.meta,
       detail: {
         pageId,
-        count: rows.length,
+        count,
+        format,
+        ...extra,
         filters: {
           ...(query.q ? { q: query.q } : {}),
           ...(query.status ? { status: query.status } : {}),
@@ -571,6 +814,5 @@ export const recordService = {
         },
       },
     });
-    return { buffer, filename: `${pageId}-${new Date().toISOString().slice(0, 10)}.xlsx` };
   },
 };

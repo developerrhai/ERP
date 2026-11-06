@@ -60,16 +60,114 @@ export const CORE_AUDIT_ACTIONS = [
   'TRANSFER_RECEIVED',
 ] as const;
 
-export const AUDIT_ACTIONS: string[] = [...CORE_AUDIT_ACTIONS];
+export const INVENTORY_AUDIT_ACTIONS = [
+  'RESERVATION_CREATED',
+  'RESERVATION_RELEASED',
+  'RESERVATION_SHORTENED',
+  'RESERVATION_EXPIRED',
+  'BATCH_CREATED',
+  'BATCH_UPDATED',
+  'BATCH_QC_CHANGED',
+  'BATCH_EXPIRY_EXTENDED',
+  'BATCH_RECALLED',
+  'SERIAL_UPDATED',
+  'HOLD_PLACED',
+  'HOLD_RELEASED',
+  'RECONCILIATION_CREATED',
+  'RECONCILIATION_UPDATED',
+  'RECONCILIATION_STATUS_CHANGED',
+  'RECONCILIATION_POSTED',
+  'REVALUATION_POSTED',
+  'REVALUATION_CANCELLED',
+  'VALUATION_RUN_CREATED',
+  'VALUATION_RUN_FINALIZED',
+  'LOCATION_CREATED',
+  'LOCATION_UPDATED',
+  'LOCATION_DELETED',
+  'LOCATION_STATUS_CHANGED',
+  'WAREHOUSE_BIN_ENABLED',
+  'STOCK_FROZEN_BLOCK',
+  'COUNT_STATUS_CHANGED',
+  'COUNT_POSTED',
+  'WAREHOUSE_FROZEN',
+  'WAREHOUSE_UNFROZEN',
+  'PUTAWAY_COMPLETED',
+  'PICK_CONFIRMED',
+  'PACK_STATUS_CHANGED',
+  'WMS_TRANSFER_STATUS_CHANGED',
+  'BARCODE_CREATED',
+  'BARCODE_UPDATED',
+  'RFID_IMPORTED',
+  'REORDER_POLICY_CHANGED',
+  'UOM_CREATED',
+  'UOM_UPDATED',
+  'POLICY_UPDATED',
+  'JOB_RUN',
+] as const;
+
+/** Phase 4: documents, submit, import / export jobs. */
+export const PHASE4_AUDIT_ACTIONS = [
+  'DOCUMENT_ADDED',
+  'DOCUMENT_REMOVED',
+  'DOCUMENT_DOWNLOADED',
+  'DOCUMENT_REJECTED',
+  'RECORD_SUBMITTED',
+  'EXPORT_JOB_CREATED',
+  'IMPORT_VALIDATED',
+  'IMPORT_COMMITTED',
+] as const;
+
+/** Phase 5: approval engine. Target = the document; detail = request, level, amount, actor, comment. */
+export const PHASE5_AUDIT_ACTIONS = [
+  'APPROVAL_SUBMITTED',
+  'APPROVAL_APPROVED_LEVEL',
+  'APPROVAL_APPROVED',
+  'APPROVAL_REJECTED',
+  'APPROVAL_RETURNED',
+  'APPROVAL_WITHDRAWN',
+  'APPROVAL_ESCALATED',
+  'APPROVAL_REASSIGNED',
+  'APPROVAL_MATRIX_CHANGED',
+  'DELEGATION_CREATED',
+  'DELEGATION_REVOKED',
+] as const;
+
+export const AUDIT_ACTIONS: string[] = [
+  ...CORE_AUDIT_ACTIONS,
+  ...INVENTORY_AUDIT_ACTIONS,
+  ...PHASE4_AUDIT_ACTIONS,
+  ...PHASE5_AUDIT_ACTIONS,
+];
 
 export type AuditAction = string;
+
+export type AuditTargetType =
+  | 'User'
+  | 'Department'
+  | 'Setting'
+  | 'Company'
+  | 'Unit'
+  | 'FinancialYear'
+  | 'Item'
+  | 'Warehouse'
+  | 'Voucher'
+  | 'Reservation'
+  | 'Batch'
+  | 'Serial'
+  | 'Location'
+  | 'Count'
+  | 'Policy'
+  | 'Pack'
+  | string;
 
 export interface AuditEntry {
   action: AuditAction;
   actorId?: string | null;
-  targetType?: string | null;
+  targetType?: AuditTargetType | null;
   targetId?: string | null;
   meta?: RequestMeta;
+  ip?: string | null;
+  userAgent?: string | null;
   detail?: Prisma.InputJsonObject;
 }
 
@@ -80,8 +178,8 @@ export async function recordAudit(entry: AuditEntry, db: Db = prisma): Promise<v
       actorId: entry.actorId ?? null,
       targetType: entry.targetType ?? null,
       targetId: entry.targetId ?? null,
-      ip: entry.meta?.ip ?? null,
-      userAgent: entry.meta?.userAgent ?? null,
+      ip: entry.ip ?? entry.meta?.ip ?? null,
+      userAgent: entry.userAgent ?? entry.meta?.userAgent ?? null,
       detail: entry.detail ?? {},
     },
   });

@@ -245,9 +245,9 @@ describe('7. unknown identifiers lock out like real accounts', () => {
 });
 
 describe('8. PATCH guards', () => {
-  it('the conditional update also requires the role the permission check used', async () => {
+  it('the conditional update also requires the version the permission check used', async () => {
     const member = await makeUser({ role: 'MEMBER', name: 'Original Name' });
-    const applied = await userRepository.updateIfVersion(member.id, member.version, 'LEAD', {
+    const applied = await userRepository.updateIfVersion(member.id, member.version + 999, {
       name: 'Should Not Apply',
     });
     expect(applied).toBe(false);

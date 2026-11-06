@@ -1,10 +1,13 @@
 // apps/api/src/kit/commands.ts
-// Header command execution with idempotency, permission guards, and size checks (docs/plans/07-ENGINE-KIT.md §2.6, §6 KR-07, §12 T-KIT-05)
+// Header command execution: permission guards, size checks and Postgres-backed idempotency
+// (docs/plans/07-ENGINE-KIT.md §2.6, docs/phases/PHASE-04.md §5 C7). No in-memory state.
 
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
+import type { Prisma } from '@prisma/client';
 import { prisma, type Db } from '../core/db/prisma';
+import { abandonIdempotent, beginIdempotent, finishIdempotent } from '../core/http/idempotency';
 import { Errors } from '../core/http/errors';
 import { asyncHandler } from '../core/http/async-handler';
 import { authenticate, requirePasswordChanged } from '../core/auth/authenticate';
@@ -12,17 +15,22 @@ import { resolveContext } from '../core/context/resolve-context';
 import { requestMeta, requireAuth } from '../core/auth/auth-context';
 import { accessUserOf, can } from '../core/rbac/access';
 import { typedSchema } from '../modules/inventory/definitions';
-import { recordRepository } from '../modules/records/repository';
 import type { Caller } from '../modules/records/service';
 import { idempotencyKeySchema } from '../modules/records/schemas';
 import type { Requires } from './types';
+
+/** What a command hands back; `result` must be JSON-serialisable. */
+export interface CommandOutcome {
+  message?: string;
+  result?: Prisma.InputJsonValue;
+}
 
 export type CommandRunner = (ctx: {
   db: Db;
   caller: Caller;
   payload: Record<string, unknown>;
   idempotencyKey?: string;
-}) => Promise<{ message?: string; result?: unknown }>;
+}) => Promise<CommandOutcome | void>;
 
 export interface CommandOpts {
   allowAllUnits?: boolean;
@@ -37,8 +45,6 @@ export interface CommandDef {
 }
 
 export const COMMAND_REGISTRY = new Map<string, CommandDef>();
-export const COMMAND_RESULT_CACHE = new Map<string, { requestHash: string; result: unknown }>();
-const IN_FLIGHT_COMMANDS = new Map<string, Promise<{ result: unknown }>>();
 
 export function registerCommand(
   pageId: string,
@@ -63,8 +69,6 @@ export function getCommandDef(pageId: string, key: string): CommandDef | undefin
 
 export function clearKitCommandsForTest(): void {
   COMMAND_REGISTRY.clear();
-  COMMAND_RESULT_CACHE.clear();
-  IN_FLIGHT_COMMANDS.clear();
 }
 
 function callerOf(req: Request): Caller {
@@ -95,6 +99,41 @@ const commandBodySchema = z
   })
   .strict();
 
+function isPlainObject(v: unknown): v is Record<string, Prisma.InputJsonValue> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/** One response body for every command: `{message}` is merged into an object result. */
+export function normalizeOutcome(outcome: CommandOutcome | void): Prisma.InputJsonValue {
+  if (!outcome) return {};
+  const { message, result } = outcome;
+  if (result === undefined) return message ? { message } : {};
+  if (message && isPlainObject(result)) return { message, ...result };
+  return result;
+}
+
+function respond(res: Response, body: Prisma.InputJsonValue, replay: boolean): void {
+  if (replay) res.set('Idempotent-Replay', 'true');
+  // `data` is the canonical key; `result` is kept as a deprecated alias for older clients.
+  res.json({ data: body, result: body });
+}
+
+function replayBodyOf(stored: Prisma.JsonValue): Prisma.InputJsonValue {
+  if (isPlainObject(stored) && 'data' in stored && stored.data !== undefined) {
+    return stored.data;
+  }
+  return stored === null ? {} : (stored as Prisma.InputJsonValue);
+}
+
+function firstIssue(
+  error: z.ZodError,
+  fallbackField: string,
+  fallbackMessage: string,
+): { field: string; msg: string } {
+  const issue = error.issues[0];
+  return { field: issue?.path.join('.') || fallbackField, msg: issue?.message ?? fallbackMessage };
+}
+
 export function createKitCommandsRouter(): Router {
   const router = Router();
 
@@ -106,179 +145,70 @@ export function createKitCommandsRouter(): Router {
     asyncHandler(async (req: Request, res: Response) => {
       const parsedParams = commandParamsSchema.safeParse(req.params);
       if (!parsedParams.success) {
-        const issue = parsedParams.error.issues[0];
-        const field = issue?.path.join('.') || 'command';
-        const msg = issue?.message ?? 'Invalid command parameters.';
+        const { field, msg } = firstIssue(
+          parsedParams.error,
+          'command',
+          'Invalid command parameters.',
+        );
         throw Errors.validation({ [field]: msg }, msg);
       }
       const { pageId, command } = parsedParams.data;
 
       const def = getCommandDef(pageId, command);
-      if (!def) {
-        throw Errors.notFound('Unknown command.');
+      if (!def) throw Errors.notFound('Unknown command.');
+
+      const cmd = typedSchema(pageId)?.commands?.find((c) => c.key === command);
+      if (!cmd) throw Errors.notFound('Unknown command.');
+
+      // Concrete unit guard unless the runner declares allowAllUnits: true
+      if (!def.opts?.allowAllUnits && (!req.ctx || req.ctx.unitId === null)) {
+        throw Errors.contextInvalid('Choose a unit first: "All units" is for viewing lists only.');
       }
 
-      const schema = typedSchema(pageId);
-      const cmd = schema?.commands?.find((c) => c.key === command);
-      if (!cmd) {
-        throw Errors.notFound('Unknown command.');
-      }
-
-      // Concrete unit guard unless runner declares allowAllUnits: true
-      if (!def.opts?.allowAllUnits) {
-        if (!req.ctx || req.ctx.unitId === null) {
-          throw Errors.contextInvalid(
-            'Choose a unit first: "All units" is for viewing lists only.',
-          );
-        }
-      }
-
-      // Check permission: default 'add' unless specified in schema
       const requiredPerm: Requires = cmd.requires ?? 'add';
       const authUser = requireAuth(req).user;
-      const allowed = await can(accessUserOf(authUser), pageId, requiredPerm);
-      if (!allowed) {
-        throw Errors.forbidden();
-      }
+      if (!(await can(accessUserOf(authUser), pageId, requiredPerm))) throw Errors.forbidden();
 
-      // Validate body
       const parsedBody = commandBodySchema.safeParse(req.body ?? {});
       if (!parsedBody.success) {
-        const issue = parsedBody.error.issues[0];
-        const field = issue?.path.join('.') || 'payload';
-        const msg = issue?.message ?? 'Invalid command body.';
+        const { field, msg } = firstIssue(parsedBody.error, 'payload', 'Invalid command body.');
         throw Errors.validation({ [field]: msg }, msg);
       }
-
-      // Payload size check (<= 100 KB)
-      if (parsedBody.data.payload && JSON.stringify(parsedBody.data.payload).length > 100 * 1024) {
-        throw Errors.payloadTooLarge();
-      }
-
       const payload = parsedBody.data.payload ?? {};
+      if (JSON.stringify(payload).length > 100 * 1024) throw Errors.payloadTooLarge();
+
       const idempotencyKey = idempotencyKeyOf(req);
       const caller = callerOf(req);
+      const runArgs = { db: prisma, caller, payload };
 
-      // Idempotency execution
-      if (idempotencyKey) {
-        const cacheKey = `${authUser.id}:${idempotencyKey}`;
-        const requestHash = createHash('sha256')
-          .update(
-            JSON.stringify([
-              pageId,
-              command,
-              req.ctx?.unitId,
-              req.ctx?.fyId,
-              payload,
-            ]),
-          )
-          .digest('hex');
-
-        // Check if an existing execution was finished
-        const seen = await recordRepository.findIdempotency(authUser.id, idempotencyKey, prisma);
-        if (seen) {
-          if (seen.requestHash !== requestHash) {
-            throw Errors.conflict('This Idempotency-Key was already used for a different request.');
-          }
-          const cached = COMMAND_RESULT_CACHE.get(cacheKey);
-          res.set('Idempotent-Replay', 'true').json({ result: cached?.result ?? {} });
-          return;
-        }
-
-        // Check if concurrent execution is in-flight
-        const inFlight = IN_FLIGHT_COMMANDS.get(cacheKey);
-        if (inFlight) {
-          const finished = await inFlight;
-          res.set('Idempotent-Replay', 'true').json({ result: finished.result });
-          return;
-        }
-
-        // Execute and store in-flight promise
-        const execPromise = (async () => {
-          const outcome = await def.run({
-            db: prisma,
-            caller,
-            payload,
-            idempotencyKey,
-          });
-
-          let finalResult: unknown;
-          if (
-            outcome &&
-            typeof outcome === 'object' &&
-            'result' in outcome &&
-            (outcome as any).result !== undefined
-          ) {
-            if (
-              outcome.message &&
-              typeof (outcome as any).result === 'object' &&
-              (outcome as any).result !== null &&
-              !Array.isArray((outcome as any).result)
-            ) {
-              finalResult = { message: outcome.message, ...(outcome as any).result };
-            } else {
-              finalResult = (outcome as any).result;
-            }
-          } else {
-            finalResult = outcome;
-          }
-
-          COMMAND_RESULT_CACHE.set(cacheKey, { requestHash, result: finalResult });
-          try {
-            await recordRepository.saveIdempotency(
-              {
-                userId: authUser.id,
-                key: idempotencyKey,
-                requestHash,
-                recordId: '00000000-0000-0000-0000-000000000000',
-              },
-              prisma,
-            );
-          } catch {
-            // Duplicate key conflict or concurrency
-          }
-          return { result: finalResult };
-        })();
-
-        IN_FLIGHT_COMMANDS.set(cacheKey, execPromise);
-        try {
-          const finished = await execPromise;
-          res.json({ result: finished.result });
-        } finally {
-          IN_FLIGHT_COMMANDS.delete(cacheKey);
-        }
+      if (!idempotencyKey) {
+        respond(res, normalizeOutcome(await def.run(runArgs)), false);
         return;
       }
 
-      // No idempotency key provided: standard execution
-      const outcome = await def.run({
-        db: prisma,
-        caller,
-        payload,
-      });
-
-      let finalResult: unknown;
-      if (
-        outcome &&
-        typeof outcome === 'object' &&
-        'result' in outcome &&
-        (outcome as any).result !== undefined
-      ) {
-        if (
-          outcome.message &&
-          typeof (outcome as any).result === 'object' &&
-          (outcome as any).result !== null &&
-          !Array.isArray((outcome as any).result)
-        ) {
-          finalResult = { message: outcome.message, ...(outcome as any).result };
-        } else {
-          finalResult = (outcome as any).result;
-        }
-      } else {
-        finalResult = outcome;
+      const scope = `cmd:${pageId}:${command}`;
+      const requestHash = createHash('sha256')
+        .update(JSON.stringify([pageId, command, req.ctx?.unitId, req.ctx?.fyId, payload]))
+        .digest('hex');
+      const start = await beginIdempotent(authUser.id, scope, idempotencyKey, requestHash);
+      if (start.kind === 'mismatch') {
+        throw Errors.conflict('This Idempotency-Key was already used for a different request.');
+      }
+      if (start.kind === 'in_progress') throw Errors.inProgress();
+      if (start.kind === 'replay') {
+        respond(res, replayBodyOf(start.body), true);
+        return;
       }
 
-      res.json({ result: finalResult });
+      let body: Prisma.InputJsonValue;
+      try {
+        body = normalizeOutcome(await def.run({ ...runArgs, idempotencyKey }));
+      } catch (err) {
+        await abandonIdempotent(authUser.id, scope, idempotencyKey);
+        throw err;
+      }
+      await finishIdempotent(authUser.id, scope, idempotencyKey, 200, { data: body });
+      respond(res, body, false);
     }),
   );
 

@@ -25,6 +25,8 @@ function setup(extra: Record<string, Handler> = {}, rows = LEAD_ROWS) {
   return signedIn(owner, {
     [`GET ${P}/schema`]: () => json(200, { data: LEAD_SCHEMA }),
     [`GET ${P}/records`]: recordsHandler(rows),
+    'GET /api/v1/approvals/requests': () =>
+      json(200, { data: [], meta: { page: 1, size: 20, total: 0 } }),
     ...extra,
   });
 }
@@ -82,19 +84,35 @@ describe('tabs and honest notices', () => {
     renderApp('/m/crm-leads');
     const ue = userEvent.setup();
     const expected: Record<string, number> = {
-      Approvals: 6,
-      Documents: 5,
       'AI Decision Center': 19,
       'Automation Studio': 19,
       'Analytics & Graphs': 19,
-      'Qualification Desk': 11,
-      'Lead Scoring': 11,
+      'Qualification Desk': 10,
+      'Lead Scoring': 10,
     };
     await screen.findByRole('heading', { name: 'Lead Management' });
     for (const [tab, phase] of Object.entries(expected)) {
       await ue.click(screen.getByRole('tab', { name: tab }));
       expect(await screen.findByText(`This view is built in Phase ${phase}.`)).toBeInTheDocument();
     }
+  });
+
+  it('the Documents tab is live on generic pages and a notice shows the phase map', async () => {
+    setup();
+    renderApp('/m/crm-leads');
+    const ue = userEvent.setup();
+    await screen.findByRole('heading', { name: 'Lead Management' });
+    await ue.click(screen.getByRole('tab', { name: 'Documents' }));
+    expect(await screen.findByLabelText('Find a record')).toBeInTheDocument();
+    expect(screen.queryByText(/This view is built in Phase/)).toBeNull();
+    // Phase 5: Approvals is live on generic pages (requests of this page, from the server).
+    await ue.click(screen.getByRole('tab', { name: 'Approvals' }));
+    expect(
+      await screen.findByText(/No approval requests for this page yet/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/This view is built in Phase/)).toBeNull();
+    await ue.click(screen.getByRole('tab', { name: 'AI Decision Center' }));
+    expect(await screen.findByRole('list', { name: 'Build phases' })).toBeInTheDocument();
   });
 
   it('falls back to the placeholder when the engine does not serve the page', async () => {
@@ -118,17 +136,27 @@ describe('tabs and honest notices', () => {
 });
 
 describe('Module Dashboard', () => {
-  it('shows 4 KPIs computed from real data and the recent records', async () => {
+  it('shows 4 KPIs from the server summary and the recent records', async () => {
     const calls = setup({
-      [`GET ${P}/records`]: (call) => {
-        const u = new URL(call.url, 'http://test');
-        const status = u.searchParams.get('status');
-        if (status) {
-          const total = { Draft: 4, Open: 1, Active: 6, Completed: 2 }[status] ?? 0;
-          return json(200, { data: [], meta: { page: 1, size: 1, total } });
-        }
-        return json(200, { data: LEAD_ROWS, meta: { page: 1, size: 100, total: 13 } });
-      },
+      [`GET ${P}/records/summary`]: () =>
+        json(200, {
+          data: {
+            pageId: 'crm-leads',
+            total: 13,
+            amountTotal: 0,
+            hasAmount: false,
+            createdThisMonth: 7,
+            staleDrafts: 0,
+            byStatus: [
+              { status: 'Draft', count: 4, amount: 0 },
+              { status: 'Open', count: 1, amount: 0 },
+              { status: 'Active', count: 6, amount: 0 },
+              { status: 'Completed', count: 2, amount: 0 },
+            ],
+          },
+        }),
+      [`GET ${P}/records`]: () =>
+        json(200, { data: LEAD_ROWS, meta: { page: 1, size: 20, total: 13 } }),
     });
     renderApp('/m/crm-leads');
     const kpis = await screen.findByText('Records');
@@ -141,8 +169,8 @@ describe('Module Dashboard', () => {
     expect(kpis).toBeInTheDocument();
     expect(within(card('Draft / Open')).getByText('5')).toBeInTheDocument();
     expect(within(card('Active / Completed')).getByText('8')).toBeInTheDocument();
-    // All 3 fetched rows are from this month but 13 exist: the count is capped, and says so.
-    expect(within(card('Created this month')).getByText('3+')).toBeInTheDocument();
+    // The month count is computed by the server over every record, not from a browser sample.
+    expect(within(card('Created this month')).getByText('7')).toBeInTheDocument();
     expect(await screen.findByText('Lead 1')).toBeInTheDocument();
     expect(calls.calls.some((c) => c.url.includes('sort=-createdAt'))).toBe(true);
   });
@@ -561,17 +589,43 @@ describe('View drawer, delete and undo', () => {
 });
 
 describe('Data Quality, audit tabs and Reports', () => {
-  it('Data Quality shows per-field completeness from real rows', async () => {
-    setup();
+  it('Data Quality shows the server checks: stale drafts, empty required fields, repeated names', async () => {
+    setup({
+      [`GET ${P}/records/quality`]: () =>
+        json(200, {
+          data: {
+            pageId: 'crm-leads',
+            total: 9,
+            staleDrafts: 2,
+            missingRequired: [{ field: 'leadName', label: 'Lead Name', count: 1 }],
+            duplicateField: { field: 'leadName', label: 'Lead Name' },
+            duplicates: [{ value: 'acme', count: 2 }],
+          },
+        }),
+    });
     renderApp('/m/crm-leads?tab=Data%20Quality');
-    const row = (await screen.findByText('Company', { selector: 'td' })).closest(
-      'tr',
-    ) as HTMLElement;
-    expect(within(row).getByText('2 / 3')).toBeInTheDocument();
-    expect(within(row).getByText(/67%/)).toBeInTheDocument();
-    const lead = screen.getByText('Lead Name', { selector: 'td' }).closest('tr') as HTMLElement;
-    expect(within(lead).getByText(/100%/)).toBeInTheDocument();
-    expect(screen.queryByText('Lead No', { selector: 'td' })).toBeNull();
+    expect(await screen.findByText(/Checked all 9 records/)).toBeInTheDocument();
+    expect(screen.getByText('Drafts older than 30 days').closest('tr')).toHaveTextContent('2');
+    expect(screen.getByText(/Lead Name: 1/)).toBeInTheDocument();
+    expect(screen.getByText('acme (2)')).toBeInTheDocument();
+  });
+
+  it('Data Quality with no records says what to do (no numbers)', async () => {
+    setup({
+      [`GET ${P}/records/quality`]: () =>
+        json(200, {
+          data: {
+            pageId: 'crm-leads',
+            total: 0,
+            staleDrafts: 0,
+            missingRequired: [],
+            duplicateField: null,
+            duplicates: [],
+          },
+        }),
+    });
+    renderApp('/m/crm-leads?tab=Data%20Quality');
+    expect(await screen.findByText(/No data yet/)).toBeInTheDocument();
   });
 
   it('Audit Trail and Activity Timeline read GET /pages/:id/audit', async () => {

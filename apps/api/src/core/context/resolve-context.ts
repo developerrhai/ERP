@@ -20,7 +20,8 @@ export interface RequestContext {
 
 export interface ContextUser {
   id: string;
-  role: RoleCode;
+  role?: any;
+  allUnits?: boolean;
   defaultUnitId: string | null;
 }
 
@@ -45,7 +46,7 @@ export async function companyId(): Promise<string> {
 /** Validates an explicit unit choice (null = "All units"). 403 CONTEXT_FORBIDDEN / 422 CONTEXT_INVALID. */
 export async function assertUnitChoice(user: ContextUser, unitId: string | null): Promise<void> {
   if (unitId === null) {
-    if (!hasAllUnits(user.role)) {
+    if (!hasAllUnits(user)) {
       throw Errors.contextForbidden('Only administrators can work in "All units".');
     }
     return;
@@ -53,7 +54,7 @@ export async function assertUnitChoice(user: ContextUser, unitId: string | null)
   const unit = isUuid(unitId) ? await contextRepository.unitById(unitId) : null;
   if (!unit) throw Errors.contextInvalid('Unknown unit.');
   if (unit.status !== 'ACTIVE') throw Errors.contextForbidden('This unit is inactive.');
-  if (!hasAllUnits(user.role) && !(await contextRepository.hasUnitRow(user.id, unit.id))) {
+  if (!hasAllUnits(user) && !(await contextRepository.hasUnitRow(user.id, unit.id))) {
     throw Errors.contextForbidden('You do not have access to this unit.');
   }
 }
@@ -71,7 +72,7 @@ export function fallbackUnit(
   preference: UserPreference | null,
   accessible: readonly Unit[],
 ): { unitId: string | null; allUnits: boolean } {
-  const admin = hasAllUnits(user.role);
+  const admin = hasAllUnits(user);
   if (preference?.allUnits && admin) return { unitId: null, allUnits: true };
   const usable = (id: string | null | undefined) =>
     id ? accessible.some((u) => u.id === id) : false;

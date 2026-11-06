@@ -2,7 +2,15 @@
 // hung requests, and on a 401 refreshes once (single-flight in-tab, Web Lock across tabs) and retries.
 import { broadcastLogout, broadcastRefreshed } from '../auth/channel';
 import { clearSession, getAccessToken, setSession } from '../auth/session';
-import type { AuthResult, PageMeta } from '../types';
+import type {
+  AuthResult,
+  LoginResponse,
+  MfaStatus,
+  PageMeta,
+  SecurityPolicy,
+  SecurityPolicyRecord,
+  SessionInfo,
+} from '../types';
 import { contextHeaders } from './context-headers';
 
 export const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/api/v1';
@@ -76,7 +84,9 @@ async function send(path: string, opts: RequestOptions, token: string | null): P
   // Working context (unit / FY) rides on every authenticated call; explicit headers win.
   const ctx = token ? contextHeaders() : {};
   const headers: Record<string, string> = { Accept: 'application/json', ...ctx, ...opts.headers };
-  if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
+  const isForm = typeof FormData !== 'undefined' && opts.body instanceof FormData;
+  // A FormData body sets its own multipart boundary; everything else is JSON.
+  if (opts.body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   if (token) headers.Authorization = `Bearer ${token}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -85,7 +95,12 @@ async function send(path: string, opts: RequestOptions, token: string | null): P
       method: opts.method ?? 'GET',
       credentials: 'include',
       headers,
-      body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+      body:
+        opts.body === undefined
+          ? undefined
+          : isForm
+            ? (opts.body as FormData)
+            : JSON.stringify(opts.body),
       signal: controller.signal,
     });
   } catch {
@@ -202,8 +217,11 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
 }
 
 /** GET a binary file (e.g. export.xlsx) with the Bearer token; the filename comes from Content-Disposition. */
-export async function download(path: string): Promise<{ blob: Blob; filename: string | null }> {
-  const res = await authedSend(path, {});
+export async function download(
+  path: string,
+  opts: RequestOptions = {},
+): Promise<{ blob: Blob; filename: string | null }> {
+  const res = await authedSend(path, opts);
   if (!res.ok) await parse<unknown>(res); // throws the ApiError
   const disposition = res.headers.get('Content-Disposition') ?? '';
   const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
@@ -240,14 +258,140 @@ export async function getHealth(): Promise<HealthState> {
 
 // ---- auth endpoints ------------------------------------------------------
 
-export async function login(identifier: string, password: string): Promise<AuthResult> {
-  const data = await api<AuthResult>('/auth/login', {
+export async function login(identifier: string, password: string): Promise<LoginResponse> {
+  const data = await api<LoginResponse>('/auth/login', {
     method: 'POST',
     body: { identifier, password },
     auth: false,
   });
+  if (!('mfaRequired' in data)) {
+    setSession(data);
+  }
+  return data;
+}
+
+export async function verifyMfa(challengeId: string, code: string): Promise<AuthResult> {
+  const data = await api<AuthResult>('/auth/mfa/verify', {
+    method: 'POST',
+    body: { challengeId, code },
+    auth: false,
+  });
   setSession(data);
   return data;
+}
+
+export async function getPasswordPolicy(): Promise<{
+  passwordMinLength: number;
+  passwordMaxLength: number;
+  emailResetAvailable: boolean;
+}> {
+  return api('/auth/password-policy', { auth: false });
+}
+
+export async function requestPasswordReset(email: string): Promise<{ message: string }> {
+  return api('/auth/password-reset/request', {
+    method: 'POST',
+    body: { email },
+    auth: false,
+  });
+}
+
+export async function confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+  await api('/auth/password-reset/confirm', {
+    method: 'POST',
+    body: { token, newPassword },
+    auth: false,
+  });
+}
+
+export async function getMySessions(): Promise<SessionInfo[]> {
+  return api('/auth/sessions');
+}
+
+export async function revokeMySession(familyId: string): Promise<void> {
+  await api(`/auth/sessions/${familyId}`, { method: 'DELETE' });
+}
+
+export async function revokeOtherSessions(): Promise<{ revoked: number }> {
+  return api('/auth/sessions/revoke-others', { method: 'POST' });
+}
+
+export async function getMfaStatus(): Promise<MfaStatus> {
+  return api('/auth/mfa');
+}
+
+export async function setupMfa(
+  currentPassword: string,
+): Promise<{ secret: string; qrCode: string }> {
+  return api('/auth/mfa/setup', {
+    method: 'POST',
+    body: { currentPassword },
+  });
+}
+
+export async function enableMfa(code: string): Promise<{ recoveryCodes: string[] }> {
+  return api('/auth/mfa/enable', {
+    method: 'POST',
+    body: { code },
+  });
+}
+
+export async function disableMfa(currentPassword: string, code: string): Promise<void> {
+  await api('/auth/mfa/disable', {
+    method: 'POST',
+    body: { currentPassword, code },
+  });
+}
+
+export async function regenerateRecoveryCodes(
+  currentPassword: string,
+  code: string,
+): Promise<{ recoveryCodes: string[] }> {
+  return api('/auth/mfa/recovery-codes', {
+    method: 'POST',
+    body: { currentPassword, code },
+  });
+}
+
+export async function getUserSessions(userId: string): Promise<SessionInfo[]> {
+  return api(`/users/${userId}/sessions`);
+}
+
+export async function revokeAllUserSessions(userId: string): Promise<{ revoked: number }> {
+  return api(`/users/${userId}/sessions/revoke-all`, { method: 'POST' });
+}
+
+export async function unlockUser(userId: string): Promise<{ unlocked: boolean }> {
+  return api(`/users/${userId}/unlock`, { method: 'POST' });
+}
+
+export async function resetUserMfa(userId: string): Promise<{ reset: boolean }> {
+  return api(`/users/${userId}/mfa/reset`, { method: 'POST' });
+}
+
+export async function getSecurityPolicy(): Promise<SecurityPolicyRecord> {
+  return api('/settings/security');
+}
+
+export async function putSecurityPolicy(
+  policy: SecurityPolicy,
+  expectedVersion: number,
+): Promise<SecurityPolicyRecord> {
+  const res = await authedSend('/settings/security', {
+    method: 'PUT',
+    headers: { 'If-Match': `"${expectedVersion}"` },
+    body: policy,
+  });
+  return (await parse<SecurityPolicyRecord>(res)).data;
+}
+
+export async function getWhoAmI(): Promise<{
+  ip: string;
+  forwardedFor: string | null;
+  trustProxy: unknown;
+  protocol: string;
+}> {
+  return api('/health/whoami');
 }
 
 export async function changePassword(

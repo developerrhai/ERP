@@ -354,7 +354,10 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
                 />
               );
               return f.suffix ? (
-                <div className="input-affix" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div
+                  className="input-affix"
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
                   {inputEl}
                   <span className="suffix" style={{ fontSize: '11px', color: 'var(--muted)' }}>
                     {f.suffix}

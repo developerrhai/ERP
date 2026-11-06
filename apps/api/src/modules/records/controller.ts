@@ -1,7 +1,11 @@
 // HTTP layer for /pages/:pageId (schema, records, audit, preview): validated input, If-Match /
 // Idempotency-Key headers, {data} out. A typed Inventory page is answered by its own handler
 // (modules/inventory), every other page by the generic engine. No business rules here.
+import { createHash } from 'node:crypto';
+import type { Prisma } from '@prisma/client';
 import type { Request, Response } from 'express';
+import type { z } from 'zod';
+import { abandonIdempotent, beginIdempotent, finishIdempotent } from '../../core/http/idempotency';
 import { requestMeta, requireAuth } from '../../core/auth/auth-context';
 import { recordAudit } from '../../core/audit/audit-service';
 import { prisma } from '../../core/db/prisma';
@@ -9,7 +13,7 @@ import { AppError, Errors } from '../../core/http/errors';
 import { parseIfMatch, parseOptionalIfMatch } from '../../core/http/if-match';
 import { validated } from '../../core/http/validate';
 import { buildPageSchema } from '../../engine/field-schema';
-import { can } from '../../core/rbac/access';
+import { accessUserOf, can } from '../../core/rbac/access';
 import type { Requires } from '../../kit/types';
 import { kitAudit } from '../../kit/audit-view';
 import { kitSchemaFor } from '../../kit/registry';
@@ -18,6 +22,7 @@ import { typedSchema } from '../inventory/definitions';
 import { buildTypedWorkbook } from '../inventory/export';
 import { previewAdjustment, previewTransfer } from '../inventory/stock/service';
 import { typedHandlerFor } from '../inventory/typed-pages';
+import { recordPdfService } from './pdf';
 import { recordService } from './service';
 import type { Caller } from './service';
 import {
@@ -34,10 +39,16 @@ import {
   recordBodySchema,
   recordParamsSchema,
   restoreBodySchema,
+  submitBulkBodySchema,
   statusBodySchema,
   typedExportQuerySchema,
   typedListQuerySchema,
 } from './schemas';
+
+/** Typed-page export query: the static filters plus the page's own (schema-built) filter params. */
+type TypedExportQuery = z.output<typeof typedExportQuerySchema> & {
+  filters?: Record<string, string>;
+};
 
 const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -61,6 +72,16 @@ function sendXlsx(res: Response, buffer: Buffer, filename: string): void {
     .set({
       'Content-Type': XLSX_TYPE,
       'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-store',
+    })
+    .send(buffer);
+}
+
+function sendPdf(res: Response, buffer: Buffer, filename: string): void {
+  res
+    .set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="${filename}"`,
       'Cache-Control': 'no-store',
     })
     .send(buffer);
@@ -196,6 +217,15 @@ export const recordsController = {
     }
     const typed = typedHandlerFor(pageId);
     if (!typed?.action) throw Errors.notFound('Unknown action.');
+    const auth = requireAuth(req);
+    const user = accessUserOf(auth);
+    if (
+      !(await can(user, pageId, 'view')) &&
+      !(await can(user, pageId, 'edit')) &&
+      !(await can(user, pageId, 'delete'))
+    ) {
+      throw Errors.forbidden();
+    }
     const existing = await typed.get(callerOf(req), id);
     const schema = typedSchema(pageId);
     const actionDef = schema?.actions?.find((a) => a.key === action);
@@ -206,12 +236,7 @@ export const recordsController = {
         requiredPerm = 'edit';
       }
     }
-    const authUser = requireAuth(req).user;
-    const allowed = await can(
-      { id: authUser.id, role: authUser.role, department: authUser.department },
-      pageId,
-      requiredPerm,
-    );
+    const allowed = await can(user, pageId, requiredPerm);
     if (!allowed) throw Errors.forbidden();
 
     const { record, replay } = await typed.action(
@@ -247,6 +272,99 @@ export const recordsController = {
     res.json({ data: report });
   },
 
+  summary: async (req: Request, res: Response): Promise<void> => {
+    const { pageId } = validated(res, 'params', pageParamsSchema);
+    res
+      .set('Cache-Control', 'no-store')
+      .json({ data: await recordService.summary(callerOf(req), pageId) });
+  },
+
+  quality: async (req: Request, res: Response): Promise<void> => {
+    const { pageId } = validated(res, 'params', pageParamsSchema);
+    res
+      .set('Cache-Control', 'no-store')
+      .json({ data: await recordService.quality(callerOf(req), pageId) });
+  },
+
+  submit: async (req: Request, res: Response): Promise<void> => {
+    const { pageId, id } = validated(res, 'params', recordParamsSchema);
+    const version = parseIfMatch(req.get('if-match'));
+    const scope = `records:submit:${pageId}:${id}`;
+    const caller = callerOf(req);
+    const key = idempotencyKeyOf(req);
+    if (key) {
+      const hash = createHash('sha256')
+        .update(JSON.stringify([pageId, id, version]))
+        .digest('hex');
+      const start = await beginIdempotent(caller.auth.userId, scope, key, hash);
+      if (start.kind === 'mismatch') {
+        throw Errors.conflict('This Idempotency-Key was already used for a different request.');
+      }
+      if (start.kind === 'in_progress') throw Errors.inProgress();
+      if (start.kind === 'replay') {
+        const stored = start.body as { data?: { version?: number } } | null;
+        res.set('Idempotent-Replay', 'true');
+        if (stored?.data?.version !== undefined) res.set('ETag', `"${stored.data.version}"`);
+        res.json({ data: stored?.data ?? {} });
+        return;
+      }
+    }
+    try {
+      const record = await recordService.submit(caller, pageId, id, version);
+      if (key) {
+        await finishIdempotent(caller.auth.userId, scope, key, 200, {
+          data: JSON.parse(JSON.stringify(record)) as Prisma.InputJsonObject,
+        });
+      }
+      res.set('ETag', `"${record.version}"`).json({ data: record });
+    } catch (err) {
+      if (key) await abandonIdempotent(caller.auth.userId, scope, key);
+      throw err;
+    }
+  },
+
+  submitBulk: async (req: Request, res: Response): Promise<void> => {
+    const { pageId } = validated(res, 'params', pageParamsSchema);
+    const body = validated(res, 'body', submitBulkBodySchema);
+    res.json({ data: await recordService.submitBulk(callerOf(req), pageId, body.ids) });
+  },
+
+  exportCsv: async (req: Request, res: Response): Promise<void> => {
+    const { pageId } = validated(res, 'params', pageParamsSchema);
+    if (typedHandlerFor(pageId)) {
+      throw Errors.notGeneric('CSV export is available for generic pages.');
+    }
+    const query = validated(res, 'query', exportRecordsQuerySchema);
+    const { buffer, filename } = await recordService.exportFile(
+      callerOf(req),
+      pageId,
+      query,
+      'csv',
+    );
+    res
+      .set({
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'no-store',
+      })
+      .send(buffer);
+  },
+
+  recordPdf: async (req: Request, res: Response): Promise<void> => {
+    const { pageId, id } = validated(res, 'params', recordParamsSchema);
+    if (typedHandlerFor(pageId)) throw Errors.notGeneric('Use the page print templates.');
+    const buffer = await recordPdfService.recordPdf(callerOf(req), pageId, id);
+    sendPdf(res, buffer, `${pageId}-${id}.pdf`);
+  },
+
+  listPdf: async (req: Request, res: Response): Promise<void> => {
+    const { pageId } = validated(res, 'params', pageParamsSchema);
+    if (typedHandlerFor(pageId)) throw Errors.notGeneric('Use the page print templates.');
+    const query = validated(res, 'query', exportRecordsQuerySchema);
+    const buffer = await recordPdfService.listPdf(callerOf(req), pageId, query);
+    sendPdf(res, buffer, `${pageId}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  },
+
   export: async (req: Request, res: Response): Promise<void> => {
     const { pageId } = validated(res, 'params', pageParamsSchema);
     const typed = typedHandlerFor(pageId);
@@ -256,7 +374,7 @@ export const recordsController = {
       sendXlsx(res, buffer, filename);
       return;
     }
-    const query = validated(res, 'query', typedExportQuerySchema) as any;
+    const query = validated(res, 'query', typedExportQuerySchema) as TypedExportQuery;
     const schema = typedSchema(pageId);
     if (!schema) throw Errors.notFound('Unknown page.');
     const { rows, total, totals } = await need(typed.exportRows?.bind(typed))(callerOf(req), {
@@ -299,7 +417,7 @@ export const recordsController = {
     const { pageId } = validated(res, 'params', pageParamsSchema);
     const query = validated(res, 'query', auditQuerySchema);
     const typed = typedHandlerFor(pageId);
-    let result: { rows: any[]; total: number };
+    let result: { rows: unknown[]; total: number };
     if (typed) {
       result = kitSchemaFor(pageId)
         ? await kitAudit(callerOf(req), pageId, query)
@@ -307,7 +425,10 @@ export const recordsController = {
     } else {
       result = await recordService.audit(callerOf(req), pageId, query);
     }
-    res.json({ data: result.rows, meta: { page: query.page, size: query.size, total: result.total } });
+    res.json({
+      data: result.rows,
+      meta: { page: query.page, size: query.size, total: result.total },
+    });
   },
 
   recordAudit: async (req: Request, res: Response): Promise<void> => {

@@ -180,10 +180,7 @@ export function BoardSection({
                         }}
                       >
                         {card.badge ? (
-                          <span
-                            className="status"
-                            style={{ fontSize: '8px', padding: '1px 4px' }}
-                          >
+                          <span className="status" style={{ fontSize: '8px', padding: '1px 4px' }}>
                             {card.badge}
                           </span>
                         ) : (

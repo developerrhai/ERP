@@ -721,7 +721,7 @@ describe('POST status', () => {
     const active = await to(rec.id, 'Active');
     expect(active.status).toBe(200);
     expect(dataOf<RecordBody>(active)).toMatchObject({ status: 'Active', version: 2 });
-    for (const bad of ['Draft', 'Cancelled', 'Completed', 'Nonsense']) {
+    for (const bad of ['Draft', 'Completed', 'Nonsense']) {
       const res = await to(rec.id, bad);
       expect(res.status, bad).toBe(422);
       expect(errorOf(res).fields?.to).toBeDefined();
@@ -730,8 +730,11 @@ describe('POST status', () => {
     expect((await to(rec.id, 'Active')).status).toBe(200);
     const other = await create(owner);
     expect((await to(other.id, 'Cancelled')).status).toBe(200);
+    // Phase 5: a Cancelled document is locked (409 RECORD_LOCKED), like Pending Approval / Approved.
     for (const target of ['Active', 'Draft', 'Inactive']) {
-      expect((await to(other.id, target)).status, target).toBe(422);
+      const locked = await to(other.id, target);
+      expect(locked.status, target).toBe(409);
+      expect(errorOf(locked).code).toBe('RECORD_LOCKED');
     }
     const rows = await auditRows('RECORD_STATUS_CHANGED', { targetId: rec.id });
     expect(rows.map((r) => r.detail)).toMatchObject([

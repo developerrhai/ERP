@@ -43,7 +43,7 @@ describe('GET /pages/:pageId/schema', () => {
       family: 'CRM',
       kind: 'generic',
       master: false,
-      statuses: ['Draft', 'Active', 'Inactive', 'Cancelled'],
+      statuses: ['Draft', 'Pending Approval', 'Approved', 'Rejected', 'Active', 'Inactive', 'Cancelled'],
       actions: [],
     });
     expect(s.purpose.length).toBeGreaterThan(5);
@@ -78,7 +78,7 @@ describe('GET /pages/:pageId/schema', () => {
       type: 'status',
       readOnly: true,
       required: false,
-      options: ['Draft', 'Active', 'Inactive', 'Cancelled'],
+      options: ['Draft', 'Pending Approval', 'Approved', 'Rejected', 'Active', 'Inactive', 'Cancelled'],
     });
     // Only "Status" is the workflow status; "Consent Status" is an ordinary, writable enum.
     expect(field(s, 'Consent Status')).toMatchObject({

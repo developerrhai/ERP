@@ -6,6 +6,7 @@ import { parseIfMatch } from '../../core/http/if-match';
 import { validated } from '../../core/http/validate';
 import {
   createUserSchema,
+  effectiveAccessQuerySchema,
   listUsersQuerySchema,
   resetPasswordSchema,
   updateUserSchema,
@@ -39,10 +40,41 @@ export const usersController = {
     res.set('ETag', `"${user.version}"`).json({ data: user });
   },
 
+  effectiveAccess: async (req: Request, res: Response): Promise<void> => {
+    const auth = requireAuth(req);
+    const { id } = validated(res, 'params', userIdParamsSchema);
+    const query = validated(res, 'query', effectiveAccessQuerySchema);
+    const result = await userService.effectiveAccess(auth, id, query.family);
+    res.json({ data: result });
+  },
+
   resetPassword: async (req: Request, res: Response): Promise<void> => {
     const { id } = validated(res, 'params', userIdParamsSchema);
     const body = validated(res, 'body', resetPasswordSchema);
     await userService.resetPassword(requireAuth(req), id, body, requestMeta(req));
     res.status(204).end();
+  },
+
+  listSessions: async (req: Request, res: Response): Promise<void> => {
+    const { id } = validated(res, 'params', userIdParamsSchema);
+    res.json({ data: await userService.listSessions(requireAuth(req), id) });
+  },
+
+  revokeAllSessions: async (req: Request, res: Response): Promise<void> => {
+    const { id } = validated(res, 'params', userIdParamsSchema);
+    const result = await userService.revokeAllSessions(requireAuth(req), id, requestMeta(req));
+    res.json({ data: result });
+  },
+
+  unlock: async (req: Request, res: Response): Promise<void> => {
+    const { id } = validated(res, 'params', userIdParamsSchema);
+    const result = await userService.unlockUser(requireAuth(req), id, requestMeta(req));
+    res.json({ data: result });
+  },
+
+  resetMfa: async (req: Request, res: Response): Promise<void> => {
+    const { id } = validated(res, 'params', userIdParamsSchema);
+    const result = await userService.resetMfa(requireAuth(req), id, requestMeta(req));
+    res.json({ data: result });
   },
 };

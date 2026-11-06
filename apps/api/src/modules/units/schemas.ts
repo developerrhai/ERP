@@ -22,6 +22,9 @@ export const createUnitSchema = z
     code: unitCodeSchema,
     name: unitNameSchema,
     address: nullableText(300).optional(),
+    city: nullableText(100).optional(),
+    stateCode: z.string().trim().regex(/^\d{2}$/, 'State code must be 2 digits.').nullable().optional(),
+    pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits.').nullable().optional(),
     gstin: gstinSchema.optional(),
   })
   .strict();
@@ -32,6 +35,9 @@ export const updateUnitSchema = z
     code: unitCodeSchema.optional(),
     name: unitNameSchema.optional(),
     address: nullableText(300).optional(),
+    city: nullableText(100).optional(),
+    stateCode: z.string().trim().regex(/^\d{2}$/, 'State code must be 2 digits.').nullable().optional(),
+    pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits.').nullable().optional(),
     gstin: gstinSchema.optional(),
     status: unitStatusSchema.optional(),
   })

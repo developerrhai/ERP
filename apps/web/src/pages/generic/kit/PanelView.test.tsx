@@ -27,6 +27,11 @@ const fullPerms: ActionSet = {
   approve: true,
   export: true,
   controls: true,
+  submit: true,
+  post: true,
+  cancel: true,
+  print: true,
+  import: true,
 };
 
 const pageTab: TabPanelRef = {
@@ -67,7 +72,13 @@ describe('PanelView', () => {
       title: 'Procurement Overview',
       subtitle: 'Key indicators and milestones',
       kpis: [
-        { label: 'Total Value', value: 50000, format: 'money', hint: '+5% vs last month', tone: 'good' },
+        {
+          label: 'Total Value',
+          value: 50000,
+          format: 'money',
+          hint: '+5% vs last month',
+          tone: 'good',
+        },
         { label: 'Open POs', value: 12, format: 'number' },
       ],
       sections: [
@@ -101,9 +112,7 @@ describe('PanelView', () => {
             { key: 'qty', label: 'Quantity', format: 'qty' },
             { key: 'rate', label: 'Rate', format: 'money' },
           ],
-          rows: [
-            { id: '1', item: 'Steel Rod 12mm', qty: 100, rate: 500 },
-          ],
+          rows: [{ id: '1', item: 'Steel Rod 12mm', qty: 100, rate: 500 }],
           totals: {
             rate: 500,
           },
@@ -113,17 +122,12 @@ describe('PanelView', () => {
 
     vi.spyOn(kitApi, 'getPanel').mockResolvedValue(mockPanel);
 
-    render(
-      <PanelView
-        pageId="scm-po"
-        tab={pageTab}
-        schema={dummySchema}
-        perms={fullPerms}
-      />,
-    );
+    render(<PanelView pageId="scm-po" tab={pageTab} schema={dummySchema} perms={fullPerms} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 2, name: 'Procurement Overview' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 2, name: 'Procurement Overview' }),
+      ).toBeInTheDocument();
     });
 
     // KPI check
@@ -161,14 +165,7 @@ describe('PanelView', () => {
 
     vi.spyOn(kitApi, 'getPanel').mockResolvedValue(mockPanel);
 
-    render(
-      <PanelView
-        pageId="scm-po"
-        tab={pageTab}
-        schema={dummySchema}
-        perms={fullPerms}
-      />,
-    );
+    render(<PanelView pageId="scm-po" tab={pageTab} schema={dummySchema} perms={fullPerms} />);
 
     await waitFor(() => {
       expect(screen.getByText('No items in schedule.')).toBeInTheDocument();
@@ -189,24 +186,23 @@ describe('PanelView', () => {
       ],
     });
 
-    render(
-      <PanelView
-        pageId="scm-po"
-        tab={pageTab}
-        schema={dummySchema}
-        perms={fullPerms}
-      />,
-    );
+    render(<PanelView pageId="scm-po" tab={pageTab} schema={dummySchema} perms={fullPerms} />);
 
     await screen.findByText('Item 1');
-    expect(getPanelMock).toHaveBeenCalledWith('scm-po', 'overview', { recId: undefined, params: { page: 1 } });
+    expect(getPanelMock).toHaveBeenCalledWith('scm-po', 'overview', {
+      recId: undefined,
+      params: { page: 1 },
+    });
 
     // Click next page
     const nextBtn = screen.getByRole('button', { name: /Next/i });
     fireEvent.click(nextBtn);
 
     await waitFor(() => {
-      expect(getPanelMock).toHaveBeenCalledWith('scm-po', 'overview', { recId: undefined, params: { page: 2 } });
+      expect(getPanelMock).toHaveBeenCalledWith('scm-po', 'overview', {
+        recId: undefined,
+        params: { page: 2 },
+      });
     });
   });
 
@@ -281,14 +277,7 @@ describe('PanelView', () => {
 
     vi.spyOn(kitApi, 'getPanel').mockResolvedValue(mockPanel);
 
-    render(
-      <PanelView
-        pageId="scm-po"
-        tab={pageTab}
-        schema={dummySchema}
-        perms={fullPerms}
-      />,
-    );
+    render(<PanelView pageId="scm-po" tab={pageTab} schema={dummySchema} perms={fullPerms} />);
 
     await waitFor(() => {
       expect(

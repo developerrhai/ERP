@@ -18,6 +18,15 @@ function identifierOf(req: Request): string {
   return '';
 }
 
+function emailOf(req: Request): string {
+  const body: unknown = req.body;
+  if (typeof body === 'object' && body !== null && 'email' in body) {
+    const value = (body as { email: unknown }).email;
+    if (typeof value === 'string') return value.trim().toLowerCase().slice(0, 254);
+  }
+  return '';
+}
+
 function ipKey(req: Request): string {
   return ipKeyGenerator(req.ip ?? 'unknown');
 }
@@ -60,6 +69,30 @@ export function createLoginIpLimiter(enabled: boolean): RequestHandler {
 export function createChangePasswordLimiter(enabled: boolean): RequestHandler {
   if (!enabled) return passThrough;
   return limiter(60_000, 5, (req) => `user:${req.auth?.userId ?? ipKey(req)}`);
+}
+
+/** 10/min per IP: prevents brute-forcing 6-digit TOTP codes or recovery codes. */
+export function createMfaVerifyLimiter(enabled: boolean): RequestHandler {
+  if (!enabled) return passThrough;
+  return limiter(60_000, 10, ipKey);
+}
+
+/** 3/hour per email: prevents spamming an email address with reset links. */
+export function createPasswordResetRequestEmailLimiter(enabled: boolean): RequestHandler {
+  if (!enabled) return passThrough;
+  return limiter(3600_000, 3, (req) => `reset_email:${emailOf(req)}`);
+}
+
+/** 10/hour per IP: prevents reset request floods from a single client. */
+export function createPasswordResetRequestIpLimiter(enabled: boolean): RequestHandler {
+  if (!enabled) return passThrough;
+  return limiter(3600_000, 10, ipKey);
+}
+
+/** 10/hour per IP: prevents brute-forcing password reset confirmation tokens. */
+export function createPasswordResetConfirmLimiter(enabled: boolean): RequestHandler {
+  if (!enabled) return passThrough;
+  return limiter(3600_000, 10, ipKey);
 }
 
 export function createGlobalLimiter(enabled: boolean): RequestHandler {

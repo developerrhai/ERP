@@ -1,14 +1,19 @@
-// Route table and guards (CONTRACT §8): /login, /, /m/:pageId, * -> 404. Signed-out users go
-// to /login?next=…, and a user who must change their password sees only that screen.
+// Route table and guards (CONTRACT §8): /login, /reset-password, /, /m/:pageId, /account/security, * -> 404.
+// Signed-out users go to /login?next=…, and a user who must change their password sees only that screen.
+// A user with mfaSetupRequired is forced to /account/security.
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useSession } from './auth/AuthProvider';
 import { loginPathFor } from './lib/next-path';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { AccountSecurityPage } from './pages/account/AccountSecurityPage';
 import { ModulePage } from './pages/ModulePage';
+import { ApprovalCenterPage } from './pages/approvals/ApprovalCenterPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { AppShell } from './shell/AppShell';
+import { IdleWarningModal } from './components/IdleWarningModal';
 
 function Restoring() {
   return (
@@ -27,15 +32,27 @@ function ProtectedApp() {
   }
   const user = session.user;
   if (user.mustChangePassword) return <ChangePasswordPage user={user} />;
+
+  // Forced MFA guard per Phase 01 §5 & §8
+  if (user.mfaSetupRequired && location.pathname !== '/account/security') {
+    return <Navigate to="/account/security" replace />;
+  }
+
   return (
-    <Routes>
-      <Route element={<AppShell user={user} />}>
-        <Route index element={<DashboardPage user={user} />} />
-        <Route path="m/:pageId" element={<ModulePage user={user} />} />
-        <Route path="m/:pageId/:sub" element={<ModulePage user={user} />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
-    </Routes>
+    <>
+      <IdleWarningModal />
+      <Routes>
+        <Route element={<AppShell user={user} />}>
+          <Route index element={<DashboardPage user={user} />} />
+          <Route path="account/security" element={<AccountSecurityPage user={user} />} />
+          <Route path="approvals" element={<ApprovalCenterPage user={user} />} />
+          <Route path="m/approval-matrix" element={<Navigate to="/m/admin-approval" replace />} />
+          <Route path="m/:pageId" element={<ModulePage user={user} />} />
+          <Route path="m/:pageId/:sub" element={<ModulePage user={user} />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </>
   );
 }
 
@@ -49,6 +66,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginRoute />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/*" element={<ProtectedApp />} />
     </Routes>
   );

@@ -16,6 +16,10 @@ import {
   createGlobalLimiter,
   createLoginIpLimiter,
   createLoginLimiter,
+  createMfaVerifyLimiter,
+  createPasswordResetConfirmLimiter,
+  createPasswordResetRequestEmailLimiter,
+  createPasswordResetRequestIpLimiter,
 } from './core/rate-limit';
 import { createAuthRouter } from './modules/auth/routes';
 import { createHealthRouter } from './modules/health/routes';
@@ -37,8 +41,20 @@ import { createKitLookupsRouter } from './kit/lookups';
 import { createKitPanelsRouter } from './kit/panels/routes';
 import { createKitCommandsRouter } from './kit/commands';
 import { createKitPrintRouter } from './kit/print';
+import { createExportsRouter, createJobsRouter } from './modules/data-jobs/routes';
+import { createDocumentsRouter } from './modules/documents/routes';
+import { createImportPagesRouter, createImportsRouter } from './modules/imports/routes';
 import { createPagesRouter } from './modules/records/routes';
 import { createUnitsRouter } from './modules/units/routes';
+import { createApprovalMatrixRouter, createApprovalsRouter } from './modules/approvals/routes';
+import {
+  createNotificationPreferencesRouter,
+  createNotificationsRouter,
+} from './modules/notifications/routes';
+import { createDesignationsRouter } from './modules/designations/routes';
+import { createCurrenciesRouter } from './modules/currencies/routes';
+import { createUomsRouter } from './modules/uoms/routes';
+import { createFilesRouter } from './modules/files/routes';
 import { bootKit } from './kit/boot';
 
 export interface AppOptions {
@@ -82,6 +98,7 @@ export function createApp(options: AppOptions = {}): Express {
         'X-Request-Id',
         'X-Unit-Id',
         'X-FY-Id',
+        'X-Activity',
       ],
       exposedHeaders: ['X-Request-Id', 'Retry-After', 'ETag'],
     }),
@@ -90,6 +107,10 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(cookieParser());
 
   const api = express.Router();
+  api.use((_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
   api.use(createGlobalLimiter(rateLimitEnabled));
   api.use('/health', createHealthRouter(options.dbPing));
   api.use(
@@ -98,6 +119,10 @@ export function createApp(options: AppOptions = {}): Express {
       loginIpLimiter: createLoginIpLimiter(rateLimitEnabled),
       loginLimiter: createLoginLimiter(rateLimitEnabled),
       changePasswordLimiter: createChangePasswordLimiter(rateLimitEnabled),
+      mfaVerifyLimiter: createMfaVerifyLimiter(rateLimitEnabled),
+      passwordResetRequestIpLimiter: createPasswordResetRequestIpLimiter(rateLimitEnabled),
+      passwordResetRequestEmailLimiter: createPasswordResetRequestEmailLimiter(rateLimitEnabled),
+      passwordResetConfirmLimiter: createPasswordResetConfirmLimiter(rateLimitEnabled),
     }),
   );
   api.use('/meta', createMetaRouter());
@@ -113,12 +138,25 @@ export function createApp(options: AppOptions = {}): Express {
   api.use('/company', createCompanyRouter());
   api.use('/units', createUnitsRouter());
   api.use('/financial-years', createFinancialYearsRouter());
+  api.use('/designations', createDesignationsRouter());
+  api.use('/currencies', createCurrenciesRouter());
+  api.use('/uoms', createUomsRouter());
+  api.use('/approval-matrix', createApprovalMatrixRouter());
+  api.use('/approvals', createApprovalsRouter());
+  api.use('/notifications', createNotificationsRouter());
+  api.use('/notification-preferences', createNotificationPreferencesRouter());
+  api.use('/files', createFilesRouter());
   api.use('/lookups', createLookupsRouter());
   api.use('/lookups', createKitLookupsRouter());
   bootKit(api);
   api.use('/pages', createKitPanelsRouter());
   api.use('/pages', createKitCommandsRouter());
   api.use('/pages', createKitPrintRouter());
+  api.use('/pages', createDocumentsRouter());
+  api.use('/pages', createExportsRouter());
+  api.use('/pages', createImportPagesRouter());
+  api.use('/imports', createImportsRouter());
+  api.use('/jobs', createJobsRouter());
   api.use('/pages', createPagesRouter());
   app.use('/api/v1', api);
 

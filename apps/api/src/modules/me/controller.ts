@@ -10,12 +10,12 @@ import { meService } from './service';
 export const meController = {
   menu: async (req: Request, res: Response): Promise<void> => {
     res.set('Cache-Control', 'no-store');
-    res.json({ data: await meService.menu(requireAuth(req).user) });
+    res.json({ data: await meService.menu(requireAuth(req)) });
   },
   permissions: async (req: Request, res: Response): Promise<void> => {
     const { pageId } = validated(res, 'query', mePermissionsQuerySchema);
     res.set('Cache-Control', 'no-store');
-    res.json({ data: await meService.permissions(requireAuth(req).user, pageId) });
+    res.json({ data: await meService.permissions(requireAuth(req), pageId) });
   },
   getContext: async (req: Request, res: Response): Promise<void> => {
     res.set('Cache-Control', 'no-store');

@@ -5,9 +5,10 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { DEPARTMENTS } from '../departments';
 import {
+  CFO_ALLOWED_FAMILIES,
   DEFAULT_RESOURCE,
   DEFAULT_ROLE_ROWS,
-  PERMISSION_ROLES,
+  allActions,
   familyResource,
   noActions,
 } from '../rbac/permission-model';
@@ -16,7 +17,19 @@ import { ADMIN_FAMILY, defaultDepartmentFamilies, registry } from '../registry';
 export const SEED_STATE_KEY = 'system.seed';
 export const LETTERHEAD_KEY = 'letterhead';
 
-type SeedCategory = 'departments' | 'departmentFamilies' | 'rolePermissions';
+type SeedCategory = 'departments' | 'departmentFamilies' | 'rolePermissions' | 'rolesV2';
+
+export const SYSTEM_ROLE_SEEDS = [
+  { code: 'SUPER_USER', name: 'Super User', level: 99, allUnits: true, isSystem: true, description: 'Complete system access' },
+  { code: 'ADMINISTRATOR', name: 'Administrator', level: 95, allUnits: true, isSystem: true, description: 'System administration and user management' },
+  { code: 'DIRECTOR', name: 'Director', level: 90, allUnits: true, isSystem: true, description: 'Full operational access' },
+  { code: 'CFO', name: 'CFO', level: 80, allUnits: true, isSystem: true, description: 'Financial leadership and all-units finance oversight' },
+  { code: 'GENERAL_MANAGER', name: 'General Manager', level: 70, allUnits: true, isSystem: true, description: 'General operational management across units' },
+  { code: 'DEPT_HEAD', name: 'Department Head', level: 60, allUnits: false, isSystem: true, description: 'Department-level management' },
+  { code: 'DEPT_MANAGER', name: 'Department Manager', level: 50, allUnits: false, isSystem: true, description: 'Department operations' },
+  { code: 'SUPERVISOR', name: 'Supervisor', level: 30, allUnits: false, isSystem: true, description: 'Team supervision and review' },
+  { code: 'EMPLOYEE', name: 'Employee', level: 10, allUnits: false, isSystem: true, description: 'Individual contributor' },
+];
 
 /** Prototype ownerDept(): which department owns each family's modules. */
 export const OWNER_DEPARTMENT_BY_FAMILY: Readonly<Record<string, string>> = {
@@ -134,18 +147,66 @@ export async function seedPhase2Defaults(db: PrismaClient): Promise<SeedReport> 
     applied.add('departmentFamilies');
   }
 
-  if (!applied.has('rolePermissions')) {
-    const rows: Prisma.RolePermissionCreateManyInput[] = [];
-    for (const role of PERMISSION_ROLES) {
-      rows.push({ role, resource: DEFAULT_RESOURCE, ...DEFAULT_ROLE_ROWS[role] });
-      if (role !== 'ADMIN') {
-        rows.push({ role, resource: familyResource(ADMIN_FAMILY), ...noActions(), scope: 'OWN' });
+  if (!applied.has('rolesV2')) {
+    // 1. Ensure system roles exist
+    for (const r of SYSTEM_ROLE_SEEDS) {
+      await db.role.upsert({
+        where: { code: r.code },
+        create: r,
+        update: {},
+      });
+    }
+
+    const allRoles = await db.role.findMany();
+    const roleByCode = new Map(allRoles.map((r) => [r.code, r]));
+    const permissionRows: Prisma.RolePermissionCreateManyInput[] = [];
+
+    // 2. Default * rows (§5.4)
+    for (const [code, defaults] of Object.entries(DEFAULT_ROLE_ROWS)) {
+      const role = roleByCode.get(code);
+      if (!role) continue;
+      permissionRows.push({
+        roleId: role.id,
+        resource: DEFAULT_RESOURCE,
+        ...defaults,
+      });
+    }
+
+    // 3. CFO family rows (§5.4)
+    const cfoRole = roleByCode.get('CFO');
+    if (cfoRole) {
+      for (const fam of CFO_ALLOWED_FAMILIES) {
+        permissionRows.push({
+          roleId: cfoRole.id,
+          resource: familyResource(fam),
+          ...allActions(),
+          delete: false,
+          controls: false,
+          scope: 'ALL',
+        });
       }
     }
-    report.rolePermissions = (
-      await db.rolePermission.createMany({ data: rows, skipDuplicates: true })
-    ).count;
-    applied.add('rolePermissions');
+
+    // 4. Deny Administration for all roles below level 95 (§5.4)
+    for (const role of allRoles) {
+      if (role.level < 95 && role.code !== 'SUPER_USER') {
+        permissionRows.push({
+          roleId: role.id,
+          resource: familyResource(ADMIN_FAMILY),
+          ...noActions(),
+          scope: 'OWN',
+        });
+      }
+    }
+
+    if (permissionRows.length > 0) {
+      const result = await db.rolePermission.createMany({
+        data: permissionRows,
+        skipDuplicates: true,
+      });
+      report.rolePermissions = result.count;
+    }
+    applied.add('rolesV2');
   }
 
   // Module controls and the letterhead cannot be deleted through the API, so "insert what is

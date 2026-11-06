@@ -18,14 +18,17 @@ export const REFRESH_COOKIE_PATH = '/api/v1/auth';
 export interface AccessClaims {
   sub: string;
   sid: string;
-  role: RoleCode;
+  role?: string;
 }
 
 const claimsSchema = z.object({
   sub: z.string().uuid(),
   sid: z.string().uuid(),
-  role: z.enum(ROLES),
+  role: z.string().min(1).optional(),
 });
+
+export const CURRENT_KID = 'k1';
+export const PREVIOUS_KID = 'k0';
 
 export function signAccessToken(claims: AccessClaims): { accessToken: string; expiresIn: number } {
   const accessToken = jwt.sign(claims, env.JWT_ACCESS_SECRET, {
@@ -33,25 +36,57 @@ export function signAccessToken(claims: AccessClaims): { accessToken: string; ex
     expiresIn: env.accessTokenTtlSeconds,
     issuer: ISSUER,
     audience: AUDIENCE,
+    keyid: CURRENT_KID,
   });
   return { accessToken, expiresIn: env.accessTokenTtlSeconds };
 }
 
-/** Verifies signature, algorithm, issuer, audience and expiry. Throws a 401 AppError otherwise. */
+/** Verifies signature, algorithm, issuer, audience and expiry with kid support. */
 export function verifyAccessToken(token: string): AccessClaims {
+  const decoded = jwt.decode(token, { complete: true });
+  const kid = decoded?.header?.kid;
+
+  let secretToUse = env.JWT_ACCESS_SECRET;
+  if (kid) {
+    if (kid === CURRENT_KID) {
+      secretToUse = env.JWT_ACCESS_SECRET;
+    } else if (kid === PREVIOUS_KID && env.JWT_ACCESS_SECRET_PREVIOUS) {
+      secretToUse = env.JWT_ACCESS_SECRET_PREVIOUS;
+    } else {
+      throw Errors.unauthenticated('Invalid access token.');
+    }
+  }
+
   let payload: unknown;
   try {
-    payload = jwt.verify(token, env.JWT_ACCESS_SECRET, {
+    payload = jwt.verify(token, secretToUse, {
       algorithms: ['HS256'],
       issuer: ISSUER,
       audience: AUDIENCE,
     });
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) throw Errors.sessionExpired();
+    // If verification failed and there's a previous secret and kid was omitted, try previous
+    if (!kid && env.JWT_ACCESS_SECRET_PREVIOUS) {
+      try {
+        payload = jwt.verify(token, env.JWT_ACCESS_SECRET_PREVIOUS, {
+          algorithms: ['HS256'],
+          issuer: ISSUER,
+          audience: AUDIENCE,
+        });
+      } catch (err2) {
+        if (err2 instanceof jwt.TokenExpiredError) throw Errors.sessionExpired();
+        throw Errors.unauthenticated('Invalid access token.');
+      }
+    } else {
+      throw Errors.unauthenticated('Invalid access token.');
+    }
+  }
+
+  const parsed = claimsSchema.safeParse(payload);
+  if (!parsed.success) {
     throw Errors.unauthenticated('Invalid access token.');
   }
-  const parsed = claimsSchema.safeParse(payload);
-  if (!parsed.success) throw Errors.unauthenticated('Invalid access token.');
   return parsed.data;
 }
 

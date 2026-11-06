@@ -257,8 +257,9 @@ describe('Administration masters served by the generic engine', () => {
 
   it('a page-level deny or the allow_* switches still apply; module controls of these pages stay locked', async () => {
     const pageId = 'admin-uom';
+    const adminRole = await prisma.role.findUniqueOrThrow({ where: { code: 'ADMINISTRATOR' } });
     await prisma.rolePermission.create({
-      data: { role: 'ADMIN', resource: `page:${pageId}`, add: false },
+      data: { roleId: adminRole.id, resource: `page:${pageId}`, add: false },
     });
     invalidateAccessCache();
     expect((await client.create(admin, pageId, sampleData(schemaOf(pageId)))).status).toBe(403);
@@ -441,15 +442,19 @@ describe('date-order rules', () => {
 });
 
 describe('locked records, schema extras and status enums', () => {
-  it('a Cancelled record cannot be edited (409 RECORD_LOCKED) but can still be deleted and restored', async () => {
+  it('a Cancelled record is locked: not editable and not deletable (lock matrix, R-09); a Draft is deletable and restorable', async () => {
     const rec = await create(owner);
     await client.status(owner, LEADS, rec.id, 'Cancelled').expect(200);
     const fresh = dataOf<RecordBody>(await client.get(owner, LEADS, rec.id));
     const res = await client.patch(owner, LEADS, rec.id, fresh.version, { campaign: 'late' });
     expect(res.status).toBe(409);
     expect(errorOf(res).code).toBe('RECORD_LOCKED');
-    expect((await client.remove(owner, LEADS, rec.id)).status).toBe(200);
-    expect((await client.restore(owner, LEADS, rec.id)).status).toBe(200);
+    const del = await client.remove(owner, LEADS, rec.id);
+    expect(del.status).toBe(409);
+    expect(errorOf(del).code).toBe('RECORD_LOCKED');
+    const draft = await create(owner);
+    expect((await client.remove(owner, LEADS, draft.id)).status).toBe(200);
+    expect((await client.restore(owner, LEADS, draft.id)).status).toBe(200);
     await prisma.genericRecord.update({ where: { id: rec.id }, data: { status: 'Completed' } });
     const completed = await client.patch(owner, LEADS, rec.id, fresh.version + 3, {
       campaign: 'late',
@@ -472,7 +477,7 @@ describe('locked records, schema extras and status enums', () => {
     const s = dataOf<PageSchema & { ownerDepartment: string; approvalRequired: boolean }>(res);
     expect(s.ownerDepartment).toBe('Sales');
     expect(s.approvalRequired).toBe(true);
-    expect(s.editableStatuses).toEqual(['Draft', 'Active', 'Inactive', 'Open', 'Pending']);
+    expect(s.editableStatuses).toEqual(['Draft', 'Active', 'Inactive', 'Open', 'Pending', 'Rejected']);
     expect(s.actions).toEqual([]);
     expect(s.fields.every((f) => typeof f.readOnly === 'boolean')).toBe(true);
     await prisma.moduleControl.update({

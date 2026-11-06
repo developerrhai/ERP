@@ -55,10 +55,12 @@ describe('login rate limit', () => {
 
 describe('env validation', () => {
   it('refuses RATE_LIMIT_DISABLED=true outside NODE_ENV=test', () => {
-    expect(() => loadEnv({ ...TEST_ENV, NODE_ENV: 'development' })).toThrow(/RATE_LIMIT_DISABLED/);
-    expect(() => loadEnv({ ...TEST_ENV, NODE_ENV: 'production' })).toThrow(/RATE_LIMIT_DISABLED/);
+    // MFA_ENCRYPTION_KEY is required in production; supply it so only RATE_LIMIT_DISABLED errors.
+    const MFA = { MFA_ENCRYPTION_KEY: 'a'.repeat(44) };
+    expect(() => loadEnv({ ...TEST_ENV, ...MFA, NODE_ENV: 'development' })).toThrow(/RATE_LIMIT_DISABLED/);
+    expect(() => loadEnv({ ...TEST_ENV, ...MFA, NODE_ENV: 'production' })).toThrow(/RATE_LIMIT_DISABLED/);
     expect(
-      loadEnv({ ...TEST_ENV, NODE_ENV: 'production', RATE_LIMIT_DISABLED: 'false' }).isProduction,
+      loadEnv({ ...TEST_ENV, ...MFA, NODE_ENV: 'production', RATE_LIMIT_DISABLED: 'false' }).isProduction,
     ).toBe(true);
   });
 
@@ -107,7 +109,12 @@ describe('env validation', () => {
     expect(() => loadEnv({ ...TEST_ENV, JWT_ACCESS_SECRET: `${'a'.repeat(40)}CHANGE-ME` })).toThrow(
       /change-me/,
     );
-    const prod = { ...TEST_ENV, NODE_ENV: 'production', RATE_LIMIT_DISABLED: 'false' };
+    const prod = {
+      ...TEST_ENV,
+      NODE_ENV: 'production',
+      RATE_LIMIT_DISABLED: 'false',
+      MFA_ENCRYPTION_KEY: 'a'.repeat(44),
+    };
     expect(() => loadEnv({ ...prod, JWT_ACCESS_SECRET: 'y'.repeat(47) })).toThrow(/48/);
     expect(loadEnv({ ...prod, JWT_ACCESS_SECRET: 'y'.repeat(48) }).isProduction).toBe(true);
     expect(

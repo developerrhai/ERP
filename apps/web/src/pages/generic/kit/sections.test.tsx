@@ -51,7 +51,13 @@ describe('T-KIT-08: Extended Sections', () => {
 
     it('renders metric rows with progress bars and tones', () => {
       const rows = [
-        { label: 'On-Time Delivery', value: 95, max: 100, format: 'pct' as const, tone: 'good' as const },
+        {
+          label: 'On-Time Delivery',
+          value: 95,
+          max: 100,
+          format: 'pct' as const,
+          tone: 'good' as const,
+        },
         { label: 'Scrap Rate', value: 8, max: 20, format: 'pct' as const, tone: 'warn' as const },
       ];
       render(<BarsSection title="Operations" rows={rows} />);
@@ -75,7 +81,9 @@ describe('T-KIT-08: Extended Sections', () => {
         { name: 'Target', data: [100, 120, 150] },
         { name: 'Actual', data: [90, 130, 140] },
       ];
-      render(<ChartSection title="Q1 Performance" chartType="bar" labels={labels} series={series} />);
+      render(
+        <ChartSection title="Q1 Performance" chartType="bar" labels={labels} series={series} />,
+      );
       expect(screen.getByText('Q1 Performance')).toBeInTheDocument();
       expect(screen.getByText('Target')).toBeInTheDocument();
       expect(screen.getByText('Actual')).toBeInTheDocument();
@@ -94,8 +102,20 @@ describe('T-KIT-08: Extended Sections', () => {
 
     it('renders timeline events in order with author and detail', () => {
       const events = [
-        { at: '2026-11-01 10:00', title: 'Inspection Created', detail: 'Incoming batch checked', by: 'John Doe', tone: 'good' as const },
-        { at: '2026-11-01 14:00', title: 'NCR Logged', detail: 'Out of tolerance dimension', by: 'Jane Smith', tone: 'bad' as const },
+        {
+          at: '2026-11-01 10:00',
+          title: 'Inspection Created',
+          detail: 'Incoming batch checked',
+          by: 'John Doe',
+          tone: 'good' as const,
+        },
+        {
+          at: '2026-11-01 14:00',
+          title: 'NCR Logged',
+          detail: 'Out of tolerance dimension',
+          by: 'Jane Smith',
+          tone: 'bad' as const,
+        },
       ];
       render(<TimelineSection title="Lot Events" events={events} />);
       expect(screen.getByText('Lot Events')).toBeInTheDocument();
@@ -254,7 +274,9 @@ describe('T-KIT-08: Extended Sections', () => {
     });
 
     it('displays error message under cell when update fails', async () => {
-      const mockCall = vi.fn().mockRejectedValue(new Error('Quantity exceeds available batch stock'));
+      const mockCall = vi
+        .fn()
+        .mockRejectedValue(new Error('Quantity exceeds available batch stock'));
       render(
         <InlineCell
           rowId="row-42"
@@ -269,7 +291,9 @@ describe('T-KIT-08: Extended Sections', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toHaveTextContent('Quantity exceeds available batch stock');
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          'Quantity exceeds available batch stock',
+        );
       });
     });
   });

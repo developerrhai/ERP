@@ -14,7 +14,7 @@ export const settingsRepository = {
     key: string,
     expectedVersion: number,
     value: Prisma.InputJsonObject,
-    actorId: string,
+    actorId: string | null = null,
     db: Db = prisma,
   ): Promise<boolean> {
     if (expectedVersion === 0) {

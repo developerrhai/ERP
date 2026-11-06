@@ -18,13 +18,33 @@ export const mockKitTestSchema: PageSchema = {
   fields: [
     { key: 'code', label: 'Code', type: 'code', required: true, readOnly: true },
     { key: 'title', label: 'Title', type: 'text', required: true, readOnly: false },
-    { key: 'category', label: 'Category', type: 'enum', options: ['Mechanical', 'Electrical'], required: true, readOnly: false },
-    { key: 'severity', label: 'Severity', type: 'enum', options: ['Low', 'Medium', 'High'], required: true, readOnly: false },
+    {
+      key: 'category',
+      label: 'Category',
+      type: 'enum',
+      options: ['Mechanical', 'Electrical'],
+      required: true,
+      readOnly: false,
+    },
+    {
+      key: 'severity',
+      label: 'Severity',
+      type: 'enum',
+      options: ['Low', 'Medium', 'High'],
+      required: true,
+      readOnly: false,
+    },
     { key: 'score', label: 'Score', type: 'qty', required: false, readOnly: false, suffix: 'pts' },
     { key: 'status', label: 'Status', type: 'status', required: true, readOnly: true },
   ],
   filters: [
-    { key: 'severity', label: 'Severity', type: 'select', param: 'severity', options: ['Low', 'Medium', 'High'] },
+    {
+      key: 'severity',
+      label: 'Severity',
+      type: 'select',
+      param: 'severity',
+      options: ['Low', 'Medium', 'High'],
+    },
     { key: 'activeOnly', label: 'Active Only', type: 'bool', param: 'activeOnly' },
   ],
   actions: [
@@ -33,9 +53,7 @@ export const mockKitTestSchema: PageSchema = {
       label: 'Activate',
       variant: 'primary',
       allowedFrom: ['Draft'],
-      payloadFields: [
-        { key: 'reason', label: 'Activation Reason', type: 'text', required: true },
-      ],
+      payloadFields: [{ key: 'reason', label: 'Activation Reason', type: 'text', required: true }],
     },
     {
       key: 'close',
@@ -50,9 +68,7 @@ export const mockKitTestSchema: PageSchema = {
       label: 'Recalculate All',
       variant: 'primary',
       requires: 'add',
-      fields: [
-        { key: 'multiplier', label: 'Multiplier', type: 'qty', required: true },
-      ],
+      fields: [{ key: 'multiplier', label: 'Multiplier', type: 'qty', required: true }],
     },
   ],
   tabPanels: [

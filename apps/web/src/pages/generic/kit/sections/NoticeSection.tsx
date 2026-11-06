@@ -1,13 +1,7 @@
 // apps/web/src/pages/generic/kit/sections/NoticeSection.tsx
 // Notice banner section using .v9-health (docs/plans/07-ENGINE-KIT.md §2.3)
 
-export function NoticeSection({
-  tone,
-  text,
-}: {
-  tone: 'info' | 'warn' | 'bad';
-  text: string;
-}) {
+export function NoticeSection({ tone, text }: { tone: 'info' | 'warn' | 'bad'; text: string }) {
   const toneClass =
     tone === 'bad'
       ? 'v9-health notice-bad'

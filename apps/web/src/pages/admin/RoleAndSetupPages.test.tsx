@@ -8,11 +8,11 @@ import type { RoleInfo } from '../../types';
 
 const owner = makeUser({ role: 'SUPER_ADMIN', roleLabel: 'Super Admin', department: null });
 const roles: RoleInfo[] = [
-  { code: 'MEMBER', label: 'Member', level: 20, userCount: 12, canManage: true },
-  { code: 'SUPER_ADMIN', label: 'Super Admin', level: 100, userCount: 1, canManage: false },
-  { code: 'ADMIN', label: 'Admin', level: 80, userCount: 2, canManage: true },
-  { code: 'MANAGER', label: 'Manager', level: 60, userCount: 4, canManage: true },
-  { code: 'LEAD', label: 'Lead', level: 40, userCount: 6, canManage: true },
+  { id: 'MEMBER', code: 'MEMBER', name: 'Member', label: 'Member', level: 20, userCount: 12, canManage: true },
+  { id: 'SUPER_ADMIN', code: 'SUPER_ADMIN', name: 'Super Admin', label: 'Super Admin', level: 100, userCount: 1, canManage: false },
+  { id: 'ADMIN', code: 'ADMIN', name: 'Admin', label: 'Admin', level: 80, userCount: 2, canManage: true },
+  { id: 'MANAGER', code: 'MANAGER', name: 'Manager', label: 'Manager', level: 60, userCount: 4, canManage: true },
+  { id: 'LEAD', code: 'LEAD', name: 'Lead', label: 'Lead', level: 40, userCount: 6, canManage: true },
 ];
 
 describe('RoleMasterPage', () => {

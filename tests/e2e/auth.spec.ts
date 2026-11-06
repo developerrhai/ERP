@@ -77,7 +77,7 @@ test('wrong password and unknown user get the same generic message (no user enum
   const msg1 = await page.locator('.msg.error').innerText();
   await signIn(page, 'nobody-here', 'Wrong#Password1');
   const msg2 = await page.locator('.msg.error').innerText();
-  expect(msg1).toBe('Invalid login ID or password.');
+  expect(msg1).toBe('Email / User ID or password is incorrect.');
   expect(msg2).toBe(msg1);
 });
 

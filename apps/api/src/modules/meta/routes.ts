@@ -8,7 +8,7 @@ import { metaController } from './controller';
 export function createMetaRouter(): Router {
   const router = Router();
   router.use(authenticate);
-  router.get('/roles', metaController.roles);
+  router.get('/roles', asyncHandler(metaController.roles));
   router.get('/departments', asyncHandler(metaController.departments));
   return router;
 }

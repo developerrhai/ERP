@@ -1,8 +1,8 @@
-// Permission Master (Phase 2 §2.3, §2.6): read every role's rows; replace one role's rows as a
-// whole. Hierarchy: only roles the caller can manage (never their own or higher). If-Match is the
-// role-level version = the highest row version of that role; a PUT writes every row at that + 1.
-// ADMIN's `*` controls cannot be switched off (409 PROTECTED). Audited with before/after rows.
-import type { Prisma, RolePermission } from '@prisma/client';
+// Permission Master service (Phase 02 §5, §6):
+// 12 actions, 4 scopes, explicit deny wins.
+// Can only edit roles below actor's level, and NEVER own role.
+// Administration pages can only be granted to Administrator and Super User (level >= 95).
+import type { Prisma, Role, RolePermission } from '@prisma/client';
 import type { AuthContext, RequestMeta } from '../../core/auth/auth-context';
 import { recordAudit } from '../../core/audit/audit-service';
 import { prisma } from '../../core/db/prisma';
@@ -11,19 +11,16 @@ import { invalidateAccessCache } from '../../core/rbac/access';
 import {
   ACTIONS,
   DEFAULT_RESOURCE,
-  PERMISSION_ROLES,
+  SCOPES,
   familyResource,
-  isPermissionRole,
   noActions,
 } from '../../core/rbac/permission-model';
-import type { PermissionRole, Scope } from '../../core/rbac/permission-model';
-import { canManage } from '../../core/rbac/role-rules';
-import type { RoleCode } from '../../core/rbac/role-rules';
+import type { Action, Scope } from '../../core/rbac/permission-model';
 import { ADMIN_FAMILY, isFamily, pageInfo, registry } from '../../core/registry';
+import { roleRepository } from '../roles/repository';
 import { permissionRepository } from './repository';
 import type { PermissionRowInput, PutPermissionsInput } from './schemas';
 
-/** null = inherited from the next less specific row (never null on "*"). */
 export interface PermissionRowDto {
   resource: string;
   view: boolean | null;
@@ -33,19 +30,26 @@ export interface PermissionRowDto {
   approve: boolean | null;
   export: boolean | null;
   controls: boolean | null;
+  submit: boolean | null;
+  post: boolean | null;
+  cancel: boolean | null;
+  print: boolean | null;
+  import: boolean | null;
   scope: Scope | null;
   version: number;
 }
 
 export interface RolePermissionsDto {
-  role: PermissionRole;
+  roleId: string;
+  code: string;
+  role: string;
+  name: string;
+  level: number;
   editable: boolean;
-  /** Role-level version used for If-Match on PUT /permissions/:role (max row version). */
   version: number;
   rows: PermissionRowDto[];
 }
 
-/** "*" first, then families in registry order, then pages in menu order. */
 function resourceOrder(resource: string): number {
   if (resource === DEFAULT_RESOURCE) return -1;
   if (resource.startsWith('family:')) {
@@ -66,28 +70,46 @@ function toRowDto(r: RolePermission): PermissionRowDto {
     approve: r.approve,
     export: r.export,
     controls: r.controls,
+    submit: r.submit,
+    post: r.post,
+    cancel: r.cancel,
+    print: r.print,
+    import: r.import,
     scope: r.scope,
     version: r.version,
   };
 }
 
-function roleDto(
-  role: PermissionRole,
+function buildRolePermissionsDto(
+  role: Role,
   rows: RolePermission[],
-  actorRole: RoleCode,
+  actor: { level: number; roleId: string },
 ): RolePermissionsDto {
   const sorted = [...rows].sort((a, b) => resourceOrder(a.resource) - resourceOrder(b.resource));
   return {
-    role,
-    editable: canManage(actorRole, role),
+    roleId: role.id,
+    code: role.code,
+    role: role.code,
+    name: role.name,
+    level: role.level,
+    editable: actor.level > role.level && role.id !== actor.roleId,
     version: rows.reduce((max, r) => Math.max(max, r.version), 0),
     rows: sorted.map(toRowDto),
   };
 }
 
-function validateRows(role: PermissionRole, rows: PermissionRowInput[]): void {
+function isAdministrationResource(resource: string): boolean {
+  if (resource === familyResource(ADMIN_FAMILY)) return true;
+  return (
+    resource.startsWith('page:') &&
+    pageInfo(resource.slice('page:'.length))?.family === ADMIN_FAMILY
+  );
+}
+
+function validateRows(role: Role, rows: PermissionRowInput[]): void {
   const fields: Record<string, string> = {};
   const seen = new Set<string>();
+
   rows.forEach((row, i) => {
     const key = `rows.${i}.resource`;
     if (seen.has(row.resource)) fields[key] = 'Duplicate resource.';
@@ -103,125 +125,180 @@ function validateRows(role: PermissionRole, rows: PermissionRowInput[]): void {
     }
     fields[key] = 'Resource must be "*", "family:<name>" or "page:<id>".';
   });
+
   if (!seen.has(DEFAULT_RESOURCE)) fields.rows = 'A "*" (role default) row is required.';
+
   rows.forEach((row, i) => {
     if (row.resource !== DEFAULT_RESOURCE) return;
     for (const cell of [...ACTIONS, 'scope'] as const) {
-      if (row[cell] === null)
+      if (row[cell] === null) {
         fields[`rows.${i}.${cell}`] = 'The "*" row cannot inherit; set a value.';
+      }
     }
   });
+
   if (Object.keys(fields).length > 0) throw Errors.validation(fields);
+
   const star = rows.find((r) => r.resource === DEFAULT_RESOURCE);
-  if (role === 'ADMIN' && star && star.controls !== true) {
-    throw Errors.protectedResource("An Admin's controls permission on * cannot be turned off.");
+  if (role.code === 'ADMINISTRATOR' && star && star.controls !== true) {
+    throw Errors.protectedResource("An Administrator's controls permission on * cannot be turned off.");
   }
+
   for (const row of rows) {
     if (!isAdministrationResource(row.resource)) continue;
-    if (role === 'ADMIN') {
+    if (role.code === 'ADMINISTRATOR') {
       if (row.controls === false) {
         throw Errors.protectedResource(
-          "An Admin's controls permission on Administration pages cannot be turned off.",
+          "An Administrator's controls permission on Administration pages cannot be turned off.",
         );
       }
-    } else if (ACTIONS.some((a) => row[a] === true)) {
-      throw Errors.protectedResource('Only Admin and above may use Administration pages.');
+    } else if (role.level < 95) {
+      if (ACTIONS.some((a) => row[a] === true)) {
+        throw Errors.protectedResource('Administration pages are only for Administrator and Super User.');
+      }
     }
   }
 }
 
-/** `family:Administration` or `page:<id>` of a page in the Administration family. */
-function isAdministrationResource(resource: string): boolean {
-  if (resource === familyResource(ADMIN_FAMILY)) return true;
-  return (
-    resource.startsWith('page:') &&
-    pageInfo(resource.slice('page:'.length))?.family === ADMIN_FAMILY
-  );
+function withAdministrationDeny(role: Role, rows: PermissionRowInput[]): PermissionRowInput[] {
+  if (role.level >= 95) return rows;
+  const adminFamily = familyResource(ADMIN_FAMILY);
+  const existing = rows.find((r) => r.resource === adminFamily);
+  const denyRow: PermissionRowInput = {
+    resource: adminFamily,
+    view: false,
+    add: false,
+    edit: false,
+    delete: false,
+    approve: false,
+    export: false,
+    controls: false,
+    submit: false,
+    post: false,
+    cancel: false,
+    print: false,
+    import: false,
+    scope: 'OWN',
+  };
+  if (!existing) return [...rows, denyRow];
+  return rows.map((r) => (r.resource === adminFamily ? denyRow : r));
 }
 
-/**
- * Non-admin roles always keep an explicit deny row on `family:Administration`: if the PUT omits it,
- * or leaves cells as "inherit" (which would inherit `*`), it is stored as all-false.
- */
-function withAdministrationDeny(
-  role: PermissionRole,
-  rows: PermissionRowInput[],
-): PermissionRowInput[] {
-  if (role === 'ADMIN') return rows;
-  const resource = familyResource(ADMIN_FAMILY);
-  const existing = rows.find((r) => r.resource === resource);
-  const deny: PermissionRowInput = { resource, ...noActions(), scope: existing?.scope ?? 'OWN' };
-  return [...rows.filter((r) => r.resource !== resource), deny];
-}
-
-const snapshot = (rows: RolePermission[]): Prisma.InputJsonArray =>
-  rows.map((r) => {
-    const out: Record<string, string | boolean | null> = { resource: r.resource, scope: r.scope };
+function snapshot(rows: RolePermission[]): Record<string, unknown>[] {
+  return rows.map((r) => {
+    const out: Record<string, unknown> = { resource: r.resource, scope: r.scope };
     for (const a of ACTIONS) out[a] = r[a];
     return out;
   });
+}
 
 export const permissionService = {
-  async list(actorRole: RoleCode): Promise<{ roles: RolePermissionsDto[]; families: string[] }> {
-    const rows = await permissionRepository.all();
-    return {
-      roles: PERMISSION_ROLES.map((role) =>
-        roleDto(
-          role,
-          rows.filter((r) => r.role === role),
-          actorRole,
-        ),
+  async list(actor: {
+    level: number;
+    roleId: string;
+  }): Promise<{
+    roles: RolePermissionsDto[];
+    families: string[];
+    actions: readonly Action[];
+    scopes: readonly Scope[];
+  }> {
+    const [allRoles, allRows] = await Promise.all([
+      roleRepository.findAll(),
+      permissionRepository.all(),
+    ]);
+
+    const nonSuperRoles = allRoles.filter((r) => r.code !== 'SUPER_USER');
+    const roles = nonSuperRoles.map((role) =>
+      buildRolePermissionsDto(
+        role,
+        allRows.filter((r) => r.roleId === role.id),
+        actor,
       ),
+    );
+
+    return {
+      roles,
       families: [...registry.familyNames],
+      actions: ACTIONS,
+      scopes: SCOPES,
     };
   },
 
   async replace(
     actor: AuthContext,
-    role: RoleCode,
+    targetIdentifier: string,
     expectedVersion: number,
     input: PutPermissionsInput,
     meta: RequestMeta,
   ): Promise<RolePermissionsDto> {
-    if (!isPermissionRole(role)) {
-      throw Errors.forbidden('Super Admin permissions are fixed and cannot be edited.');
+    let role = await roleRepository.findById(targetIdentifier);
+    if (!role) {
+      role = await roleRepository.findByCode(targetIdentifier);
     }
-    if (!canManage(actor.role, role)) {
-      throw Errors.forbidden('You cannot edit the permissions of your own role or a higher role.');
+    if (!role) throw Errors.notFound('Role not found.');
+
+    if (role.code === 'SUPER_USER') {
+      throw Errors.forbidden('Super User permissions are fixed and cannot be edited.');
     }
+
+    if (role.id === actor.roleId) {
+      throw Errors.forbidden("You cannot change your own role's permissions.");
+    }
+
+    if (role.level >= actor.level) {
+      throw Errors.forbidden('You can only manage users below your own role.');
+    }
+
     validateRows(role, input.rows);
-    // An override row whose cells are all "inherit" carries no information: it is not stored.
-    const rows = withAdministrationDeny(role, input.rows).filter(
+
+    const rowsToStore = withAdministrationDeny(role, input.rows).filter(
       (r) =>
-        r.resource === DEFAULT_RESOURCE || r.scope !== null || ACTIONS.some((a) => r[a] !== null),
+        r.resource === DEFAULT_RESOURCE ||
+        r.scope !== null ||
+        ACTIONS.some((a) => r[a] !== null),
     );
 
     const result = await prisma.$transaction(async (tx) => {
-      await permissionRepository.lockRole(role, tx);
-      const before = await permissionRepository.forRole(role, tx);
+      await permissionRepository.lockRoleId(role.id, tx);
+      const before = await permissionRepository.forRoleId(role.id, tx);
       const current = before.reduce((max, r) => Math.max(max, r.version), 0);
-      if (current !== expectedVersion) throw Errors.versionConflict();
+      if (current !== expectedVersion) {
+        throw Errors.versionConflict();
+      }
       const nextVersion = current + 1;
       await permissionRepository.replace(
-        role,
-        rows.map((r) => ({ ...r, version: nextVersion, updatedById: actor.userId })),
+        role.id,
+        rowsToStore.map((r) => ({
+          ...r,
+          version: nextVersion,
+          updatedById: actor.userId,
+        })),
         tx,
       );
-      const after = await permissionRepository.forRole(role, tx);
+      const after = await permissionRepository.forRoleId(role.id, tx);
+
       await recordAudit(
         {
           action: 'PERMISSIONS_UPDATED',
           actorId: actor.userId,
           targetType: 'RolePermissions',
-          targetId: role,
-          meta,
-          detail: { role, before: snapshot(before), after: snapshot(after) },
+          targetId: role.id,
+          ip: meta.ip,
+          userAgent: meta.userAgent,
+          detail: {
+            roleId: role.id,
+            roleCode: role.code,
+            before: snapshot(before) as unknown as Prisma.InputJsonValue,
+            after: snapshot(after) as unknown as Prisma.InputJsonValue,
+          },
         },
         tx,
       );
       return after;
     });
+
     invalidateAccessCache();
-    return roleDto(role, result, actor.role);
+
+    return buildRolePermissionsDto(role, result, { level: actor.level, roleId: actor.roleId });
   },
 };

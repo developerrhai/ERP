@@ -18,11 +18,17 @@ import {
 } from './engineApi';
 import { baseFilters, displayValue, isEmptyValue, listFields, valueOf } from './fieldModel';
 import { statusClass } from './RegisterTab';
+import { PhaseMap, ReportExtras } from './Phase4Tabs';
+import { getSummary } from './phase4Api';
 
 export function PhaseNotice({ tab, phase }: { tab: string; phase: number }) {
   return (
     <div className="notice" role="note">
       <b>{tab}</b> <span>This view is built in Phase {phase}.</span>
+      <details className="phase-details">
+        <summary>Phase map</summary>
+        <PhaseMap highlight={phase} />
+      </details>
     </div>
   );
 }
@@ -69,6 +75,29 @@ export function DashboardTab({
   onView: (row: RecordRow) => void;
 }) {
   const { data, loading, error } = useLoad<DashData>(async () => {
+    if (schema.kind === 'generic') {
+      // Counts are computed on the server over every record, never from a browser sample.
+      const [summary, recent] = await Promise.all([
+        getSummary(schema.pageId),
+        listRecords(schema.pageId, { sort: '-createdAt', size: 20 }),
+      ]);
+      const sum = (wanted: string[]): number | null => {
+        const use = wanted.filter((s) => schema.statuses.includes(s));
+        if (use.length === 0) return null;
+        return use.reduce(
+          (n, s) => n + (summary.byStatus.find((b) => b.status === s)?.count ?? 0),
+          0,
+        );
+      };
+      return {
+        total: summary.total,
+        recent: recent.rows,
+        draftOpen: sum(['Draft', 'Open']),
+        activeDone: sum(['Active', 'Completed']),
+        thisMonth: summary.createdThisMonth,
+        monthCapped: false,
+      };
+    }
     const base = baseFilters(schema);
     const recent = await listRecords(schema.pageId, {
       sort: '-createdAt',
@@ -387,6 +416,18 @@ export function ReportsTab({
         </button>
       </div>
       {exportError ? <ErrorMessage>{exportError}</ErrorMessage> : null}
+      {schema.kind === 'generic' ? (
+        <ReportExtras
+          schema={schema}
+          perms={perms}
+          filters={{
+            ...(query.q ? { q: query.q } : {}),
+            ...(query.status ? { status: query.status } : {}),
+            ...(query.sort ? { sort: query.sort } : {}),
+          }}
+          onImported={() => undefined}
+        />
+      ) : null}
       {error ? <ErrorMessage>{error}</ErrorMessage> : null}
       <p className="v8-sub report-note">
         {data

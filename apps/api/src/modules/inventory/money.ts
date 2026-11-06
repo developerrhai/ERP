@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 export type Dec = Prisma.Decimal;
 
 export const D = (value: Prisma.Decimal.Value): Dec => new Prisma.Decimal(value);
+export const dec = D;
 export const ZERO: Dec = D(0);
 
 export const round2 = (v: Dec): Dec => v.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);

@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=20 <21"
+  },
   "description": "RHAI ERP web client (React 18 + Vite). See docs/phase1/CONTRACT.md section 8.",
   "scripts": {
     "dev": "vite",

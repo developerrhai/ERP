@@ -15,6 +15,7 @@ import {
   updateUser,
   userUnitIds,
   VERSION_CONFLICT_MESSAGE,
+  type CreateUserInput,
   type UserPatch,
 } from './usersApi';
 
@@ -59,15 +60,27 @@ export function UserFormModal({
   onSaved,
 }: Props) {
   const options = manageableRoles(roles);
+  const initialRole = options.find(
+    (r) => (user?.roleId && r.id === user.roleId) || (user?.role && (r.code === user.role || r.id === user.role)),
+  );
   const [loginId, setLoginId] = useState(user?.loginId ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [name, setName] = useState(user?.name ?? '');
-  const [role, setRole] = useState<RoleCode | ''>(user?.role ?? '');
+  const [roleId, setRoleId] = useState(initialRole?.code ?? initialRole?.id ?? user?.role ?? user?.roleId ?? '');
   const [department, setDepartment] = useState(user?.department ?? '');
+  const [extraDepartments, setExtraDepartments] = useState<string[]>(user?.extraDepartments ?? []);
+  const [approvalLimit, setApprovalLimit] = useState<string>(
+    user?.approvalLimit !== null && user?.approvalLimit !== undefined ? user.approvalLimit : '0',
+  );
   const [tempPassword, setTempPassword] = useState('');
   const initialUnits = user ? userUnitIds(user) : [];
   const [unitIds, setUnitIds] = useState<string[]>(initialUnits);
   const [defaultUnitId, setDefaultUnitId] = useState(user?.defaultUnitId ?? '');
+
+  const selectedRole = options.find((r) => r.id === roleId || r.code === roleId);
+  const isSuperUser = selectedRole?.code === 'SUPER_USER';
+  const roleCode = selectedRole?.code ?? '';
+
   // Assigned units that are no longer offered (e.g. deactivated) stay visible and removable.
   const unitOptions: UnitRef[] = [
     ...units,
@@ -76,7 +89,7 @@ export function UserFormModal({
       .filter((id) => !units.some((k) => k.id === id) && !user?.units?.some((u) => u.id === id))
       .map((id) => ({ id, code: id, name: id })),
   ];
-  const unitScoped = needsUnits(role);
+  const unitScoped = needsUnits(roleCode, roles);
   // The default must be one of the chosen units; a single unit is its own default.
   const effectiveDefault = unitIds.includes(defaultUnitId)
     ? defaultUnitId
@@ -89,24 +102,29 @@ export function UserFormModal({
         ? unitOptions.map((u) => u.id).filter((x) => x === id || prev.includes(x))
         : prev.filter((x) => x !== id),
     );
-  const [errors, setErrors] = useState<Errors>({});
+  const [errors, setErrors] = useState<Errors & { approvalLimit?: string; extraDepartments?: string }>({});
   const [formError, setFormError] = useState('');
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
 
   const pwChecks = checkPassword(tempPassword, loginId, email);
 
-  const validate = (): Errors => {
-    const e: Errors = {};
+  const validate = (): typeof errors => {
+    const e: typeof errors = {};
     if (mode === 'add' && !LOGIN_ID_RE.test(loginId.trim().toLowerCase())) {
       e.loginId = '3–64 characters: letters, digits, . _ @ -';
     }
     if (email.trim() && !EMAIL_RE.test(email.trim())) e.email = 'Enter a valid email address.';
     const n = name.trim();
     if (n.length < 2 || n.length > 100) e.name = 'Name must be 2–100 characters.';
-    if (!role) e.role = 'Choose a role.';
-    if (!department) e.department = 'Choose a department.';
-    if (needsUnits(role)) {
+    if (!roleId && !selectedRole) e.role = 'Choose a role.';
+    if (!isSuperUser && !department) e.department = 'Choose a department.';
+    if (!isSuperUser) {
+      if (!approvalLimit || !/^\d+(\.\d{1,2})?$/.test(approvalLimit.trim())) {
+        e.approvalLimit = 'Enter an amount of 0 or more with up to 2 decimals.';
+      }
+    }
+    if (unitScoped) {
       if (unitIds.length === 0) e.unitIds = 'Choose at least one unit.';
       else if (!effectiveDefault) e.defaultUnitId = 'Choose the default unit.';
     }
@@ -121,9 +139,23 @@ export function UserFormModal({
     const newEmail = email.trim().toLowerCase() || null;
     if (newEmail !== current.email) patch.email = newEmail;
     if (name.trim() !== current.name) patch.name = name.trim();
-    if (role && role !== current.role) patch.role = role;
+    const currentRoleMatch = options.find(
+      (r) => (current.roleId && r.id === current.roleId) || (current.role && (r.code === current.role || r.id === current.role)),
+    );
+    if (selectedRole && (!currentRoleMatch || selectedRole.id !== currentRoleMatch.id)) {
+      if (current.roleId || selectedRole.id) patch.roleId = selectedRole.id;
+      patch.role = selectedRole.code;
+    }
     if (department !== (current.department ?? '')) patch.department = department || null;
-    if (needsUnits(role)) {
+    if (current.extraDepartments !== undefined ? !sameSet(extraDepartments, current.extraDepartments) : extraDepartments.length > 0) {
+      patch.extraDepartments = extraDepartments;
+    }
+    const currentLimitStr = current.approvalLimit !== null && current.approvalLimit !== undefined ? current.approvalLimit : null;
+    const nextLimit = isSuperUser ? null : approvalLimit.trim();
+    if (current.approvalLimit !== undefined ? nextLimit !== currentLimitStr : (approvalLimit.trim() !== '' && approvalLimit.trim() !== '0')) {
+      patch.approvalLimit = nextLimit;
+    }
+    if (unitScoped) {
       if (!sameSet(unitIds, userUnitIds(current))) patch.unitIds = unitIds;
       if ((effectiveDefault || null) !== (current.defaultUnitId ?? null)) {
         patch.defaultUnitId = effectiveDefault || null;
@@ -144,15 +176,25 @@ export function UserFormModal({
     try {
       let saved: User;
       if (mode === 'add') {
-        saved = await createUser({
+        const input: CreateUserInput = {
           loginId: loginId.trim().toLowerCase(),
           ...(email.trim() ? { email: email.trim().toLowerCase() } : {}),
           name: name.trim(),
-          role: role as RoleCode,
-          department,
+          role: selectedRole?.code ?? (roleId as RoleCode),
+          department: isSuperUser ? null : department,
           temporaryPassword: tempPassword,
-          ...(needsUnits(role) ? { unitIds, defaultUnitId: effectiveDefault } : {}),
-        });
+          ...(unitScoped ? { unitIds, defaultUnitId: effectiveDefault } : {}),
+        };
+        if (extraDepartments.length > 0) {
+          input.extraDepartments = extraDepartments;
+        }
+        if (approvalLimit && approvalLimit.trim() !== '0') {
+          input.approvalLimit = approvalLimit.trim();
+        }
+        if (selectedRole?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedRole.id)) {
+          input.roleId = selectedRole.id;
+        }
+        saved = await createUser(input);
       } else if (user) {
         const patch = buildPatch(user);
         if (Object.keys(patch).length === 0) {
@@ -166,7 +208,7 @@ export function UserFormModal({
       onSaved(saved);
     } catch (err) {
       if (err instanceof ApiError) {
-        setErrors(err.fields as Errors);
+        setErrors(err.fields as any);
         setFormError(err.code === 'VERSION_CONFLICT' ? VERSION_CONFLICT_MESSAGE : err.message);
       } else {
         setFormError('Something went wrong.');
@@ -233,14 +275,14 @@ export function UserFormModal({
           />
           <SelectField
             label="Role"
-            value={role}
+            value={roleId}
             error={errors.role}
-            onChange={(v) => setRole(v as RoleCode | '')}
+            onChange={(v) => setRoleId(v)}
           >
             <option value="">Select role</option>
             {options.map((r) => (
-              <option key={r.code} value={r.code}>
-                {r.label}
+              <option key={r.code || r.id} value={r.code || r.id}>
+                {r.name || r.label || r.code}
               </option>
             ))}
           </SelectField>
@@ -257,6 +299,64 @@ export function UserFormModal({
               </option>
             ))}
           </SelectField>
+
+          <div className="field">
+            <label>Also Works In (Extra Departments)</label>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+              {departments
+                .filter((d) => d !== department)
+                .map((d) => {
+                  const selected = extraDepartments.includes(d);
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      className={`chip ${selected ? 'primary' : ''}`}
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '12px',
+                        border: selected ? '1px solid var(--primary)' : '1px solid var(--border)',
+                        background: selected ? 'var(--primary-subtle, #ebf8ff)' : 'var(--surface-sunken)',
+                        color: selected ? 'var(--primary-dark, #2b6cb0)' : 'var(--text)',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                      }}
+                      onClick={() => {
+                        if (selected) {
+                          setExtraDepartments(extraDepartments.filter((dept) => dept !== d));
+                        } else if (extraDepartments.length < 10) {
+                          setExtraDepartments([...extraDepartments, d]);
+                        }
+                      }}
+                    >
+                      {selected ? '✓ ' : '＋ '}
+                      {d}
+                    </button>
+                  );
+                })}
+            </div>
+            {errors.extraDepartments ? (
+              <span className="field-error">{errors.extraDepartments}</span>
+            ) : null}
+            <span className="hint">Up to 10 additional departments where user can view and work.</span>
+          </div>
+
+          <div className="field">
+            <Field
+              label="Approval Limit (₹)"
+              type="number"
+              value={isSuperUser ? '' : approvalLimit}
+              disabled={isSuperUser}
+              error={errors.approvalLimit}
+              placeholder={isSuperUser ? 'Unlimited' : '0'}
+              onChange={(e) => setApprovalLimit(e.target.value)}
+            />
+            <span className="hint">
+              {isSuperUser
+                ? 'Super Users have unlimited approval authority.'
+                : 'Maximum financial amount user can approve (0 for none).'}
+            </span>
+          </div>
           {unitScoped ? (
             <fieldset
               className="field unit-checks"
@@ -284,7 +384,7 @@ export function UserFormModal({
                 </span>
               ) : null}
             </fieldset>
-          ) : role ? (
+          ) : selectedRole ? (
             <div className="field">
               <span className="field-label">Units</span>
               <span className="v8-sub">Admins work in all units.</span>

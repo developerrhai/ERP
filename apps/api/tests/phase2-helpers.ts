@@ -49,9 +49,10 @@ export async function restoreGlobal(snap: GlobalSnapshot): Promise<void> {
     for (const x of snap.settings) {
       const now = currentSettings.get(x.key);
       if (now && same(now.value, x.value) && now.version === x.version) continue;
-      await tx.setting.update({
+      await tx.setting.upsert({
         where: { key: x.key },
-        data: { value: x.value ?? {}, version: x.version },
+        create: { key: x.key, value: x.value ?? {}, version: x.version },
+        update: { value: x.value ?? {}, version: x.version },
       });
     }
   });
@@ -98,9 +99,23 @@ export async function permissionsOf(app: Express, s: Signed, pageId: string) {
 }
 
 export async function roleVersion(app: Express, s: Signed, role: string): Promise<number> {
+  const legacyMap: Record<string, string> = {
+    SUPER_ADMIN: 'SUPER_USER',
+    ADMIN: 'ADMINISTRATOR',
+    MANAGER: 'DEPT_MANAGER',
+    LEAD: 'SUPERVISOR',
+    MEMBER: 'EMPLOYEE',
+  };
+  const resolved = legacyMap[role] ?? role;
   const res = await request(app).get(`${API}/permissions`).set(s.bearer);
-  const roles = (res.body as { data: { roles: { role: string; version: number }[] } }).data.roles;
-  return roles.find((r) => r.role === role)?.version ?? 0;
+  const roles = (
+    res.body as {
+      data: { roles: { roleId: string; code: string; role?: string; version: number }[] };
+    }
+  ).data.roles;
+  return (
+    roles.find((r) => r.code === role || r.code === resolved || r.role === role || r.role === resolved || r.roleId === role)?.version ?? 0
+  );
 }
 
 export async function controlVersion(pageId: string): Promise<number> {

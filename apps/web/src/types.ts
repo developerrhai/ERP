@@ -1,7 +1,7 @@
 // Shared API types for the web client, mirroring the DTOs in docs/phase1/CONTRACT.md §7
 // so every screen agrees on the shape of a user, a role and an error.
 
-export type RoleCode = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'LEAD' | 'MEMBER';
+export type RoleCode = string;
 export type UserStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface User {
@@ -9,17 +9,27 @@ export interface User {
   loginId: string;
   email: string | null;
   name: string;
-  role: RoleCode;
-  roleLabel: string;
+  roleId: string;
+  roleCode: string;
+  roleName: string;
   roleLevel: number;
+  role: string;
+  roleLabel: string;
   department: string | null;
+  extraDepartments?: string[];
+  approvalLimit?: string | null;
   status: UserStatus;
   mustChangePassword: boolean;
   lastLoginAt: string | null;
+  previousLoginAt?: string | null;
+  previousLoginIp?: string | null;
+  lockedUntil?: string | null;
+  mfaEnabled?: boolean;
+  mfaSetupRequired?: boolean;
   createdAt: string;
   updatedAt: string;
   version: number;
-  /** Phase 3: units the user may work in (ADMIN+ have all units implicitly and may omit it). */
+  /** Units the user may work in (SUPER_USER / allUnits roles have all units implicitly). */
   units?: UnitRef[];
   unitIds?: string[];
   defaultUnitId?: string | null;
@@ -31,11 +41,59 @@ export interface AuthResult {
   user: User;
 }
 
+export interface MfaChallengeResult {
+  mfaRequired: true;
+  challengeId: string;
+  expiresIn: number;
+}
+
+export type LoginResponse = AuthResult | MfaChallengeResult;
+
+export interface SessionInfo {
+  id: string;
+  familyId: string;
+  userAgent: string | null;
+  ip: string | null;
+  createdAt: string;
+  lastUsedAt: string;
+  revokedAt?: string | null;
+  revokedReason?: string | null;
+  isCurrent?: boolean;
+  isLive?: boolean;
+  mfaVerified?: boolean;
+}
+
+export interface SecurityPolicy {
+  passwordMinLength: number;
+  maxFailedLogins: number;
+  lockoutMinutes: number;
+  idleMinutes: number;
+  absoluteHours: number;
+  maxSessionsPerUser: number;
+  mfaRequiredForAdmins: boolean;
+}
+
+export interface SecurityPolicyRecord {
+  value: SecurityPolicy;
+  version: number;
+}
+
+export interface MfaStatus {
+  eligible: boolean;
+  enabled: boolean;
+  required: boolean;
+  recoveryCodesRemaining: number;
+  enrolledAt: string | null;
+}
+
 export interface RoleMeta {
-  code: RoleCode;
+  id: string;
+  code: string;
+  name: string;
   label: string;
   level: number;
   canManage: boolean;
+  allUnits: boolean;
 }
 
 export interface PageMeta {
@@ -46,13 +104,26 @@ export interface PageMeta {
   totals?: Record<string, number | string>;
 }
 
-// ---- Phase 2 (docs/phase2/CONTRACT.md §2–§3) ------------------------------
+// ---- Phase 02 (Roles & Access v2) ----------------------------------------
 
-export const ACTIONS = ['view', 'add', 'edit', 'delete', 'approve', 'export', 'controls'] as const;
+export const ACTIONS = [
+  'view',
+  'add',
+  'edit',
+  'delete',
+  'approve',
+  'export',
+  'controls',
+  'submit',
+  'post',
+  'cancel',
+  'print',
+  'import',
+] as const;
 export type Action = (typeof ACTIONS)[number];
 export type ActionSet = Record<Action, boolean>;
-export type Scope = 'OWN' | 'DEPARTMENT' | 'ALL';
-export const SCOPES: readonly Scope[] = ['OWN', 'DEPARTMENT', 'ALL'];
+export type Scope = 'OWN' | 'DEPARTMENT' | 'UNIT' | 'ALL';
+export const SCOPES: readonly Scope[] = ['OWN', 'DEPARTMENT', 'UNIT', 'ALL'];
 
 export interface PagePermissions {
   pageId: string;
@@ -77,11 +148,18 @@ export interface Department {
 }
 
 export interface RoleInfo {
-  code: RoleCode;
-  label: string;
+  id: string;
+  code: string;
+  name: string;
+  label?: string;
   level: number;
+  description?: string | null;
+  isSystem?: boolean;
+  allUnits?: boolean;
+  status?: UserStatus;
   userCount: number;
   canManage: boolean;
+  version?: number;
 }
 
 /**
@@ -95,9 +173,31 @@ export type PermissionRow = Record<Action, boolean | null> & {
 };
 
 export interface RolePermissions {
-  role: Exclude<RoleCode, 'SUPER_ADMIN'>;
+  roleId?: string;
+  role?: string;
+  code?: string;
+  name?: string;
+  level?: number;
+  isSystem?: boolean;
+  allUnits?: boolean;
+  status?: UserStatus;
   editable: boolean;
+  version?: number;
   rows: PermissionRow[];
+}
+
+export interface EffectiveAccessPage {
+  pageId: string;
+  title: string;
+  family: string;
+  actions: ActionSet;
+  scope: Scope;
+  reasons: string[];
+}
+
+export interface EffectiveAccessResult {
+  user: User;
+  pages: EffectiveAccessPage[];
 }
 
 export interface ModuleControl {
@@ -126,6 +226,14 @@ export interface Letterhead {
   cin: string;
   footer: string;
   signatory: string;
+  version?: number;
+  logoFileId?: string | null;
+  headerHeightMm?: number;
+  footerHeightMm?: number;
+  primaryColor?: string;
+  showGstin?: boolean;
+  showPan?: boolean;
+  showCin?: boolean;
 }
 
 export interface AuditLog {
@@ -187,6 +295,12 @@ export interface Company {
   currency: string;
   timezone: string;
   version: number;
+  stateCode?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  city?: string | null;
+  pincode?: string | null;
 }
 
 export interface Unit {
@@ -199,6 +313,9 @@ export interface Unit {
   version: number;
   /** Optional: shown when the API reports how many users work in the unit. */
   userCount?: number;
+  stateCode?: string | null;
+  city?: string | null;
+  pincode?: string | null;
 }
 
 export interface FinancialYear {
@@ -211,4 +328,43 @@ export interface FinancialYear {
   status: FyStatus;
   isCurrent: boolean;
   version: number;
+}
+
+export interface Designation {
+  id: string;
+  code: string;
+  name: string;
+  departmentId: string | null;
+  department?: { id: string; code: string; name: string } | null;
+  level: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Currency {
+  id: string;
+  code: string;
+  name: string;
+  symbol: string;
+  decimalPlaces: number;
+  isBase: boolean;
+  exchangeRate: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Uom {
+  id: string;
+  code: string;
+  name: string;
+  uomClass: string;
+  decimals: number;
+  status: string;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
 }

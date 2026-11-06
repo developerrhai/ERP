@@ -50,7 +50,7 @@ describe('permissionModel', () => {
     expect(cellState(d, 'CRM', 'view')).toBe('inherit');
     expect(effective(d, 'Sales', 'view')).toBe(true);
     expect(effective(d, 'Sales', 'delete')).toBe(false);
-    expect(overrideCount(d)).toBe(8);
+    expect(overrideCount(d)).toBe(13);
   });
 
   it('an explicit value equal to * stays explicit (no "equals * means inherit" guess)', () => {

@@ -26,23 +26,23 @@ export async function getPanel(
   return api<PanelDto>(url);
 }
 
+/** `data` of a command response: `message` is merged into an object result by the server. */
+export type CommandResponse = { message?: string } & Record<string, unknown>;
+
 export async function runCommand(
   pageId: string,
   command: string,
   payload?: Record<string, unknown>,
   idempotencyKey?: string,
-): Promise<{ message?: string; result?: unknown }> {
+): Promise<CommandResponse> {
   const headers: Record<string, string> = {};
   if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
 
-  return api<{ message?: string; result?: unknown }>(
-    `/pages/${pageId}/commands/${command}`,
-    {
-      method: 'POST',
-      body: { payload: payload ?? {} },
-      headers,
-    },
-  );
+  return api<CommandResponse>(`/pages/${pageId}/commands/${command}`, {
+    method: 'POST',
+    body: { payload: payload ?? {} },
+    headers,
+  });
 }
 
 export async function postCall(
@@ -64,18 +64,16 @@ export async function postCall(
     if (!targetId) throw new Error('Target id is required for action call');
     const headers: Record<string, string> = {};
     if (opts?.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
-    return api(
-      `/pages/${pageId}/records/${targetId}/actions/${call.name}`,
-      {
-        method: 'POST',
-        body: { payload: opts?.payload ?? {} },
-        headers,
-      },
-    );
+    return api(`/pages/${pageId}/records/${targetId}/actions/${call.name}`, {
+      method: 'POST',
+      body: { payload: opts?.payload ?? {} },
+      headers,
+    });
   }
   if (call.kind === 'post') {
     let path = call.path;
-    if (opts?.pageId || pageId) path = path.replace('{pageId}', encodeURIComponent(opts?.pageId ?? pageId));
+    if (opts?.pageId || pageId)
+      path = path.replace('{pageId}', encodeURIComponent(opts?.pageId ?? pageId));
     if (opts?.recId) path = path.replace('{recId}', encodeURIComponent(opts.recId));
     if (opts?.rowId) path = path.replace('{rowId}', encodeURIComponent(opts.rowId));
     return api(path, {

@@ -1,16 +1,26 @@
 // The shape of "who is calling" after authenticate has re-checked the DB, plus the request
 // metadata (ip, user agent) that services pass to the audit log.
 import type { Request } from 'express';
-import type { User } from '@prisma/client';
-import type { RoleCode } from '../rbac/role-rules';
+import type { Role, User, UserDepartment } from '@prisma/client';
 import { Errors } from '../http/errors';
+
+export type UserWithRoleAndDepts = User & {
+  role: Role;
+  extraDepartments?: UserDepartment[];
+};
 
 export interface AuthContext {
   userId: string;
   sessionId: string;
-  /** Always the role from the database, never from the token. */
-  role: RoleCode;
-  user: User;
+  familyId?: string;
+  roleId: string;
+  roleCode: string;
+  level: number;
+  allUnits: boolean;
+  departments: string[];
+  /** Legacy role string code for backwards compatibility. */
+  role: string;
+  user: UserWithRoleAndDepts;
 }
 
 export interface RequestMeta {

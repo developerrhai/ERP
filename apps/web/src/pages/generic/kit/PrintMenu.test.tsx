@@ -13,9 +13,7 @@ describe('PrintMenu', () => {
   });
 
   it('1. does not render anything when no visible templates are available', () => {
-    const { container } = render(
-      <PrintMenu pageId="test-page" templates={[]} />,
-    );
+    const { container } = render(<PrintMenu pageId="test-page" templates={[]} />);
     expect(container.firstChild).toBeNull();
   });
 
@@ -25,9 +23,7 @@ describe('PrintMenu', () => {
       { key: 't2', label: 'Certificate PDF', kind: 'pdf' as const, scope: 'record' as const },
     ];
 
-    render(
-      <PrintMenu pageId="test-page" recordId="rec-1" templates={templates} />,
-    );
+    render(<PrintMenu pageId="test-page" recordId="rec-1" templates={templates} />);
 
     const button = screen.getByRole('button', { name: 'Print ▾' });
     expect(button).toBeDefined();
@@ -49,9 +45,7 @@ describe('PrintMenu', () => {
       { key: 'cert-pdf', label: 'Certificate PDF', kind: 'pdf' as const, scope: 'record' as const },
     ];
 
-    render(
-      <PrintMenu pageId="test-page" recordId="rec-123" templates={templates} />,
-    );
+    render(<PrintMenu pageId="test-page" recordId="rec-123" templates={templates} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Print ▾' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Certificate PDF/ }));
@@ -86,12 +80,15 @@ describe('PrintMenu', () => {
     const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
 
     const templates = [
-      { key: 'custom-web', label: 'Custom Web Sheet', kind: 'web' as const, scope: 'record' as const },
+      {
+        key: 'custom-web',
+        label: 'Custom Web Sheet',
+        kind: 'web' as const,
+        scope: 'record' as const,
+      },
     ];
 
-    render(
-      <PrintMenu pageId="test-page" recordId="rec-123" templates={templates} />,
-    );
+    render(<PrintMenu pageId="test-page" recordId="rec-123" templates={templates} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Print ▾' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Custom Web Sheet/ }));

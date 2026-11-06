@@ -16,10 +16,15 @@ export function makeUser(over: Partial<User> = {}): User {
     loginId: 'asha',
     email: 'asha@rhai.local',
     name: 'Asha Patil',
+    roleId: 'r-admin',
+    roleCode: 'ADMIN',
+    roleName: 'Admin',
     role: 'ADMIN',
     roleLabel: 'Admin',
     roleLevel: 80,
     department: 'Administration',
+    extraDepartments: [],
+    approvalLimit: '0',
     status: 'ACTIVE',
     mustChangePassword: false,
     lastLoginAt: null,
@@ -31,11 +36,11 @@ export function makeUser(over: Partial<User> = {}): User {
 }
 
 export const ROLES_FOR_ADMIN: RoleMeta[] = [
-  { code: 'SUPER_ADMIN', label: 'Super Admin', level: 100, canManage: false },
-  { code: 'ADMIN', label: 'Admin', level: 80, canManage: false },
-  { code: 'MANAGER', label: 'Manager', level: 60, canManage: true },
-  { code: 'LEAD', label: 'Lead', level: 40, canManage: true },
-  { code: 'MEMBER', label: 'Member', level: 20, canManage: true },
+  { id: 'r-sa', code: 'SUPER_ADMIN', name: 'Super Admin', label: 'Super Admin', level: 100, canManage: false, allUnits: true },
+  { id: 'r-ad', code: 'ADMIN', name: 'Admin', label: 'Admin', level: 80, canManage: false, allUnits: true },
+  { id: 'r-mg', code: 'MANAGER', name: 'Manager', label: 'Manager', level: 60, canManage: true, allUnits: false },
+  { id: 'r-ld', code: 'LEAD', name: 'Lead', label: 'Lead', level: 40, canManage: true, allUnits: false },
+  { id: 'r-mb', code: 'MEMBER', name: 'Member', label: 'Member', level: 20, canManage: true, allUnits: false },
 ];
 
 export const DEPARTMENTS = [
@@ -175,6 +180,10 @@ export function signedIn(user: User, routes: Record<string, Handler> = {}) {
   return mockFetch({
     'POST /api/v1/auth/refresh': () => authOk(user),
     'GET /api/v1/health': () => json(200, { data: { status: 'ok', db: 'ok' } }),
+    // Phase 5: the bell polls the unread count; the dashboard shows "My Approvals (n)".
+    'GET /api/v1/notifications/unread-count': () => json(200, { data: { count: 0 } }),
+    'GET /api/v1/approvals/counts': () =>
+      json(200, { data: { waitingForMe: 0, submittedPending: 0, overdue: 0 } }),
     ...routes,
   });
 }

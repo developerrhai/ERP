@@ -28,7 +28,13 @@ describe('T-KIT-10: FilterBar', () => {
 
   it('triggers onFilterChange when bool checkbox is toggled', () => {
     const onFilterChange = vi.fn();
-    render(<FilterBar filters={filters} activeFilters={{ active: '' }} onFilterChange={onFilterChange} />);
+    render(
+      <FilterBar
+        filters={filters}
+        activeFilters={{ active: '' }}
+        onFilterChange={onFilterChange}
+      />,
+    );
 
     fireEvent.click(screen.getByLabelText('Only Active'));
     expect(onFilterChange).toHaveBeenCalledWith('active', 'true');
@@ -36,7 +42,9 @@ describe('T-KIT-10: FilterBar', () => {
 
   it('triggers onFilterChange when select option is chosen', () => {
     const onFilterChange = vi.fn();
-    render(<FilterBar filters={filters} activeFilters={{ cat: '' }} onFilterChange={onFilterChange} />);
+    render(
+      <FilterBar filters={filters} activeFilters={{ cat: '' }} onFilterChange={onFilterChange} />,
+    );
 
     fireEvent.change(screen.getByLabelText('Category'), { target: { value: 'Raw' } });
     expect(onFilterChange).toHaveBeenCalledWith('cat', 'Raw');

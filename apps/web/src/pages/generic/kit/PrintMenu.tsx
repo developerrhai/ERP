@@ -82,7 +82,11 @@ export const PrintMenu: React.FC<PrintMenuProps> = ({
   };
 
   return (
-    <div className="print-menu-wrap" style={{ position: 'relative', display: 'inline-block' }} ref={menuRef}>
+    <div
+      className="print-menu-wrap"
+      style={{ position: 'relative', display: 'inline-block' }}
+      ref={menuRef}
+    >
       <button
         type="button"
         className={className}
@@ -137,14 +141,10 @@ export const PrintMenu: React.FC<PrintMenuProps> = ({
                 e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
-              <span style={{ marginRight: '8px' }}>
-                {t.kind === 'pdf' ? '📄' : '🖨'}
-              </span>
+              <span style={{ marginRight: '8px' }}>{t.kind === 'pdf' ? '📄' : '🖨'}</span>
               <span>{t.label}</span>
               {t.kind === 'pdf' && (
-                <span style={{ marginLeft: 'auto', fontSize: '10px', color: '#888' }}>
-                  PDF
-                </span>
+                <span style={{ marginLeft: 'auto', fontSize: '10px', color: '#888' }}>PDF</span>
               )}
             </button>
           ))}

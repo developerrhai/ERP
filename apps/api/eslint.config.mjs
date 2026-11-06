@@ -22,5 +22,19 @@ export default tseslint.config(
       'no-console': 'error',
     },
   },
+  {
+    files: ['src/modules/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector:
+            'CallExpression[callee.name=/^(parseFloat|Number)$/][arguments.0.property.name=/^(amount|qty|rate|value)$/i]',
+          message:
+            'Do not use parseFloat() or Number() on amount, qty, rate, or value. Use Decimal (decimal.js) instead per STANDARDS §5.2.',
+        },
+      ],
+    },
+  },
   prettier,
 );

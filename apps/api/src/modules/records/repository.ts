@@ -43,6 +43,7 @@ export interface Visibility {
   scope: Scope;
   userId: string;
   department: string | null;
+  departments?: string[];
   /** The page's owner department is the caller's own (scope DEPARTMENT sees all of the page). */
   ownerIsMine: boolean;
   deleted: 'no' | 'only' | 'any';
@@ -76,7 +77,13 @@ function visibilitySql(v: Visibility): Prisma.Sql[] {
   if (v.fyId) where.push(Prisma.sql`g.fy_id = ${v.fyId}::uuid`);
   if (v.scope === 'OWN') where.push(Prisma.sql`g.created_by_id = ${v.userId}::uuid`);
   if (v.scope === 'DEPARTMENT' && !v.ownerIsMine) {
-    where.push(v.department ? Prisma.sql`g.department = ${v.department}` : Prisma.sql`false`);
+    const depts =
+      v.departments && v.departments.length > 0
+        ? v.departments
+        : v.department
+          ? [v.department]
+          : [];
+    where.push(depts.length > 0 ? Prisma.sql`g.department = ANY(${depts})` : Prisma.sql`false`);
   }
   return where;
 }
@@ -128,7 +135,74 @@ function whereClause(parts: Prisma.Sql[]): Prisma.Sql {
   return Prisma.sql`WHERE ${Prisma.join(parts, ' AND ')}`;
 }
 
+export interface StatusCount {
+  status: string;
+  count: number;
+  amount: number;
+}
+
+export interface QualityStats {
+  total: number;
+  staleDrafts: number;
+  missing: Record<string, number>;
+  duplicates: { value: string; count: number }[];
+}
+
 export const recordRepository = {
+  /** Counts and amount per status for what the caller may see (unit, year, data scope). */
+  async statusSummary(
+    v: Visibility,
+  ): Promise<{ byStatus: StatusCount[]; createdThisMonth: number; staleDrafts: number }> {
+    const where = whereClause(visibilitySql(v));
+    const [byStatus, extra] = await Promise.all([
+      prisma.$queryRaw<StatusCount[]>`
+        SELECT g.status, count(*)::int AS count, COALESCE(sum(g.amount), 0)::float8 AS amount
+        ${FROM} ${where} GROUP BY g.status ORDER BY g.status`,
+      prisma.$queryRaw<{ month: number; stale: number }[]>`
+        SELECT count(*) FILTER (WHERE g.created_at >= date_trunc('month', now()))::int AS month,
+               count(*) FILTER (WHERE g.status = 'Draft' AND g.created_at < now() - interval '30 days')::int AS stale
+        ${FROM} ${where}`,
+    ]);
+    return {
+      byStatus,
+      createdThisMonth: extra[0]?.month ?? 0,
+      staleDrafts: extra[0]?.stale ?? 0,
+    };
+  },
+
+  /** Data-quality counters: blank required fields, duplicated natural key, old Drafts. */
+  async qualityStats(
+    v: Visibility,
+    requiredKeys: readonly string[],
+    naturalKey: string | undefined,
+  ): Promise<QualityStats> {
+    const where = whereClause(visibilitySql(v));
+    const missingCols = requiredKeys.map(
+      (key, i) =>
+        Prisma.sql`count(*) FILTER (WHERE coalesce(btrim(g.data ->> ${key}), '') = '')::int AS ${Prisma.raw(`m${i}`)}`,
+    );
+    const cols = [
+      Prisma.sql`count(*)::int AS total`,
+      Prisma.sql`count(*) FILTER (WHERE g.status = 'Draft' AND g.created_at < now() - interval '30 days')::int AS stale`,
+      ...missingCols,
+    ];
+    const rows = await prisma.$queryRaw<Record<string, number>[]>`
+      SELECT ${Prisma.join(cols, ', ')} ${FROM} ${where}`;
+    const row = rows[0] ?? {};
+    const missing: Record<string, number> = {};
+    requiredKeys.forEach((key, i) => {
+      missing[key] = row[`m${i}`] ?? 0;
+    });
+    let duplicates: { value: string; count: number }[] = [];
+    if (naturalKey) {
+      duplicates = await prisma.$queryRaw<{ value: string; count: number }[]>`
+        SELECT lower(btrim(g.data ->> ${naturalKey})) AS value, count(*)::int AS count
+        ${FROM} ${where} AND coalesce(btrim(g.data ->> ${naturalKey}), '') <> ''
+        GROUP BY 1 HAVING count(*) > 1 ORDER BY count DESC, value LIMIT 20`;
+    }
+    return { total: row.total ?? 0, staleDrafts: row.stale ?? 0, missing, duplicates };
+  },
+
   async list(
     v: Visibility,
     f: ListFilters,
@@ -244,13 +318,42 @@ export const recordRepository = {
   },
 
   findIdempotency(userId: string, key: string, db: Db) {
-    return db.idempotencyKey.findUnique({ where: { userId_key: { userId, key } } });
+    return db.idempotencyKey.findUnique({
+      where: { userId_scope_key: { userId, scope: 'records:create', key } },
+    });
   },
 
   saveIdempotency(
     row: { userId: string; key: string; requestHash: string; recordId: string },
     db: Db,
   ) {
-    return db.idempotencyKey.create({ data: row });
+    return db.idempotencyKey.create({
+      data: {
+        ...row,
+        scope: 'records:create',
+        state: 'DONE',
+        expiresAt: new Date(Date.now() + 86_400_000),
+      },
+    });
+  },
+
+  visibilitySql(
+    user: { id: string; departments?: string[]; department?: string | null },
+    scope: Scope,
+    ownerIsMine = false,
+  ) {
+    if (scope === 'OWN') {
+      return { statement: 'g.created_by_id = $1::uuid', values: [user.id] };
+    }
+    if (scope === 'DEPARTMENT' && !ownerIsMine) {
+      const depts =
+        user.departments && user.departments.length > 0
+          ? user.departments
+          : user.department
+            ? [user.department]
+            : [];
+      return { statement: 'g.department = ANY($1)', values: [depts] };
+    }
+    return { statement: 'TRUE', values: [] };
   },
 };

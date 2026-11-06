@@ -122,14 +122,22 @@ export function PayloadDialog({
           <div
             className="notice bad"
             role="alert"
-            style={{ marginBottom: '12px', padding: '8px 12px', fontSize: '11px', borderRadius: '6px' }}
+            style={{
+              marginBottom: '12px',
+              padding: '8px 12px',
+              fontSize: '11px',
+              borderRadius: '6px',
+            }}
           >
             {generalError}
           </div>
         ) : null}
 
         <form onSubmit={handleSubmit}>
-          <div className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div
+            className="form-grid"
+            style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
+          >
             {fields.map((f) => {
               const err = fieldErrors[f.key] ?? fieldErrors[`payload.${f.key}`];
               const val = values[f.key];
@@ -176,7 +184,13 @@ export function PayloadDialog({
                   ) : (
                     <input
                       id={`payload-f-${f.key}`}
-                      type={f.type === 'qty' || f.type === 'money' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                      type={
+                        f.type === 'qty' || f.type === 'money'
+                          ? 'number'
+                          : f.type === 'date'
+                            ? 'date'
+                            : 'text'
+                      }
                       value={val !== undefined && val !== null ? String(val) : ''}
                       onChange={(e) => updateField(f.key, e.target.value)}
                       aria-invalid={err ? true : undefined}
@@ -188,7 +202,12 @@ export function PayloadDialog({
                     <small
                       className="field-error"
                       role="alert"
-                      style={{ color: '#dc2626', fontSize: '9px', display: 'block', marginTop: '3px' }}
+                      style={{
+                        color: '#dc2626',
+                        fontSize: '9px',
+                        display: 'block',
+                        marginTop: '3px',
+                      }}
                     >
                       {err}
                     </small>

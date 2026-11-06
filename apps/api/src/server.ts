@@ -5,10 +5,14 @@ import { createApp } from './app';
 import { env } from './config/env';
 import { warmUpDummyHash } from './core/auth/password';
 import { prisma } from './core/db/prisma';
+import { startJobs, stopJobs } from './core/jobs';
 import { logger } from './core/logger';
+import { registerDataJobHandlers } from './modules/data-jobs/worker';
 import { seedPhase2Defaults } from './core/seed/defaults';
 import { seedPhase3Defaults } from './core/seed/phase3-defaults';
+import { seedApprovalDefaults } from './core/seed/approval-defaults';
 import { seedPhase5Defaults } from './core/seed/phase5-defaults';
+import { registerApprovalJobHandlers } from './modules/approvals/register-jobs';
 
 void warmUpDummyHash();
 
@@ -17,6 +21,7 @@ async function ensureDefaults(): Promise<void> {
     const inserted = await seedPhase2Defaults(prisma);
     const phase3 = await seedPhase3Defaults(prisma);
     const phase5 = await seedPhase5Defaults(prisma);
+    await seedApprovalDefaults(prisma);
     logger.info(
       { inserted, phase3, phase5 },
       'Boot: Phase 2/3 defaults checked (missing rows inserted only)',
@@ -30,17 +35,31 @@ async function ensureDefaults(): Promise<void> {
 
 let server: ReturnType<ReturnType<typeof createApp>['listen']> | undefined;
 
-void ensureDefaults().then(() => {
-  server = createApp().listen(env.PORT, () => {
-    logger.info({ port: env.PORT, env: env.NODE_ENV }, 'RHAI ERP API listening');
+async function startBackgroundJobs(): Promise<void> {
+  // Jobs are best-effort at boot: if the queue cannot start, the API still serves and /jobs report it.
+  try {
+    registerDataJobHandlers();
+    registerApprovalJobHandlers();
+    await startJobs();
+  } catch (err) {
+    logger.error({ err }, 'Boot: background jobs could not start');
+  }
+}
+
+void ensureDefaults()
+  .then(startBackgroundJobs)
+  .then(() => {
+    server = createApp().listen(env.PORT, () => {
+      logger.info({ port: env.PORT, env: env.NODE_ENV }, 'RHAI ERP API listening');
+    });
   });
-});
 
 function shutdown(signal: string): void {
   logger.info({ signal }, 'Shutting down');
   const finish = () => {
-    prisma
-      .$disconnect()
+    stopJobs()
+      .catch((err: unknown) => logger.error({ err }, 'Stopping background jobs failed'))
+      .then(() => prisma.$disconnect())
       .catch((err: unknown) => logger.error({ err }, 'Prisma disconnect failed'))
       .finally(() => process.exit(0));
   };

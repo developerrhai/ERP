@@ -4,7 +4,7 @@
 export const E2E = {
   apiPort: 4100,
   webPort: 5180,
-  owner: { loginId: 'owner', email: 'owner@rhai.local', initialPassword: 'Owner#Init2026x', newPassword: 'Owner#New2026xy' },
+  owner: { loginId: 'owner', email: 'owner@rhai.local', initialPassword: 'Zeta#Init2026xq', newPassword: 'Zeta#Next2026xq' },
   apiEnv: {
     NODE_ENV: 'test',
     PORT: '4100',
@@ -19,6 +19,6 @@ export const E2E = {
     SUPERADMIN_LOGIN_ID: 'owner',
     SUPERADMIN_EMAIL: 'owner@rhai.local',
     SUPERADMIN_NAME: 'Owner',
-    SUPERADMIN_PASSWORD: 'Owner#Init2026x',
+    SUPERADMIN_PASSWORD: 'Zeta#Init2026xq',
   },
 };

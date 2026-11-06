@@ -151,6 +151,11 @@ export interface PageSchema {
   commands?: KitCommand[];
   readOnlyCreate?: boolean;
   printTemplates?: PrintTemplateRef[];
+  /** status → operations the server's lock matrix allows (docs/phases/PHASE-04.md C6). */
+  lock?: Record<
+    string,
+    Record<'update' | 'remove' | 'restore' | 'status' | 'submit' | 'documents', boolean>
+  >;
 }
 
 export interface RecordRow {

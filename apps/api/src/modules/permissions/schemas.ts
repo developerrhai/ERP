@@ -1,8 +1,7 @@
-// Zod schemas for PUT /permissions/:role. Rows are strict; cells may be null (inherit) except on
-// "*". Resource format and existence (registry families/pages, exactly one "*") are checked in the service.
+// Zod schemas for PUT /permissions/:roleId (Phase 02 §6).
+// 12 actions, 4 scopes, nullable override cells.
 import { z } from 'zod';
 import { SCOPES } from '../../core/rbac/permission-model';
-import { ROLES } from '../../core/rbac/role-rules';
 
 /** On family/page rows a null cell means "inherit"; the "*" row must be complete (service check). */
 export const permissionRowSchema = z
@@ -15,14 +14,25 @@ export const permissionRowSchema = z
     approve: z.boolean().nullable(),
     export: z.boolean().nullable(),
     controls: z.boolean().nullable(),
+    submit: z.boolean().nullable().optional().default(null),
+    post: z.boolean().nullable().optional().default(null),
+    cancel: z.boolean().nullable().optional().default(null),
+    print: z.boolean().nullable().optional().default(null),
+    import: z.boolean().nullable().optional().default(null),
     scope: z.enum(SCOPES).nullable(),
   })
   .strict();
+
 export type PermissionRowInput = z.output<typeof permissionRowSchema>;
 
 export const putPermissionsSchema = z
   .object({ rows: z.array(permissionRowSchema).min(1).max(400) })
   .strict();
+
 export type PutPermissionsInput = z.output<typeof putPermissionsSchema>;
 
-export const roleParamsSchema = z.object({ role: z.enum(ROLES) }).strict();
+export const roleIdParamsSchema = z
+  .object({
+    roleId: z.string().trim().min(1),
+  })
+  .strict();

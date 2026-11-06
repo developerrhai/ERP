@@ -13,7 +13,7 @@ export interface MenuFamily {
 }
 
 export const meService = {
-  async menu(user: User): Promise<{ families: MenuFamily[] }> {
+  async menu(user: any): Promise<{ families: MenuFamily[] }> {
     const profile = await accessProfile(accessUserOf(user));
     const families: MenuFamily[] = [];
     for (const family of registry.data.families) {
@@ -25,10 +25,10 @@ export const meService = {
     return { families };
   },
 
-  async permissions(user: User, pageId: string): Promise<PageAccess & { pageId: string }> {
+  async permissions(user: any, pageId: string): Promise<PageAccess & { pageId: string }> {
     if (!pageInfo(pageId)) throw Errors.notFound('Unknown page.');
     const access = (await accessProfile(accessUserOf(user))).get(pageId);
     if (!access) throw Errors.notFound('Unknown page.');
-    return { pageId, actions: { ...access.actions }, scope: access.scope };
+    return { pageId, actions: { ...access.actions }, scope: access.scope, reasons: access.reasons ?? [] };
   },
 };

@@ -7,23 +7,13 @@ export interface StepperStep {
   note?: string;
 }
 
-export function StepperSection({
-  title,
-  steps,
-}: {
-  title?: string;
-  steps: StepperStep[];
-}) {
+export function StepperSection({ title, steps }: { title?: string; steps: StepperStep[] }) {
   return (
     <div className="v9-section stepper-section">
       {title ? <h3>{title}</h3> : null}
       <div className="v9-stepper" role="list" aria-label={title ?? 'Steps'}>
         {steps.map((step, idx) => (
-          <div
-            key={`${step.label}-${idx}`}
-            className={`v9-step ${step.state}`}
-            role="listitem"
-          >
+          <div key={`${step.label}-${idx}`} className={`v9-step ${step.state}`} role="listitem">
             <b>{step.label}</b>
             {step.note ? <small>{step.note}</small> : null}
           </div>

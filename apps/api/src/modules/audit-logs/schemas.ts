@@ -15,7 +15,8 @@ export const listAuditLogsQuerySchema = z
     from: dateInput.optional(),
     to: dateInput.optional(),
     actorId: z.string().uuid('Invalid user id.').optional(),
-    action: z.string().trim().min(1).max(64).optional(),
+    action: z.string().trim().min(1).max(256).optional(),
+    preset: z.string().trim().min(1).max(40).optional(),
     targetType: z.string().trim().min(1).max(40).optional(),
     /** Phase 4: records of one page (detail.pageId), e.g. ?targetType=record&pageId=crm-leads. */
     pageId: z.string().trim().min(1).max(80).optional(),

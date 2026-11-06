@@ -1,29 +1,40 @@
-// The Phase 2 permission vocabulary (CONTRACT §2.1–2.2): the 7 actions, the 3 data scopes, the
-// resource string format, and the role-default table from §2.4. Shared by access.ts, the seed,
-// the permissions module and the tests so the names exist exactly once.
-import type { RoleCode } from './role-rules';
+// The Phase 02 permission vocabulary (PHASE-02 §5): the 12 actions, the 4 data scopes, the
+// resource string format, and role default configurations per §5.4.
+import type { DataScope } from '@prisma/client';
 
-export const ACTIONS = ['view', 'add', 'edit', 'delete', 'approve', 'export', 'controls'] as const;
+export const ACTIONS = [
+  'view',
+  'add',
+  'edit',
+  'delete',
+  'approve',
+  'export',
+  'controls',
+  'submit',
+  'post',
+  'cancel',
+  'print',
+  'import',
+] as const;
+
 export type Action = (typeof ACTIONS)[number];
 
-export const SCOPES = ['OWN', 'DEPARTMENT', 'ALL'] as const;
+export const SCOPES = ['OWN', 'DEPARTMENT', 'UNIT', 'ALL'] as const;
 export type Scope = (typeof SCOPES)[number];
 
 export type ActionFlags = Record<Action, boolean>;
 
-/** Actions that a module control's allow_* switch can veto (for SUPER_ADMIN too). */
+/** Actions that a module control's allow_* switch can veto (for Super User too). */
 export const ALLOW_FLAG_FOR: Partial<
   Record<Action, 'allowAdd' | 'allowEdit' | 'allowDelete' | 'allowExport'>
 > = {
   add: 'allowAdd',
+  import: 'allowAdd',
   edit: 'allowEdit',
   delete: 'allowDelete',
   export: 'allowExport',
+  print: 'allowExport',
 };
-
-/** Roles that can have role_permissions rows; SUPER_ADMIN is always allowed everything. */
-export const PERMISSION_ROLES = ['ADMIN', 'MANAGER', 'LEAD', 'MEMBER'] as const;
-export type PermissionRole = (typeof PERMISSION_ROLES)[number];
 
 export const DEFAULT_RESOURCE = '*';
 export const familyResource = (family: string): string => `family:${family}`;
@@ -38,6 +49,11 @@ export function noActions(): ActionFlags {
     approve: false,
     export: false,
     controls: false,
+    submit: false,
+    post: false,
+    cancel: false,
+    print: false,
+    import: false,
   };
 }
 
@@ -50,23 +66,88 @@ export function allActions(): ActionFlags {
     approve: true,
     export: true,
     controls: true,
+    submit: true,
+    post: true,
+    cancel: true,
+    print: true,
+    import: true,
   };
 }
 
-/** §2.4 role defaults (the `*` rows). */
-export const DEFAULT_ROLE_ROWS: Record<PermissionRole, ActionFlags & { scope: Scope }> = {
-  ADMIN: { ...allActions(), scope: 'ALL' },
-  MANAGER: { ...allActions(), controls: false, scope: 'DEPARTMENT' },
-  LEAD: { ...allActions(), delete: false, approve: false, controls: false, scope: 'DEPARTMENT' },
-  MEMBER: {
+/** §5.4 role defaults (the `*` rows). */
+export const DEFAULT_ROLE_ROWS: Record<string, ActionFlags & { scope: Scope }> = {
+  ADMINISTRATOR: {
+    ...allActions(),
+    approve: false,
+    post: false,
+    cancel: false,
+    scope: 'ALL',
+  },
+  DIRECTOR: {
+    ...allActions(),
+    controls: false,
+    scope: 'ALL',
+  },
+  CFO: {
+    ...noActions(),
+    scope: 'OWN',
+  },
+  GENERAL_MANAGER: {
+    ...allActions(),
+    delete: false,
+    controls: false,
+    scope: 'ALL',
+  },
+  DEPT_HEAD: {
+    ...allActions(),
+    controls: false,
+    scope: 'DEPARTMENT',
+  },
+  DEPT_MANAGER: {
+    ...allActions(),
+    controls: false,
+    import: false,
+    scope: 'DEPARTMENT',
+  },
+  SUPERVISOR: {
     ...noActions(),
     view: true,
     add: true,
     edit: true,
+    submit: true,
+    export: true,
+    print: true,
+    scope: 'DEPARTMENT',
+  },
+  EMPLOYEE: {
+    ...noActions(),
+    view: true,
+    add: true,
+    edit: true,
+    submit: true,
+    print: true,
     scope: 'OWN',
+  },
+  // Legacy aliases
+  get ADMIN() {
+    return this.ADMINISTRATOR!;
+  },
+  get MANAGER() {
+    return this.DEPT_MANAGER!;
+  },
+  get LEAD() {
+    return this.SUPERVISOR!;
+  },
+  get MEMBER() {
+    return this.EMPLOYEE!;
   },
 };
 
-export function isPermissionRole(role: RoleCode): role is PermissionRole {
-  return (PERMISSION_ROLES as readonly string[]).includes(role);
-}
+export const CFO_ALLOWED_FAMILIES: readonly string[] = [
+  'Finance & Accounts',
+  'Indian Taxation',
+  'Sales',
+  'Procurement / SCM',
+  'Business Intelligence',
+  'Executive',
+];

@@ -30,7 +30,10 @@ export function ChartSection({
               style={{ display: 'flex', gap: '14px', marginBottom: '10px', fontSize: '10px' }}
             >
               {series.map((s, sIdx) => (
-                <span key={s.name} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <span
+                  key={s.name}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                >
                   <span
                     style={{
                       display: 'inline-block',
@@ -65,7 +68,8 @@ export function ChartSection({
                 >
                   {series.map((s, sIdx) => {
                     const val = s.data[lIdx] ?? 0;
-                    const pct = maxVal > 0 ? Math.min(100, Math.max(0, Math.round((val / maxVal) * 100))) : 0;
+                    const pct =
+                      maxVal > 0 ? Math.min(100, Math.max(0, Math.round((val / maxVal) * 100))) : 0;
                     const color = CHART_COLORS[sIdx % CHART_COLORS.length];
 
                     return (

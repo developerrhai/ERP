@@ -33,7 +33,9 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
   const ctx: LineCtx = { pageId: schema.pageId, record, schema };
 
   // Parse initial lines from record.data.lines or record.lines
-  const initialDataLines = (record.data?.lines ?? (record as unknown as Record<string, unknown>).lines ?? []) as Line[];
+  const initialDataLines = (record.data?.lines ??
+    (record as unknown as Record<string, unknown>).lines ??
+    []) as Line[];
   const [lines, setLines] = useState<LocalLine[]>(() =>
     initialDataLines.map((l) => ({ _localKey: nextKey(), data: { ...l } })),
   );
@@ -91,31 +93,32 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
     return () => clearTimeout(timer);
   }, [lines, spec, ctx.pageId, record.id]);
 
-  const updateCell = useCallback(
-    (idx: number, key: string, val: unknown) => {
-      setLines((prev) => {
-        const next = [...prev];
-        const current = next[idx];
-        if (!current) return prev;
-        next[idx] = {
-          ...current,
-          data: { ...current.data, [key]: val },
-        };
-        return next;
-      });
-      // Clear field error for this cell
-      setFieldErrors((prev) => {
-        const copy = { ...prev };
-        delete copy[`lines[${idx}].${key}`];
-        delete copy[`${idx}.${key}`];
-        return copy;
-      });
-    },
-    [],
-  );
+  const updateCell = useCallback((idx: number, key: string, val: unknown) => {
+    setLines((prev) => {
+      const next = [...prev];
+      const current = next[idx];
+      if (!current) return prev;
+      next[idx] = {
+        ...current,
+        data: { ...current.data, [key]: val },
+      };
+      return next;
+    });
+    // Clear field error for this cell
+    setFieldErrors((prev) => {
+      const copy = { ...prev };
+      delete copy[`lines[${idx}].${key}`];
+      delete copy[`${idx}.${key}`];
+      return copy;
+    });
+  }, []);
 
   const handlePick = useCallback(
-    async (idx: number, col: LineColumn, item: { id: string; code: string; name: string } | null) => {
+    async (
+      idx: number,
+      col: LineColumn,
+      item: { id: string; code: string; name: string } | null,
+    ) => {
       if (!item) {
         updateCell(idx, col.key, null);
         return;
@@ -197,7 +200,12 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
     <div className="v9-section lines-editor">
       <div
         className="lines-header"
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '10px',
+        }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <h3 style={{ margin: 0 }}>Document Lines</h3>
@@ -205,7 +213,13 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
             <span
               className="badge"
               title="Only a Draft can be edited"
-              style={{ fontSize: '10px', background: 'var(--card2)', color: 'var(--muted)', padding: '2px 8px', borderRadius: '6px' }}
+              style={{
+                fontSize: '10px',
+                background: 'var(--card2)',
+                color: 'var(--muted)',
+                padding: '2px 8px',
+                borderRadius: '6px',
+              }}
             >
               Only a Draft can be edited
             </span>
@@ -213,12 +227,7 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
         </div>
         {isEditable ? (
           <div className="actions" style={{ display: 'flex', gap: '8px' }}>
-            <button
-              type="button"
-              className="btn small"
-              onClick={addRow}
-              disabled={saving}
-            >
+            <button type="button" className="btn small" onClick={addRow} disabled={saving}>
               ＋ Add row
             </button>
             <button
@@ -238,9 +247,17 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
         <div
           className="notice bad"
           role="alert"
-          style={{ marginBottom: '10px', padding: '8px 12px', borderRadius: '8px', background: '#fee2e2', color: '#991b1b', fontSize: '11px' }}
+          style={{
+            marginBottom: '10px',
+            padding: '8px 12px',
+            borderRadius: '8px',
+            background: '#fee2e2',
+            color: '#991b1b',
+            fontSize: '11px',
+          }}
         >
-          Version conflict: This record has been updated elsewhere. Your changes are preserved in the grid. Reload to refresh.
+          Version conflict: This record has been updated elsewhere. Your changes are preserved in
+          the grid. Reload to refresh.
         </div>
       ) : null}
 
@@ -277,16 +294,27 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
                     {spec.columns.map((col) => {
                       const canEdit =
                         isEditable &&
-                        (col.editableWhen ? col.editableWhen(l.data, ctx) : col.type !== 'readonly');
+                        (col.editableWhen
+                          ? col.editableWhen(l.data, ctx)
+                          : col.type !== 'readonly');
                       const cellErr =
-                        fieldErrors[`lines[${rIdx}].${col.key}`] ?? fieldErrors[`${rIdx}.${col.key}`];
+                        fieldErrors[`lines[${rIdx}].${col.key}`] ??
+                        fieldErrors[`${rIdx}.${col.key}`];
                       const val = l.data[col.key];
 
                       return (
                         <td key={col.key} style={{ verticalAlign: 'top' }}>
                           {!canEdit ? (
                             <span style={{ fontSize: '11px' }}>
-                              {formatValue(val, col.format ?? (col.type === 'money' ? 'money' : col.type === 'qty' ? 'qty' : 'text'))}
+                              {formatValue(
+                                val,
+                                col.format ??
+                                  (col.type === 'money'
+                                    ? 'money'
+                                    : col.type === 'qty'
+                                      ? 'qty'
+                                      : 'text'),
+                              )}
                             </span>
                           ) : col.type === 'lookup' && col.lookup ? (
                             <div>

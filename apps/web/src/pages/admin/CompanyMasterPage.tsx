@@ -13,11 +13,47 @@ import { taxIdError } from '../../lib/validators';
 import type { ActionSet, Company } from '../../types';
 import { getCompany, updateCompany, type CompanyPatch } from './orgApi';
 
-type FormKey = 'legalName' | 'tradeName' | 'gstin' | 'pan' | 'cin' | 'address';
+type FormKey =
+  | 'legalName'
+  | 'tradeName'
+  | 'gstin'
+  | 'pan'
+  | 'cin'
+  | 'address'
+  | 'city'
+  | 'stateCode'
+  | 'pincode'
+  | 'phone'
+  | 'email'
+  | 'website';
 type Form = Record<FormKey, string>;
-const KEYS: readonly FormKey[] = ['legalName', 'tradeName', 'gstin', 'pan', 'cin', 'address'];
-const OPTIONAL: ReadonlySet<FormKey> = new Set(['gstin', 'pan', 'cin', 'address']);
-const UPPER: ReadonlySet<FormKey> = new Set(['gstin', 'pan', 'cin']);
+const KEYS: readonly FormKey[] = [
+  'legalName',
+  'tradeName',
+  'gstin',
+  'pan',
+  'cin',
+  'address',
+  'city',
+  'stateCode',
+  'pincode',
+  'phone',
+  'email',
+  'website',
+];
+const OPTIONAL: ReadonlySet<FormKey> = new Set([
+  'gstin',
+  'pan',
+  'cin',
+  'address',
+  'city',
+  'stateCode',
+  'pincode',
+  'phone',
+  'email',
+  'website',
+]);
+const UPPER: ReadonlySet<FormKey> = new Set(['gstin', 'pan', 'cin', 'stateCode']);
 
 const LABELS: Record<FormKey, string> = {
   legalName: 'Legal Name',
@@ -26,6 +62,12 @@ const LABELS: Record<FormKey, string> = {
   pan: 'PAN',
   cin: 'CIN',
   address: 'Registered Address',
+  city: 'City',
+  stateCode: 'State Code',
+  pincode: 'Pincode',
+  phone: 'Phone',
+  email: 'Email',
+  website: 'Website',
 };
 const MAX: Record<FormKey, number> = {
   legalName: 300,
@@ -34,6 +76,12 @@ const MAX: Record<FormKey, number> = {
   pan: 10,
   cin: 21,
   address: 300,
+  city: 100,
+  stateCode: 2,
+  pincode: 6,
+  phone: 30,
+  email: 120,
+  website: 200,
 };
 
 function toForm(c: Company): Form {
@@ -44,6 +92,12 @@ function toForm(c: Company): Form {
     pan: c.pan ?? '',
     cin: c.cin ?? '',
     address: c.address ?? '',
+    city: c.city ?? '',
+    stateCode: c.stateCode ?? '',
+    pincode: c.pincode ?? '',
+    phone: c.phone ?? '',
+    email: c.email ?? '',
+    website: c.website ?? '',
   };
 }
 
@@ -56,6 +110,15 @@ export function validateCompany(f: Form): Partial<Record<FormKey, string>> {
   for (const k of ['gstin', 'pan', 'cin'] as const) {
     const err = taxIdError(k, f[k]);
     if (err) e[k] = err;
+  }
+  if (f.stateCode.trim() && !/^\d{2}$/.test(f.stateCode.trim())) {
+    e.stateCode = 'State code must be 2 digits (e.g. 27).';
+  }
+  if (f.pincode.trim() && !/^\d{6}$/.test(f.pincode.trim())) {
+    e.pincode = 'Pincode must be 6 digits.';
+  }
+  if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
+    e.email = 'Enter a valid email address.';
   }
   return e;
 }

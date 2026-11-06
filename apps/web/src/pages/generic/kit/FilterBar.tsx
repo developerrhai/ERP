@@ -22,7 +22,10 @@ export function FilterControl({
   switch (filter.type) {
     case 'bool':
       return (
-        <label className="filter-check" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+        <label
+          className="filter-check"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+        >
           <input
             type="checkbox"
             className="v8-checkbox"
@@ -35,11 +38,7 @@ export function FilterControl({
 
     case 'select':
       return (
-        <select
-          aria-label={filter.label}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        >
+        <select aria-label={filter.label} value={value} onChange={(e) => onChange(e.target.value)}>
           <option value="">{`All ${filter.label}`}</option>
           {(filter.options ?? []).map((o) => {
             const optVal = typeof o === 'string' ? o : o.value;
@@ -108,7 +107,10 @@ export function FilterBar({ filters, activeFilters, onFilterChange }: FilterBarP
   if (!filters || filters.length === 0) return null;
 
   return (
-    <div className="filter-bar" style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+    <div
+      className="filter-bar"
+      style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}
+    >
       {filters.map((f) => (
         <FilterControl
           key={f.param}

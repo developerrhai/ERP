@@ -1,13 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  json,
-  makeUser,
-  renderApp,
-  signedIn,
-  type Handler,
-} from '../../test/helpers';
+import { json, makeUser, renderApp, signedIn, type Handler } from '../../test/helpers';
 import { LEAD_ROWS, LEAD_SCHEMA, recordsHandler } from '../../test/engine-fixtures';
 import type { PageSchema } from './engineApi';
 
@@ -39,7 +33,9 @@ function setup(schema: PageSchema = DEMO_SCHEMA, extra: Record<string, Handler> 
         data: {
           key: 'lead-ws',
           title: 'Lead Workspace Panel',
-          sections: [{ type: 'facts', title: 'Details', items: [{ label: 'Lead Code', value: 'LD-001' }] }],
+          sections: [
+            { type: 'facts', title: 'Details', items: [{ label: 'Lead Code', value: 'LD-001' }] },
+          ],
         },
       }),
     ...extra,

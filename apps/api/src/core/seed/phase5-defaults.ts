@@ -24,7 +24,7 @@ export async function seedPhase5Defaults(db: PrismaClient): Promise<Phase5SeedRe
   if (applied.has('warehouses')) return report;
 
   const owner =
-    (await db.user.findFirst({ where: { role: 'SUPER_ADMIN' } })) ??
+    (await db.user.findFirst({ where: { role: { code: 'SUPER_USER' } } })) ??
     (await db.user.findFirst({ orderBy: { createdAt: 'asc' } }));
   if (!owner) return report;
   const units = new Map((await db.unit.findMany()).map((u) => [u.code, u.id]));

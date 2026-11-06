@@ -213,9 +213,9 @@ describe('T-KIT-09: LinesEditor', () => {
   });
 
   it('keeps grid intact on 409 stale version conflict', async () => {
-    const patchSpy = vi.spyOn(engineApiModule, 'patchRecord').mockRejectedValue(
-      new ApiError(409, 'VERSION_CONFLICT', 'VERSION_CONFLICT'),
-    );
+    const patchSpy = vi
+      .spyOn(engineApiModule, 'patchRecord')
+      .mockRejectedValue(new ApiError(409, 'VERSION_CONFLICT', 'VERSION_CONFLICT'));
 
     render(
       <ToastProvider>

@@ -16,9 +16,7 @@ vi.mock('../../../lib/context', async (importOriginal) => {
     company: { id: 'co-1', code: 'SAWANT', tradeName: 'Sawant Group' },
     units: [{ id: 'unit-1', code: 'TAL', name: 'Talwandi' }],
     allUnitsAllowed: true,
-    fys: [
-      { id: 'fy-2026', code: '2025-26', label: 'FY 2025-26', status: 'OPEN', isCurrent: true },
-    ],
+    fys: [{ id: 'fy-2026', code: '2025-26', label: 'FY 2025-26', status: 'OPEN', isCurrent: true }],
     current: { unitId: 'unit-1', fyId: 'fy-2026' },
   };
   return {
@@ -97,6 +95,9 @@ describe('T-KIT-12 — Web Kit Contract Suite', () => {
     name: 'Test Owner',
     loginId: 'owner@sawant.com',
     email: 'owner@sawant.com',
+    roleId: 'r-admin',
+    roleCode: 'ADMIN',
+    roleName: 'Admin',
     role: 'ADMIN' as const,
     roleLabel: 'Admin',
     roleLevel: 10,
@@ -117,6 +118,11 @@ describe('T-KIT-12 — Web Kit Contract Suite', () => {
     approve: true,
     export: true,
     controls: true,
+    submit: true,
+    post: true,
+    cancel: true,
+    print: true,
+    import: true,
   };
 
   function renderPage() {

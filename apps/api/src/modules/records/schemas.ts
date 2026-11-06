@@ -34,6 +34,10 @@ export const listRecordsQuerySchema = z
 export type ListRecordsQuery = z.output<typeof listRecordsQuerySchema>;
 
 export const MAX_EXPORT_ROWS = 10_000;
+/** Largest export answered inside the request; bigger ones run as a background job. */
+export const SYNC_EXPORT_ROWS = 5_000;
+/** Largest background export. */
+export const ASYNC_EXPORT_ROWS = 50_000;
 
 /** Extra filters of the typed Inventory pages (ledger / voucher view, warehouse, below reorder). */
 const typedFilters = {
@@ -88,10 +92,7 @@ export const actionBodySchema = z
     receivedQty: z.number().positive('Enter a quantity greater than 0.').optional(),
     payload: z
       .record(z.string(), z.unknown())
-      .refine(
-        (val) => JSON.stringify(val).length <= 100 * 1024,
-        'Payload exceeds 100 KB limit.',
-      )
+      .refine((val) => JSON.stringify(val).length <= 100 * 1024, 'Payload exceeds 100 KB limit.')
       .optional(),
   })
   .strict();
@@ -164,3 +165,13 @@ export const idempotencyKeySchema = z
   .min(1)
   .max(128)
   .regex(/^[\x21-\x7e]+$/, 'Idempotency-Key must be printable ASCII without spaces.');
+
+export const submitBulkBodySchema = z
+  .object({
+    ids: z
+      .array(z.string().uuid('Invalid record id.'))
+      .min(1, 'Select at least one record.')
+      .max(100, 'Submit at most 100 records at a time.')
+      .refine((ids) => new Set(ids).size === ids.length, 'Each record may appear only once.'),
+  })
+  .strict();

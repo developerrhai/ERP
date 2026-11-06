@@ -52,31 +52,36 @@ describe('seeded content', () => {
     expect(departmentCode('Administration')).toBe('ADMI');
   });
 
-  it('role permission defaults (§2.4) and no SUPER_ADMIN rows', async () => {
-    const rows = await prisma.rolePermission.findMany({ where: { resource: '*' } });
-    const byRole = new Map(rows.map((r) => [r.role, r]));
-    expect(byRole.get('ADMIN')).toMatchObject({
+  it('role permission defaults (§2.4/§5.4) and no SUPER_USER rows', async () => {
+    const roles = await prisma.role.findMany();
+    const roleByCode = new Map(roles.map((r) => [r.code, r]));
+    const rows = await prisma.rolePermission.findMany({
+      where: { resource: '*' },
+      include: { role: true },
+    });
+    const byRole = new Map(rows.map((r) => [r.role.code, r]));
+    expect(byRole.get('ADMINISTRATOR')).toMatchObject({
       view: true,
       delete: true,
-      approve: true,
+      approve: false,
       controls: true,
       scope: 'ALL',
     });
-    expect(byRole.get('MANAGER')).toMatchObject({
+    expect(byRole.get('DEPT_MANAGER')).toMatchObject({
       delete: true,
       approve: true,
       export: true,
       controls: false,
       scope: 'DEPARTMENT',
     });
-    expect(byRole.get('LEAD')).toMatchObject({
+    expect(byRole.get('SUPERVISOR')).toMatchObject({
       edit: true,
       delete: false,
       approve: false,
       export: true,
       scope: 'DEPARTMENT',
     });
-    expect(byRole.get('MEMBER')).toMatchObject({
+    expect(byRole.get('EMPLOYEE')).toMatchObject({
       view: true,
       add: true,
       edit: true,
@@ -86,11 +91,15 @@ describe('seeded content', () => {
     });
     const adminFamily = await prisma.rolePermission.findMany({
       where: { resource: 'family:Administration' },
+      include: { role: true },
     });
-    expect(adminFamily.map((r) => r.role).sort()).toEqual(['LEAD', 'MANAGER', 'MEMBER']);
+    expect(adminFamily.every((r) => r.role.level < 95)).toBe(true);
     expect(adminFamily.every((r) => !r.view && !r.controls)).toBe(true);
+    const superUserRole = roleByCode.get('SUPER_USER')!;
     await expect(
-      prisma.rolePermission.create({ data: { role: 'SUPER_ADMIN', resource: 'family:Sales' } }),
+      prisma.rolePermission.create({
+        data: { roleId: superUserRole.id, resource: 'family:Sales' },
+      }),
     ).rejects.toThrow();
   });
 
@@ -114,12 +123,14 @@ describe('seeded content', () => {
 
 describe('idempotency', () => {
   it('a second and third run insert nothing and keep admin edits', async () => {
+    const empRole = await prisma.role.findUniqueOrThrow({ where: { code: 'EMPLOYEE' } });
+    const supRole = await prisma.role.findUniqueOrThrow({ where: { code: 'SUPERVISOR' } });
     await prisma.rolePermission.update({
-      where: { role_resource: { role: 'MEMBER', resource: '*' } },
+      where: { roleId_resource: { roleId: empRole.id, resource: '*' } },
       data: { add: false },
     });
     await prisma.rolePermission.delete({
-      where: { role_resource: { role: 'LEAD', resource: 'family:Administration' } },
+      where: { roleId_resource: { roleId: supRole.id, resource: 'family:Administration' } },
     });
     await prisma.departmentFamily.deleteMany({ where: { departmentName: 'Sales', family: 'CRM' } });
     await prisma.moduleControl.update({
@@ -146,13 +157,13 @@ describe('idempotency', () => {
     expect(
       (
         await prisma.rolePermission.findUniqueOrThrow({
-          where: { role_resource: { role: 'MEMBER', resource: '*' } },
+          where: { roleId_resource: { roleId: empRole.id, resource: '*' } },
         })
       ).add,
     ).toBe(false);
     expect(
       await prisma.rolePermission.findUnique({
-        where: { role_resource: { role: 'LEAD', resource: 'family:Administration' } },
+        where: { roleId_resource: { roleId: supRole.id, resource: 'family:Administration' } },
       }),
     ).toBeNull();
     expect(

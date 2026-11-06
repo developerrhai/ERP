@@ -30,7 +30,9 @@ describe('T-KIT-09: lineKinds registry', () => {
 
   it('throws when registering a duplicate line kind', () => {
     registerLineKind(dummySpec);
-    expect(() => registerLineKind(dummySpec)).toThrow('KIT: Line kind "test-line" is already registered.');
+    expect(() => registerLineKind(dummySpec)).toThrow(
+      'KIT: Line kind "test-line" is already registered.',
+    );
   });
 
   it('clears registry on resetLineKindsForTest', () => {

@@ -28,7 +28,8 @@ export function BarsSection({
         <div className="bars-list">
           {rows.map((r, idx) => {
             const rowMax = r.max ?? (globalMax > 0 ? globalMax : 1);
-            const pct = rowMax > 0 ? Math.min(100, Math.max(0, Math.round((r.value / rowMax) * 100))) : 0;
+            const pct =
+              rowMax > 0 ? Math.min(100, Math.max(0, Math.round((r.value / rowMax) * 100))) : 0;
             const barBg =
               r.tone === 'good'
                 ? '#16a34a'

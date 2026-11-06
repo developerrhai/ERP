@@ -3,31 +3,40 @@ node_modules/
 dist/
 build/
 coverage/
+
 # Secrets: never commit real env files, keys or deployment scripts with secrets
 .env
 .env.*
 !.env.example
+**/.env
+apps/**/.env*
+!**/.env.example
+deploy_to_ec2.ps1
+deploy_to_ec2.local.ps1
+deploy.config.json
 *.pem
 *.key
 *.id_rsa
 *.cert
 *.crt
-deploy_to_ec2.ps1
-deploy_to_ec2.local.ps1
-deploy.config.json
 *.tar.gz
 
 # Test artefacts
 test-results/
 playwright-report/
 tests/e2e/.artifacts/
+.artifacts/
+.parity/
 *.log
 
 # Dump and scratch files
 dump/
-.parity/
 
 # Client shared documents & templates (confidential)
 doc from clint/
 *from clint*/
 *from client*/
+
+# Uploaded files / generated exports (local disk StorageProvider)
+storage/
+apps/api/storage/

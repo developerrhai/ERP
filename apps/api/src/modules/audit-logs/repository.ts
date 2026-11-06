@@ -19,7 +19,40 @@ function whereSql(query: ListAuditLogsQuery): Prisma.Sql {
     );
   }
   if (query.actorId) conditions.push(Prisma.sql`a.actor_id = ${query.actorId}::uuid`);
-  if (query.action) conditions.push(Prisma.sql`a.action = ${query.action}`);
+  if (query.preset === 'login_events') {
+    const loginActions = [
+      'LOGIN_SUCCESS',
+      'LOGIN_FAILED',
+      'ACCOUNT_LOCKED',
+      'ACCOUNT_UNLOCKED',
+      'LOGOUT',
+      'LOGOUT_ALL',
+      'MFA_CHALLENGE_ISSUED',
+      'MFA_SUCCESS',
+      'MFA_FAILED',
+      'MFA_RECOVERY_CODE_USED',
+      'MFA_ENABLED',
+      'MFA_DISABLED',
+      'MFA_RECOVERY_REGENERATED',
+      'MFA_RESET_BY_ADMIN',
+      'SESSION_REVOKED',
+      'SESSIONS_REVOKED_OTHERS',
+      'SESSIONS_REVOKED_BY_ADMIN',
+      'SESSION_IDLE_EXPIRED',
+      'PASSWORD_RESET_REQUESTED',
+      'PASSWORD_RESET_COMPLETED',
+      'PASSWORD_CHANGED',
+      'USER_PASSWORD_RESET',
+    ];
+    conditions.push(Prisma.sql`a.action IN (${Prisma.join(loginActions)})`);
+  } else if (query.action) {
+    const actions = query.action.split(',').map((s) => s.trim()).filter(Boolean);
+    if (actions.length > 1) {
+      conditions.push(Prisma.sql`a.action IN (${Prisma.join(actions)})`);
+    } else {
+      conditions.push(Prisma.sql`a.action = ${query.action}`);
+    }
+  }
   // Case-insensitive: the web asks for `record`, the audit rows say `Record`.
   if (query.targetType) {
     conditions.push(Prisma.sql`lower(a.target_type) = lower(${query.targetType})`);

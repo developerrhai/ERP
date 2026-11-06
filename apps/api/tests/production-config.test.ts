@@ -27,11 +27,12 @@ describe('NODE_ENV=production', () => {
     expect(env.isProduction).toBe(true);
 
     const loginId = `prod-${Date.now().toString(36)}`;
+    const empRole = await prisma.role.findUniqueOrThrow({ where: { code: 'EMPLOYEE' } });
     await prisma.user.create({
       data: {
         loginId,
         name: 'Prod Probe',
-        role: 'MEMBER',
+        roleId: empRole.id,
         department: 'Sales',
         mustChangePassword: false,
         passwordHash: await hashPassword('Prod-Passw0rd!'),

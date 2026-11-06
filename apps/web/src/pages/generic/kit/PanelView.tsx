@@ -66,9 +66,7 @@ export function PanelView({
     const CustomComponent = getPanelComponent(tab.component);
     if (!CustomComponent) {
       return (
-        <ErrorMessage>
-          Panel component &quot;{tab.component}&quot; is not registered.
-        </ErrorMessage>
+        <ErrorMessage>Panel component &quot;{tab.component}&quot; is not registered.</ErrorMessage>
       );
     }
     return (
@@ -209,7 +207,10 @@ export function PanelView({
 
       {panel.kpis && panel.kpis.length > 0 ? <KpiRow kpis={panel.kpis} /> : null}
 
-      <div className="panel-sections" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div
+        className="panel-sections"
+        style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
+      >
         {panel.sections.map((section, sIdx) => {
           switch (section.type) {
             case 'table':
@@ -247,7 +248,13 @@ export function PanelView({
                   kind={section.lineKind}
                   record={
                     record ??
-                    ({ id: recId ?? '', version: 1, status: 'Draft', code: '', data: {} } as RecordRow)
+                    ({
+                      id: recId ?? '',
+                      version: 1,
+                      status: 'Draft',
+                      code: '',
+                      data: {},
+                    } as RecordRow)
                   }
                   schema={schema}
                   onSaved={() => {
@@ -270,7 +277,9 @@ export function PanelView({
             default:
               return (
                 <div key={`section-unsupported-${sIdx}`} className="v9-section">
-                  <p className="muted">Section type &quot;{(section as any).type}&quot; not yet loaded.</p>
+                  <p className="muted">
+                    Section type &quot;{(section as any).type}&quot; not yet loaded.
+                  </p>
                 </div>
               );
           }
@@ -278,13 +287,19 @@ export function PanelView({
       </div>
 
       {confirmDlg ? (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-dlg-title">
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-dlg-title"
+        >
           <div className="modal" style={{ maxWidth: '420px', padding: '20px' }}>
             <h3 id="confirm-dlg-title">{confirmDlg.action.label}</h3>
-            <p style={{ margin: '12px 0 20px', fontSize: '13px' }}>
-              {confirmDlg.action.confirm}
-            </p>
-            <div className="actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <p style={{ margin: '12px 0 20px', fontSize: '13px' }}>{confirmDlg.action.confirm}</p>
+            <div
+              className="actions"
+              style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}
+            >
               <button
                 type="button"
                 className="btn"
