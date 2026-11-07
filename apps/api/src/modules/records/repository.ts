@@ -29,6 +29,9 @@ export interface RecordRow {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
+  /** Phase 6B: the settings versions the document was created with. */
+  formatVersionId: string | null;
+  ruleSetVersionIds: Record<string, string> | null;
 }
 
 /** Who is asking and what they may see; built by the service from req.ctx and the access decision. */
@@ -60,7 +63,8 @@ const COLUMNS = Prisma.sql`
   g.id, g.page_id AS "pageId", g.code, g.status, g.unit_id AS "unitId", un.code AS "unitCode",
   g.fy_id AS "fyId", f.code AS "fyCode", f.status::text AS "fyStatus", g.department, g.data, g.version, g.amount::float8 AS amount,
   g.created_by_id AS "createdById", u.name AS "createdByName", g.created_at AS "createdAt",
-  g.updated_at AS "updatedAt", g.deleted_at AS "deletedAt"`;
+  g.updated_at AS "updatedAt", g.deleted_at AS "deletedAt",
+  g.format_version_id AS "formatVersionId", g.rule_set_version_ids AS "ruleSetVersionIds"`;
 
 const FROM = Prisma.sql`
   FROM generic_records g

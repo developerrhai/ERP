@@ -52,6 +52,7 @@ export const errorHandler: ErrorRequestHandler = (err: unknown, req, res, _next)
   const requestId = req.requestId ?? 'unknown';
   if (!appError) {
     logger.error({ err, requestId }, 'Unhandled error');
+    if (process.env.DEBUG_UNHANDLED) console.error('UNHANDLED', err);
     res.status(500).json({
       error: { code: 'INTERNAL', message: 'Something went wrong.', status: 500, requestId },
     });

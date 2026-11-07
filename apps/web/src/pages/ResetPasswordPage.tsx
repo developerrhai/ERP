@@ -78,16 +78,30 @@ export function ResetPasswordPage() {
           <p style={{ color: 'var(--color-danger, #dc2626)', marginBottom: '1.25rem' }}>
             This reset link has expired or was already used. Ask for a new one.
           </p>
-          <Link to="/login" className="btn primary" style={{ display: 'block', textAlign: 'center' }}>
+          <Link
+            to="/login"
+            className="btn primary"
+            style={{ display: 'block', textAlign: 'center' }}
+          >
             Back to Sign In
           </Link>
         </div>
       ) : success ? (
         <div className="auth-body">
-          <div style={{ color: 'var(--color-success, #16a34a)', marginBottom: '1.25rem', fontWeight: 500 }}>
+          <div
+            style={{
+              color: 'var(--color-success, #16a34a)',
+              marginBottom: '1.25rem',
+              fontWeight: 500,
+            }}
+          >
             ✓ Password changed successfully. You can now sign in with your new password.
           </div>
-          <Link to="/login" className="btn primary" style={{ display: 'block', textAlign: 'center' }}>
+          <Link
+            to="/login"
+            className="btn primary"
+            style={{ display: 'block', textAlign: 'center' }}
+          >
             Sign In to ERP
           </Link>
         </div>

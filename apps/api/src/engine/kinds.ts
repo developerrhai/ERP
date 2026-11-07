@@ -14,6 +14,43 @@ const INITIAL_TYPED_PAGES = [
   'inv-transactions',
   'inv-adjustment',
   'inv-transfer',
+  // Phase 8 pages: own tables and services under /inventory; the generic record engine refuses them.
+  'inv-batch',
+  'inv-serial',
+  'inv-reservation',
+  'inv-reconciliation',
+  'inv-ageing',
+  'inv-valuation',
+  'inv-reorder',
+  'inv-expiry',
+  'wms-bins',
+  'wms-cycle',
+  'wms-physical',
+  'wms-barcode',
+  // Phase 7 finance pages: typed (own tables and services); the generic record engine refuses them.
+  'fin-coa',
+  'fin-gl',
+  'fin-journal',
+  'fin-cashbook',
+  'fin-bankbook',
+  'fin-ap',
+  'fin-ar',
+  'fin-bankreco',
+  'fin-costcenter',
+  'fin-profitcenter',
+  'fin-budget',
+  'fin-trial',
+  'fin-pnl',
+  'fin-bs',
+  'fin-ageing',
+  'fin-creditnote',
+  'fin-debitnote',
+  'fin-expenses',
+  'fin-cashflow',
+  'tax-salesreg',
+  'tax-purchasereg',
+  'tax-tds',
+  'tax-tcs',
 ];
 
 const typedPages = new Set<string>(INITIAL_TYPED_PAGES);
@@ -64,9 +101,7 @@ export const CUSTOM_PAGES: ReadonlySet<string> = new Set([
  * Administration pages with plain master fields that the generic engine serves (ADMIN+ only, the
  * Administration hard rule still applies). Every other Administration page is `custom`.
  */
-export const GENERIC_ADMIN_PAGES: ReadonlySet<string> = new Set([
-  'admin-taxes',
-]);
+export const GENERIC_ADMIN_PAGES: ReadonlySet<string> = new Set(['admin-taxes']);
 
 export function kindOf(pageId: string): PageKind | null {
   const page = pageInfo(pageId);

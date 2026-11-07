@@ -14,6 +14,8 @@ import { accessUserOf, can } from '../core/rbac/access';
 import { typedSchema } from '../modules/inventory/definitions';
 import { typedHandlerFor } from '../modules/inventory/typed-pages';
 import type { Caller } from '../modules/records/service';
+import { applyPrintFormat } from '../core/settings/format-schema';
+import { FormatService } from '../modules/format-settings/resolve';
 import { registerAuditVocabulary } from './audit';
 import { registerTestResetter } from './registry';
 
@@ -80,6 +82,11 @@ export const printDtoSchema = z.object({
   amountInWords: z.string().optional(),
   notes: z.string().optional(),
   signatures: z.array(z.object({ label: z.string(), name: z.string().optional() })).default([]),
+  /** Phase 6B: set when a published PRINT format restyled this document. */
+  layout: z
+    .object({ paper: z.string(), orientation: z.string(), showLetterhead: z.boolean() })
+    .optional(),
+  formatVersion: z.object({ id: z.string(), version: z.number() }).optional(),
 });
 
 export type PrintDto = z.infer<typeof printDtoSchema>;
@@ -142,6 +149,13 @@ export function resetPrintRegistryForTest(): void {
 
 registerTestResetter(resetPrintRegistryForTest);
 
+/** Applies the ACTIVE published PRINT format of the page (customer / unit specific when one exists). */
+async function withPrintFormat(pageId: string, dto: PrintDto, unitId: string | null): Promise<PrintDto> {
+  const format = await FormatService.resolve(pageId, 'PRINT', { unitId });
+  if (!format) return dto;
+  return applyPrintFormat(dto, format.schema, { id: format.id, version: format.versionNo });
+}
+
 function getCaller(req: Request): Caller {
   if (!req.ctx) throw Errors.unauthenticated();
   return {
@@ -189,7 +203,7 @@ export function createKitPrintRouter(): Router {
       }
 
       const dto = await builder({ db: prisma, caller, pageId, id });
-      const parsed = printDtoSchema.parse(dto);
+      const parsed = await withPrintFormat(pageId, printDtoSchema.parse(dto), caller.ctx.unitId);
 
       await recordAudit({
         action: 'PRINT_RENDERED',
@@ -293,7 +307,7 @@ export function createKitPrintRouter(): Router {
       }
 
       const dto = await builder({ db: prisma, caller, pageId, query: req.query as Record<string, unknown> });
-      const parsed = printDtoSchema.parse(dto);
+      const parsed = await withPrintFormat(pageId, printDtoSchema.parse(dto), caller.ctx.unitId);
 
       await recordAudit({
         action: 'PRINT_RENDERED',

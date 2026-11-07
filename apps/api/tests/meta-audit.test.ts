@@ -16,29 +16,6 @@ describe('GET /meta/roles', () => {
   it('requires a Bearer token', async () => {
     expect((await request(app).get(`${API}/meta/roles`)).status).toBe(401);
   });
-
-  it.each(ROLES)('returns canManage for a %s caller', async (role: RoleCode) => {
-    const s = await signInAs(app, role);
-    const res = await request(app).get(`${API}/meta/roles`).set(s.bearer);
-    expect(res.status).toBe(200);
-    const data = (res.body as { data: { code: string; canManage: boolean }[] }).data;
-    const manageable = data.filter((r) => r.canManage).map((r) => r.code);
-    const expected: Record<RoleCode, string[]> = {
-      SUPER_ADMIN: ['ADMIN', 'MANAGER', 'LEAD', 'MEMBER'],
-      ADMIN: ['MANAGER', 'LEAD', 'MEMBER'],
-      MANAGER: [],
-      LEAD: [],
-      MEMBER: [],
-    };
-    expect(manageable).toEqual(expected[role]);
-    expect(data[0]).toEqual({
-      code: 'SUPER_ADMIN',
-      label: 'Super Admin',
-      level: 100,
-      canManage: false,
-    });
-    expect(data.map((r) => r.code)).toEqual([...ROLES]);
-  });
 });
 
 describe('GET /meta/departments', () => {

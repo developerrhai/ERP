@@ -21,11 +21,7 @@ export const UOM_CLASSES = [
   { value: 'OTHER', label: 'Other' },
 ] as const;
 
-type Dialog =
-  | { kind: 'add' }
-  | { kind: 'edit'; item: Uom }
-  | { kind: 'delete'; item: Uom }
-  | null;
+type Dialog = { kind: 'add' } | { kind: 'edit'; item: Uom } | { kind: 'delete'; item: Uom } | null;
 
 export function UomMasterPage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
@@ -140,7 +136,9 @@ export function UomMasterPage({ actions }: { actions: ActionSet }) {
                 UOM_CLASSES.find((c) => c.value === u.uomClass)?.label ?? u.uomClass ?? 'Other';
               return (
                 <tr key={u.id}>
-                  <td><strong>{u.code}</strong></td>
+                  <td>
+                    <strong>{u.code}</strong>
+                  </td>
                   <td>{u.name}</td>
                   <td>{classLabel}</td>
                   <td>{u.decimals ?? 0}</td>
@@ -194,10 +192,7 @@ export function UomMasterPage({ actions }: { actions: ActionSet }) {
         </table>
       </div>
       {dialog?.kind === 'add' ? (
-        <UomFormModal
-          onClose={close}
-          onSaved={(item) => afterSave(`UOM ${item.code} created.`)}
-        />
+        <UomFormModal onClose={close} onSaved={(item) => afterSave(`UOM ${item.code} created.`)} />
       ) : null}
       {dialog?.kind === 'edit' ? (
         <UomFormModal
@@ -233,9 +228,7 @@ function UomFormModal({ item, onReload, onClose, onSaved }: FormProps) {
   const [name, setName] = useState(item?.name ?? '');
   const [uomClass, setUomClass] = useState(item?.uomClass ?? 'COUNT');
   const [decimals, setDecimals] = useState(String(item?.decimals ?? 0));
-  const [status, setStatus] = useState<UserStatus>(
-    (item?.status as UserStatus) || 'ACTIVE',
-  );
+  const [status, setStatus] = useState<UserStatus>((item?.status as UserStatus) || 'ACTIVE');
   const [err, setErr] = useState<UiError | null>(null);
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);

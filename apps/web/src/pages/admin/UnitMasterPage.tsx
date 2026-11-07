@@ -251,7 +251,8 @@ function UnitFormModal({ unit, onReload, onClose, onSaved }: FormProps) {
       if (input.name !== unit.name) patch.name = input.name;
       if ((input.address ?? null) !== (unit.address ?? null)) patch.address = input.address;
       if ((input.city ?? null) !== (unit.city ?? null)) patch.city = input.city ?? null;
-      if ((input.stateCode ?? null) !== (unit.stateCode ?? null)) patch.stateCode = input.stateCode ?? null;
+      if ((input.stateCode ?? null) !== (unit.stateCode ?? null))
+        patch.stateCode = input.stateCode ?? null;
       if ((input.pincode ?? null) !== (unit.pincode ?? null)) patch.pincode = input.pincode ?? null;
       if ((input.gstin ?? null) !== (unit.gstin ?? null)) patch.gstin = input.gstin;
       if (status !== unit.status) patch.status = status;

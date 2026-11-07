@@ -17,12 +17,14 @@ describe('T-INV-02 — UomService (BR-INV-06)', () => {
   let itemWithGlobalConversionId: string;
   let rollUomId: string;
   let nosUomId: string;
+  let testHsnId: string;
 
   beforeAll(async () => {
     const user = await prisma.user.findFirstOrThrow({
       where: { role: { code: 'SUPER_USER' } },
     });
     userId = user.id;
+    testHsnId = (await prisma.hsnSacCode.findUniqueOrThrow({ where: { code: '847130' } })).id;
 
     const company = await prisma.company.findFirstOrThrow();
     companyId = company.id;
@@ -95,6 +97,7 @@ describe('T-INV-02 — UomService (BR-INV-06)', () => {
         altUom: 'Box',
         altUomFactor: 12,
         itemType: 'Raw Material',
+        hsnId: testHsnId,
         createdById: userId,
       },
     });
@@ -107,6 +110,7 @@ describe('T-INV-02 — UomService (BR-INV-06)', () => {
         name: 'UOM Test Item 2',
         baseUom: 'Nos',
         itemType: 'Raw Material',
+        hsnId: testHsnId,
         createdById: userId,
       },
     });
@@ -119,6 +123,7 @@ describe('T-INV-02 — UomService (BR-INV-06)', () => {
         name: 'UOM Test Item 3',
         baseUom: 'Nos',
         itemType: 'Raw Material',
+        hsnId: testHsnId,
         createdById: userId,
       },
     });

@@ -38,7 +38,9 @@ function setup(extra: Record<string, Handler> = {}) {
 const rowOf = (code: string): HTMLElement =>
   screen.getByText(code, { selector: 'td' }).closest('tr') as HTMLElement;
 
-describe('typed page actions', () => {
+// Phase 8: /m/inv-adjustment is now the header+lines voucher screen (covered by pages/inventory/Inventory.test.tsx), so these
+// suites that drove the old one-item adjustment page are skipped, not deleted.
+describe.skip('typed page actions', () => {
   it('shows only the actions a status allows and locks Posted records', async () => {
     setup();
     renderApp(REGISTER);
@@ -145,7 +147,7 @@ describe('typed page actions', () => {
   });
 });
 
-describe('typed page form', () => {
+describe.skip('typed page form', () => {
   it('searches items and warehouses with lookups, fills read-only fields from preview and saves ids', async () => {
     const { calls } = setup({
       'GET /api/v1/lookups/items': () => json(200, { data: [ITEM_REF] }),
@@ -222,7 +224,7 @@ describe('typed page form', () => {
   });
 });
 
-describe('list-only typed page', () => {
+describe.skip('list-only typed page', () => {
   it('a readOnly schema shows the table without Add, Edit, Delete or actions', async () => {
     setup({
       [`GET ${P}/schema`]: () =>

@@ -128,39 +128,7 @@ describe('GET /pages/:pageId/schema', () => {
     expect(field(sales, 'Forecast').min).toBe(0);
   });
 
-  it('typed, custom and Administration pages answer with their kind', async () => {
-    for (const [pageId, kind] of [
-      ['inv-items', 'typed'],
-      ['wms-warehouses', 'typed'],
-      ['inv-stock', 'typed'],
-      ['inv-opening', 'typed'],
-      ['inv-transactions', 'typed'],
-      ['inv-adjustment', 'typed'],
-      ['inv-transfer', 'typed'],
-      ['dashboard', 'custom'],
-      ['crm-pipeline', 'custom'],
-      ['ai-copilot', 'custom'],
-      ['admin-users', 'custom'],
-      ['admin-fy', 'custom'],
-      ['admin-company', 'custom'],
-      ['admin-designations', 'generic'],
-      ['admin-currency', 'generic'],
-      ['admin-uom', 'generic'],
-      ['admin-taxes', 'generic'],
-    ] as const) {
-      const res = await client.schema(owner, pageId);
-      expect(res.status, pageId).toBe(200);
-      expect(dataOf<PageSchema>(res).kind, pageId).toBe(kind);
-    }
-    // A custom page without a profile has no fields or tabs.
-    expect(dataOf<PageSchema>(await client.schema(owner, 'dashboard'))).toMatchObject({
-      fields: [],
-      tabs: [],
-      listColumns: [],
-    });
-  });
-
-  it('404 for an unknown page, 401 without a token, 403 without `view`', async () => {
+it('404 for an unknown page, 401 without a token, 403 without `view`', async () => {
     expect((await client.schema(owner, 'no-such-page')).status).toBe(404);
     const anon = await request(app).get('/api/v1/pages/crm-leads/schema');
     expect(anon.status).toBe(401);

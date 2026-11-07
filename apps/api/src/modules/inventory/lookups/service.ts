@@ -60,6 +60,7 @@ export const lookupService = {
       where: {
         deletedAt: null,
         status: 'ACTIVE',
+        isTransit: false,
         ...(unitFilter.unitId ? { unitId: unitFilter.unitId } : {}),
         ...(like
           ? {

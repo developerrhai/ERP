@@ -70,6 +70,9 @@ export function FinancialYearsPage({ actions }: { actions: ActionSet }) {
           <Link className="btn" to="/m/admin-settings">
             ← System Setup
           </Link>
+          <Link className="btn" to="/m/admin-fy/close">
+            Period close &amp; year-end
+          </Link>
           {canChange && data ? (
             <button
               type="button"

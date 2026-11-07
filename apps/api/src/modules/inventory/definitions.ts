@@ -203,6 +203,7 @@ const ITEMS = define({
     text('barcode', 'Barcode', 60),
     f('batchTracked', 'Batch Tracked', 'bool'),
     f('serialTracked', 'Serial Tracked', 'bool'),
+    f('qcRequired', 'Quality Inspection Required', 'bool'),
     qty('shelfLifeDays', 'Shelf Life Days'),
     money('standardCost', 'Standard Cost'),
     money('sellingPrice', 'Selling Price'),

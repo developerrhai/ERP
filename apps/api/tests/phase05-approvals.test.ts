@@ -715,7 +715,7 @@ describe('delegation', () => {
     });
     invalidateAccessCache();
     try {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10); // IST business date
       const post = (s: Signed, body: Record<string, unknown>) =>
         request(app).post(`${API}/approvals/delegations`).set(s.bearer).send(body);
       const self = await post(boss, { toUserId: boss.user.id, fromDate: today, toDate: today });
@@ -785,7 +785,7 @@ describe('delegation', () => {
 
   it('a delegate who is the requester is blocked', async () => {
     const boss = await signIn(app, await makeUser({ role: 'DEPT_MANAGER', department: DEPT }));
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10); // IST business date
     const doc = await newDoc(emp, 500);
     expect((await submit(emp, doc.id, doc.version)).status).toBe(200);
     const res = await request(app)

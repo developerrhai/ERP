@@ -4,14 +4,10 @@
 import { itemHandler } from './items/service';
 import { ledgerList, stockHandler } from './stock/service';
 import type { TypedHandler } from './typed';
-import {
-  adjustmentHandler,
-  openingHandler,
-  transactionHandler,
-  transferHandler,
-} from './vouchers/service';
+import { voucherTypedHandler } from './vouchers/typed-adapter';
 import { warehouseHandler } from './warehouses/service';
 
+const transactionHandler = voucherTypedHandler('inv-transactions');
 const transactions: TypedHandler = {
   ...transactionHandler,
   list(caller, query) {
@@ -27,10 +23,10 @@ const transactions: TypedHandler = {
 const HANDLERS: Readonly<Record<string, TypedHandler>> = {
   'inv-items': itemHandler,
   'wms-warehouses': warehouseHandler,
-  'inv-opening': openingHandler,
+  'inv-opening': voucherTypedHandler('inv-opening'),
   'inv-transactions': transactions,
-  'inv-adjustment': adjustmentHandler,
-  'inv-transfer': transferHandler,
+  'inv-adjustment': voucherTypedHandler('inv-adjustment'),
+  'inv-transfer': voucherTypedHandler('inv-transfer'),
   'inv-stock': stockHandler,
 };
 

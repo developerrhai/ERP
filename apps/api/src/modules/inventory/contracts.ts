@@ -148,7 +148,12 @@ export interface StockServiceApi {
   postMovement(tx: Db, m: MovementInput): Promise<PostedEntry[]>;
   reserve(tx: Db, r: ReserveInput): Promise<ReservationResult>;
   release(tx: Db, reservationId: string, reason: string): Promise<void>;
-  availability(tx: Db, itemId: string, warehouseId: string, batchId?: string): Promise<Availability>;
+  availability(
+    tx: Db,
+    itemId: string,
+    warehouseId: string,
+    batchId?: string,
+  ): Promise<Availability>;
   hold(tx: Db, h: HoldInput): Promise<string>;
   releaseHold(tx: Db, holdId: string): Promise<void>;
   applyLandedCost(tx: Db, a: LandedCostInput): Promise<void>;
@@ -160,7 +165,10 @@ export interface AccountingServiceApi {
 }
 
 export interface GlBridge {
-  inventoryBalance(tx: Db, q: { unitId: string; asOf: string; warehouseId?: string }): Promise<Dec | null>;
+  inventoryBalance(
+    tx: Db,
+    q: { unitId: string; asOf: string; warehouseId?: string },
+  ): Promise<Dec | null>;
 }
 
 export interface OpenSupplyProvider {
@@ -168,25 +176,28 @@ export interface OpenSupplyProvider {
 }
 
 export interface PurchaseRequestGateway {
-  createDraft(tx: Db, lines: { itemId: string; warehouseId: string; qty: Dec; vendor?: string }[]): Promise<{ prRef: string }>;
+  createDraft(
+    tx: Db,
+    lines: { itemId: string; warehouseId: string; qty: Dec; vendor?: string }[],
+  ): Promise<{ prRef: string }>;
 }
 
 // Module-level provider registries with default implementations
 let glBridge: GlBridge = {
-  async inventoryBalance() {
-    return null;
+  inventoryBalance() {
+    return Promise.resolve(null);
   },
 };
 
 let openSupplyProvider: OpenSupplyProvider = {
-  async openPoQty() {
-    return dec(0);
+  openPoQty() {
+    return Promise.resolve(dec(0));
   },
 };
 
 let purchaseRequestGateway: PurchaseRequestGateway = {
-  async createDraft() {
-    throw new Error('PurchaseRequestGateway not registered');
+  createDraft() {
+    return Promise.reject(new Error('PurchaseRequestGateway not registered'));
   },
 };
 

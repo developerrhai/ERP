@@ -28,6 +28,7 @@ import {
   validateField,
 } from './fieldModel';
 import { LookupCombobox } from './LookupCombobox';
+import { useFormFormat } from '../settings/useFormFormat';
 
 interface Props {
   schema: PageSchema;
@@ -102,6 +103,14 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [preview, setPreview] = useState<Record<string, unknown>>({});
   const inFlight = useRef(false);
+  // Phase 6B: the published form format for the chosen customer (labels / required / hidden).
+  const { format, overrides } = useFormFormat(schema.pageId, schema.fields, values);
+  const view = (f: FieldMeta): FieldMeta => {
+    const o = overrides[f.key];
+    if (!o || f.readOnly || f.type === 'code' || f.type === 'status') return f;
+    return { ...f, label: o.label ?? f.label, required: f.required || o.required === true };
+  };
+  const hiddenByFormat = (f: FieldMeta): boolean => overrides[f.key]?.hidden === true && !f.required;
 
   const dirty = JSON.stringify(values) !== JSON.stringify(initial);
   useUnsavedGuard(dirty);
@@ -150,7 +159,8 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
 
   const localErrors = (): Record<string, string> => {
     const out: Record<string, string> = {};
-    for (const f of editable) {
+    for (const f of editable.map(view)) {
+      if (hiddenByFormat(f)) continue;
       const m = validateField(f, values[f.key]);
       if (m) out[f.key] = m;
     }
@@ -420,8 +430,14 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
               {err.message}
             </ErrorMessage>
           ) : null}
+          {format ? (
+            <p className="v8-sub format-banner" role="status">
+              Format: {format.name} v{format.versionNo}
+              {format.matchedBy.includes('customer') ? ' (for this customer)' : ''}
+            </p>
+          ) : null}
           <div className="form-grid">
-            {shown.map((f) =>
+            {shown.filter((f) => !hiddenByFormat(f)).map(view).map((f) =>
               f.readOnly || f.type === 'code' || f.type === 'status' ? (
                 <Control key={f.key} label={f.label}>
                   {(ids) =>

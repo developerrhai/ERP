@@ -17,6 +17,12 @@ export default async function setup(): Promise<void> {
     await seedPhase2Defaults(prisma);
     await seedPhase3Defaults(prisma);
     await seedApprovalDefaults(prisma);
+    // Phase 6: items need an HSN. One test HSN (no rate mapping: the builder never decides a rate).
+    await prisma.hsnSacCode.upsert({
+      where: { code: '847130' },
+      create: { code: '847130', description: 'Test HSN used by the test fixtures' },
+      update: {},
+    });
     const superUserRole = await prisma.role.findUniqueOrThrow({ where: { code: 'SUPER_USER' } });
     await prisma.user.create({
       data: {

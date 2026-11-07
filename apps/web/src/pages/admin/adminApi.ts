@@ -129,7 +129,9 @@ export function getEffectiveAccess(
   family?: string,
 ): Promise<{ user: any; pages: any[] }> {
   const qs = family ? `?family=${encodeURIComponent(family)}` : '';
-  return api<{ user: any; pages: any[] }>(`/users/${encodeURIComponent(userId)}/effective-access${qs}`);
+  return api<{ user: any; pages: any[] }>(
+    `/users/${encodeURIComponent(userId)}/effective-access${qs}`,
+  );
 }
 
 export interface DepartmentAccessData {

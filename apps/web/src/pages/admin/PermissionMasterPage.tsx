@@ -142,15 +142,21 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
   // Only roles with unsaved edits live here; the rest read straight from the server data
   const [drafts, setDrafts] = useState<Record<string, RoleDraft>>({});
   const [open, setOpen] = useState<ReadonlySet<string>>(
-    () => new Set(focusRole && focusRole !== 'SUPER_ADMIN' && focusRole !== 'SUPER_USER' ? [focusRole] : []),
+    () =>
+      new Set(
+        focusRole && focusRole !== 'SUPER_ADMIN' && focusRole !== 'SUPER_USER' ? [focusRole] : [],
+      ),
   );
   const [saving, setSaving] = useState<string | null>(null);
-  const [rowError, setRowError] = useState<Record<string, { message: string; conflict: boolean } | undefined>>({});
+  const [rowError, setRowError] = useState<
+    Record<string, { message: string; conflict: boolean } | undefined>
+  >({});
 
   const originals = useMemo(() => buildDrafts(data), [data]);
   const originalsRef = useRef(originals);
   originalsRef.current = originals;
-  const draftFor = (roleKey: string): RoleDraft | undefined => drafts[roleKey] ?? originals[roleKey];
+  const draftFor = (roleKey: string): RoleDraft | undefined =>
+    drafts[roleKey] ?? originals[roleKey];
 
   useUnsavedGuard(
     Object.keys(drafts).some((roleKey) => {
@@ -173,8 +179,7 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
     });
   };
 
-  const keyOf = (block: RolePermissions): string =>
-    block.roleId || block.role || block.code || '';
+  const keyOf = (block: RolePermissions): string => block.roleId || block.role || block.code || '';
 
   const save = async (block: RolePermissions): Promise<void> => {
     const key = keyOf(block);
@@ -287,7 +292,11 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
               return (
                 <tr
                   key={key}
-                  className={focusRole === key || focusRole === block.role || focusRole === block.code ? 'perm-focus' : undefined}
+                  className={
+                    focusRole === key || focusRole === block.role || focusRole === block.code
+                      ? 'perm-focus'
+                      : undefined
+                  }
                   title={locked ? NOT_EDITABLE_TITLE : undefined}
                 >
                   <td>{label}</td>
@@ -310,7 +319,8 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
                   </td>
                   {ACTIONS.map((a) => {
                     const adminControls =
-                      (block.role === 'ADMIN' || block.code === 'ADMINISTRATOR') && a === 'controls';
+                      (block.role === 'ADMIN' || block.code === 'ADMINISTRATOR') &&
+                      a === 'controls';
                     return (
                       <td key={a}>
                         <input
@@ -376,7 +386,10 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
           const draft = draftFor(key);
           if (!draft) return null;
           const label = roleLabelOf(block);
-          const isOpen = open.has(key) || (!!block.role && open.has(block.role)) || (!!block.code && open.has(block.code));
+          const isOpen =
+            open.has(key) ||
+            (!!block.role && open.has(block.role)) ||
+            (!!block.code && open.has(block.code));
           const locked = !block.editable;
           const panelId = `ovr-${key}`;
           return (
@@ -437,9 +450,7 @@ function RolePermissionsTab({ focusRole }: { focusRole: string | null }) {
                                     title={locked ? NOT_EDITABLE_TITLE : text}
                                     disabled={locked}
                                     onClick={() =>
-                                      update(key, (d) =>
-                                        withCell(d, fam, a, nextState(state)),
-                                      )
+                                      update(key, (d) => withCell(d, fam, a, nextState(state)))
                                     }
                                   >
                                     {value ? '✓' : '✕'}

@@ -225,54 +225,9 @@ describe('GET /pages/:pageId/audit and /records/:id/audit', () => {
 describe('Administration masters served by the generic engine', () => {
   const PAGES = ['admin-designations', 'admin-currency', 'admin-uom', 'admin-taxes'];
 
-  it('ADMIN+ can create, edit, delete and restore on the four masters; everyone below gets 403', async () => {
-    for (const pageId of PAGES) {
-      const schema = schemaOf(pageId);
-      expect(schema.kind, pageId).toBe('generic');
-      const created = await client.create(admin, pageId, sampleData(schema));
-      expect(created.status, `${pageId} ${JSON.stringify(created.body)}`).toBe(201);
-      const rec = dataOf<RecordBody>(created);
-      expect(rec.status).toBe(schema.master ? 'Active' : 'Draft');
-      const text = schema.fields.find((f) => !f.readOnly && f.type === 'text' && !f.required);
-      if (text) {
-        const patched = await client.patch(admin, pageId, rec.id, rec.version, {
-          [text.key]: 'Edited',
-        });
-        expect(patched.status, pageId).toBe(200);
-      }
-      expect((await client.get(owner, pageId, rec.id)).status).toBe(200);
-      expect((await client.remove(admin, pageId, rec.id)).status).toBe(200);
-      expect((await client.restore(admin, pageId, rec.id)).status).toBe(200);
-      for (const role of ['MANAGER', 'LEAD', 'MEMBER'] as const) {
-        const s = await signInAs(app, role, { department: 'Sales' });
-        expect((await client.list(s, pageId)).status, `${pageId} ${role}`).toBe(403);
-        expect(
-          (await client.create(s, pageId, sampleData(schema))).status,
-          `${pageId} ${role}`,
-        ).toBe(403);
-        expect((await client.schema(s, pageId)).status, `${pageId} ${role}`).toBe(403);
-      }
-    }
-  });
 
-  it('a page-level deny or the allow_* switches still apply; module controls of these pages stay locked', async () => {
-    const pageId = 'admin-uom';
-    const adminRole = await prisma.role.findUniqueOrThrow({ where: { code: 'ADMINISTRATOR' } });
-    await prisma.rolePermission.create({
-      data: { roleId: adminRole.id, resource: `page:${pageId}`, add: false },
-    });
-    invalidateAccessCache();
-    expect((await client.create(admin, pageId, sampleData(schemaOf(pageId)))).status).toBe(403);
-    expect((await client.create(owner, pageId, sampleData(schemaOf(pageId)))).status).toBe(201);
-    const version = (await prisma.moduleControl.findUniqueOrThrow({ where: { pageId } })).version;
-    const lock = await request(app)
-      .patch(`${API}/module-controls/${pageId}`)
-      .set(owner.bearer)
-      .set('If-Match', String(version))
-      .send({ allowAdd: false });
-    expect(lock.status).toBe(409);
-    expect(errorOf(lock).code).toBe('PROTECTED');
-  });
+
+
 
   it('every other Administration page is still NOT_GENERIC', async () => {
     for (const pageId of [

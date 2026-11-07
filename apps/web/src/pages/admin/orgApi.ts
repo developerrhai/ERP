@@ -2,7 +2,15 @@
 // designations, currencies, uoms — docs/phase3-4/CONTRACT.md A2).
 // Every PATCH and state change of a versioned row sends If-Match.
 import { api } from '../../lib/api';
-import type { Company, Currency, Designation, FinancialYear, Unit, Uom, UserStatus } from '../../types';
+import type {
+  Company,
+  Currency,
+  Designation,
+  FinancialYear,
+  Unit,
+  Uom,
+  UserStatus,
+} from '../../types';
 
 const ifMatch = (version: number): Record<string, string> => ({ 'If-Match': String(version) });
 
@@ -121,7 +129,11 @@ export function nextFinancialYear(
 
 // ---- designations -----------------------------------------------------------------
 
-export function listDesignations(query?: { q?: string; status?: string; departmentId?: string }): Promise<Designation[]> {
+export function listDesignations(query?: {
+  q?: string;
+  status?: string;
+  departmentId?: string;
+}): Promise<Designation[]> {
   const params = new URLSearchParams();
   if (query?.q) params.set('q', query.q);
   if (query?.status) params.set('status', query.status);
@@ -142,7 +154,11 @@ export function createDesignation(input: DesignationInput): Promise<Designation>
   return api<Designation>('/designations', { method: 'POST', body: input });
 }
 
-export function updateDesignation(id: string, version: number, patch: Partial<DesignationInput>): Promise<Designation> {
+export function updateDesignation(
+  id: string,
+  version: number,
+  patch: Partial<DesignationInput>,
+): Promise<Designation> {
   return api<Designation>(`/designations/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: patch,
@@ -181,7 +197,11 @@ export function createCurrency(input: CurrencyInput): Promise<Currency> {
   return api<Currency>('/currencies', { method: 'POST', body: input });
 }
 
-export function updateCurrency(id: string, version: number, patch: Partial<CurrencyInput>): Promise<Currency> {
+export function updateCurrency(
+  id: string,
+  version: number,
+  patch: Partial<CurrencyInput>,
+): Promise<Currency> {
   return api<Currency>(`/currencies/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: patch,
@@ -198,7 +218,11 @@ export function deleteCurrency(id: string, version: number): Promise<void> {
 
 // ---- uoms -------------------------------------------------------------------------
 
-export function listUoms(query?: { q?: string; status?: string; uomClass?: string }): Promise<Uom[]> {
+export function listUoms(query?: {
+  q?: string;
+  status?: string;
+  uomClass?: string;
+}): Promise<Uom[]> {
   const params = new URLSearchParams();
   if (query?.q) params.set('q', query.q);
   if (query?.status) params.set('status', query.status);

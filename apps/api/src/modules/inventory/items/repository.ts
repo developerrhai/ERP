@@ -89,6 +89,6 @@ export const itemRepository = {
 
   /** Vouchers (any status, not deleted) that name the item. */
   countVouchers(id: string, db: Db = prisma): Promise<number> {
-    return db.stockVoucher.count({ where: { itemId: id, deletedAt: null } });
+    return db.stockVoucherLine.count({ where: { itemId: id, voucher: { deletedAt: null } } });
   },
 };

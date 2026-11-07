@@ -34,6 +34,7 @@ export type ErrorCode =
   | 'RATE_LIMITED'
   | 'SERVER_BUSY'
   | 'STOCK_RESERVED'
+  | 'BACKDATED_POSTING'
   | 'WAREHOUSE_FROZEN'
   | 'BATCH_REQUIRED'
   | 'BATCH_BLOCKED'
@@ -83,6 +84,82 @@ export type ErrorCode =
   | 'COMMENT_REQUIRED'
   | 'DELEGATION_OVERLAP'
   | 'DELEGATION_SELF'
+  | 'GSTIN_LENGTH'
+  | 'GSTIN_FORMAT'
+  | 'GSTIN_STATE'
+  | 'GSTIN_CHECKSUM'
+  | 'GSTIN_PAN_MISMATCH'
+  | 'GSTIN_STATE_MISMATCH'
+  | 'GSTIN_REQUIRED'
+  | 'GSTIN_NOT_ALLOWED'
+  | 'GSTIN_DUPLICATE'
+  | 'PAN_FORMAT'
+  | 'UDYAM_FORMAT'
+  | 'MSME_DAYS'
+  | 'IFSC_FORMAT'
+  | 'ACCOUNT_CONFIRM'
+  | 'BANK_SELF_VERIFY'
+  | 'BANK_DUPLICATE'
+  | 'HSN_REQUIRED'
+  | 'HSN_DIGITS'
+  | 'NO_GST_RATE'
+  | 'RATE_OVERLAP'
+  | 'TERMS_SUM'
+  | 'PRICE_DATES'
+  | 'CREDIT_PENDING'
+  | 'SUPPLIER_NOT_APPROVED'
+  | 'DUP_WARN'
+  | 'JOURNAL_UNBALANCED'
+  | 'AMOUNT_PRECISION'
+  | 'PERIOD_LOCKED'
+  | 'NO_PERIOD'
+  | 'FUTURE_DATE'
+  | 'ACCOUNT_NOT_POSTABLE'
+  | 'COST_CENTER_REQUIRED'
+  | 'PARTY_REQUIRED'
+  | 'PARTY_ROLE_MISMATCH'
+  | 'PARTY_NOT_ALLOWED'
+  | 'ALREADY_REVERSED'
+  | 'CANNOT_REVERSE_REVERSAL'
+  | 'REVERSAL_DATE_INVALID'
+  | 'REASON_REQUIRED'
+  | 'SETTLED_DOCUMENT'
+  | 'RECONCILED_ENTRY'
+  | 'EVENT_PAYLOAD_CHANGED'
+  | 'NO_POSTING_RULE'
+  | 'UNMAPPED_ACCOUNT_KEY'
+  | 'ROUND_OFF_TOO_LARGE'
+  | 'BILL_REF_REQUIRED'
+  | 'OVER_ALLOCATION'
+  | 'ADVANCE_NOT_CONFIRMED'
+  | 'ITEM_BLOCKED'
+  | 'NEGATIVE_CASH'
+  | 'CASH_RECEIPT_LIMIT'
+  | 'MODE_ACCOUNT_MISMATCH'
+  | 'BUDGET_EXCEEDED'
+  | 'STATEMENT_DOES_NOT_FOOT'
+  | 'DUPLICATE_STATEMENT'
+  | 'PREVIOUS_STATEMENT_OPEN'
+  | 'RECON_DIFFERENCE'
+  | 'SUGGESTIONS_PENDING'
+  | 'AMOUNT_MISMATCH'
+  | 'CLOSE_BLOCKED'
+  | 'PARENT_TYPE_MISMATCH'
+  | 'CYCLE'
+  | 'ACCOUNT_HAS_BALANCE'
+  | 'INVALID_TRANSITION'
+  | 'CURRENCY_NOT_SUPPORTED'
+  | 'APPROVAL_NOT_ENABLED'
+  | 'NOT_DRAFT'
+  | 'LEDGER_LOCKED'
+  | 'TAX_PAYLOAD_MISMATCH'
+  | 'TDS_ALREADY_DEPOSITED'
+  | 'CHALLAN_MISMATCH'
+  | 'NO_FX_RATE'
+  | 'EXPENSE_LIMIT'
+  | 'FORMAT_NOT_ALLOWED'
+  | 'FORMULA_INVALID'
+  | 'FORMAT_IN_USE'
   | 'INTERNAL';
 
 export type FieldErrors = Record<string, string>;
@@ -181,6 +258,9 @@ export const Errors = {
         'Retry-After': String(retryAfterSeconds),
       },
     ),
+  backdatedPosting: (
+    message = 'This posting is dated before the last movement of the item. Ask a user with approve rights to post it.',
+  ) => new AppError(409, 'BACKDATED_POSTING', message),
   stockReserved: (message = 'Stock is reserved for another demand.') =>
     new AppError(409, 'STOCK_RESERVED', message),
   warehouseFrozen: (message = 'Warehouse is frozen for counting.') =>
@@ -253,6 +333,20 @@ export const Errors = {
       403,
       'FORBIDDEN',
       'Two-step verification is required for administrators. You cannot turn it off.',
+    ),
+  formatNotAllowed: (department: string) =>
+    new AppError(
+      403,
+      'FORMAT_NOT_ALLOWED',
+      `Only the Department Head of ${department} can change these settings.`,
+    ),
+  formulaInvalid: (name: string, reason: string) =>
+    new AppError(422, 'FORMULA_INVALID', `The formula for ${name} is not valid: ${reason}.`),
+  formatInUse: (n: number) =>
+    new AppError(
+      409,
+      'FORMAT_IN_USE',
+      `This format is used by ${n} open document${n === 1 ? '' : 's'}. Publish a new version instead of editing.`,
     ),
   featureDisabled: (message = 'Feature is disabled.') =>
     new AppError(503, 'FEATURE_DISABLED', message),

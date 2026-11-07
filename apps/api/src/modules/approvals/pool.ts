@@ -5,6 +5,11 @@
 import type { Prisma } from '@prisma/client';
 import type { Db } from '../../core/db/prisma';
 import { accessUserOf, can } from '../../core/rbac/access';
+import type { AccessUser } from '../../core/rbac/access';
+import {
+  SETTINGS_APPROVAL_DOC_TYPE,
+  SETTINGS_APPROVER_MIN_LEVEL,
+} from '../../core/settings/constants';
 
 export const COMPANY_WIDE_LEVEL = 70;
 
@@ -56,7 +61,7 @@ export async function eligibleApprovers(tx: Db, q: PoolQuery): Promise<Approver[
       extraDepartments: u.extraDepartments,
     });
     // An empty docType (matrix preview without a document) skips the page-level check.
-    if (q.docType && !(await can(access, q.docType, 'approve'))) continue;
+    if (q.docType && !(await canApproveAccess(access, q.docType))) continue;
     result.push({
       id: u.id,
       name: u.name,
@@ -89,4 +94,20 @@ export async function approverLabel(
     return user?.name ?? 'the assigned approver';
   }
   return 'the assigned approver';
+}
+
+/**
+ * Page-level approve right for a document type. A settings change (Phase 6B) is approved by people
+ * of the owner department, so it asks only for a Department Manager level or above.
+ */
+async function canApproveAccess(access: AccessUser, docType: string): Promise<boolean> {
+  if (docType === SETTINGS_APPROVAL_DOC_TYPE) return access.level >= SETTINGS_APPROVER_MIN_LEVEL;
+  return can(access, docType, 'approve');
+}
+
+export async function canApproveDoc(
+  user: Parameters<typeof accessUserOf>[0],
+  docType: string,
+): Promise<boolean> {
+  return canApproveAccess(accessUserOf(user), docType);
 }

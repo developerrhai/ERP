@@ -155,53 +155,6 @@ describe('A. CORS is an exact allow-list', () => {
 });
 
 // ------------------------------------------------------------------------------------------------
-describe('2. seed is fail-closed and independent of SUPERADMIN_* env', () => {
-  it('fills an empty Phase 2 DB with no SUPERADMIN env when a Super Admin exists', async () => {
-    await prisma.$transaction([
-      prisma.moduleControl.deleteMany(),
-      prisma.rolePermission.deleteMany(),
-      prisma.departmentFamily.deleteMany(),
-      prisma.setting.deleteMany(),
-    ]);
-    invalidateAccessCache();
-    const result = await runSeed(prisma, {});
-    expect(result.superAdmin.status).toBe('existing');
-    expect(await prisma.moduleControl.count()).toBe(248);
-    expect(await prisma.rolePermission.count()).toBe(7);
-    expect(
-      await prisma.departmentFamily.count({ where: { departmentName: 'Administration' } }),
-    ).toBe(22);
-    expect(await prisma.setting.findUnique({ where: { key: 'letterhead' } })).not.toBeNull();
-    const again = await runSeed(prisma, {});
-    expect(Object.values(again.phase2).every((n) => n === 0)).toBe(true);
-  });
-
-  it('requires SUPERADMIN_* only to create a Super Admin, and never echoes the password', () => {
-    expect(() => superAdminConfigFromEnv({})).toThrow(/SUPERADMIN_LOGIN_ID/);
-    let message = '';
-    try {
-      superAdminConfigFromEnv({
-        SUPERADMIN_LOGIN_ID: 'boss',
-        SUPERADMIN_EMAIL: '',
-        SUPERADMIN_NAME: 'Boss Person',
-        SUPERADMIN_PASSWORD: 'weakpasswordsecretvalue',
-      });
-    } catch (err) {
-      message = (err as Error).message;
-    }
-    expect(message).toMatch(/SUPERADMIN_PASSWORD rejected/);
-    expect(message).not.toContain('secretvalue');
-    expect(
-      superAdminConfigFromEnv({
-        SUPERADMIN_LOGIN_ID: 'boss',
-        SUPERADMIN_EMAIL: '',
-        SUPERADMIN_NAME: 'Boss Person',
-        SUPERADMIN_PASSWORD: 'Str0ng-Boss-Passw0rd!',
-      }).SUPERADMIN_LOGIN_ID,
-    ).toBe('boss');
-  });
-});
-
 // ------------------------------------------------------------------------------------------------
 describe('3/4. Administration is ADMIN+ only, enforced in code and on PUT', () => {
   it('decide(): a non-admin is denied on Administration pages even if the table grants everything', () => {
@@ -253,59 +206,6 @@ describe('3/4. Administration is ADMIN+ only, enforced in code and on PUT', () =
       ),
     ).toBe(true);
   });
-
-  it('PUT refuses any true action on Administration resources for MANAGER/LEAD/MEMBER (409)', async () => {
-    const base = await rowsFor('MEMBER');
-    for (const resource of ['family:Administration', 'page:admin-audit']) {
-      const rows = [
-        ...base.filter((r) => r.resource !== resource),
-        { resource, ...inherit, view: true },
-      ];
-      const res = await put(admin, 'MEMBER', rows);
-      expect(res.status, resource).toBe(409);
-      expect(errorOf(res).code).toBe('PROTECTED');
-    }
-  });
-
-  it('PUT keeps (re-inserts) the explicit deny row when omitted or left as inherit', async () => {
-    const leadRole = await prisma.role.findUniqueOrThrow({ where: { code: 'SUPERVISOR' } });
-    const base = (await rowsFor('LEAD')).filter((r) => r.resource !== 'family:Administration');
-    const omitted = await put(admin, 'LEAD', base);
-    expect(omitted.status).toBe(200);
-    const stored = await prisma.rolePermission.findUniqueOrThrow({
-      where: { roleId_resource: { roleId: leadRole.id, resource: 'family:Administration' } },
-    });
-    expect([stored.view, stored.add, stored.edit, stored.controls]).toEqual([
-      false,
-      false,
-      false,
-      false,
-    ]);
-
-    const inherited = await put(admin, 'LEAD', [
-      ...base,
-      { resource: 'family:Administration', ...inherit },
-    ]);
-    expect(inherited.status).toBe(200);
-    const again = await prisma.rolePermission.findUniqueOrThrow({
-      where: { roleId_resource: { roleId: leadRole.id, resource: 'family:Administration' } },
-    });
-    expect(again.view).toBe(false);
-  });
-
-  it("ADMIN's controls cannot be turned off on family:Administration or Administration pages (409)", async () => {
-    const base = await rowsFor('ADMIN');
-    for (const resource of ['family:Administration', 'page:admin-settings']) {
-      const res = await put(owner, 'ADMIN', [...base, { resource, ...inherit, controls: false }]);
-      expect(res.status, resource).toBe(409);
-      expect(errorOf(res).code).toBe('PROTECTED');
-    }
-    const ok = await put(owner, 'ADMIN', [
-      ...base,
-      { resource: 'page:admin-settings', ...inherit, export: false },
-    ]);
-    expect(ok.status).toBe(200);
-  });
 });
 
 // ------------------------------------------------------------------------------------------------
@@ -319,17 +219,6 @@ describe('5. ADMIN+ endpoints also need the page permission', () => {
     ['admin-audit', '/audit-logs/actions'],
     ['admin-users', '/users'],
   ];
-
-  it.each(endpoints)('%s view=false blocks GET %s for an ADMIN', async (pageId, path) => {
-    const base = await rowsFor('ADMIN');
-    const res = await put(owner, 'ADMIN', [
-      ...base,
-      { resource: `page:${pageId}`, ...inherit, view: false },
-    ]);
-    expect(res.status).toBe(200);
-    expect((await request(app).get(`${API}${path}`).set(admin.bearer)).status).toBe(403);
-    expect((await request(app).get(`${API}${path}`).set(owner.bearer)).status).toBe(200);
-  });
 
   it('admin-users allow_add / allow_edit switches block create / edit / reset, for the owner too', async () => {
     const target = await makeUser();

@@ -128,7 +128,9 @@ function setup(extra: Record<string, Handler> = {}) {
   });
 }
 
-describe('Ledger | Vouchers toggle', () => {
+// SUPERSEDED by Phase 8: Inventory Transactions is now pages/inventory/VouchersPage.tsx with its own Ledger | Vouchers
+// toggle (tested in pages/inventory/Inventory.test.tsx). Kept, skipped, not deleted.
+describe.skip('Ledger | Vouchers toggle', () => {
   it('defaults to the first view, shows a segmented toggle (no select) and requests view=ledger', async () => {
     const { calls } = setup();
     renderApp(REG);
@@ -230,7 +232,8 @@ describe('Ledger | Vouchers toggle', () => {
   });
 });
 
-describe('action requires', () => {
+// Phase 8: the voucher buttons moved to the header+lines screen (pages/inventory/Inventory.test.tsx); skipped, not deleted.
+describe.skip('action requires', () => {
   const vouchers = `${REG}&view=vouchers`;
 
   it('cancel of a posted voucher needs delete; a Draft cancel only needs edit', async () => {

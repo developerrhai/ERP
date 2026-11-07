@@ -1,8 +1,9 @@
-// The stock posting engine (docs/phase3-4 C1/C2): one function writes a ledger entry and updates the
-// balance of (item, warehouse) in the CALLER's transaction, with SELECT ... FOR UPDATE on the balance
-// row so concurrent movements queue up. Moving-average valuation: an inflow adds qty x rate, an
-// outflow leaves at the current average rate; stock can never go negative (409 INSUFFICIENT_STOCK).
-// A reversal undoes a ledger row exactly (same quantity and value, opposite direction).
+// The valuation core of the stock posting engine (Phase 8 step 2: postMovement -> postCoreMovement, the old
+// name stays as a re-export). One function writes a ledger entry and updates the balance of
+// (item, warehouse) in the CALLER's transaction, with SELECT ... FOR UPDATE on the balance row so
+// concurrent movements queue up. Moving-average valuation: an inflow adds qty x rate, an outflow leaves at
+// the current average rate; stock can never go negative (409 INSUFFICIENT_STOCK). The slice layer
+// (batch / bin / status), reservations, GL and the rest live in StockService, which calls this.
 import { randomUUID } from 'node:crypto';
 import { Errors } from '../../../core/http/errors';
 import type { Db } from '../../../core/db/prisma';
@@ -16,7 +17,12 @@ export type LedgerVoucherType =
   | 'ADJUSTMENT'
   | 'TRANSFER_OUT'
   | 'TRANSFER_IN'
-  | 'REVERSAL';
+  | 'REVERSAL'
+  | 'RECONCILIATION'
+  | 'REVALUATION'
+  | 'STATUS_CHANGE';
+
+export type StockStatus = 'UNRESTRICTED' | 'QUALITY_INSPECTION' | 'BLOCKED';
 
 export interface Balance {
   onHand: Dec;
@@ -74,6 +80,14 @@ export interface Movement {
   outValue?: Dec;
   outRate?: Dec;
   reversesId?: string;
+  /** Phase 8 dimensions: written to the ledger row; valuation stays per item x warehouse. */
+  batchId?: string | null;
+  binId?: string | null;
+  stockStatus?: StockStatus;
+  lineId?: string | null;
+  uom?: string | null;
+  uomFactor?: Dec | null;
+  reasonCode?: string | null;
 }
 
 export interface PostedEntry {
@@ -89,11 +103,11 @@ export const insufficientStock = (available: Dec, wanted: Dec) =>
   Errors.insufficientStock(`Not enough stock: ${str(available)} on hand, ${str(wanted)} needed.`);
 
 /** Writes one ledger entry and updates the balance. Must run inside a transaction. */
-export async function postMovement(db: Db, m: Movement): Promise<PostedEntry> {
+export async function postCoreMovement(db: Db, m: Movement): Promise<PostedEntry> {
   const before = await lockBalance(db, m.itemId, m.warehouseId);
   const inflow = m.qtyIn !== undefined && m.qtyIn.greaterThan(0);
   const qty = inflow ? (m.qtyIn ?? ZERO) : (m.qtyOut ?? ZERO);
-  if (qty.lessThanOrEqualTo(0)) throw new Error('postMovement needs a positive quantity');
+  if (qty.lessThanOrEqualTo(0)) throw new Error('postCoreMovement needs a positive quantity');
 
   let entryValue: Dec;
   let rate: Dec;
@@ -122,17 +136,24 @@ export async function postMovement(db: Db, m: Movement): Promise<PostedEntry> {
   const signedValue = inflow ? entryValue : entryValue.negated();
   await db.$executeRaw`
     INSERT INTO stock_ledger (id, posted_at, posting_date, unit_id, warehouse_id, item_id, qty_in, qty_out, rate, value,
-      balance_qty, balance_value, voucher_type, voucher_id, voucher_no, reverses_id, created_by_id)
+      balance_qty, balance_value, voucher_type, voucher_id, voucher_no, reverses_id, created_by_id,
+      batch_id, bin_id, stock_status, line_id, uom, uom_factor, reason_code)
     VALUES (${id}::uuid, clock_timestamp(), ${m.postingDate}::date, ${m.unitId}::uuid, ${m.warehouseId}::uuid, ${m.itemId}::uuid,
       ${inflow ? str(qty) : '0'}::numeric, ${inflow ? '0' : str(qty)}::numeric, ${str(rate)}::numeric,
       ${str(signedValue)}::numeric, ${str(onHand)}::numeric, ${str(value)}::numeric, ${m.voucherType},
-      ${m.voucherId}::uuid, ${m.voucherNo}, ${m.reversesId ?? null}::uuid, ${m.createdById}::uuid)`;
+      ${m.voucherId}::uuid, ${m.voucherNo}, ${m.reversesId ?? null}::uuid, ${m.createdById}::uuid,
+      ${m.batchId ?? null}::uuid, ${m.binId ?? null}::uuid, ${m.stockStatus ?? 'UNRESTRICTED'},
+      ${m.lineId ?? null}::uuid, ${m.uom ?? null}, ${m.uomFactor ? str(m.uomFactor) : null}::numeric,
+      ${m.reasonCode ?? null})`;
   await db.$executeRaw`
     UPDATE stock_balances SET on_hand = ${str(onHand)}::numeric, value = ${str(value)}::numeric,
       avg_rate = ${str(avgRate)}::numeric, updated_at = now()
     WHERE item_id = ${m.itemId}::uuid AND warehouse_id = ${m.warehouseId}::uuid`;
   return { id, qty, rate, value: entryValue, balance: { onHand, value, avgRate } };
 }
+
+/** Old name, kept so existing imports and tests keep working. */
+export const postMovement = postCoreMovement;
 
 export interface LedgerRow {
   id: string;
@@ -145,49 +166,49 @@ export interface LedgerRow {
   value: string;
   voucher_type: LedgerVoucherType;
   voucher_no: string;
+  batch_id: string | null;
+  bin_id: string | null;
+  stock_status: StockStatus;
+  line_id: string | null;
 }
 
 /** The live (not yet reversed) entries a voucher wrote, oldest first. */
 export function entriesOfVoucher(db: Db, voucherId: string): Promise<LedgerRow[]> {
   return db.$queryRaw<LedgerRow[]>`
     SELECT l.id, l.unit_id, l.warehouse_id, l.item_id, l.qty_in::text, l.qty_out::text, l.rate::text,
-           l.value::text, l.voucher_type, l.voucher_no
+           l.value::text, l.voucher_type, l.voucher_no, l.batch_id, l.bin_id, l.stock_status, l.line_id
     FROM stock_ledger l
     WHERE l.voucher_id = ${voucherId}::uuid AND l.voucher_type <> 'REVERSAL'
       AND NOT EXISTS (SELECT 1 FROM stock_ledger r WHERE r.reverses_id = l.id)
     ORDER BY l.posted_at ASC, l.id ASC`;
 }
 
-/** Undoes every live entry of a voucher with REVERSAL entries (newest first). */
-export async function reverseVoucher(
-  db: Db,
-  voucherId: string,
-  context: { voucherNo: string; postingDate: string; createdById: string },
-): Promise<number> {
-  const entries = (await entriesOfVoucher(db, voucherId)).reverse();
-  for (const e of entries) {
-    const qtyIn = D(e.qty_in);
-    const qtyOut = D(e.qty_out);
-    const absValue = D(e.value).abs();
-    const base = {
-      unitId: e.unit_id,
-      warehouseId: e.warehouse_id,
-      itemId: e.item_id,
-      postingDate: context.postingDate,
-      voucherType: 'REVERSAL' as const,
-      voucherId,
-      voucherNo: context.voucherNo,
-      createdById: context.createdById,
-      reversesId: e.id,
-    };
-    if (qtyIn.greaterThan(0)) {
-      // The original was an inflow: take the same quantity and value back out.
-      await postMovement(db, { ...base, qtyOut: qtyIn, outValue: absValue, outRate: D(e.rate) });
-    } else {
-      await postMovement(db, { ...base, qtyIn: qtyOut, rate: D(e.rate), value: absValue });
-    }
-  }
-  return entries.length;
+/** The ledger movement that exactly undoes row `e` (same quantity and value, opposite direction). */
+export function reversalOf(
+  e: LedgerRow,
+  context: { voucherId: string; voucherNo: string; postingDate: string; createdById: string },
+): Movement {
+  const qtyIn = D(e.qty_in);
+  const qtyOut = D(e.qty_out);
+  const absValue = D(e.value).abs();
+  const base = {
+    unitId: e.unit_id,
+    warehouseId: e.warehouse_id,
+    itemId: e.item_id,
+    postingDate: context.postingDate,
+    voucherType: 'REVERSAL' as const,
+    voucherId: context.voucherId,
+    voucherNo: context.voucherNo,
+    createdById: context.createdById,
+    reversesId: e.id,
+    batchId: e.batch_id,
+    binId: e.bin_id,
+    stockStatus: e.stock_status,
+    lineId: e.line_id,
+  };
+  return qtyIn.greaterThan(0)
+    ? { ...base, qtyOut: qtyIn, outValue: absValue, outRate: D(e.rate) }
+    : { ...base, qtyIn: qtyOut, rate: D(e.rate), value: absValue };
 }
 
 /** How many ledger rows (any voucher) touch this item in this warehouse. */

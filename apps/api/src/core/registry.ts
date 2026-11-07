@@ -49,12 +49,57 @@ export const DEFAULT_REGISTRY_PATH = path.resolve(
   '../../../../packages/registry/registry.json',
 );
 
+/**
+ * Pages that a later phase file adds to the frozen prototype registry (packages/registry stays the
+ * extract of index.html). Phase 6B: admin-formats, placed right after the Approval Matrix.
+ */
+export const PHASE_ADDED_PAGES: readonly {
+  id: string;
+  title: string;
+  family: string;
+  after: string;
+  purpose: string;
+  /** Seed value of the module control (Administration pages are normally 'no approval'). */
+  approvalRequired?: boolean;
+}[] = [
+  {
+    id: 'admin-formats',
+    title: 'Formats & Rules',
+    family: 'Administration',
+    after: 'admin-approval',
+    purpose:
+      'All document formats and calculation rule sets, their versions, and who changed what.',
+    // Turns the Phase 5 approval engine on for publishing money-affecting rule sets (PHASE-06B §3.6).
+    approvalRequired: true,
+  },
+];
+
+function addPhasePages(data: RegistryData): void {
+  for (const extra of PHASE_ADDED_PAGES) {
+    const family = data.families.find((f) => f.name === extra.family);
+    if (!family || family.items.some((i) => i.id === extra.id)) continue;
+    const at = family.items.findIndex((i) => i.id === extra.after);
+    family.items.splice(at >= 0 ? at + 1 : family.items.length, 0, {
+      id: extra.id,
+      title: extra.title,
+    });
+    data.profiles[extra.id] = {
+      title: extra.title,
+      family: extra.family,
+      purpose: extra.purpose,
+      tabs: ['Formats', 'Rule Sets', 'Changes'],
+      fields: [],
+    };
+  }
+}
+
 export function loadRegistry(file: string = process.env.REGISTRY_PATH ?? DEFAULT_REGISTRY_PATH) {
   const parsed = registrySchema.safeParse(JSON.parse(readFileSync(file, 'utf8')));
   if (!parsed.success) {
     throw new Error(`Invalid registry at ${file}: ${parsed.error.issues[0]?.message ?? 'unknown'}`);
   }
   const data = parsed.data;
+  addPhasePages(data);
   const pages = new Map<string, PageInfo>();
   let order = 0;
   for (const family of data.families) {

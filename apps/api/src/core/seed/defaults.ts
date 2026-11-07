@@ -12,7 +12,7 @@ import {
   familyResource,
   noActions,
 } from '../rbac/permission-model';
-import { ADMIN_FAMILY, defaultDepartmentFamilies, registry } from '../registry';
+import { ADMIN_FAMILY, PHASE_ADDED_PAGES, defaultDepartmentFamilies, registry } from '../registry';
 
 export const SEED_STATE_KEY = 'system.seed';
 export const LETTERHEAD_KEY = 'letterhead';
@@ -222,7 +222,9 @@ export async function seedPhase2Defaults(db: PrismaClient): Promise<SeedReport> 
     controls.push({
       pageId: page.id,
       ownerDepartment: owner,
-      approvalRequired: !NO_APPROVAL_FAMILIES.has(page.family),
+      approvalRequired:
+        PHASE_ADDED_PAGES.find((p) => p.id === page.id)?.approvalRequired ??
+        !NO_APPROVAL_FAMILIES.has(page.family),
     });
   }
   report.moduleControls = (

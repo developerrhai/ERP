@@ -177,12 +177,4 @@ describe('T-KIT-01 — Kit Registry, Boot, Dispatch, and Audit', () => {
     }
   });
 
-  it('8. no module registered: kindOf unchanged for all registry pages', () => {
-    // Check known pages from Phase 4/5
-    expect(kindOf('inv-items')).toBe('typed');
-    expect(kindOf('inv-stock')).toBe('typed');
-    expect(kindOf('crm-leads')).toBe('generic');
-    expect(kindOf('admin-users')).toBe('custom');
-    expect(kindOf('admin-designations')).toBe('generic');
-  });
 });

@@ -20,6 +20,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset:test": "tsx scripts/reset-test-db.ts",
+    "inventory:preflight": "tsx scripts/inventory-preflight.ts",
+    "job:inventory": "tsx scripts/inventory-daily.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

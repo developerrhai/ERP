@@ -73,7 +73,8 @@ export function EffectiveAccessTab() {
         setError('');
       })
       .catch((err: unknown) => {
-        if (alive) setError(err instanceof ApiError ? err.message : 'Could not calculate effective access.');
+        if (alive)
+          setError(err instanceof ApiError ? err.message : 'Could not calculate effective access.');
       })
       .finally(() => {
         if (alive) setLoadingAccess(false);
@@ -122,7 +123,9 @@ export function EffectiveAccessTab() {
           </div>
           {selectedUser ? (
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', paddingBottom: '6px' }}>
-              Role: <strong>{selectedUser.roleLabel || selectedUser.role}</strong> (Level {selectedUser.roleLevel ?? 10}) · Dept: <strong>{selectedUser.department ?? '—'}</strong>
+              Role: <strong>{selectedUser.roleLabel || selectedUser.role}</strong> (Level{' '}
+              {selectedUser.roleLevel ?? 10}) · Dept:{' '}
+              <strong>{selectedUser.department ?? '—'}</strong>
               {selectedUser.extraDepartments && selectedUser.extraDepartments.length > 0 ? (
                 <> · Also works in: {selectedUser.extraDepartments.join(', ')}</>
               ) : null}
@@ -138,8 +141,18 @@ export function EffectiveAccessTab() {
       ) : null}
 
       {selectedPage ? (
-        <div className="card" style={{ marginBottom: '16px', background: 'var(--surface-sunken)', padding: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <div
+          className="card"
+          style={{ marginBottom: '16px', background: 'var(--surface-sunken)', padding: '14px' }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '8px',
+            }}
+          >
             <h4 style={{ margin: 0 }}>
               Decision Reasons: <strong>{selectedPage.title}</strong> ({selectedPage.family})
             </h4>
@@ -222,8 +235,12 @@ export function EffectiveAccessTab() {
                               lineHeight: '18px',
                               fontSize: '11px',
                               fontWeight: 'bold',
-                              background: allowed ? 'var(--success-bg, #c6f6d5)' : 'var(--danger-bg, #fed7d7)',
-                              color: allowed ? 'var(--success-fg, #22543d)' : 'var(--danger-fg, #742a2a)',
+                              background: allowed
+                                ? 'var(--success-bg, #c6f6d5)'
+                                : 'var(--danger-bg, #fed7d7)',
+                              color: allowed
+                                ? 'var(--success-fg, #22543d)'
+                                : 'var(--danger-fg, #742a2a)',
                             }}
                           >
                             {allowed ? '✓' : '—'}

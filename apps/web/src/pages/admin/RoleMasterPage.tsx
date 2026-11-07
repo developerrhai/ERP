@@ -26,7 +26,11 @@ type Dialog =
   | { kind: 'delete'; role: RoleInfo }
   | null;
 
-export function RoleMasterPage({ actions }: { actions?: Pick<ActionSet, 'add' | 'edit' | 'delete'> }) {
+export function RoleMasterPage({
+  actions,
+}: {
+  actions?: Pick<ActionSet, 'add' | 'edit' | 'delete'>;
+}) {
   const navigate = useNavigate();
   const toast = useToast();
   const { data, loading, error, reload } = useLoad(listRoles, []);
@@ -89,7 +93,8 @@ export function RoleMasterPage({ actions }: { actions?: Pick<ActionSet, 'add' | 
                   <td>{r.level}</td>
                   <td>{r.userCount}</td>
                   <td>
-                    {ROLE_CREATED_BY[r.code] ?? (r.level >= 95 ? 'Nobody (system)' : `Level > ${r.level}`)}
+                    {ROLE_CREATED_BY[r.code] ??
+                      (r.level >= 95 ? 'Nobody (system)' : `Level > ${r.level}`)}
                   </td>
                   <td>
                     <span className={`status ${(r.status ?? 'ACTIVE').toLowerCase()}`}>
@@ -126,7 +131,9 @@ export function RoleMasterPage({ actions }: { actions?: Pick<ActionSet, 'add' | 
                           className="btn sm danger"
                           aria-label={`Delete ${r.label || r.name}`}
                           disabled={r.userCount > 0}
-                          title={r.userCount > 0 ? 'Assigned to users; cannot be deleted' : undefined}
+                          title={
+                            r.userCount > 0 ? 'Assigned to users; cannot be deleted' : undefined
+                          }
                           onClick={() => setDialog({ kind: 'delete', role: r })}
                         >
                           Delete
@@ -147,11 +154,7 @@ export function RoleMasterPage({ actions }: { actions?: Pick<ActionSet, 'add' | 
       </div>
 
       {dialog?.kind === 'add' ? (
-        <AddRoleModal
-          roles={roles}
-          onClose={close}
-          onSaved={() => afterSave('Role created.')}
-        />
+        <AddRoleModal roles={roles} onClose={close} onSaved={() => afterSave('Role created.')} />
       ) : null}
 
       {dialog?.kind === 'edit' ? (
@@ -214,7 +217,9 @@ function AddRoleModal({
     if (!CODE_RE.test(trimmedCode)) {
       setUiError({
         message: 'Please fix the highlighted fields.',
-        fields: { code: 'Use 2-30 uppercase letters, digits and underscores; start with a letter.' },
+        fields: {
+          code: 'Use 2-30 uppercase letters, digits and underscores; start with a letter.',
+        },
         code: 'VALIDATION_ERROR',
       });
       return;
@@ -276,7 +281,9 @@ function AddRoleModal({
             error={uiError?.fields?.code}
             required
           />
-          <span className="hint">Permanent identifier (uppercase, 2-30 chars, e.g. REGIONAL_MANAGER).</span>
+          <span className="hint">
+            Permanent identifier (uppercase, 2-30 chars, e.g. REGIONAL_MANAGER).
+          </span>
         </div>
         <div className="field">
           <Field
@@ -288,15 +295,13 @@ function AddRoleModal({
             error={uiError?.fields?.level}
             required
           />
-          <span className="hint">1 to 94. Higher number = more authority. Must be below your own level.</span>
+          <span className="hint">
+            1 to 94. Higher number = more authority. Must be below your own level.
+          </span>
         </div>
         <div className="field">
           <label>Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={2}
-          />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
           {uiError?.fields?.description ? (
             <span className="field-error">{uiError.fields.description}</span>
           ) : null}
@@ -419,11 +424,7 @@ function EditRoleModal({
         </div>
         <div className="field">
           <label>Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={2}
-          />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
           {uiError?.fields?.description ? (
             <span className="field-error">{uiError.fields.description}</span>
           ) : null}
@@ -502,7 +503,8 @@ function DeleteRoleModal({
       }
     >
       <p>
-        Are you sure you want to delete role <strong>{role.label || role.name}</strong> (<code>{role.code}</code>)?
+        Are you sure you want to delete role <strong>{role.label || role.name}</strong> (
+        <code>{role.code}</code>)?
       </p>
       <p className="v8-sub">
         This action cannot be undone. All custom permission rows for this role will also be removed.

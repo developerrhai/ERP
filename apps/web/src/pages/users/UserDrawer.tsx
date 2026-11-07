@@ -85,11 +85,25 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
   return (
     <>
       <Drawer title={`User: ${user.name} (${user.loginId})`} onClose={onClose}>
-        <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', marginBottom: '1.25rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '0.5rem',
+            borderBottom: '1px solid #e2e8f0',
+            marginBottom: '1.25rem',
+          }}
+        >
           <button
             type="button"
             className={`auth-tab ${tab === 'auth' ? 'active' : ''}`}
-            style={{ padding: '0.5rem 1rem', background: 'none', border: 'none', cursor: 'pointer', borderBottom: tab === 'auth' ? '2px solid var(--color-primary, #0284c7)' : 'none', fontWeight: 600 }}
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              borderBottom: tab === 'auth' ? '2px solid var(--color-primary, #0284c7)' : 'none',
+              fontWeight: 600,
+            }}
             onClick={() => setTab('auth')}
           >
             Authentication
@@ -97,24 +111,39 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
           <button
             type="button"
             className={`auth-tab ${tab === 'sessions' ? 'active' : ''}`}
-            style={{ padding: '0.5rem 1rem', background: 'none', border: 'none', cursor: 'pointer', borderBottom: tab === 'sessions' ? '2px solid var(--color-primary, #0284c7)' : 'none', fontWeight: 600 }}
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              borderBottom: tab === 'sessions' ? '2px solid var(--color-primary, #0284c7)' : 'none',
+              fontWeight: 600,
+            }}
             onClick={() => setTab('sessions')}
           >
             Session History
           </button>
         </div>
 
-        {error ? <div className="msg error show" style={{ marginBottom: '1rem' }}>{error}</div> : null}
+        {error ? (
+          <div className="msg error show" style={{ marginBottom: '1rem' }}>
+            {error}
+          </div>
+        ) : null}
 
         {tab === 'auth' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Lock State */}
             <div style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
                 <div>
                   <b style={{ fontSize: '0.9375rem' }}>Account Lock State</b>
                   <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '0.25rem' }}>
-                    {isLocked ? 'Account is currently locked due to failed login attempts.' : 'Account is active and not locked.'}
+                    {isLocked
+                      ? 'Account is currently locked due to failed login attempts.'
+                      : 'Account is active and not locked.'}
                   </div>
                 </div>
                 <span className={`status ${isLocked ? 'inactive' : 'active'}`}>
@@ -144,11 +173,15 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
 
             {/* MFA State */}
             <div style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
                 <div>
                   <b style={{ fontSize: '0.9375rem' }}>Two-Step Verification</b>
                   <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '0.25rem' }}>
-                    {user.mfaEnabled ? 'Two-step verification is enabled.' : 'Two-step verification is not enabled.'}
+                    {user.mfaEnabled
+                      ? 'Two-step verification is enabled.'
+                      : 'Two-step verification is not enabled.'}
                   </div>
                 </div>
                 <span className={`status ${user.mfaEnabled ? 'active' : 'inactive'}`}>
@@ -204,8 +237,17 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
             </div>
 
             {/* Last Sign-in info */}
-            <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '6px', fontSize: '0.8125rem' }}>
-              <div>Last Sign-In: <b>{formatIstDateTime(user.lastLoginAt) || 'Never'}</b></div>
+            <div
+              style={{
+                padding: '1rem',
+                backgroundColor: '#f8fafc',
+                borderRadius: '6px',
+                fontSize: '0.8125rem',
+              }}
+            >
+              <div>
+                Last Sign-In: <b>{formatIstDateTime(user.lastLoginAt) || 'Never'}</b>
+              </div>
               {user.previousLoginAt ? (
                 <div style={{ marginTop: '0.25rem' }}>
                   Previous Sign-In: <b>{formatIstDateTime(user.previousLoginAt)}</b>
@@ -217,7 +259,14 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
         ) : (
           /* Session History Tab */
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1rem',
+              }}
+            >
               <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
                 {sessions.length} recorded session{sessions.length === 1 ? '' : 's'}
               </span>
@@ -250,16 +299,24 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
                   {sessions.map((s) => (
                     <tr key={s.id}>
                       <td>
-                        <div style={{ fontWeight: 500, fontSize: '0.8125rem' }}>{s.userAgent ?? 'Unknown'}</div>
+                        <div style={{ fontWeight: 500, fontSize: '0.8125rem' }}>
+                          {s.userAgent ?? 'Unknown'}
+                        </div>
                         {s.mfaVerified ? (
-                          <span style={{ fontSize: '0.6875rem', color: '#16a34a' }}>✓ 2FA Verified</span>
+                          <span style={{ fontSize: '0.6875rem', color: '#16a34a' }}>
+                            ✓ 2FA Verified
+                          </span>
                         ) : null}
                       </td>
                       <td>{s.ip ?? '—'}</td>
                       <td>{formatIstDateTime(s.lastUsedAt)}</td>
                       <td>
                         <span className={`status ${s.isLive ? 'active' : 'inactive'}`}>
-                          {s.isLive ? 'Live' : s.revokedReason ? `Revoked (${s.revokedReason})` : 'Expired'}
+                          {s.isLive
+                            ? 'Live'
+                            : s.revokedReason
+                              ? `Revoked (${s.revokedReason})`
+                              : 'Expired'}
                         </span>
                       </td>
                     </tr>

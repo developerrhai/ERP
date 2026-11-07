@@ -4,7 +4,11 @@
 // ledger and Stock Balance views, previews, audit entries and permissions.
 import ExcelJS from 'exceljs';
 import request from 'supertest';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe as baseDescribe, expect, it } from 'vitest';
+// SUPERSEDED by Phase 8 (R-08): the four vouchers now have header + lines and go through approval before posting, so
+// these single-item, post-from-Draft flows no longer exist. Their rules are covered again, on the new API, by
+// tests/phase08-vouchers.test.ts, phase08-stock.test.ts and phase08-simulation.test.ts. Kept (skipped), not deleted.
+const describe = baseDescribe.skip;
 import { invalidateAccessCache } from '../src/core/rbac/access';
 import { API, auditRows, errorOf, newApp, prisma, signInAs, signInOwner } from './helpers';
 import type { Signed } from './helpers';

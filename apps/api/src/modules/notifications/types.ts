@@ -72,6 +72,22 @@ export const NOTIFICATION_TYPES: readonly NotificationTypeDef[] = [
     inAppLocked: false,
   },
   {
+    type: 'STOCK_EXPIRING',
+    label: 'Stock expiring',
+    description: 'Batches in stock have expired or expire within 30 days.',
+    group: 'System',
+    severity: 'WARN',
+    inAppLocked: false,
+  },
+  {
+    type: 'STOCK_REORDER',
+    label: 'Items to re-order',
+    description: 'Stock fell below the re-order level of one or more items.',
+    group: 'System',
+    severity: 'WARN',
+    inAppLocked: false,
+  },
+  {
     type: 'DOCUMENT_EXPIRING',
     label: 'Document expiring',
     description: 'A document you manage is about to expire.',

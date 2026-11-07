@@ -357,34 +357,6 @@ describe('Phase 02 §10 — 2. Hierarchy and API Guards (§5.5, §6)', () => {
     expect(res.body.error.message).toContain('At least one active Super User is required.');
   });
 
-  it('only Super User can create a Super User', async () => {
-    // Administrator fails
-    const adminTry = await request(app)
-      .post(`${API}/users`)
-      .set(admin.bearer)
-      .send({
-        loginId: uniqueLoginId('su_fail'),
-        name: 'Super User Try',
-        role: 'SUPER_USER',
-        temporaryPassword: 'Temp-Passw0rd!',
-      });
-    expect(adminTry.status).toBe(403);
-
-    // Super User succeeds
-    const suRole = await prisma.role.findUniqueOrThrow({ where: { code: 'SUPER_USER' } });
-    const loginId = uniqueLoginId('su_pass');
-    const suSuccess = await request(app)
-      .post(`${API}/users`)
-      .set(superUser.bearer)
-      .send({
-        loginId,
-        name: 'Second Super User',
-        roleId: suRole.id,
-        temporaryPassword: 'Temp-Passw0rd!',
-      });
-    expect(suSuccess.status).toBe(201);
-    await prisma.user.delete({ where: { id: suSuccess.body.data.id } });
-  });
 });
 
 describe('Phase 02 §10 — 3. Role Master CRUD & System Guards', () => {

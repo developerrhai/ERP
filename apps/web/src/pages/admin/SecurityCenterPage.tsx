@@ -1,12 +1,7 @@
 // Security Center (/m/admin-security): Phase 01 §2, §7, §8, §13.
 import { useEffect, useState } from 'react';
 import { useToast } from '../../components/Toast';
-import {
-  ApiError,
-  getSecurityPolicy,
-  getWhoAmI,
-  putSecurityPolicy,
-} from '../../lib/api';
+import { ApiError, getSecurityPolicy, getWhoAmI, putSecurityPolicy } from '../../lib/api';
 import type { ActionSet, AuditLog, SecurityPolicy } from '../../types';
 import { listAuditLogs } from './adminApi';
 import { listUsers } from '../users/usersApi';
@@ -78,14 +73,10 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
       if (usersRes) {
         const users = usersRes.users;
         const now = Date.now();
-        const admins = users.filter(
-          (u) => u.role === 'SUPER_ADMIN' || u.role === 'ADMIN',
-        );
+        const admins = users.filter((u) => u.role === 'SUPER_ADMIN' || u.role === 'ADMIN');
         setAdminsWithoutMfa(admins.filter((u) => !u.mfaEnabled).length);
         setLockedAccountsCount(
-          users.filter(
-            (u) => u.lockedUntil && new Date(u.lockedUntil).getTime() > now,
-          ).length,
+          users.filter((u) => u.lockedUntil && new Date(u.lockedUntil).getTime() > now).length,
         );
       }
 
@@ -336,7 +327,8 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   required
                 />
                 <span className="v8-sub" style={{ fontSize: 12 }}>
-                  NIST SP 800-63B recommends at least 12 characters with no arbitrary character classes.
+                  NIST SP 800-63B recommends at least 12 characters with no arbitrary character
+                  classes.
                 </span>
               </div>
 
@@ -368,9 +360,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   max={1440}
                   value={policy.lockoutMinutes}
                   disabled={!actions.edit}
-                  onChange={(e) =>
-                    setPolicy({ ...policy, lockoutMinutes: Number(e.target.value) })
-                  }
+                  onChange={(e) => setPolicy({ ...policy, lockoutMinutes: Number(e.target.value) })}
                   required
                 />
                 <span className="v8-sub" style={{ fontSize: 12 }}>
@@ -389,9 +379,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   style={{ width: 18, height: 18, marginTop: 2 }}
                   checked={policy.mfaRequiredForAdmins}
                   disabled={!actions.edit}
-                  onChange={(e) =>
-                    setPolicy({ ...policy, mfaRequiredForAdmins: e.target.checked })
-                  }
+                  onChange={(e) => setPolicy({ ...policy, mfaRequiredForAdmins: e.target.checked })}
                 />
                 <div>
                   <label
@@ -401,8 +389,9 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                     Require two-step verification for Administrators
                   </label>
                   <span className="v8-sub" style={{ fontSize: 13, display: 'block', marginTop: 4 }}>
-                    When enabled, all Super Admin and Admin accounts must enroll an authenticator app
-                    before accessing ERP modules. Users without two-step will be guided directly to setup.
+                    When enabled, all Super Admin and Admin accounts must enroll an authenticator
+                    app before accessing ERP modules. Users without two-step will be guided directly
+                    to setup.
                   </span>
                 </div>
               </div>
@@ -420,9 +409,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   max={240}
                   value={policy.idleMinutes}
                   disabled={!actions.edit}
-                  onChange={(e) =>
-                    setPolicy({ ...policy, idleMinutes: Number(e.target.value) })
-                  }
+                  onChange={(e) => setPolicy({ ...policy, idleMinutes: Number(e.target.value) })}
                   required
                 />
                 <span className="v8-sub" style={{ fontSize: 12 }}>
@@ -439,9 +426,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   max={72}
                   value={policy.absoluteHours}
                   disabled={!actions.edit}
-                  onChange={(e) =>
-                    setPolicy({ ...policy, absoluteHours: Number(e.target.value) })
-                  }
+                  onChange={(e) => setPolicy({ ...policy, absoluteHours: Number(e.target.value) })}
                   required
                 />
                 <span className="v8-sub" style={{ fontSize: 12 }}>
@@ -517,9 +502,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   <tbody>
                     {recentEvents.map((evt) => (
                       <tr key={evt.id}>
-                        <td style={{ whiteSpace: 'nowrap' }}>
-                          {formatIstDateTime(evt.at)}
-                        </td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{formatIstDateTime(evt.at)}</td>
                         <td>
                           <code>{evt.action}</code>
                         </td>

@@ -192,7 +192,7 @@ export function signedIn(user: User, routes: Record<string, Handler> = {}) {
 export function permissionsRoute(actions: Partial<Record<string, boolean>>): Handler {
   return (call) => {
     const pageId = new URL(call.url, 'http://test').searchParams.get('pageId') ?? '';
-    const all = ['view', 'add', 'edit', 'delete', 'approve', 'export', 'controls'];
+    const all = ['view', 'add', 'edit', 'delete', 'submit', 'approve', 'post', 'cancel', 'export', 'print', 'import', 'controls'];
     return json(200, {
       data: {
         pageId,

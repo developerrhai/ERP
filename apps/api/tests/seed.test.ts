@@ -111,9 +111,9 @@ describe('seeded content', () => {
     expect(new Set(salesFamilies)).toEqual(new Set(registry.data.deptFamilies.Sales));
   });
 
-  it('248 module controls and the letterhead', async () => {
+  it('249 module controls and the letterhead', async () => {
     const pages = [...registry.pages.keys()];
-    expect(await prisma.moduleControl.count({ where: { pageId: { in: pages } } })).toBe(248);
+    expect(await prisma.moduleControl.count({ where: { pageId: { in: pages } } })).toBe(249);
     const letterhead = await prisma.setting.findUnique({ where: { key: 'letterhead' } });
     expect(Object.keys(letterhead?.value as object).sort()).toEqual(
       Object.keys(DEFAULT_LETTERHEAD).sort(),

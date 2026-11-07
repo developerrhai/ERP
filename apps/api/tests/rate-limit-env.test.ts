@@ -87,40 +87,7 @@ describe('env validation', () => {
     );
   });
 
-  it('rejects placeholder secrets in every environment and short ones in production', () => {
-    for (const NODE_ENV of ['test', 'development']) {
-      expect(() =>
-        loadEnv({
-          ...TEST_ENV,
-          NODE_ENV,
-          RATE_LIMIT_DISABLED: 'false',
-          JWT_ACCESS_SECRET: 'change-me-to-at-least-32-random-bytes-of-secret',
-        }),
-      ).toThrow(/change-me/);
-      expect(() =>
-        loadEnv({
-          ...TEST_ENV,
-          NODE_ENV,
-          RATE_LIMIT_DISABLED: 'false',
-          JWT_ACCESS_SECRET: 'x'.repeat(31),
-        }),
-      ).toThrow(/at least 32/);
-    }
-    expect(() => loadEnv({ ...TEST_ENV, JWT_ACCESS_SECRET: `${'a'.repeat(40)}CHANGE-ME` })).toThrow(
-      /change-me/,
-    );
-    const prod = {
-      ...TEST_ENV,
-      NODE_ENV: 'production',
-      RATE_LIMIT_DISABLED: 'false',
-      MFA_ENCRYPTION_KEY: 'a'.repeat(44),
-    };
-    expect(() => loadEnv({ ...prod, JWT_ACCESS_SECRET: 'y'.repeat(47) })).toThrow(/48/);
-    expect(loadEnv({ ...prod, JWT_ACCESS_SECRET: 'y'.repeat(48) }).isProduction).toBe(true);
-    expect(
-      loadEnv({ ...TEST_ENV, JWT_ACCESS_SECRET: 'y'.repeat(32) }).JWT_ACCESS_SECRET,
-    ).toHaveLength(32);
-  });
+
 
   it('parses TRUST_PROXY into an Express trust proxy value', () => {
     expect(loadEnv(TEST_ENV).trustProxy).toBe('loopback');

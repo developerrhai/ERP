@@ -2,6 +2,8 @@
 // barcode, an alternate UOM needs a factor > 0, the base UOM is frozen once stock exists, delete is
 // refused (409 IN_USE) when the item has ledger rows or vouchers (deactivate it instead). Every write
 // is audited; soft delete returns an undo token like the generic engine.
+import { HSN_REQUIRED_MESSAGE, resolveItemHsn } from '../../masters/hsn-rules';
+import { AppError } from '../../../core/http/errors';
 import { Prisma } from '@prisma/client';
 import type { Item } from '@prisma/client';
 import { prisma } from '../../../core/db/prisma';
@@ -56,6 +58,7 @@ const COLUMNS: Record<string, keyof Prisma.ItemUncheckedUpdateManyInput> = {
   barcode: 'barcode',
   batchTracked: 'batchTracked',
   serialTracked: 'serialTracked',
+  qcRequired: 'qcRequired',
   shelfLifeDays: 'shelfLifeDays',
   standardCost: 'standardCost',
   sellingPrice: 'sellingPrice',
@@ -76,6 +79,7 @@ function toData(row: Item): Record<string, unknown> {
     barcode: row.barcode,
     batchTracked: row.batchTracked,
     serialTracked: row.serialTracked,
+    qcRequired: row.qcRequired,
     shelfLifeDays: row.shelfLifeDays,
     standardCost: num(row.standardCost),
     sellingPrice: num(row.sellingPrice),
@@ -208,6 +212,7 @@ export const itemHandler: TypedHandler = {
     if (explicit && (await repo.findByCode(explicit))) {
       throw Errors.duplicate({ itemCode: 'This item code is already in use.' });
     }
+    const hsnId = await resolveItemHsn(get<string>('hsnSac')); // Phase 6: HSN is required
     const barcode = get<string>('barcode');
     if (barcode && (await repo.findByBarcode(barcode))) {
       throw Errors.duplicate({ barcode: 'This barcode is already in use.' });
@@ -218,6 +223,7 @@ export const itemHandler: TypedHandler = {
         const row = await repo.create(
           {
             ...(createData(values) as Prisma.ItemUncheckedCreateInput),
+            hsnId,
             code,
             createdById: caller.auth.userId,
           } as Prisma.ItemUncheckedCreateInput,
@@ -264,6 +270,21 @@ export const itemHandler: TypedHandler = {
     const barcode = after.barcode as string | null;
     if (barcode && barcode !== current.barcode && (await repo.findByBarcode(barcode, id))) {
       throw Errors.duplicate({ barcode: 'This barcode is already in use.' });
+    }
+    // Phase 6: HSN is required. Legacy items without one stay as they are, but cannot be edited until they get one.
+    const hsnTouched = v.values.hsnSac !== undefined || v.cleared.includes('hsnSac');
+    if (hsnTouched || current.hsnId === null) {
+      if (
+        v.cleared.includes('hsnSac') ||
+        (!hsnTouched && current.hsnId === null && !current.hsnSac)
+      ) {
+        throw new AppError(422, 'HSN_REQUIRED', HSN_REQUIRED_MESSAGE, {
+          hsnSac: HSN_REQUIRED_MESSAGE,
+        });
+      }
+      (data as Record<string, unknown>).hsnId = await resolveItemHsn(
+        (after.hsnSac as string | null) ?? null,
+      );
     }
     const before = toData(current);
     const changed = Object.keys(after).filter(

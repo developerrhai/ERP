@@ -140,7 +140,11 @@ export function AccountSecurityPage({ user }: Props) {
       loadStatus();
       loadSessions();
     } catch (err) {
-      setMfaError(err instanceof ApiError ? err.message : 'That code did not work. Check the time on your phone and try the newest code.');
+      setMfaError(
+        err instanceof ApiError
+          ? err.message
+          : 'That code did not work. Check the time on your phone and try the newest code.',
+      );
     } finally {
       setMfaPending(false);
     }
@@ -189,7 +193,9 @@ export function AccountSecurityPage({ user }: Props) {
       toast('Two-step verification has been turned off.');
       loadStatus();
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Could not turn off two-step verification.');
+      setActionError(
+        err instanceof ApiError ? err.message : 'Could not turn off two-step verification.',
+      );
     }
   };
 
@@ -207,7 +213,9 @@ export function AccountSecurityPage({ user }: Props) {
       toast('New recovery codes generated.');
       loadStatus();
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Could not regenerate recovery codes.');
+      setActionError(
+        err instanceof ApiError ? err.message : 'Could not regenerate recovery codes.',
+      );
     }
   };
 
@@ -246,7 +254,13 @@ export function AccountSecurityPage({ user }: Props) {
         {/* CARD 1: Password */}
         <div className="card" style={{ padding: '1.5rem' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Change Password</h2>
-          <p style={{ color: 'var(--color-muted, #64748b)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
+          <p
+            style={{
+              color: 'var(--color-muted, #64748b)',
+              fontSize: '0.875rem',
+              marginBottom: '1.25rem',
+            }}
+          >
             Choose a unique phrase of at least 12 characters that you do not use anywhere else.
           </p>
 
@@ -309,11 +323,16 @@ export function AccountSecurityPage({ user }: Props) {
 
         {/* CARD 2: Two-Step Verification */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+          >
             <div>
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Two-Step Verification (MFA)</h2>
+              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
+                Two-Step Verification (MFA)
+              </h2>
               <p style={{ color: 'var(--color-muted, #64748b)', fontSize: '0.875rem' }}>
-                Protect your account with a 6-digit code from Google Authenticator or Microsoft Authenticator.
+                Protect your account with a 6-digit code from Google Authenticator or Microsoft
+                Authenticator.
               </p>
             </div>
             {mfaStatus?.enabled ? (
@@ -375,22 +394,25 @@ export function AccountSecurityPage({ user }: Props) {
                   </div>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  className="btn primary"
-                  onClick={() => setMfaWizardStep(1)}
-                >
+                <button type="button" className="btn primary" onClick={() => setMfaWizardStep(1)}>
                   Turn On Two-Step Verification
                 </button>
               )}
             </div>
           ) : mfaWizardStep === 1 ? (
             /* Wizard Step 1: Confirm Password */
-            <form onSubmit={(e) => void onStartMfaSetup(e)} style={{ maxWidth: '420px', marginTop: '1.25rem' }}>
+            <form
+              onSubmit={(e) => void onStartMfaSetup(e)}
+              style={{ maxWidth: '420px', marginTop: '1.25rem' }}
+            >
               <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
                 Step 1 of 3: Enter your current password to begin.
               </p>
-              {mfaError ? <div className="msg error show" style={{ marginBottom: '1rem' }}>{mfaError}</div> : null}
+              {mfaError ? (
+                <div className="msg error show" style={{ marginBottom: '1rem' }}>
+                  {mfaError}
+                </div>
+              ) : null}
               <div className="field">
                 <label htmlFor="mfa-pw">Current Password</label>
                 <input
@@ -402,27 +424,59 @@ export function AccountSecurityPage({ user }: Props) {
                 />
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="submit" className="btn primary" disabled={mfaPending || !mfaCurrentPassword}>
+                <button
+                  type="submit"
+                  className="btn primary"
+                  disabled={mfaPending || !mfaCurrentPassword}
+                >
                   {mfaPending ? 'Checking…' : 'Continue'}
                 </button>
-                <button type="button" className="btn secondary" onClick={() => setMfaWizardStep(null)}>
+                <button
+                  type="button"
+                  className="btn secondary"
+                  onClick={() => setMfaWizardStep(null)}
+                >
                   Cancel
                 </button>
               </div>
             </form>
           ) : mfaWizardStep === 2 ? (
             /* Wizard Step 2: Scan QR & Enter 6-digit Code */
-            <form onSubmit={(e) => void onVerifyMfaSetup(e)} style={{ maxWidth: '420px', marginTop: '1.25rem' }}>
+            <form
+              onSubmit={(e) => void onVerifyMfaSetup(e)}
+              style={{ maxWidth: '420px', marginTop: '1.25rem' }}
+            >
               <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
-                Step 2 of 3: Scan this QR code with your phone&apos;s Authenticator app, then enter the 6-digit code.
+                Step 2 of 3: Scan this QR code with your phone&apos;s Authenticator app, then enter
+                the 6-digit code.
               </p>
-              {mfaError ? <div className="msg error show" style={{ marginBottom: '1rem' }}>{mfaError}</div> : null}
+              {mfaError ? (
+                <div className="msg error show" style={{ marginBottom: '1rem' }}>
+                  {mfaError}
+                </div>
+              ) : null}
 
               {qrCodeData ? (
                 <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                  <img src={qrCodeData} alt="TOTP QR Code" style={{ width: '180px', height: '180px', border: '1px solid #e2e8f0', borderRadius: '4px' }} />
+                  <img
+                    src={qrCodeData}
+                    alt="TOTP QR Code"
+                    style={{
+                      width: '180px',
+                      height: '180px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '4px',
+                    }}
+                  />
                   {totpSecret ? (
-                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem', wordBreak: 'break-all' }}>
+                    <p
+                      style={{
+                        fontSize: '0.75rem',
+                        color: '#64748b',
+                        marginTop: '0.5rem',
+                        wordBreak: 'break-all',
+                      }}
+                    >
                       Secret key: <code>{totpSecret}</code>
                     </p>
                   ) : null}
@@ -444,10 +498,18 @@ export function AccountSecurityPage({ user }: Props) {
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="submit" className="btn primary" disabled={mfaPending || verifyCode.length !== 6}>
+                <button
+                  type="submit"
+                  className="btn primary"
+                  disabled={mfaPending || verifyCode.length !== 6}
+                >
                   {mfaPending ? 'Verifying…' : 'Verify & Enable'}
                 </button>
-                <button type="button" className="btn secondary" onClick={() => setMfaWizardStep(null)}>
+                <button
+                  type="button"
+                  className="btn secondary"
+                  onClick={() => setMfaWizardStep(null)}
+                >
                   Cancel
                 </button>
               </div>
@@ -455,11 +517,19 @@ export function AccountSecurityPage({ user }: Props) {
           ) : (
             /* Wizard Step 3: Save Recovery Codes */
             <div style={{ maxWidth: '480px', marginTop: '1.25rem' }}>
-              <p style={{ fontSize: '0.875rem', marginBottom: '0.75rem', color: '#16a34a', fontWeight: 600 }}>
+              <p
+                style={{
+                  fontSize: '0.875rem',
+                  marginBottom: '0.75rem',
+                  color: '#16a34a',
+                  fontWeight: 600,
+                }}
+              >
                 ✓ Step 3 of 3: Save your 10 single-use recovery codes.
               </p>
               <p style={{ fontSize: '0.8125rem', color: '#64748b', marginBottom: '1rem' }}>
-                If you ever lose access to your phone, each recovery code can be used once to sign in. Store them safely.
+                If you ever lose access to your phone, each recovery code can be used once to sign
+                in. Store them safely.
               </p>
 
               <div
@@ -490,7 +560,16 @@ export function AccountSecurityPage({ user }: Props) {
                 </button>
               </div>
 
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', marginBottom: '1.25rem', cursor: 'pointer' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.875rem',
+                  marginBottom: '1.25rem',
+                  cursor: 'pointer',
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={savedCodesChecked}
@@ -517,7 +596,14 @@ export function AccountSecurityPage({ user }: Props) {
 
         {/* CARD 3: Devices Table */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1rem',
+            }}
+          >
             <div>
               <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>My Signed-In Devices</h2>
               <p style={{ color: 'var(--color-muted, #64748b)', fontSize: '0.875rem' }}>
@@ -525,11 +611,7 @@ export function AccountSecurityPage({ user }: Props) {
               </p>
             </div>
             {sessions.length > 1 ? (
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => void onSignOutOthers()}
-              >
+              <button type="button" className="btn primary" onClick={() => void onSignOutOthers()}>
                 Sign out all other devices
               </button>
             ) : null}
@@ -583,7 +665,11 @@ export function AccountSecurityPage({ user }: Props) {
                           Sign out
                         </button>
                       ) : (
-                        <span style={{ color: 'var(--color-muted, #64748b)', fontSize: '0.8125rem' }}>Current</span>
+                        <span
+                          style={{ color: 'var(--color-muted, #64748b)', fontSize: '0.8125rem' }}
+                        >
+                          Current
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -601,27 +687,64 @@ export function AccountSecurityPage({ user }: Props) {
 
       {/* Disable Modal */}
       {showDisableModal ? (
-        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+        <div
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+        >
           <div className="card" style={{ maxWidth: '420px', width: '90%', padding: '1.5rem' }}>
             <h2>Turn Off Two-Step Verification</h2>
             <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 1rem' }}>
               Confirm your password and enter a 6-digit code to turn off two-step verification.
             </p>
-            {actionError ? <div className="msg error show" style={{ marginBottom: '1rem' }}>{actionError}</div> : null}
+            {actionError ? (
+              <div className="msg error show" style={{ marginBottom: '1rem' }}>
+                {actionError}
+              </div>
+            ) : null}
             <form onSubmit={(e) => void onDisableMfa(e)}>
               <div className="field">
                 <label htmlFor="dis-pw">Password</label>
-                <input id="dis-pw" type="password" value={actionPassword} onChange={(e) => setActionPassword(e.target.value)} />
+                <input
+                  id="dis-pw"
+                  type="password"
+                  value={actionPassword}
+                  onChange={(e) => setActionPassword(e.target.value)}
+                />
               </div>
               <div className="field">
                 <label htmlFor="dis-code">6-Digit Code</label>
-                <input id="dis-code" type="text" maxLength={6} value={actionCode} onChange={(e) => setActionCode(e.target.value)} />
+                <input
+                  id="dis-code"
+                  type="text"
+                  maxLength={6}
+                  value={actionCode}
+                  onChange={(e) => setActionCode(e.target.value)}
+                />
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="submit" className="btn danger" disabled={!actionPassword || actionCode.length !== 6}>
+                <button
+                  type="submit"
+                  className="btn danger"
+                  disabled={!actionPassword || actionCode.length !== 6}
+                >
                   Turn Off
                 </button>
-                <button type="button" className="btn secondary" onClick={() => { setShowDisableModal(false); setActionError(''); }}>
+                <button
+                  type="button"
+                  className="btn secondary"
+                  onClick={() => {
+                    setShowDisableModal(false);
+                    setActionError('');
+                  }}
+                >
                   Cancel
                 </button>
               </div>
@@ -632,27 +755,64 @@ export function AccountSecurityPage({ user }: Props) {
 
       {/* Regenerate Modal */}
       {showRegenModal ? (
-        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+        <div
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+        >
           <div className="card" style={{ maxWidth: '420px', width: '90%', padding: '1.5rem' }}>
             <h2>Regenerate Recovery Codes</h2>
             <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 1rem' }}>
               Generating new recovery codes will invalidate all existing ones.
             </p>
-            {actionError ? <div className="msg error show" style={{ marginBottom: '1rem' }}>{actionError}</div> : null}
+            {actionError ? (
+              <div className="msg error show" style={{ marginBottom: '1rem' }}>
+                {actionError}
+              </div>
+            ) : null}
             <form onSubmit={(e) => void onRegenCodes(e)}>
               <div className="field">
                 <label htmlFor="reg-pw">Password</label>
-                <input id="reg-pw" type="password" value={actionPassword} onChange={(e) => setActionPassword(e.target.value)} />
+                <input
+                  id="reg-pw"
+                  type="password"
+                  value={actionPassword}
+                  onChange={(e) => setActionPassword(e.target.value)}
+                />
               </div>
               <div className="field">
                 <label htmlFor="reg-code">6-Digit Code</label>
-                <input id="reg-code" type="text" maxLength={6} value={actionCode} onChange={(e) => setActionCode(e.target.value)} />
+                <input
+                  id="reg-code"
+                  type="text"
+                  maxLength={6}
+                  value={actionCode}
+                  onChange={(e) => setActionCode(e.target.value)}
+                />
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="submit" className="btn primary" disabled={!actionPassword || actionCode.length !== 6}>
+                <button
+                  type="submit"
+                  className="btn primary"
+                  disabled={!actionPassword || actionCode.length !== 6}
+                >
                   Regenerate
                 </button>
-                <button type="button" className="btn secondary" onClick={() => { setShowRegenModal(false); setActionError(''); }}>
+                <button
+                  type="button"
+                  className="btn secondary"
+                  onClick={() => {
+                    setShowRegenModal(false);
+                    setActionError('');
+                  }}
+                >
                   Cancel
                 </button>
               </div>

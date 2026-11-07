@@ -33,6 +33,7 @@ import {
 } from '../../engine/lock-matrix';
 import type { LockOp } from '../../engine/lock-matrix';
 import { approvalService } from '../approvals/service';
+import { customerIdFor, documentSettings } from '../format-settings/resolve';
 import { naturalKeyField } from '../imports/rows';
 import { auditLogRepository } from '../audit-logs/repository';
 import { toAuditLogDto } from '../audit-logs/service';
@@ -62,6 +63,9 @@ export interface RecordDto {
   createdBy: { id: string; name: string };
   updatedAt: string;
   deletedAt: string | null;
+  /** Phase 6B: the format / rule-set versions this document was created with. */
+  formatVersionId: string | null;
+  ruleSetVersionIds: Record<string, string> | null;
 }
 
 function toDto(row: RecordRow): RecordDto {
@@ -79,6 +83,8 @@ function toDto(row: RecordRow): RecordDto {
     createdBy: { id: row.createdById, name: row.createdByName },
     updatedAt: row.updatedAt.toISOString(),
     deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
+    formatVersionId: row.formatVersionId ?? null,
+    ruleSetVersionIds: row.ruleSetVersionIds ?? null,
   };
 }
 
@@ -294,6 +300,13 @@ export const recordService = {
     const validated = validateRecordInput(schema, p.values, 'create');
     const data = applyAadhaar({ ...validated.values }, validated.aadhaar);
     assertDateOrder(schema, data, new Set(Object.keys(validated.values)));
+    const settings = await documentSettings.stamp(tx, {
+      pageId: p.pageId,
+      unitId: p.unitId,
+      customerId: await customerIdFor(tx, data),
+    });
+    const calc = documentSettings.calculate(settings.ruleSets, data);
+    Object.assign(data, calc.fields);
     const derived = deriveColumns(schema, data);
     const code = await NumberingService.allocate(tx, {
       pageId: p.pageId,
@@ -310,9 +323,17 @@ export const recordService = {
         department: p.department,
         code,
         status: schema.master ? 'Active' : 'Draft',
-        amount: derived.amount,
+        amount: calc.amount ?? derived.amount,
         docDate: derived.docDate ? new Date(`${derived.docDate}T00:00:00Z`) : null,
         data: data as Prisma.InputJsonObject,
+        formatVersionId: settings.formatVersionId,
+        ...(documentSettings.pinMap(settings.ruleSets)
+          ? {
+              ruleSetVersionIds: documentSettings.pinMap(
+                settings.ruleSets,
+              ) as Prisma.InputJsonObject,
+            }
+          : {}),
         createdById: p.userId,
       },
       tx,
@@ -347,7 +368,6 @@ export const recordService = {
     const validated = validateRecordInput(schema, input, 'create');
     const data = applyAadhaar({ ...validated.values }, validated.aadhaar);
     assertDateOrder(schema, data, new Set(Object.keys(validated.values)));
-    const derived = deriveColumns(schema, data);
     const unit = await prisma.unit.findUnique({ where: { id: unitId } });
     if (!unit) throw Errors.contextInvalid('Unknown unit.');
     const user = caller.auth.user;
@@ -385,6 +405,16 @@ export const recordService = {
             if (row) return { record: toDto(row), replay: true };
           }
         }
+        // Phase 6B: the settings versions in force now are pinned to the new document, and the
+        // pinned rule sets compute the amount (a later publish never changes this document).
+        const settings = await documentSettings.stamp(tx, {
+          pageId,
+          unitId,
+          customerId: await customerIdFor(tx, data),
+        });
+        const calc = documentSettings.calculate(settings.ruleSets, data);
+        const stored: Record<string, unknown> = { ...data, ...calc.fields };
+        const derived = deriveColumns(schema, stored);
         const code = await NumberingService.allocate(tx, {
           pageId,
           unitId,
@@ -400,15 +430,23 @@ export const recordService = {
             department: user.department ?? 'Administration',
             code,
             status: schema.master ? 'Active' : 'Draft',
-            amount: derived.amount,
+            amount: calc.amount ?? derived.amount,
             docDate: derived.docDate ? new Date(`${derived.docDate}T00:00:00Z`) : null,
-            data: data as Prisma.InputJsonObject,
+            data: stored as Prisma.InputJsonObject,
+            formatVersionId: settings.formatVersionId,
+            ...(documentSettings.pinMap(settings.ruleSets)
+              ? {
+                  ruleSetVersionIds: documentSettings.pinMap(
+                    settings.ruleSets,
+                  ) as Prisma.InputJsonObject,
+                }
+              : {}),
             createdById: user.id,
           },
           tx,
         );
         await audit(tx, 'RECORD_CREATED', caller, { id: created.id, code }, pageId, {
-          after: publicData(data) as Prisma.InputJsonObject,
+          after: publicData(stored) as Prisma.InputJsonObject,
         });
         if (idempotencyKey) {
           await repo.saveIdempotency(
@@ -469,14 +507,18 @@ export const recordService = {
     const diff = changedKeys(publicData(current.data), publicData(next));
     // Nothing changes: return the current row without a version bump or an audit row.
     if (!diff.changed) return toDto(current);
-    const derived = deriveColumns(schema, next);
     const updated = await prisma.$transaction(async (tx) => {
+      // Phase 6B: the document is recalculated with the rule-set versions it was CREATED with.
+      const pinned = await documentSettings.pinned(tx, current.ruleSetVersionIds);
+      const calc = documentSettings.calculate(pinned, next);
+      Object.assign(next, calc.fields);
+      const derived = deriveColumns(schema, next);
       const ok = await repo.updateIfVersion(
         id,
         expectedVersion,
         {
           data: next as Prisma.InputJsonObject,
-          amount: derived.amount,
+          amount: calc.amount ?? derived.amount,
           docDate: derived.docDate ? new Date(`${derived.docDate}T00:00:00Z`) : null,
           updatedById: caller.auth.userId,
         },

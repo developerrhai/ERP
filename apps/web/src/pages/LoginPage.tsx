@@ -6,11 +6,7 @@ import { Navigate, useSearchParams } from 'react-router-dom';
 import { useSession } from '../auth/AuthProvider';
 import { PasswordField } from '../components/Field';
 import { useToast } from '../components/Toast';
-import {
-  ApiError,
-  login,
-  verifyMfa,
-} from '../lib/api';
+import { ApiError, login, verifyMfa } from '../lib/api';
 import { safeNext } from '../lib/next-path';
 import type { AuthResult, User } from '../types';
 import { LoginLayout } from './LoginLayout';
@@ -115,7 +111,9 @@ export function LoginPage() {
     if (!mfaChallenge || inFlight.current) return;
     const code = (codeToSubmit ?? mfaCode).trim();
     if (!code) {
-      setError(useRecovery ? 'Recovery codes look like ABCD-1234.' : 'Please enter the 6-digit code.');
+      setError(
+        useRecovery ? 'Recovery codes look like ABCD-1234.' : 'Please enter the 6-digit code.',
+      );
       return;
     }
     inFlight.current = true;

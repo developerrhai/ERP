@@ -127,7 +127,9 @@ describe('Stock Balance (list-only typed page)', () => {
   });
 });
 
-describe('Opening Stock', () => {
+// SUPERSEDED by Phase 8: Opening Stock, Stock Transfer and Stock Adjustment are now header + lines screens
+// (pages/inventory/VouchersPage.tsx, tested in pages/inventory/Inventory.test.tsx). Kept, skipped, not deleted.
+describe.skip('Opening Stock', () => {
   const P = '/api/v1/pages/inv-opening';
   const open = '/m/inv-opening?tab=Opening%20Register';
   const posted: RecordRow = {
@@ -254,7 +256,7 @@ describe('Opening Stock', () => {
   });
 });
 
-describe('Stock Transfer', () => {
+describe.skip('Stock Transfer', () => {
   const P = '/api/v1/pages/inv-transfer';
   const open = '/m/inv-transfer?tab=Transfer%20Register';
   const draft = transferRow(1, 'Draft');
@@ -365,7 +367,7 @@ describe('Stock Transfer', () => {
   });
 });
 
-describe('Stock Adjustment computed fields', () => {
+describe.skip('Stock Adjustment computed fields', () => {
   const P = '/api/v1/pages/inv-adjustment';
   const schema: PageSchema = {
     ...ADJUST_SCHEMA,

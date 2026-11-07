@@ -126,7 +126,9 @@ export function DesignationMasterPage({ actions }: { actions: ActionSet }) {
                 'All Departments';
               return (
                 <tr key={d.id}>
-                  <td><strong>{d.code}</strong></td>
+                  <td>
+                    <strong>{d.code}</strong>
+                  </td>
                   <td>{d.name}</td>
                   <td>{deptName}</td>
                   <td>{d.level ?? 10}</td>

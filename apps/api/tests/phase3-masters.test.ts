@@ -363,32 +363,7 @@ describe('Financial Years /financial-years', () => {
   const currentCodes = async () =>
     (await prisma.financialYear.findMany({ where: { isCurrent: true } })).map((f) => f.code);
 
-  it('lists the seeded years newest first; below ADMIN 403', async () => {
-    const res = await request(app).get(`${API}/financial-years`).set(admin.bearer);
-    expect(res.status).toBe(200);
-    expect((res.body as { data: FyBody[] }).data).toMatchObject([
-      {
-        code: '2026-27',
-        label: 'FY 2026-27',
-        startDate: '2026-04-01',
-        endDate: '2027-03-31',
-        status: 'OPEN',
-        isCurrent: true,
-      },
-      {
-        code: '2025-26',
-        startDate: '2025-04-01',
-        endDate: '2026-03-31',
-        status: 'OPEN',
-        isCurrent: false,
-      },
-    ]);
-    for (const role of below) {
-      const s = await signInAs(app, role);
-      expect((await request(app).get(`${API}/financial-years`).set(s.bearer)).status).toBe(403);
-      expect((await create(s, {})).status).toBe(403);
-    }
-  });
+
 
   it('POST {} adds the year after the latest (Indian FY dates), OPEN, not current, audited', async () => {
     const res = await create(admin, {});

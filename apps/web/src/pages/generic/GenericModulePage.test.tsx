@@ -107,9 +107,7 @@ describe('tabs and honest notices', () => {
     expect(screen.queryByText(/This view is built in Phase/)).toBeNull();
     // Phase 5: Approvals is live on generic pages (requests of this page, from the server).
     await ue.click(screen.getByRole('tab', { name: 'Approvals' }));
-    expect(
-      await screen.findByText(/No approval requests for this page yet/),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/No approval requests for this page yet/)).toBeInTheDocument();
     expect(screen.queryByText(/This view is built in Phase/)).toBeNull();
     await ue.click(screen.getByRole('tab', { name: 'AI Decision Center' }));
     expect(await screen.findByRole('list', { name: 'Build phases' })).toBeInTheDocument();

@@ -27,6 +27,11 @@ export const SETUP_TILES: readonly Tile[] = [
   },
   { title: 'Approval Matrix', text: 'Department and amount thresholds.', phase: 'Phase 6' },
   {
+    title: 'Finance Approval Limits',
+    text: 'Amounts from which journals and notes need approval.',
+    to: '/m/admin-settings/finance-limits',
+  },
+  {
     title: 'Letterhead & PDF',
     text: 'Company PDF template settings.',
     to: '/m/admin-settings/letterhead',

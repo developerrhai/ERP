@@ -126,22 +126,27 @@ export function CurrencyMasterPage({ actions }: { actions: ActionSet }) {
               const active = c.status === 'ACTIVE';
               return (
                 <tr key={c.id}>
-                  <td><strong>{c.code}</strong></td>
+                  <td>
+                    <strong>{c.code}</strong>
+                  </td>
                   <td>{c.name}</td>
-                  <td><span style={{ fontSize: '1.1em' }}>{c.symbol}</span></td>
+                  <td>
+                    <span style={{ fontSize: '1.1em' }}>{c.symbol}</span>
+                  </td>
                   <td>{c.decimalPlaces ?? 2}</td>
                   <td>
                     {c.isBase ? (
-                      <span className="chip" style={{ background: '#dbeafe', color: '#1e40af', fontWeight: 600 }}>
+                      <span
+                        className="chip"
+                        style={{ background: '#dbeafe', color: '#1e40af', fontWeight: 600 }}
+                      >
                         Base Currency
                       </span>
                     ) : (
                       '—'
                     )}
                   </td>
-                  <td>
-                    {c.isBase ? '1.000000' : Number(c.exchangeRate ?? 1).toFixed(4)}
-                  </td>
+                  <td>{c.isBase ? '1.000000' : Number(c.exchangeRate ?? 1).toFixed(4)}</td>
                   <td>
                     <span className={`status ${c.status.toLowerCase()}`}>
                       {active ? 'Active' : 'Inactive'}

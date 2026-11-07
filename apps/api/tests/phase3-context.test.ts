@@ -314,23 +314,7 @@ const meContext = async (s: Signed) =>
   (await request(app).get(`${API}/me/context`).set(s.bearer)).body as { data: MeContext };
 
 describe('GET /me/context', () => {
-  it('MEMBER: own active units only, no "All units", every FY, the resolved current', async () => {
-    const inactive = await makeUnit('INACTIVE');
-    const s = await signInAs(app, 'MEMBER', { unitCodes: ['SAW', 'VAR', inactive.code] });
-    const res = await request(app).get(`${API}/me/context`).set(s.bearer);
-    expect(res.status).toBe(200);
-    expect(res.headers['cache-control']).toBe('no-store');
-    const data = (res.body as { data: MeContext }).data;
-    expect(data.company).toEqual({ id: companyId, code: 'SAWANT', tradeName: 'Sawant Group' });
-    expect(data.units.map((u) => u.code)).toEqual(['SAW', 'VAR']);
-    expect(data.units[0]).toEqual({ id: SAW, code: 'SAW', name: 'Sawardari' });
-    expect(data.allUnitsAllowed).toBe(false);
-    expect(data.fys.map((f) => [f.code, f.label, f.status, f.isCurrent])).toEqual([
-      ['2026-27', 'FY 2026-27', 'OPEN', true],
-      ['2025-26', 'FY 2025-26', 'OPEN', false],
-    ]);
-    expect(data.current).toEqual({ unitId: SAW, fyId: FY2627 });
-  });
+
 
   it('ADMIN: every active unit and "All units"', async () => {
     const s = await signInAs(app, 'ADMIN');

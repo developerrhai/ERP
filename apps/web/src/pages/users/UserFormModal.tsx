@@ -61,12 +61,16 @@ export function UserFormModal({
 }: Props) {
   const options = manageableRoles(roles);
   const initialRole = options.find(
-    (r) => (user?.roleId && r.id === user.roleId) || (user?.role && (r.code === user.role || r.id === user.role)),
+    (r) =>
+      (user?.roleId && r.id === user.roleId) ||
+      (user?.role && (r.code === user.role || r.id === user.role)),
   );
   const [loginId, setLoginId] = useState(user?.loginId ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [name, setName] = useState(user?.name ?? '');
-  const [roleId, setRoleId] = useState(initialRole?.code ?? initialRole?.id ?? user?.role ?? user?.roleId ?? '');
+  const [roleId, setRoleId] = useState(
+    initialRole?.code ?? initialRole?.id ?? user?.role ?? user?.roleId ?? '',
+  );
   const [department, setDepartment] = useState(user?.department ?? '');
   const [extraDepartments, setExtraDepartments] = useState<string[]>(user?.extraDepartments ?? []);
   const [approvalLimit, setApprovalLimit] = useState<string>(
@@ -102,7 +106,9 @@ export function UserFormModal({
         ? unitOptions.map((u) => u.id).filter((x) => x === id || prev.includes(x))
         : prev.filter((x) => x !== id),
     );
-  const [errors, setErrors] = useState<Errors & { approvalLimit?: string; extraDepartments?: string }>({});
+  const [errors, setErrors] = useState<
+    Errors & { approvalLimit?: string; extraDepartments?: string }
+  >({});
   const [formError, setFormError] = useState('');
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
@@ -140,19 +146,32 @@ export function UserFormModal({
     if (newEmail !== current.email) patch.email = newEmail;
     if (name.trim() !== current.name) patch.name = name.trim();
     const currentRoleMatch = options.find(
-      (r) => (current.roleId && r.id === current.roleId) || (current.role && (r.code === current.role || r.id === current.role)),
+      (r) =>
+        (current.roleId && r.id === current.roleId) ||
+        (current.role && (r.code === current.role || r.id === current.role)),
     );
     if (selectedRole && (!currentRoleMatch || selectedRole.id !== currentRoleMatch.id)) {
       if (current.roleId || selectedRole.id) patch.roleId = selectedRole.id;
       patch.role = selectedRole.code;
     }
     if (department !== (current.department ?? '')) patch.department = department || null;
-    if (current.extraDepartments !== undefined ? !sameSet(extraDepartments, current.extraDepartments) : extraDepartments.length > 0) {
+    if (
+      current.extraDepartments !== undefined
+        ? !sameSet(extraDepartments, current.extraDepartments)
+        : extraDepartments.length > 0
+    ) {
       patch.extraDepartments = extraDepartments;
     }
-    const currentLimitStr = current.approvalLimit !== null && current.approvalLimit !== undefined ? current.approvalLimit : null;
+    const currentLimitStr =
+      current.approvalLimit !== null && current.approvalLimit !== undefined
+        ? current.approvalLimit
+        : null;
     const nextLimit = isSuperUser ? null : approvalLimit.trim();
-    if (current.approvalLimit !== undefined ? nextLimit !== currentLimitStr : (approvalLimit.trim() !== '' && approvalLimit.trim() !== '0')) {
+    if (
+      current.approvalLimit !== undefined
+        ? nextLimit !== currentLimitStr
+        : approvalLimit.trim() !== '' && approvalLimit.trim() !== '0'
+    ) {
       patch.approvalLimit = nextLimit;
     }
     if (unitScoped) {
@@ -191,7 +210,10 @@ export function UserFormModal({
         if (approvalLimit && approvalLimit.trim() !== '0') {
           input.approvalLimit = approvalLimit.trim();
         }
-        if (selectedRole?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedRole.id)) {
+        if (
+          selectedRole?.id &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedRole.id)
+        ) {
           input.roleId = selectedRole.id;
         }
         saved = await createUser(input);
@@ -316,7 +338,9 @@ export function UserFormModal({
                         padding: '3px 8px',
                         borderRadius: '12px',
                         border: selected ? '1px solid var(--primary)' : '1px solid var(--border)',
-                        background: selected ? 'var(--primary-subtle, #ebf8ff)' : 'var(--surface-sunken)',
+                        background: selected
+                          ? 'var(--primary-subtle, #ebf8ff)'
+                          : 'var(--surface-sunken)',
                         color: selected ? 'var(--primary-dark, #2b6cb0)' : 'var(--text)',
                         cursor: 'pointer',
                         fontSize: '11px',
@@ -338,7 +362,9 @@ export function UserFormModal({
             {errors.extraDepartments ? (
               <span className="field-error">{errors.extraDepartments}</span>
             ) : null}
-            <span className="hint">Up to 10 additional departments where user can view and work.</span>
+            <span className="hint">
+              Up to 10 additional departments where user can view and work.
+            </span>
           </div>
 
           <div className="field">

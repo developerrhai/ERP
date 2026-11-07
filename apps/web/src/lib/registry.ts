@@ -13,12 +13,40 @@ const TITLE_OVERRIDES: Readonly<Record<string, string>> = {
   'admin-branches': 'Unit Master',
 };
 
+/**
+ * Pages a later phase adds to the frozen prototype registry (the API does the same in
+ * apps/api/src/core/registry.ts). Phase 6B: admin-formats, right after the Approval Matrix.
+ */
+const PHASE_ADDED_PAGES = [
+  {
+    id: 'admin-formats',
+    title: 'Formats & Rules',
+    family: 'Administration',
+    after: 'admin-approval',
+    purpose: 'All document formats and calculation rule sets, their versions, and who changed what.',
+  },
+] as const;
+
 export const registry: typeof rawRegistry = {
   ...rawRegistry,
-  families: rawRegistry.families.map((f) => ({
-    ...f,
-    items: f.items.map((i) => ({ ...i, title: TITLE_OVERRIDES[i.id] ?? i.title })),
-  })),
+  families: rawRegistry.families.map((f) => {
+    const items = f.items.map((i) => ({ ...i, title: TITLE_OVERRIDES[i.id] ?? i.title }));
+    for (const extra of PHASE_ADDED_PAGES) {
+      if (extra.family !== f.name || items.some((i) => i.id === extra.id)) continue;
+      const at = items.findIndex((i) => i.id === extra.after);
+      items.splice(at >= 0 ? at + 1 : items.length, 0, { id: extra.id, title: extra.title });
+    }
+    return { ...f, items };
+  }),
+  profiles: {
+    ...rawRegistry.profiles,
+    ...Object.fromEntries(
+      PHASE_ADDED_PAGES.map((p) => [
+        p.id,
+        { title: p.title, family: p.family, purpose: p.purpose, tabs: [], fields: [] },
+      ]),
+    ),
+  },
 };
 
 const ALL_FAMILIES_ROLES: readonly RoleCode[] = ['SUPER_ADMIN', 'ADMIN'];

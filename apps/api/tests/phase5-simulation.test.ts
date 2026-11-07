@@ -2,7 +2,9 @@
 // cancellations, across three warehouses in two units, including requests that must fail with
 // INSUFFICIENT_STOCK): afterwards the ledger adds up to the balance of every item x warehouse, no
 // balance is negative, a failed request left nothing behind, and a cancelled voucher nets to zero.
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe as baseDescribe, expect, it } from 'vitest';
+// SUPERSEDED by Phase 8 (single-item vouchers are gone): replaced by tests/phase08-simulation.test.ts. Kept (skipped).
+const describe = baseDescribe.skip;
 import { errorOf, newApp, prisma, signInOwner } from './helpers';
 import type { Signed } from './helpers';
 import { unitByCode } from './phase3-helpers';

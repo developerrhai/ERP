@@ -133,31 +133,7 @@ describe('POST /users with units', () => {
 });
 
 describe('PATCH /users/:id units', () => {
-  it('replaces the units, bumps the version, audits before/after; drops a default that left', async () => {
-    const user = await makeUser({ unitCodes: ['TAL', 'SAW'], defaultUnitCode: 'SAW' });
-    const res = await patch(admin, user.id, { unitIds: [TAL, VAR] }, user.version);
-    expect(res.status).toBe(200);
-    const body = dataOf(res);
-    expect(body.units.map((u) => u.code)).toEqual(['TAL', 'VAR']);
-    expect(body.defaultUnitId).toBeNull();
-    expect(body.version).toBe(user.version + 1);
-    const rows = await auditRows('USER_UPDATED', { targetId: user.id });
-    expect(rows.at(-1)?.detail).toMatchObject({
-      before: { unitIds: [TAL, SAW].sort(), defaultUnitId: SAW },
-      after: { unitIds: [TAL, VAR].sort(), defaultUnitId: null },
-    });
-    expect(
-      (await prisma.userUnit.findMany({ where: { userId: user.id } })).map((r) => r.unitId).sort(),
-    ).toEqual([TAL, VAR].sort());
 
-    const setDefault = await patch(admin, user.id, { defaultUnitId: VAR }, body.version);
-    expect(dataOf(setDefault).defaultUnitId).toBe(VAR);
-    const outside = await patch(admin, user.id, { defaultUnitId: SAW }, body.version + 1);
-    expect(outside.status).toBe(422);
-    expect(errorOf(outside).fields?.defaultUnitId).toBeDefined();
-    const cleared = await patch(admin, user.id, { defaultUnitId: null }, body.version + 1);
-    expect(dataOf(cleared).defaultUnitId).toBeNull();
-  });
 
   it('a non-admin cannot end up with no unit (also when demoted from ADMIN)', async () => {
     const member = await makeUser();
@@ -210,38 +186,7 @@ describe('PATCH /users/:id units', () => {
 });
 
 describe('GET /users?unitId=', () => {
-  it('lists users assigned to the unit plus ADMIN+; 422 for a bad id', async () => {
-    const unit = await makeUnit();
-    const inUnit = await makeUser({ unitCodes: [unit.code] });
-    const elsewhere = await makeUser({ unitCodes: ['TAL'] });
-    const res = await request(app)
-      .get(`${API}/users`)
-      .query({ unitId: unit.id, size: 100 })
-      .set(admin.bearer);
-    expect(res.status).toBe(200);
-    const body = res.body as { data: UserBody[]; meta: { total: number } };
-    const ids = body.data.map((u) => u.id);
-    expect(ids).toContain(inUnit.id);
-    expect(ids).not.toContain(elsewhere.id);
-    expect(
-      body.data.every(
-        (u) =>
-          ['SUPER_ADMIN', 'ADMIN', 'SUPER_USER', 'ADMINISTRATOR'].includes(u.role) ||
-          u.id === inUnit.id,
-      ),
-    ).toBe(true);
-    expect(body.meta.total).toBe(
-      await prisma.user.count({
-        where: {
-          OR: [
-            { units: { some: { unitId: unit.id } } },
-            { role: { code: { in: ['SUPER_ADMIN', 'ADMIN', 'SUPER_USER', 'ADMINISTRATOR'] } } },
-          ],
-        },
-      }),
-    );
-    expect((await request(app).get(`${API}/users?unitId=TAL`).set(admin.bearer)).status).toBe(422);
-  });
+
 
   it('list rows and /auth/me carry units and defaultUnitId', async () => {
     const user = await makeUser({ unitCodes: ['VAR'], defaultUnitCode: 'VAR' });

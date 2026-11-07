@@ -44,11 +44,11 @@ interface ControlRow {
 }
 
 describe('GET /module-controls', () => {
-  it('returns all 248 pages in registry order with prototype defaults', async () => {
+  it('returns all 249 pages in registry order with prototype defaults', async () => {
     const res = await request(app).get(`${API}/module-controls`).set(admin.bearer);
     expect(res.status).toBe(200);
     const rows = (res.body as { data: ControlRow[] }).data;
-    expect(rows).toHaveLength(248);
+    expect(rows).toHaveLength(249);
     expect(rows.map((r) => r.pageId)).toEqual([...registry.pages.keys()]);
     const byId = new Map(rows.map((r) => [r.pageId, r]));
     expect(byId.get('crm-leads')).toMatchObject({

@@ -42,7 +42,8 @@ export function EffectiveAccessDrawer({ user, onClose }: Props) {
         setError('');
       })
       .catch((err: unknown) => {
-        if (alive) setError(err instanceof ApiError ? err.message : 'Could not load effective access.');
+        if (alive)
+          setError(err instanceof ApiError ? err.message : 'Could not load effective access.');
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -55,13 +56,24 @@ export function EffectiveAccessDrawer({ user, onClose }: Props) {
   const families = Array.from(new Set(pages.map((p) => p.family))).sort();
 
   return (
-    <div className="drawer-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="eff-title">
-      <div className="drawer" style={{ maxWidth: '960px', width: '90vw' }} onClick={(e) => e.stopPropagation()}>
+    <div
+      className="drawer-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="eff-title"
+    >
+      <div
+        className="drawer"
+        style={{ maxWidth: '960px', width: '90vw' }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="drawer-head">
           <div>
             <h2 id="eff-title">Check Access — {user.name}</h2>
             <p className="v8-sub">
-              Role: <strong>{user.roleLabel || user.roleName || user.role}</strong> (Level {user.roleLevel ?? 10}) · Home Dept: <strong>{user.department ?? '—'}</strong>
+              Role: <strong>{user.roleLabel || user.roleName || user.role}</strong> (Level{' '}
+              {user.roleLevel ?? 10}) · Home Dept: <strong>{user.department ?? '—'}</strong>
               {user.extraDepartments && user.extraDepartments.length > 0 ? (
                 <> · Also works in: {user.extraDepartments.join(', ')}</>
               ) : null}
@@ -103,10 +115,20 @@ export function EffectiveAccessDrawer({ user, onClose }: Props) {
           ) : null}
 
           {selectedPage ? (
-            <div className="card" style={{ marginBottom: '16px', background: 'var(--bg-subtle, #f8f9fa)', padding: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div
+              className="card"
+              style={{
+                marginBottom: '16px',
+                background: 'var(--bg-subtle, #f8f9fa)',
+                padding: '12px',
+              }}
+            >
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
                 <h4 style={{ margin: 0 }}>
-                  Decision for: <strong>{selectedPage.title}</strong> ({selectedPage.family}) — Scope: <strong>{selectedPage.scope}</strong>
+                  Decision for: <strong>{selectedPage.title}</strong> ({selectedPage.family}) —
+                  Scope: <strong>{selectedPage.scope}</strong>
                 </h4>
                 <button type="button" className="btn sm" onClick={() => setSelectedPage(null)}>
                   Hide details
@@ -155,7 +177,9 @@ export function EffectiveAccessDrawer({ user, onClose }: Props) {
                           <span
                             style={{
                               display: 'inline-block',
-                              color: allowed ? 'var(--color-success, #2e7d32)' : 'var(--color-danger, #d32f2f)',
+                              color: allowed
+                                ? 'var(--color-success, #2e7d32)'
+                                : 'var(--color-danger, #d32f2f)',
                               fontWeight: 'bold',
                             }}
                           >

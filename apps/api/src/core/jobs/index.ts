@@ -16,6 +16,8 @@ export const QUEUES = {
   notificationsDigest: 'notifications.digest',
   emailSend: 'email.send',
   notificationsPurge: 'notifications.purge',
+  // Phase 8: reservations that ran out, reorder suggestions, expiry / reorder alerts.
+  inventoryDaily: 'inventory.daily',
 } as const;
 
 /** Cron schedules (Asia/Kolkata) of the Phase 5 queues. */
@@ -25,6 +27,7 @@ export const PHASE5_SCHEDULES: Readonly<Record<string, string>> = {
   [QUEUES.notificationsDigest]: '30 8 * * *',
   [QUEUES.emailSend]: '* * * * *',
   [QUEUES.notificationsPurge]: '0 3 * * 0',
+  [QUEUES.inventoryDaily]: '0 2 * * *',
 };
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 

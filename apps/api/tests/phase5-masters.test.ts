@@ -297,6 +297,7 @@ describe('Item Master', () => {
       itemName: 'Other',
       itemType: 'Consumable',
       baseUom: 'Nos',
+      hsnSac: '847130',
       itemCode: code,
     });
     expect(dupCode.status).toBe(409);
@@ -308,6 +309,7 @@ describe('Item Master', () => {
       itemName: 'Other',
       itemType: 'Consumable',
       baseUom: 'Nos',
+      hsnSac: '847130',
       barcode: `BC${code}`,
     });
     expect(dupBarcode.status).toBe(409);
@@ -321,7 +323,7 @@ describe('Item Master', () => {
   });
 
   it('validates fields: name, type, UOM, HSN, alternate UOM with a factor > 0, costs', async () => {
-    const base = { itemName: 'Valid Name', itemType: 'Consumable', baseUom: 'Nos' };
+    const base = { itemName: 'Valid Name', itemType: 'Consumable', baseUom: 'Nos', hsnSac: '847130' };
     const bad: [Record<string, unknown>, string][] = [
       [{ itemName: 'A' }, 'itemName'],
       [{ itemName: 'x'.repeat(151) }, 'itemName'],

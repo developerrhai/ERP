@@ -220,7 +220,9 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
                 return (
                   <tr key={u.id}>
                     <td>{u.name}</td>
-                    <td><code>{u.loginId}</code></td>
+                    <td>
+                      <code>{u.loginId}</code>
+                    </td>
                     <td>{u.email ?? '—'}</td>
                     <td>{u.department ?? '—'}</td>
                     <td>{u.roleLabel}</td>

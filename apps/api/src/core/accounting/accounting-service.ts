@@ -37,9 +37,8 @@ export const AccountingService = {
     const docDate = e.docDate instanceof Date ? e.docDate : new Date(e.docDate);
 
     await tx.$executeRaw`
-      INSERT INTO accounting_event_queue (company_id, event, doc_type, doc_id, doc_date, unit_id, payload, status)
+      INSERT INTO accounting_event_queue (event, doc_type, doc_id, doc_date, unit_id, payload, status)
       VALUES (
-        ${e.companyId}::uuid,
         ${e.event},
         ${e.docType},
         ${e.docId}::uuid,
@@ -60,9 +59,8 @@ export const AccountingService = {
     const docDate = e.docDate instanceof Date ? e.docDate : new Date(e.docDate);
 
     await tx.$executeRaw`
-      INSERT INTO accounting_event_queue (company_id, event, doc_type, doc_id, doc_date, unit_id, payload, status)
+      INSERT INTO accounting_event_queue (event, doc_type, doc_id, doc_date, unit_id, payload, status)
       VALUES (
-        ${e.companyId}::uuid,
         ${reverseEvent},
         ${e.docType},
         ${e.docId}::uuid,

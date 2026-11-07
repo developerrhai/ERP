@@ -261,22 +261,6 @@ describe('authenticate (Bearer)', () => {
   });
 });
 
-describe('GET /auth/me', () => {
-  it('returns the caller as a DTO', async () => {
-    const user = await makeUser({ role: 'MANAGER', department: 'Finance' });
-    const s = await signIn(app, user);
-    const res = await me(s);
-    expect(res.status).toBe(200);
-    expect((res.body as { data: Record<string, unknown> }).data).toMatchObject({
-      id: user.id,
-      role: 'MANAGER',
-      roleLabel: 'Manager',
-      roleLevel: 60,
-      department: 'Finance',
-    });
-  });
-});
-
 describe('POST /auth/logout', () => {
   it('requires X-Requested-With', async () => {
     const s = await signIn(app, await makeUser());

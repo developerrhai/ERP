@@ -1,8 +1,10 @@
 // Inventory-slice test helpers: make items and warehouses through the API, create and act on stock
 // vouchers, and read the balance / ledger straight from the database. Every call returns the raw
 // supertest response unless the name says otherwise.
+import request from 'supertest';
 import { expect } from 'vitest';
 import type { Express } from 'express';
+import { invalidateAccessCache } from '../src/core/rbac/access';
 import { prisma } from './helpers';
 import type { Signed } from './helpers';
 import { api, dataOf } from './phase4-helpers';
@@ -25,6 +27,7 @@ export function inventory(app: Express) {
       itemName: `Item ${tag()}`,
       itemType: 'Raw Material',
       baseUom: 'Kg',
+      hsnSac: '847130',
       ...extra,
     });
     expect(res.status, JSON.stringify(res.body)).toBe(201);
@@ -54,20 +57,70 @@ export function inventory(app: Express) {
     data: Record<string, unknown>,
     h?: Hdr,
   ): Promise<TypedBody> {
-    const res = await client.create(s, pageId, data, h);
+    // Phase 8: vouchers have header + lines and go through approval. These helpers keep the old one-item call
+    // shapes and switch approval off for the four voucher pages (the tests that need it switch it back on).
+    await noApproval();
+    const body =
+      pageId === 'inv-opening'
+        ? {
+            warehouseId: data.warehouse,
+            lines: [{ itemId: data.item, qty: data.openingQty, unitCost: data.unitCost }],
+          }
+        : {
+            warehouseId: data.warehouse,
+            txType: data.transactionType,
+            lines: [{ itemId: data.item, qty: data.qty, unitCost: data.unitCost }],
+          };
+    const res = await vreq(s, 'post', `/inventory/vouchers/${KIND[pageId] ?? ''}`, h, body);
     expect(res.status, JSON.stringify(res.body)).toBe(201);
-    return dataOf<TypedBody>(res);
+    // Re-read it through the legacy typed API so callers get the old record shape (code, refs, data, version).
+    const created = dataOf<{ id: string }>(res);
+    const again = await client.get(s, pageId, created.id, h);
+    expect(again.status, JSON.stringify(again.body)).toBe(200);
+    return dataOf<TypedBody>(again);
   }
 
+  async function noApproval(): Promise<void> {
+    await prisma.moduleControl.updateMany({
+      where: { pageId: { in: Object.keys(KIND) } },
+      data: { approvalRequired: false },
+    });
+    invalidateAccessCache();
+  }
+  const KIND: Record<string, string> = {
+    'inv-opening': 'opening',
+    'inv-transactions': 'transactions',
+    'inv-adjustment': 'adjustment',
+    'inv-transfer': 'transfer',
+  };
+  const vreq = (
+    s: Signed,
+    method: 'post' | 'get',
+    path: string,
+    h: Hdr | undefined,
+    body?: unknown,
+  ) => {
+    let r = request(app)[method](`/api/v1${path}`).set(s.bearer);
+    if (h?.unit) r = r.set('X-Unit-Id', h.unit);
+    return body === undefined ? r : r.send(body as object);
+  };
+
+  /** Submit (auto-approved) and post a Draft voucher. */
   async function act(
     s: Signed,
     pageId: string,
     id: string,
     name: string,
     h?: Hdr,
-    body: Record<string, unknown> = {},
+    version = 1,
   ): Promise<TypedBody> {
-    const res = await client.action(s, pageId, id, name, body, undefined, h);
+    const kind = KIND[pageId] ?? '';
+    const sub = await vreq(s, 'post', `/inventory/vouchers/${kind}/${id}/submit`, h).set(
+      'If-Match',
+      `"${version}"`,
+    );
+    expect(sub.status, JSON.stringify(sub.body)).toBe(200);
+    const res = await vreq(s, 'post', `/inventory/vouchers/${kind}/${id}/${name}`, h, {});
     expect(res.status, `${name}: ${JSON.stringify(res.body)}`).toBe(200);
     return dataOf<TypedBody>(res);
   }
@@ -87,7 +140,7 @@ export function inventory(app: Express) {
       { item: itemId, warehouse: warehouseId, openingQty: qty, unitCost: cost },
       h,
     );
-    return act(s, 'inv-opening', v.id, 'post', h);
+    return act(s, 'inv-opening', v.id, 'post', h, v.version);
   }
 
   async function receipt(
@@ -104,7 +157,7 @@ export function inventory(app: Express) {
       { transactionType: 'Receipt', item: itemId, warehouse: warehouseId, qty, unitCost: cost },
       h,
     );
-    return act(s, 'inv-transactions', v.id, 'post', h);
+    return act(s, 'inv-transactions', v.id, 'post', h, v.version);
   }
 
   async function issue(s: Signed, itemId: string, warehouseId: string, qty: number, h?: Hdr) {
@@ -114,7 +167,7 @@ export function inventory(app: Express) {
       { transactionType: 'Issue', item: itemId, warehouse: warehouseId, qty },
       h,
     );
-    return act(s, 'inv-transactions', v.id, 'post', h);
+    return act(s, 'inv-transactions', v.id, 'post', h, v.version);
   }
 
   return { client, newItem, newWarehouse, voucher, act, open, receipt, issue };

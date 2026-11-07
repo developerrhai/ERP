@@ -46,6 +46,10 @@ import { createDocumentsRouter } from './modules/documents/routes';
 import { createImportPagesRouter, createImportsRouter } from './modules/imports/routes';
 import { createPagesRouter } from './modules/records/routes';
 import { createUnitsRouter } from './modules/units/routes';
+import { createFinanceRouter } from './modules/finance/routes';
+import { createInventoryRouter } from './modules/inventory/routes';
+import { createMastersRouter } from './modules/masters/routes';
+import { createSimpleMastersRouter } from './modules/masters/simple-masters';
 import { createApprovalMatrixRouter, createApprovalsRouter } from './modules/approvals/routes';
 import {
   createNotificationPreferencesRouter,
@@ -55,6 +59,7 @@ import { createDesignationsRouter } from './modules/designations/routes';
 import { createCurrenciesRouter } from './modules/currencies/routes';
 import { createUomsRouter } from './modules/uoms/routes';
 import { createFilesRouter } from './modules/files/routes';
+import { createFormatsRouter, createPageSettingsRouter } from './modules/format-settings/routes';
 import { bootKit } from './kit/boot';
 
 export interface AppOptions {
@@ -141,6 +146,10 @@ export function createApp(options: AppOptions = {}): Express {
   api.use('/designations', createDesignationsRouter());
   api.use('/currencies', createCurrenciesRouter());
   api.use('/uoms', createUomsRouter());
+  api.use(createSimpleMastersRouter());
+  api.use(createMastersRouter()); // Phase 6: /statutory, /parties, /tax, /pricing, /customers, /suppliers
+  api.use(createFinanceRouter()); // Phase 7: /finance (accounts, journals, cash & bank, budgets, reports, close, reconciliation)
+  api.use(createInventoryRouter()); // Phase 8: /inventory (vouchers with lines, batches, serials, bins, reservations, counts, reports)
   api.use('/approval-matrix', createApprovalMatrixRouter());
   api.use('/approvals', createApprovalsRouter());
   api.use('/notifications', createNotificationsRouter());
@@ -149,6 +158,8 @@ export function createApp(options: AppOptions = {}): Express {
   api.use('/lookups', createLookupsRouter());
   api.use('/lookups', createKitLookupsRouter());
   bootKit(api);
+  api.use('/pages', createPageSettingsRouter()); // Phase 6B: /pages/:p/settings (formats, rule sets, Excel import)
+  api.use('/formats', createFormatsRouter()); // Phase 6B: admin-formats
   api.use('/pages', createKitPanelsRouter());
   api.use('/pages', createKitCommandsRouter());
   api.use('/pages', createKitPrintRouter());

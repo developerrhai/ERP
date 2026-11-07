@@ -14,7 +14,9 @@ import { ADMIN_LEVEL } from '../../core/rbac/role-rules';
 import { notificationService } from '../notifications/service';
 import { ApprovalErrors, formatDateTimeIst, istDate } from './errors';
 import { formatInr } from './money';
+import { SETTINGS_APPROVAL_DOC_TYPE } from '../../core/settings/constants';
 import { handlerFor, registerApprovalHandler } from './handlers';
+import { canApproveDoc } from './pool';
 import type { ApprovalDocHandler } from './handlers';
 import { applicableRules, resolveRuleSet } from './matrix';
 import { approverLabel, eligibleApprovers } from './pool';
@@ -310,7 +312,12 @@ export const approvalService = {
   ): Promise<RequestDto> {
     const handler = handlerFor(docType);
     const user = caller.auth.user;
-    if (!(await can(accessUserOf(user), docType, 'submit'))) throw Errors.forbidden();
+    if (
+      docType !== SETTINGS_APPROVAL_DOC_TYPE &&
+      !(await can(accessUserOf(user), docType, 'submit'))
+    ) {
+      throw Errors.forbidden();
+    }
     const now = new Date();
     try {
       const requestId = await prisma.$transaction(async (tx) => {
@@ -485,7 +492,7 @@ export const approvalService = {
         if (actingUser.status !== 'ACTIVE') {
           throw ApprovalErrors.notYourLevel(await approverLabel(tx, step));
         }
-        if (!(await can(accessUserOf(actingUser), req.docType, 'approve'))) {
+        if (!(await canApproveDoc(actingUser, req.docType))) {
           throw Errors.forbidden();
         }
 

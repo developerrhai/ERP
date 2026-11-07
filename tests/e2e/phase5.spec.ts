@@ -9,6 +9,9 @@ const OWNER_PW = E2E.owner.newPassword;
 const M2 = { loginId: 'member2', next: 'Member2#Real26x' };
 
 test.describe.configure({ mode: 'serial' });
+// SUPERSEDED by Phase 8 (single-item vouchers that post straight from Draft are gone, R-08): the same stories on the new
+// header + lines vouchers with approval are in phase8.spec.ts. Kept, not deleted.
+test.skip(true, 'Superseded by phase8.spec.ts');
 
 async function signIn(page: Page, id: string, password: string) {
   await page.goto('/login');

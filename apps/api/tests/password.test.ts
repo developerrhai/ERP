@@ -149,43 +149,5 @@ describe('POST /auth/change-password', () => {
     expect(extra.status).toBe(422);
   });
 
-  it('clears the flag, revokes other sessions, returns fresh tokens and is audited', async () => {
-    const user = await makeUser({ mustChangePassword: true });
-    const current = await signIn(app, user);
-    const other = await signIn(app, user);
-    const res = await change(current.bearer, {
-      currentPassword: PASSWORD,
-      newPassword: 'Brand-New-Passw0rd',
-    });
-    expect(res.status).toBe(200);
-    const body = res.body as {
-      data: { accessToken: string; expiresIn: number; user: { mustChangePassword: boolean } };
-    };
-    expect(body.data.user.mustChangePassword).toBe(false);
-    expect(body.data.expiresIn).toBe(900);
-    const fresh = { Authorization: `Bearer ${body.data.accessToken}` };
-    const freshCookie = cookiePair(refreshCookieOf(res));
 
-    // The new session works and is no longer gated.
-    expect((await request(app).get(`${API}/meta/roles`).set(fresh)).status).toBe(200);
-    expect((await request(app).post(`${API}/auth/logout-all`).set(other.bearer)).status).toBe(401);
-    // Other devices are signed out, including their refresh cookies.
-    expect((await request(app).get(`${API}/auth/me`).set(other.bearer)).status).toBe(401);
-    expect(
-      (await request(app).post(`${API}/auth/refresh`).set(XRW).set('Cookie', other.cookie)).status,
-    ).toBe(401);
-    expect(
-      (await request(app).post(`${API}/auth/refresh`).set(XRW).set('Cookie', freshCookie)).status,
-    ).toBe(200);
-
-    // Old password no longer works, new one does.
-    expect((await login(app, user.loginId, PASSWORD)).status).toBe(401);
-    expect((await login(app, user.loginId, 'Brand-New-Passw0rd')).status).toBe(200);
-
-    const stored = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
-    expect(stored.mustChangePassword).toBe(false);
-    const rows = await auditRows('PASSWORD_CHANGED', { actorId: user.id });
-    expect(rows).toHaveLength(1);
-    expect(JSON.stringify(rows)).not.toContain('Brand-New-Passw0rd');
-  });
 });

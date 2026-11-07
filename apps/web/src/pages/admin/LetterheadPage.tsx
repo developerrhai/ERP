@@ -72,7 +72,8 @@ export function validateLetterhead(v: Letterhead): Partial<Record<keyof Letterhe
   const e: Partial<Record<keyof Letterhead, string>> = {};
   if (!v.companyName.trim()) e.companyName = 'Company name is required.';
   for (const [k, max] of Object.entries(MAX) as [keyof Letterhead, number][]) {
-    if (!e[k] && v[k] && typeof v[k] === 'string' && v[k].length > max) e[k] = `At most ${max} characters.`;
+    if (!e[k] && v[k] && typeof v[k] === 'string' && v[k].length > max)
+      e[k] = `At most ${max} characters.`;
   }
   if (v.email && !EMAIL_RE.test(v.email))
     e.email = 'Enter a valid email address or leave it empty.';
@@ -235,7 +236,13 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
                     <img
                       src={`/api/v1/files/${value.logoFileId}`}
                       alt="Logo preview"
-                      style={{ height: 44, objectFit: 'contain', border: '1px solid var(--line)', borderRadius: 6, padding: 4 }}
+                      style={{
+                        height: 44,
+                        objectFit: 'contain',
+                        border: '1px solid var(--line)',
+                        borderRadius: 6,
+                        padding: 4,
+                      }}
                     />
                     {canEdit ? (
                       <button type="button" className="btn sm danger" onClick={onRemoveLogo}>
@@ -264,7 +271,14 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
                     type="color"
                     value={value.primaryColor || '#1B365D'}
                     disabled={!canEdit}
-                    style={{ width: 44, height: 36, padding: 2, cursor: canEdit ? 'pointer' : 'default', border: '1px solid var(--line)', borderRadius: 6 }}
+                    style={{
+                      width: 44,
+                      height: 36,
+                      padding: 2,
+                      cursor: canEdit ? 'pointer' : 'default',
+                      border: '1px solid var(--line)',
+                      borderRadius: 6,
+                    }}
                     onChange={(e) => setValue({ ...value, primaryColor: e.target.value })}
                   />
                   <input
@@ -293,7 +307,10 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
                   }}
                 />
               ))}
-              <div className="field" style={{ gridColumn: '1 / -1', display: 'flex', gap: 24, marginTop: 8 }}>
+              <div
+                className="field"
+                style={{ gridColumn: '1 / -1', display: 'flex', gap: 24, marginTop: 8 }}
+              >
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                   <input
                     type="checkbox"
