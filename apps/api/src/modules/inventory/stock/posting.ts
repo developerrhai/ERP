@@ -26,7 +26,11 @@ export type LedgerVoucherType =
   | 'PUTAWAY'
   | 'PURCH_RETURN'
   | 'DISPATCH'
-  | 'SALES_RETURN';
+  | 'SALES_RETURN'
+  | 'MFG_ISSUE'
+  | 'MFG_RETURN'
+  | 'FG_RECEIPT'
+  | 'SCRAP';
 
 export type StockStatus = 'UNRESTRICTED' | 'QUALITY_INSPECTION' | 'BLOCKED';
 

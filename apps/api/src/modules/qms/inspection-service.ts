@@ -687,6 +687,13 @@ export async function submitInspection(
   return getInspection(caller, pageId, id);
 }
 
+/** Phase 13: what happens to a production lot when its Usage Decision is made (the manufacturing module registers it). */
+type LotDecisionHook = (tx: Db, caller: Caller, lotId: string, accepted: string, rejected: string) => Promise<void>;
+let lotHook: LotDecisionHook | null = null;
+export const registerLotDecisionHook = (h: LotDecisionHook): void => {
+  lotHook = h;
+};
+
 export interface DecideInput {
   acceptedQty: string | number;
   rejectedQty: string | number;
@@ -756,6 +763,8 @@ export async function decideInspection(
         rejectReason: note || undefined,
         actorId: caller.auth.userId,
       });
+    if (S(cur.source_type) === 'MFG_LOT' && lotHook)
+      await lotHook(tx, caller, S(cur.source_id), acc.toFixed(), rej.toFixed());
     await exec(
       tx,
       `UPDATE qms_inspections SET status='Decided', decision=$1, decision_note=$2, accepted_qty=$3::numeric, rejected_qty=$4::numeric,

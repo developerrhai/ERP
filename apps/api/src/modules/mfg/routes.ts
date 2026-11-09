@@ -1,8 +1,8 @@
-// Phase 13 API (/api/v1/mfg, ERRATA E-26). authenticate -> requirePasswordChanged -> resolveContext -> permission -> zod ->
-// service. The permission page follows the screen: work centres mfg-workcenters, BOM mfg-bom, routing mfg-routing, daily
-// board mfg-plan, production orders and the job-work registers mfg-orders, MRP mfg-mrp, operations mfg-workorders, finished
-// goods mfg-fg, scrap mfg-scrap, rework and the challan rework register mfg-rework, WIP mfg-wip, costing mfg-costing,
-// dashboard mfg-shopfloor.
+// Phase 13 API (/api/v1/mfg, spec PHASE-13 section 6, ERRATA E-26). authenticate -> requirePasswordChanged ->
+// resolveContext -> permission -> zod -> service. The permission page follows the screen: work centres and masters
+// mfg-workcenters, BOM mfg-bom, routing mfg-routing, production plans mfg-plan, production orders mfg-orders, MRP and item
+// planning mfg-mrp, job cards and downtime mfg-workorders, production receipts mfg-fg, scrap mfg-scrap, rework mfg-rework,
+// WIP mfg-wip, costing mfg-costing, shop floor and OEE mfg-shopfloor. The old daily board lives under /mfg/day-board.
 import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
 import { z } from 'zod';
@@ -15,36 +15,44 @@ import { Errors } from '../../core/http/errors';
 import { accessUserOf, can, requirePageAction } from '../../core/rbac/access';
 import type { Action } from '../../core/rbac/permission-model';
 import { runIdempotent } from '../approvals/idempotent';
-import { callerOf, isoDate, pageQuery, uuid } from '../inventory/routes-shared';
+import { prisma } from '../../core/db/prisma';
+import { query } from '../procurement/core';
+import { callerOf, idemOf, isoDate, pageQuery, uuid } from '../inventory/routes-shared';
+import type { Caller } from '../records/service';
 import { boardService } from './board-service';
+import { bomService } from './bom-service';
 import {
   REPORTS,
   assertReport,
   bomPdf,
+  jobCardPdf,
   mrpPdf,
   mrpWorkbook,
   orderPdf,
   reportWorkbook,
   routingPdf,
+  travellerPdf,
 } from './export-service';
+import { jobCardService } from './jobcard-service';
+import './lot-hook';
 import { WORK_CENTRE_KINDS, masterService } from './master-service';
 import { mrpService } from './mrp-service';
 import { orderService } from './order-service';
+import { planService } from './plan-service';
 import { reportsService } from './reports-service';
+import { routingService } from './routing-service';
+import { scrapService } from './scrap-service';
 
 const num = z
   .union([z.number(), z.string()])
   .transform((v) => String(v))
   .refine((v) => /^\d+(\.\d+)?$/.test(v), 'Enter a number.');
 const pos = num.refine((v) => Number(v) > 0, 'Enter a number greater than 0.');
-const hours = num.refine(
-  (v) => Number(v) > 0 && Number(v) <= 24,
-  'Hours per day: more than 0, up to 24.',
-);
-const mins = num.refine((v) => Number(v) <= 1000000, 'That is too large.');
 const txt = (n: number) => z.string().trim().min(1, 'This is required.').max(n);
 const opt = (n: number) => z.string().trim().max(n).optional();
+const ts = z.string().datetime({ offset: true, message: 'Use a date and time.' });
 const idp = z.object({ id: uuid }).strict();
+const noQ = z.object({}).strict();
 const h = (fn: (req: Request, res: Response) => Promise<unknown>): RequestHandler =>
   asyncHandler(async (req, res) => {
     await fn(req, res);
@@ -52,6 +60,44 @@ const h = (fn: (req: Request, res: Response) => Promise<unknown>): RequestHandle
 const g = (page: string, a: Action): RequestHandler => requirePageAction(page, a);
 const me = (req: Request): string => req.auth!.userId;
 const ver = (req: Request) => parseIfMatch(req.get('if-match'));
+
+/** passes when the user may view at least one of the pages (shared reads: reasons, orders, settings) */
+const anyView =
+  (...pages: string[]): RequestHandler =>
+  (req, _res, next) => {
+    void (async () => {
+      if (!req.auth) throw Errors.unauthenticated();
+      const u = accessUserOf(req.auth);
+      for (const p of pages) if (await can(u, p, 'view')) return;
+      throw Errors.forbidden();
+    })().then(
+      () => next(),
+      (e: unknown) => next(e),
+    );
+  };
+
+/** the first of the pages the user can do `action` on, so one shared read scopes by the right screen */
+async function firstPage(req: Request, pages: readonly string[], action: Action): Promise<string> {
+  if (!req.auth) throw Errors.unauthenticated();
+  const u = accessUserOf(req.auth);
+  for (const p of pages) if (await can(u, p, action)) return p;
+  throw Errors.forbidden();
+}
+const canDo = async (req: Request, page: string, a: Action): Promise<boolean> =>
+  !!req.auth && (await can(accessUserOf(req.auth), page, a));
+
+const ORDER_PAGES = [
+  'mfg-orders',
+  'mfg-workorders',
+  'mfg-fg',
+  'mfg-wip',
+  'mfg-scrap',
+  'mfg-rework',
+  'mfg-costing',
+  'mfg-shopfloor',
+  'mfg-plan',
+] as const;
+const READ_ALL = [...ORDER_PAGES, 'mfg-mrp', 'mfg-bom', 'mfg-routing', 'mfg-workcenters'] as const;
 
 export function createMfgRouter(): Router {
   const router = Router();
@@ -88,21 +134,31 @@ export function createMfgRouter(): Router {
         return { ...r, version: Number((r as { version?: unknown }).version ?? 0) };
       },
     );
+  const C = (req: Request): Caller => callerOf(req);
 
-  // ---------------------------------------------------------------- work centres
+  // ---------------------------------------------------------------- work centres, calendars, reasons, settings
   const wcQ = z
     .object({ q: opt(80), status: z.enum(['ACTIVE', 'INACTIVE']).optional(), ...pageQuery })
     .strict();
   router.get(
-    '/mfg/work-centres',
-    g('mfg-workcenters', 'view'),
+    ['/mfg/work-centers', '/mfg/work-centres'],
+    anyView('mfg-workcenters', 'mfg-workorders', 'mfg-routing', 'mfg-plan', 'mfg-shopfloor'),
     validate({ query: wcQ }),
     h(async (req, res) => {
       const q = validated(res, 'query', wcQ);
-      const r = await masterService.listWorkCentres(callerOf(req), 'mfg-workcenters', q);
+      const r = await masterService.listWorkCentres(
+        C(req),
+        await firstPage(
+          req,
+          ['mfg-workcenters', 'mfg-workorders', 'mfg-routing', 'mfg-plan', 'mfg-shopfloor'],
+          'view',
+        ),
+        q,
+      );
       paged(res, r.rows, r.total, q.page, q.size);
     }),
   );
+  const money = num.refine((v) => Number(v) <= 100000000, 'That is too large.');
   const wcB = z
     .object({
       code: z
@@ -111,21 +167,31 @@ export function createMfgRouter(): Router {
         .regex(/^[A-Za-z0-9][A-Za-z0-9_\-/]{0,29}$/, 'Use letters, digits, - _ /.'),
       name: txt(120),
       kind: z.enum(WORK_CENTRE_KINDS).optional(),
-      capacityHours: hours.optional(),
-      costPerHour: num.optional(),
+      department: opt(80),
+      costCentreId: uuid.optional(),
+      machineCount: z.number().int().min(0).max(1000).optional(),
+      labourCount: z.number().int().min(0).max(1000).optional(),
+      calendarId: uuid.optional(),
+      hoursPerShift: pos.refine((v) => Number(v) <= 24, 'Up to 24 hours.').optional(),
+      shiftsPerDay: z.number().int().min(1).max(4).optional(),
+      normalCapacityHrs: num.refine((v) => Number(v) <= 24 * 4, 'That is too large.').optional(),
+      labourRatePerHr: money.optional(),
+      overheadRatePerHr: money.optional(),
+      oeeTargetPct: num.refine((v) => Number(v) <= 100, 'Up to 100.').optional(),
+      efficiencyPct: num.refine((v) => Number(v) <= 100 && Number(v) > 0, '1 to 100.').optional(),
       assetRef: opt(60),
       notes: opt(300),
     })
     .strict();
   router.post(
-    '/mfg/work-centres',
+    ['/mfg/work-centers', '/mfg/work-centres'],
     g('mfg-workcenters', 'add'),
     validate({ body: wcB }),
     h(async (req, res) =>
       send(
         res,
         await masterService.createWorkCentre(
-          callerOf(req),
+          C(req),
           'mfg-workcenters',
           validated(res, 'body', wcB),
         ),
@@ -139,14 +205,14 @@ export function createMfgRouter(): Router {
     .extend({ status: z.enum(['ACTIVE', 'INACTIVE']).optional() })
     .strict();
   router.patch(
-    '/mfg/work-centres/:id',
+    ['/mfg/work-centers/:id', '/mfg/work-centres/:id'],
     g('mfg-workcenters', 'edit'),
     validate({ params: idp, body: wcU }),
     h(async (req, res) =>
       send(
         res,
         await masterService.updateWorkCentre(
-          callerOf(req),
+          C(req),
           'mfg-workcenters',
           String(req.params.id),
           ver(req),
@@ -156,42 +222,256 @@ export function createMfgRouter(): Router {
     ),
   );
 
+  router.get(
+    '/mfg/cost-centers',
+    anyView('mfg-workcenters'),
+    validate({ query: noQ }),
+    h(async (req, res) => {
+      const unitId = C(req).ctx.unitId;
+      const r = await query(
+        prisma,
+        `SELECT id::text, code, name FROM cost_centers WHERE deleted_at IS NULL AND NOT is_group AND status='Active' AND ($1::uuid IS NULL OR unit_id=$1::uuid) ORDER BY code LIMIT 300`,
+        unitId ?? null,
+      );
+      res.json({ data: r });
+    }),
+  );
+  router.get(
+    '/mfg/calendars',
+    anyView('mfg-workcenters', 'mfg-plan', 'mfg-shopfloor'),
+    validate({ query: noQ }),
+    h(async (req, res) => res.json({ data: await masterService.listCalendars(C(req)) })),
+  );
+  const calB = z
+    .object({
+      name: txt(80),
+      workDays: z.array(z.number().int().min(0).max(6)).max(7),
+      exceptions: z
+        .array(z.object({ date: isoDate, availableHrs: num, reason: opt(120) }).strict())
+        .max(400)
+        .optional(),
+    })
+    .strict();
+  router.post(
+    '/mfg/calendars',
+    g('mfg-workcenters', 'add'),
+    validate({ body: calB }),
+    h(async (req, res) =>
+      send(
+        res,
+        await masterService.saveCalendar(
+          C(req),
+          'mfg-workcenters',
+          null,
+          validated(res, 'body', calB),
+        ),
+        201,
+      ),
+    ),
+  );
+  router.put(
+    '/mfg/calendars/:id',
+    g('mfg-workcenters', 'edit'),
+    validate({ params: idp, body: calB }),
+    h(async (req, res) =>
+      send(
+        res,
+        await masterService.saveCalendar(
+          C(req),
+          'mfg-workcenters',
+          String(req.params.id),
+          validated(res, 'body', calB),
+        ),
+      ),
+    ),
+  );
+
+  for (const [path, kind] of [
+    ['downtime-reasons', 'downtime'],
+    ['scrap-reasons', 'scrap'],
+  ] as const) {
+    router.get(
+      `/mfg/${path}`,
+      anyView(...READ_ALL),
+      validate({ query: noQ }),
+      h(async (_req, res) => res.json({ data: await masterService.listReasons(kind) })),
+    );
+    const rB = z
+      .object({
+        code: z
+          .string()
+          .trim()
+          .regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,19}$/, 'Use letters, digits, - _.'),
+        name: txt(80),
+        category: z.enum(['PLANNED', 'UNPLANNED']).optional(),
+        countsAgainstAvailability: z.boolean().optional(),
+        normal: z.boolean().optional(),
+        status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+      })
+      .strict();
+    router.post(
+      `/mfg/${path}`,
+      g('mfg-workcenters', 'add'),
+      validate({ body: rB }),
+      h(async (req, res) =>
+        send(
+          res,
+          await masterService.saveReason(
+            C(req),
+            'mfg-workcenters',
+            kind,
+            validated(res, 'body', rB),
+          ),
+          201,
+        ),
+      ),
+    );
+  }
+
+  const itemP = z.object({ itemId: uuid }).strict();
+  router.get(
+    '/mfg/item-planning/:itemId',
+    anyView('mfg-mrp', 'mfg-bom', 'mfg-plan'),
+    validate({ params: itemP }),
+    h(async (req, res) => send(res, await masterService.getPlanning(String(req.params.itemId)))),
+  );
+  const ipB = z
+    .object({
+      makeOrBuy: z.enum(['MAKE', 'BUY']).optional(),
+      leadTimeDays: z.number().int().min(0).max(730).optional(),
+      safetyStock: num.optional(),
+      lotSizing: z.enum(['LFL', 'FIXED', 'EOQ']).optional(),
+      fixedLotQty: num.nullable().optional(),
+      minOrderQty: num.nullable().optional(),
+      orderMultiple: num.nullable().optional(),
+      eoqSetupCost: num.nullable().optional(),
+      eoqHoldingRate: num.nullable().optional(),
+      backflushWhId: uuid.nullable().optional(),
+      wipWhId: uuid.nullable().optional(),
+      fgWhId: uuid.nullable().optional(),
+    })
+    .strict();
+  router.put(
+    '/mfg/item-planning/:itemId',
+    g('mfg-mrp', 'edit'),
+    validate({ params: itemP, body: ipB }),
+    h(async (req, res) =>
+      send(
+        res,
+        await masterService.savePlanning(
+          C(req),
+          'mfg-mrp',
+          String(req.params.itemId),
+          validated(res, 'body', ipB),
+        ),
+      ),
+    ),
+  );
+
+  router.get(
+    '/mfg/settings',
+    anyView(...READ_ALL),
+    validate({ query: noQ }),
+    h(async (req, res) =>
+      res.json({ data: await masterService.settings(C(req).ctx.unitId ?? null) }),
+    ),
+  );
+  const setP = z
+    .object({ key: z.enum(['OVER_ISSUE_PCT', 'ORDER_APPROVAL_VALUE', 'SCRAP_APPROVAL_VALUE']) })
+    .strict();
+  const setB = z.object({ value: num.nullable() }).strict();
+  router.put(
+    '/mfg/settings/:key',
+    g('mfg-workcenters', 'approve'),
+    validate({ params: setP, body: setB }),
+    h(async (req, res) =>
+      res.json({
+        data: await masterService.saveSetting(
+          C(req),
+          'mfg-workcenters',
+          req.params.key as 'OVER_ISSUE_PCT' | 'ORDER_APPROVAL_VALUE' | 'SCRAP_APPROVAL_VALUE',
+          validated(res, 'body', setB).value,
+        ),
+      }),
+    ),
+  );
+
   // ---------------------------------------------------------------- BOM
   const bomQ = z
     .object({
       itemId: uuid.optional(),
-      status: z.enum(['DRAFT', 'ACTIVE', 'RETIRED']).optional(),
+      status: z.enum(['DRAFT', 'PENDING_APPROVAL', 'RELEASED', 'OBSOLETE']).optional(),
       q: opt(80),
       ...pageQuery,
     })
     .strict();
   router.get(
     '/mfg/boms',
-    g('mfg-bom', 'view'),
+    anyView('mfg-bom', 'mfg-orders', 'mfg-mrp', 'mfg-plan'),
     validate({ query: bomQ }),
     h(async (req, res) => {
       const q = validated(res, 'query', bomQ);
-      const r = await masterService.listBoms(callerOf(req), 'mfg-bom', q);
+      const r = await bomService.list(
+        C(req),
+        await firstPage(req, ['mfg-bom', 'mfg-orders', 'mfg-mrp', 'mfg-plan'], 'view'),
+        q,
+      );
       paged(res, r.rows, r.total, q.page, q.size);
     }),
   );
   router.get(
     '/mfg/boms/:id',
-    g('mfg-bom', 'view'),
+    anyView('mfg-bom', 'mfg-orders', 'mfg-mrp', 'mfg-plan'),
     validate({ params: idp }),
     h(async (req, res) =>
-      send(res, await masterService.getBom(callerOf(req), 'mfg-bom', String(req.params.id))),
+      send(
+        res,
+        await bomService.get(
+          C(req),
+          await firstPage(req, ['mfg-bom', 'mfg-orders', 'mfg-mrp', 'mfg-plan'], 'view'),
+          String(req.params.id),
+        ),
+      ),
     ),
   );
-  const bomLine = z
-    .object({ itemId: uuid, qtyPer: num, scrapPct: num.optional(), notes: opt(200) })
+  const lineB = z
+    .object({
+      itemId: uuid,
+      qtyPer: pos,
+      uom: opt(20),
+      conversionFactor: pos.optional(),
+      scrapPct: num.refine((v) => Number(v) <= 50, 'Scrap is 0 to 50 percent.').optional(),
+      issueMethod: z.enum(['MANUAL', 'BACKFLUSH']).optional(),
+      operationSeq: z.number().int().min(1).max(9999).optional(),
+      effectiveFrom: isoDate.optional(),
+      effectiveTo: isoDate.optional(),
+      isPhantom: z.boolean().optional(),
+      referenceDesignator: opt(60),
+      remarks: opt(200),
+      alternates: z
+        .array(
+          z
+            .object({
+              altItemId: uuid,
+              priority: z.number().int().min(1).max(9).optional(),
+              ratio: pos.optional(),
+            })
+            .strict(),
+        )
+        .max(10)
+        .optional(),
+    })
     .strict();
   const bomB = z
     .object({
       itemId: uuid,
       baseQty: pos.optional(),
+      bomType: z.enum(['STANDARD', 'ENGINEERING', 'REWORK']).optional(),
+      effectiveFrom: isoDate.optional(),
+      effectiveTo: isoDate.optional(),
+      routingId: uuid.optional(),
       notes: opt(300),
-      lines: z.array(bomLine).min(1).max(300),
+      lines: z.array(lineB).min(1, 'Add at least one component.').max(300),
     })
     .strict();
   router.post(
@@ -199,20 +479,10 @@ export function createMfgRouter(): Router {
     g('mfg-bom', 'add'),
     validate({ body: bomB }),
     h(async (req, res) =>
-      send(
-        res,
-        await masterService.createBom(callerOf(req), 'mfg-bom', validated(res, 'body', bomB)),
-        201,
-      ),
+      send(res, await bomService.create(C(req), 'mfg-bom', validated(res, 'body', bomB)), 201),
     ),
   );
-  const bomU = z
-    .object({
-      baseQty: pos.optional(),
-      notes: opt(300),
-      lines: z.array(bomLine).min(1).max(300).optional(),
-    })
-    .strict();
+  const bomU = bomB.omit({ itemId: true }).partial().strict();
   router.patch(
     '/mfg/boms/:id',
     g('mfg-bom', 'edit'),
@@ -220,8 +490,8 @@ export function createMfgRouter(): Router {
     h(async (req, res) =>
       send(
         res,
-        await masterService.updateBom(
-          callerOf(req),
+        await bomService.update(
+          C(req),
           'mfg-bom',
           String(req.params.id),
           ver(req),
@@ -231,74 +501,205 @@ export function createMfgRouter(): Router {
     ),
   );
   router.post(
-    '/mfg/boms/:id/activate',
-    g('mfg-bom', 'approve'),
+    '/mfg/boms/:id/submit',
+    g('mfg-bom', 'edit'),
     validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await bomService.submit(C(req), 'mfg-bom', String(req.params.id), ver(req))),
+    ),
+  );
+  const reasonB = z.object({ reason: txt(300) }).strict();
+  router.post(
+    '/mfg/boms/:id/reject',
+    g('mfg-bom', 'approve'),
+    validate({ params: idp, body: reasonB }),
     h(async (req, res) =>
       send(
         res,
-        await masterService.activateBom(callerOf(req), 'mfg-bom', String(req.params.id), ver(req)),
+        await bomService.reject(
+          C(req),
+          'mfg-bom',
+          String(req.params.id),
+          ver(req),
+          validated(res, 'body', reasonB).reason,
+        ),
       ),
     ),
   );
   router.post(
-    '/mfg/boms/:id/retire',
+    '/mfg/boms/:id/release',
     g('mfg-bom', 'approve'),
     validate({ params: idp }),
     h(async (req, res) =>
-      send(
-        res,
-        await masterService.retireBom(callerOf(req), 'mfg-bom', String(req.params.id), ver(req)),
-      ),
+      send(res, await bomService.release(C(req), 'mfg-bom', String(req.params.id), ver(req))),
     ),
   );
   router.post(
-    '/mfg/boms/:id/new-version',
+    '/mfg/boms/:id/revise',
     g('mfg-bom', 'add'),
     validate({ params: idp }),
     h(async (req, res) =>
+      send(res, await bomService.revise(C(req), 'mfg-bom', String(req.params.id)), 201),
+    ),
+  );
+  router.post(
+    '/mfg/boms/:id/obsolete',
+    g('mfg-bom', 'approve'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await bomService.obsolete(C(req), 'mfg-bom', String(req.params.id), ver(req))),
+    ),
+  );
+  router.post(
+    '/mfg/boms/:id/set-default',
+    g('mfg-bom', 'approve'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await bomService.setDefault(C(req), 'mfg-bom', String(req.params.id), ver(req))),
+    ),
+  );
+  const expl = z.object({ qty: pos.optional(), date: isoDate.optional() }).strict();
+  const today = () => new Date().toISOString().slice(0, 10);
+  router.get(
+    '/mfg/boms/:id/explode',
+    g('mfg-bom', 'view'),
+    validate({ params: idp, query: expl }),
+    h(async (req, res) => {
+      const q = validated(res, 'query', expl);
       send(
         res,
-        await masterService.newBomVersion(callerOf(req), 'mfg-bom', String(req.params.id)),
-        201,
-      ),
+        await bomService.explodeBom(
+          C(req),
+          'mfg-bom',
+          String(req.params.id),
+          q.qty ?? '1',
+          q.date ?? today(),
+        ),
+      );
+    }),
+  );
+  router.get(
+    '/mfg/boms/:id/tree',
+    g('mfg-bom', 'view'),
+    validate({ params: idp, query: expl }),
+    h(async (req, res) => {
+      const q = validated(res, 'query', expl);
+      send(
+        res,
+        await bomService.tree(
+          C(req),
+          'mfg-bom',
+          String(req.params.id),
+          q.qty ?? '1',
+          q.date ?? today(),
+        ),
+      );
+    }),
+  );
+  router.get(
+    '/mfg/boms/:id/cost-rollup',
+    g('mfg-bom', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await bomService.costRollup(C(req), 'mfg-bom', String(req.params.id))),
     ),
+  );
+  const impB = z
+    .object({
+      rows: z
+        .array(
+          z
+            .object({
+              itemCode: txt(60),
+              baseQty: num.optional(),
+              lines: z
+                .array(
+                  z
+                    .object({
+                      componentCode: txt(60),
+                      qtyPerBase: num,
+                      uom: opt(20),
+                      scrapPct: num.optional(),
+                      isPhantom: z.boolean().optional(),
+                      issueMethod: z.enum(['MANUAL', 'BACKFLUSH']).optional(),
+                    })
+                    .strict(),
+                )
+                .min(1)
+                .max(300),
+            })
+            .strict(),
+        )
+        .min(1)
+        .max(500),
+    })
+    .strict();
+  router.post(
+    '/mfg/boms/import',
+    g('mfg-bom', 'add'),
+    validate({ body: impB }),
+    h(async (req, res) => {
+      const b = validated(res, 'body', impB);
+      await idem(req, res, 'mfg-bom-import', [b], async () => ({
+        ...(await bomService.importBoms(C(req), 'mfg-bom', b.rows)),
+        version: 0,
+      }));
+    }),
   );
 
   // ---------------------------------------------------------------- routing
+  const rtQ = bomQ;
   router.get(
     '/mfg/routings',
-    g('mfg-routing', 'view'),
-    validate({ query: bomQ }),
+    anyView('mfg-routing', 'mfg-orders', 'mfg-bom', 'mfg-plan'),
+    validate({ query: rtQ }),
     h(async (req, res) => {
-      const q = validated(res, 'query', bomQ);
-      const r = await masterService.listRoutings(callerOf(req), 'mfg-routing', q);
+      const q = validated(res, 'query', rtQ);
+      const r = await routingService.list(
+        C(req),
+        await firstPage(req, ['mfg-routing', 'mfg-orders', 'mfg-bom', 'mfg-plan'], 'view'),
+        q,
+      );
       paged(res, r.rows, r.total, q.page, q.size);
     }),
   );
   router.get(
     '/mfg/routings/:id',
-    g('mfg-routing', 'view'),
+    anyView('mfg-routing', 'mfg-orders', 'mfg-bom', 'mfg-plan'),
     validate({ params: idp }),
     h(async (req, res) =>
       send(
         res,
-        await masterService.getRouting(callerOf(req), 'mfg-routing', String(req.params.id)),
+        await routingService.get(
+          C(req),
+          await firstPage(req, ['mfg-routing', 'mfg-orders', 'mfg-bom', 'mfg-plan'], 'view'),
+          String(req.params.id),
+        ),
       ),
     ),
   );
-  const opZ = z
+  const opB = z
     .object({
       seq: z.number().int().min(1).max(9999),
       name: txt(120),
       workCentreId: uuid,
-      setupMinutes: mins.optional(),
-      runMinutes: mins.optional(),
-      inspectionRequired: z.boolean().optional(),
+      setupMinutes: num.optional(),
+      runMinutes: num.optional(),
+      queueMinutes: num.optional(),
+      moveMinutes: num.optional(),
+      qcRequired: z.boolean().optional(),
+      qmsPlanRef: opt(60),
+      isOutside: z.boolean().optional(),
+      toolingNote: opt(200),
     })
     .strict();
   const rtB = z
-    .object({ itemId: uuid, notes: opt(300), ops: z.array(opZ).min(1).max(100) })
+    .object({
+      itemId: uuid,
+      effectiveFrom: isoDate.optional(),
+      notes: opt(300),
+      ops: z.array(opB).min(1, 'Add at least one operation.').max(60),
+    })
     .strict();
   router.post(
     '/mfg/routings',
@@ -307,16 +708,12 @@ export function createMfgRouter(): Router {
     h(async (req, res) =>
       send(
         res,
-        await masterService.createRouting(
-          callerOf(req),
-          'mfg-routing',
-          validated(res, 'body', rtB),
-        ),
+        await routingService.create(C(req), 'mfg-routing', validated(res, 'body', rtB)),
         201,
       ),
     ),
   );
-  const rtU = z.object({ notes: opt(300), ops: z.array(opZ).min(1).max(100).optional() }).strict();
+  const rtU = rtB.omit({ itemId: true }).partial().strict();
   router.patch(
     '/mfg/routings/:id',
     g('mfg-routing', 'edit'),
@@ -324,8 +721,8 @@ export function createMfgRouter(): Router {
     h(async (req, res) =>
       send(
         res,
-        await masterService.updateRouting(
-          callerOf(req),
+        await routingService.update(
+          C(req),
           'mfg-routing',
           String(req.params.id),
           ver(req),
@@ -335,55 +732,339 @@ export function createMfgRouter(): Router {
     ),
   );
   router.post(
-    '/mfg/routings/:id/activate',
+    '/mfg/routings/:id/release',
     g('mfg-routing', 'approve'),
     validate({ params: idp }),
     h(async (req, res) =>
       send(
         res,
-        await masterService.activateRouting(
-          callerOf(req),
-          'mfg-routing',
-          String(req.params.id),
-          ver(req),
-        ),
+        await routingService.release(C(req), 'mfg-routing', String(req.params.id), ver(req)),
       ),
     ),
   );
   router.post(
-    '/mfg/routings/:id/retire',
-    g('mfg-routing', 'approve'),
-    validate({ params: idp }),
-    h(async (req, res) =>
-      send(
-        res,
-        await masterService.retireRouting(
-          callerOf(req),
-          'mfg-routing',
-          String(req.params.id),
-          ver(req),
-        ),
-      ),
-    ),
-  );
-  router.post(
-    '/mfg/routings/:id/new-version',
+    '/mfg/routings/:id/revise',
     g('mfg-routing', 'add'),
     validate({ params: idp }),
     h(async (req, res) =>
+      send(res, await routingService.revise(C(req), 'mfg-routing', String(req.params.id)), 201),
+    ),
+  );
+  router.post(
+    '/mfg/routings/:id/obsolete',
+    g('mfg-routing', 'approve'),
+    validate({ params: idp }),
+    h(async (req, res) =>
       send(
         res,
-        await masterService.newRoutingVersion(callerOf(req), 'mfg-routing', String(req.params.id)),
-        201,
+        await routingService.obsolete(C(req), 'mfg-routing', String(req.params.id), ver(req)),
       ),
     ),
+  );
+
+  // ---------------------------------------------------------------- production plans
+  const ppQ = z
+    .object({
+      status: z.enum(['DRAFT', 'SUBMITTED', 'RELEASED', 'CLOSED']).optional(),
+      ...pageQuery,
+    })
+    .strict();
+  router.get(
+    '/mfg/production-plans',
+    g('mfg-plan', 'view'),
+    validate({ query: ppQ }),
+    h(async (req, res) => {
+      const q = validated(res, 'query', ppQ);
+      const r = await planService.list(C(req), 'mfg-plan', q);
+      paged(res, r.rows, r.total, q.page, q.size);
+    }),
+  );
+  router.get(
+    '/mfg/production-plans/:id',
+    g('mfg-plan', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await planService.get(C(req), 'mfg-plan', String(req.params.id))),
+    ),
+  );
+  const ppLine = z
+    .object({
+      demandSource: z.enum(['SALES_ORDER', 'MANUAL', 'FORECAST']).optional(),
+      soLineId: uuid.optional(),
+      itemId: uuid,
+      demandQty: num.optional(),
+      plannedQty: pos,
+      requiredDate: isoDate,
+    })
+    .strict();
+  const ppB = z
+    .object({
+      planDate: isoDate.optional(),
+      horizonDays: z.number().int().min(1).max(365).optional(),
+      notes: opt(300),
+      lines: z.array(ppLine).max(500).optional(),
+    })
+    .strict();
+  router.post(
+    '/mfg/production-plans',
+    g('mfg-plan', 'add'),
+    validate({ body: ppB }),
+    h(async (req, res) =>
+      send(res, await planService.create(C(req), 'mfg-plan', validated(res, 'body', ppB)), 201),
+    ),
+  );
+  const ppU = ppB.omit({ planDate: true }).strict();
+  router.patch(
+    '/mfg/production-plans/:id',
+    g('mfg-plan', 'edit'),
+    validate({ params: idp, body: ppU }),
+    h(async (req, res) =>
+      send(
+        res,
+        await planService.update(
+          C(req),
+          'mfg-plan',
+          String(req.params.id),
+          ver(req),
+          validated(res, 'body', ppU),
+        ),
+      ),
+    ),
+  );
+  router.post(
+    '/mfg/production-plans/:id/pull-demand',
+    g('mfg-plan', 'edit'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await planService.pullDemand(C(req), 'mfg-plan', String(req.params.id))),
+    ),
+  );
+  router.post(
+    '/mfg/production-plans/:id/check-capacity',
+    g('mfg-plan', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await planService.checkCapacity(C(req), 'mfg-plan', String(req.params.id))),
+    ),
+  );
+  router.post(
+    '/mfg/production-plans/:id/check-material',
+    g('mfg-plan', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await planService.checkMaterial(C(req), 'mfg-plan', String(req.params.id))),
+    ),
+  );
+  router.post(
+    '/mfg/production-plans/:id/submit',
+    g('mfg-plan', 'edit'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(
+        res,
+        await planService.setStatus(
+          C(req),
+          'mfg-plan',
+          String(req.params.id),
+          ver(req),
+          ['DRAFT'],
+          'SUBMITTED',
+        ),
+      ),
+    ),
+  );
+  router.post(
+    '/mfg/production-plans/:id/release',
+    g('mfg-plan', 'approve'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(
+        res,
+        await planService.setStatus(
+          C(req),
+          'mfg-plan',
+          String(req.params.id),
+          ver(req),
+          ['DRAFT', 'SUBMITTED'],
+          'RELEASED',
+        ),
+      ),
+    ),
+  );
+  router.post(
+    '/mfg/production-plans/:id/close',
+    g('mfg-plan', 'approve'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(
+        res,
+        await planService.setStatus(
+          C(req),
+          'mfg-plan',
+          String(req.params.id),
+          ver(req),
+          ['RELEASED'],
+          'CLOSED',
+        ),
+      ),
+    ),
+  );
+  router.post(
+    '/mfg/production-plans/:id/run-mrp',
+    g('mfg-mrp', 'post'),
+    validate({ params: idp }),
+    h(async (req, res) => {
+      const id = String(req.params.id);
+      await idem(req, res, 'mfg-plan-mrp', [id], () => planService.runMrp(C(req), 'mfg-plan', id));
+    }),
+  );
+
+  // ---------------------------------------------------------------- MRP
+  const mrQ = z
+    .object({ status: z.enum(['QUEUED', 'RUNNING', 'DONE', 'FAILED']).optional(), ...pageQuery })
+    .strict();
+  router.get(
+    '/mfg/mrp-runs',
+    g('mfg-mrp', 'view'),
+    validate({ query: mrQ }),
+    h(async (req, res) => {
+      const q = validated(res, 'query', mrQ);
+      const r = await mrpService.list(C(req), 'mfg-mrp', q);
+      paged(res, r.rows, r.total, q.page, q.size);
+    }),
+  );
+  const mrB = z
+    .object({
+      horizonDays: z.number().int().min(1).max(365).optional(),
+      bucket: z.enum(['DAY', 'WEEK']).optional(),
+      includeSo: z.boolean().optional(),
+      planId: uuid.optional(),
+      notes: opt(300),
+    })
+    .strict();
+  router.post(
+    '/mfg/mrp-runs',
+    g('mfg-mrp', 'post'),
+    validate({ body: mrB }),
+    h(async (req, res) => {
+      const b = validated(res, 'body', mrB);
+      await idem(req, res, 'mfg-mrp-run', [b], () => mrpService.enqueueRun(C(req), 'mfg-mrp', b));
+    }),
+  );
+  router.get(
+    '/mfg/mrp-runs/:id',
+    g('mfg-mrp', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await mrpService.get(C(req), 'mfg-mrp', String(req.params.id))),
+    ),
+  );
+  const sugQ = z
+    .object({ status: z.enum(['OPEN', 'FIRMED', 'CONVERTED', 'IGNORED']).optional() })
+    .strict();
+  router.get(
+    '/mfg/mrp-runs/:id/suggestions',
+    g('mfg-mrp', 'view'),
+    validate({ params: idp, query: sugQ }),
+    h(async (req, res) =>
+      res.json({
+        data: await mrpService.suggestions(
+          C(req),
+          'mfg-mrp',
+          String(req.params.id),
+          validated(res, 'query', sugQ).status,
+        ),
+      }),
+    ),
+  );
+  const bkQ = z.object({ itemId: uuid.optional() }).strict();
+  router.get(
+    '/mfg/mrp-runs/:id/buckets',
+    g('mfg-mrp', 'view'),
+    validate({ params: idp, query: bkQ }),
+    h(async (req, res) =>
+      res.json({
+        data: await mrpService.buckets(
+          C(req),
+          'mfg-mrp',
+          String(req.params.id),
+          validated(res, 'query', bkQ).itemId,
+        ),
+      }),
+    ),
+  );
+  router.get(
+    '/mfg/mrp-runs/:id/pegging',
+    g('mfg-mrp', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      res.json({ data: await mrpService.pegging(C(req), 'mfg-mrp', String(req.params.id)) }),
+    ),
+  );
+  router.get(
+    '/mfg/mrp-runs/:id/exceptions',
+    g('mfg-mrp', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      res.json({ data: await mrpService.exceptions(C(req), 'mfg-mrp', String(req.params.id)) }),
+    ),
+  );
+  router.post(
+    '/mfg/mrp-suggestions/:id/firm',
+    g('mfg-mrp', 'edit'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await mrpService.firm(C(req), 'mfg-mrp', String(req.params.id))),
+    ),
+  );
+  router.post(
+    '/mfg/mrp-suggestions/:id/ignore',
+    g('mfg-mrp', 'edit'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await mrpService.ignore(C(req), 'mfg-mrp', String(req.params.id))),
+    ),
+  );
+  const whB = z.object({ warehouseId: uuid.optional(), rmWarehouseId: uuid.optional() }).strict();
+  router.post(
+    '/mfg/mrp-suggestions/:id/convert',
+    g('mfg-mrp', 'approve'),
+    validate({ params: idp, body: whB }),
+    h(async (req, res) => {
+      const id = String(req.params.id);
+      const b = validated(res, 'body', whB);
+      await idem(req, res, 'mfg-mrp-convert', [id, b], () =>
+        mrpService.convert(C(req), 'mfg-mrp', id, b),
+      );
+    }),
+  );
+  const cbB = whB.extend({ ids: z.array(uuid).min(1).max(200) }).strict();
+  router.post(
+    '/mfg/mrp-suggestions/convert-bulk',
+    g('mfg-mrp', 'approve'),
+    validate({ body: cbB }),
+    h(async (req, res) => {
+      const { ids, ...w } = validated(res, 'body', cbB);
+      await idem(req, res, 'mfg-mrp-convert-bulk', [ids, w], async () => ({
+        ...(await mrpService.convertBulk(C(req), 'mfg-mrp', ids, w)),
+        version: 0,
+      }));
+    }),
   );
 
   // ---------------------------------------------------------------- production orders
   const ordQ = z
     .object({
       status: z
-        .enum(['Planned', 'Released', 'In Progress', 'Completed', 'Closed', 'Cancelled'])
+        .enum([
+          'Planned',
+          'Pending Approval',
+          'Released',
+          'In Progress',
+          'Completed',
+          'Closed',
+          'Cancelled',
+        ])
         .optional(),
       itemId: uuid.optional(),
       q: opt(80),
@@ -392,70 +1073,104 @@ export function createMfgRouter(): Router {
       ...pageQuery,
     })
     .strict();
-  /** one list, three screens: orders, operations (work orders) and finished goods read the same rows */
-  for (const page of ['mfg-orders', 'mfg-workorders', 'mfg-fg', 'mfg-wip', 'mfg-scrap'] as const) {
+  /** one list, many screens: they read the same rows, scoped by the screen the caller asks through */
+  for (const base of ['production-orders', 'orders'] as const) {
     router.get(
-      `/mfg/orders${page === 'mfg-orders' ? '' : `/for/${page}`}`,
-      g(page, 'view'),
+      `/mfg/${base}`,
+      anyView(...ORDER_PAGES),
       validate({ query: ordQ }),
       h(async (req, res) => {
         const q = validated(res, 'query', ordQ);
-        const r = await orderService.list(callerOf(req), page, q);
+        const r = await orderService.list(C(req), await firstPage(req, ORDER_PAGES, 'view'), q);
         paged(res, r.rows, r.total, q.page, q.size);
       }),
     );
-    router.get(
-      `/mfg/orders/for/${page}/:id`,
-      g(page, 'view'),
-      validate({ params: idp }),
-      h(async (req, res) =>
-        send(res, await orderService.get(callerOf(req), page, String(req.params.id))),
-      ),
-    );
   }
   router.get(
-    '/mfg/orders/:id',
-    g('mfg-orders', 'view'),
+    '/mfg/production-orders/:id',
+    anyView(...ORDER_PAGES),
     validate({ params: idp }),
     h(async (req, res) =>
-      send(res, await orderService.get(callerOf(req), 'mfg-orders', String(req.params.id))),
+      send(
+        res,
+        await orderService.get(
+          C(req),
+          await firstPage(req, ORDER_PAGES, 'view'),
+          String(req.params.id),
+        ),
+      ),
+    ),
+  );
+  router.get(
+    '/mfg/production-orders/:id/materials',
+    anyView(...ORDER_PAGES),
+    validate({ params: idp }),
+    h(async (req, res) => {
+      const o = await orderService.get(
+        C(req),
+        await firstPage(req, ORDER_PAGES, 'view'),
+        String(req.params.id),
+      );
+      res.json({ data: o.materials ?? [] });
+    }),
+  );
+  router.get(
+    '/mfg/production-orders/:id/cost-sheet',
+    anyView('mfg-costing', 'mfg-orders', 'mfg-wip'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(
+        res,
+        await reportsService.costSheet(
+          C(req),
+          await firstPage(req, ['mfg-costing', 'mfg-orders', 'mfg-wip'], 'view'),
+          String(req.params.id),
+        ),
+      ),
     ),
   );
   const ordB = z
     .object({
       itemId: uuid,
-      qty: num,
+      qty: pos,
       dueDate: isoDate,
       startDate: isoDate.optional(),
       customerId: uuid.optional(),
       customerPoNo: opt(60),
       warehouseId: uuid,
       rmWarehouseId: uuid,
+      wipWhId: uuid.optional(),
+      priority: z.number().int().min(1).max(5).optional(),
+      overProductionPct: num.refine((v) => Number(v) <= 100, 'Up to 100.').optional(),
+      sourceType: z.enum(['MANUAL', 'SALES_ORDER', 'MRP', 'PLAN']).optional(),
+      sourceId: uuid.optional(),
+      planLineId: uuid.optional(),
+      soLineId: uuid.optional(),
+      suggestionId: uuid.optional(),
       notes: opt(300),
     })
     .strict();
   router.post(
-    '/mfg/orders',
+    '/mfg/production-orders',
     g('mfg-orders', 'add'),
     validate({ body: ordB }),
-    h(async (req, res) =>
-      send(
-        res,
-        await orderService.create(callerOf(req), 'mfg-orders', validated(res, 'body', ordB)),
-        201,
-      ),
-    ),
+    h(async (req, res) => {
+      const b = validated(res, 'body', ordB);
+      await idem(req, res, 'mfg-order-create', [b], () =>
+        orderService.create(C(req), 'mfg-orders', b),
+      );
+    }),
   );
-  const ordU = ordB.omit({ itemId: true }).partial().strict();
+  const ordU = ordB.omit({ itemId: true, sourceType: true, sourceId: true }).partial().strict();
   router.patch(
-    '/mfg/orders/:id',
+    '/mfg/production-orders/:id',
     g('mfg-orders', 'edit'),
     validate({ params: idp, body: ordU }),
     h(async (req, res) =>
       send(
         res,
         await orderService.update(
-          callerOf(req),
+          C(req),
           'mfg-orders',
           String(req.params.id),
           ver(req),
@@ -465,50 +1180,68 @@ export function createMfgRouter(): Router {
     ),
   );
   router.post(
-    '/mfg/orders/:id/release',
+    '/mfg/production-orders/:id/release',
+    g('mfg-orders', 'post'),
+    validate({ params: idp }),
+    h(async (req, res) => {
+      const id = String(req.params.id);
+      const v = ver(req);
+      const approver = await canDo(req, 'mfg-orders', 'approve');
+      await idem(req, res, 'mfg-order-release', [id, v], () =>
+        orderService.release(C(req), 'mfg-orders', id, v, approver),
+      );
+    }),
+  );
+  router.post(
+    '/mfg/production-orders/:id/approve',
     g('mfg-orders', 'approve'),
+    validate({ params: idp }),
+    h(async (req, res) => {
+      const id = String(req.params.id);
+      const v = ver(req);
+      await idem(req, res, 'mfg-order-release', [id, v], () =>
+        orderService.release(C(req), 'mfg-orders', id, v, true),
+      );
+    }),
+  );
+  router.post(
+    '/mfg/production-orders/:id/start-complete',
+    g('mfg-orders', 'post'),
     validate({ params: idp }),
     h(async (req, res) =>
       send(
         res,
-        await orderService.release(callerOf(req), 'mfg-orders', String(req.params.id), ver(req)),
+        await orderService.technicallyComplete(C(req), 'mfg-orders', String(req.params.id)),
       ),
     ),
   );
-  const cancelB = z
-    .object({ reason: z.string().trim().min(3, 'Give the reason.').max(300) })
-    .strict();
+  const noteB = z.object({ note: opt(300) }).strict();
   router.post(
-    '/mfg/orders/:id/cancel',
+    '/mfg/production-orders/:id/close',
+    g('mfg-orders', 'approve'),
+    validate({ params: idp, body: noteB }),
+    h(async (req, res) => {
+      const id = String(req.params.id);
+      const v = ver(req);
+      const note = validated(res, 'body', noteB).note;
+      await idem(req, res, 'mfg-order-close', [id, v], () =>
+        orderService.close(C(req), 'mfg-orders', id, v, note),
+      );
+    }),
+  );
+  router.post(
+    '/mfg/production-orders/:id/cancel',
     g('mfg-orders', 'cancel'),
-    validate({ params: idp, body: cancelB }),
+    validate({ params: idp, body: reasonB }),
     h(async (req, res) =>
       send(
         res,
         await orderService.cancel(
-          callerOf(req),
+          C(req),
           'mfg-orders',
           String(req.params.id),
           ver(req),
-          validated(res, 'body', cancelB).reason,
-        ),
-      ),
-    ),
-  );
-  const closeB = z.object({ note: opt(300) }).strict();
-  router.post(
-    '/mfg/orders/:id/close',
-    g('mfg-orders', 'post'),
-    validate({ params: idp, body: closeB }),
-    h(async (req, res) =>
-      send(
-        res,
-        await orderService.close(
-          callerOf(req),
-          'mfg-orders',
-          String(req.params.id),
-          ver(req),
-          validated(res, 'body', closeB).note,
+          validated(res, 'body', reasonB).reason,
         ),
       ),
     ),
@@ -520,143 +1253,249 @@ export function createMfgRouter(): Router {
           z
             .object({
               materialId: uuid,
-              qty: num,
+              qty: pos,
               batchNo: opt(60),
-              serialNos: z.array(z.string().trim().min(1).max(60)).max(500).optional(),
-              customerLotId: uuid.optional(),
+              serialNos: z.array(txt(60)).max(500).optional(),
             })
             .strict(),
         )
         .min(1)
-        .max(200),
+        .max(100),
     })
     .strict();
   router.post(
-    '/mfg/orders/:id/issue',
+    '/mfg/production-orders/:id/issue',
     g('mfg-orders', 'post'),
     validate({ params: idp, body: issueB }),
     h(async (req, res) => {
-      const b = validated(res, 'body', issueB);
       const id = String(req.params.id);
-      await idem(req, res, 'mfg-issue', [id, b], () =>
-        orderService.issue(callerOf(req), 'mfg-orders', id, b.lines),
+      const b = validated(res, 'body', issueB);
+      const sup = await canDo(req, 'mfg-orders', 'approve');
+      await idem(req, res, 'mfg-order-issue', [id, b], () =>
+        orderService.issue(C(req), 'mfg-orders', id, b.lines, sup),
       );
     }),
   );
-  const returnB = z
+  const retB = z
     .object({
       lines: z
-        .array(z.object({ materialId: uuid, qty: num, batchNo: opt(60) }).strict())
+        .array(z.object({ materialId: uuid, qty: pos, batchNo: opt(60) }).strict())
         .min(1)
-        .max(200),
+        .max(100),
     })
     .strict();
   router.post(
-    '/mfg/orders/:id/return',
+    '/mfg/production-orders/:id/return',
     g('mfg-orders', 'post'),
-    validate({ params: idp, body: returnB }),
+    validate({ params: idp, body: retB }),
     h(async (req, res) => {
-      const b = validated(res, 'body', returnB);
       const id = String(req.params.id);
-      await idem(req, res, 'mfg-return', [id, b], () =>
-        orderService.returnMaterial(callerOf(req), 'mfg-orders', id, b.lines),
+      const b = validated(res, 'body', retB);
+      await idem(req, res, 'mfg-order-return', [id, b], () =>
+        orderService.returnMaterial(C(req), 'mfg-orders', id, b.lines),
       );
     }),
   );
 
-  // ---------------------------------------------------------------- operations (work orders)
-  const opP = z.object({ id: uuid, opId: uuid }).strict();
+  // ---------------------------------------------------------------- production receipts (finished goods)
+  const rcB = z
+    .object({
+      orderId: uuid,
+      qty: pos,
+      batchNo: opt(60),
+      serialNos: z.array(txt(60)).max(1000).optional(),
+    })
+    .strict();
+  router.post(
+    '/mfg/production-receipts',
+    g('mfg-fg', 'post'),
+    validate({ body: rcB }),
+    h(async (req, res) => {
+      const { orderId, ...b } = validated(res, 'body', rcB);
+      await idem(req, res, 'mfg-receipt', [orderId, b], () =>
+        orderService.receive(C(req), 'mfg-fg', orderId, b),
+      );
+    }),
+  );
+  router.post(
+    '/mfg/production-receipts/:id/cancel',
+    g('mfg-fg', 'cancel'),
+    validate({ params: idp, body: reasonB }),
+    h(async (req, res) =>
+      send(
+        res,
+        await orderService.cancelReceipt(
+          C(req),
+          'mfg-fg',
+          String(req.params.id),
+          validated(res, 'body', reasonB).reason,
+        ),
+      ),
+    ),
+  );
+
+  // ---------------------------------------------------------------- job cards, time logs, downtime
+  const jcQ = z
+    .object({
+      workCentreId: uuid.optional(),
+      status: z.enum(['Pending', 'In Progress', 'Paused', 'Done']).optional(),
+      orderId: uuid.optional(),
+      q: opt(80),
+      ...pageQuery,
+    })
+    .strict();
+  router.get(
+    '/mfg/job-cards',
+    anyView('mfg-workorders', 'mfg-shopfloor'),
+    validate({ query: jcQ }),
+    h(async (req, res) => {
+      const q = validated(res, 'query', jcQ);
+      const r = await jobCardService.list(
+        C(req),
+        await firstPage(req, ['mfg-workorders', 'mfg-shopfloor'], 'view'),
+        q,
+      );
+      paged(res, r.rows, r.total, q.page, q.size);
+    }),
+  );
+  router.get(
+    '/mfg/job-cards/:id',
+    anyView('mfg-workorders', 'mfg-shopfloor'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(
+        res,
+        await jobCardService.get(
+          C(req),
+          await firstPage(req, ['mfg-workorders', 'mfg-shopfloor'], 'view'),
+          String(req.params.id),
+        ),
+      ),
+    ),
+  );
+  const startB = z.object({ kind: z.enum(['SETUP', 'RUN']), operator: opt(80) }).strict();
+  router.post(
+    '/mfg/job-cards/:id/start',
+    g('mfg-workorders', 'post'),
+    validate({ params: idp, body: startB }),
+    h(async (req, res) => {
+      const id = String(req.params.id);
+      const b = validated(res, 'body', startB);
+      const k = idemOf(req);
+      await idem(req, res, 'mfg-jc-start', [id, b], () =>
+        jobCardService.start(C(req), 'mfg-workorders', id, {
+          ...b,
+          ...(k ? { idempotencyKey: k } : {}),
+        }),
+      );
+    }),
+  );
+  const pauseB = z.object({ reasonId: uuid, remarks: opt(200) }).strict();
+  router.post(
+    '/mfg/job-cards/:id/pause',
+    g('mfg-workorders', 'post'),
+    validate({ params: idp, body: pauseB }),
+    h(async (req, res) => {
+      const id = String(req.params.id);
+      const b = validated(res, 'body', pauseB);
+      await idem(req, res, 'mfg-jc-pause', [id, b], () =>
+        jobCardService.pause(C(req), 'mfg-workorders', id, b),
+      );
+    }),
+  );
+  const resumeB = z.object({ operator: opt(80) }).strict();
+  router.post(
+    '/mfg/job-cards/:id/resume',
+    g('mfg-workorders', 'post'),
+    validate({ params: idp, body: resumeB }),
+    h(async (req, res) => {
+      const id = String(req.params.id);
+      const b = validated(res, 'body', resumeB);
+      await idem(req, res, 'mfg-jc-resume', [id, b], () =>
+        jobCardService.resume(C(req), 'mfg-workorders', id, b),
+      );
+    }),
+  );
   const logB = z
     .object({
+      kind: z.enum(['SETUP', 'RUN']),
+      fromTs: ts,
+      toTs: ts,
+      operator: opt(80),
       good: num.optional(),
+      rejected: num.optional(),
+    })
+    .strict();
+  router.post(
+    '/mfg/job-cards/:id/time-logs',
+    g('mfg-workorders', 'post'),
+    validate({ params: idp, body: logB }),
+    h(async (req, res) => {
+      const id = String(req.params.id);
+      const b = validated(res, 'body', logB);
+      const k = idemOf(req);
+      await idem(req, res, 'mfg-jc-log', [id, b], () =>
+        jobCardService.logTime(C(req), 'mfg-workorders', id, {
+          ...b,
+          ...(k ? { idempotencyKey: k } : {}),
+        }),
+      );
+    }),
+  );
+  const doneB = z
+    .object({
+      good: num.optional(),
+      rejected: num.optional(),
       scrap: num.optional(),
       rework: num.optional(),
-      minutes: num.optional(),
-      operator: opt(80),
+      scrapReasonId: uuid.optional(),
       reason: opt(200),
-      note: opt(200),
-      fromGood: z.boolean().optional(),
-      logDate: isoDate.optional(),
+      operator: opt(80),
     })
     .strict();
   router.post(
-    '/mfg/orders/:id/ops/:opId/log',
-    g('mfg-workorders', 'edit'),
-    validate({ params: opP, body: logB }),
+    '/mfg/job-cards/:id/complete',
+    g('mfg-workorders', 'post'),
+    validate({ params: idp, body: doneB }),
     h(async (req, res) => {
-      const b = validated(res, 'body', logB);
       const id = String(req.params.id);
-      const opId = String(req.params.opId);
-      await idem(req, res, 'mfg-log', [id, opId, b], () =>
-        orderService.logOperation(callerOf(req), 'mfg-workorders', id, opId, b),
+      const b = validated(res, 'body', doneB);
+      const k = idemOf(req);
+      await idem(req, res, 'mfg-jc-done', [id, b], () =>
+        jobCardService.complete(C(req), 'mfg-workorders', id, {
+          ...b,
+          ...(k ? { idempotencyKey: k } : {}),
+        }),
       );
     }),
   );
+  const dtB = z.object({ workCentreId: uuid, reasonId: uuid, remarks: opt(200) }).strict();
   router.post(
-    '/mfg/orders/:id/ops/:opId/complete',
-    g('mfg-workorders', 'edit'),
-    validate({ params: opP }),
-    h(async (req, res) => {
-      const id = String(req.params.id);
-      const opId = String(req.params.opId);
-      await idem(req, res, 'mfg-opdone', [id, opId], () =>
-        orderService.completeOperation(callerOf(req), 'mfg-workorders', id, opId),
-      );
-    }),
+    '/mfg/downtime',
+    g('mfg-workorders', 'post'),
+    validate({ body: dtB }),
+    h(async (req, res) =>
+      send(
+        res,
+        await jobCardService.startDowntime(C(req), 'mfg-workorders', validated(res, 'body', dtB)),
+        201,
+      ),
+    ),
   );
-  const lotB = z.object({ lotQty: num.optional() }).strict();
   router.post(
-    '/mfg/orders/:id/ops/:opId/inspection',
-    g('mfg-workorders', 'edit'),
-    validate({ params: opP, body: lotB }),
-    h(async (req, res) => {
-      const b = validated(res, 'body', lotB);
-      const id = String(req.params.id);
-      const opId = String(req.params.opId);
-      await idem(req, res, 'mfg-oplot', [id, opId, b], () =>
-        orderService.createOpLot(callerOf(req), 'mfg-workorders', id, opId, b.lotQty),
-      );
-    }),
+    '/mfg/downtime/:id/end',
+    g('mfg-workorders', 'post'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await jobCardService.endDowntime(C(req), 'mfg-workorders', String(req.params.id))),
+    ),
   );
 
-  // ---------------------------------------------------------------- finished goods
-  router.post(
-    '/mfg/orders/:id/fg-lots',
-    g('mfg-fg', 'add'),
-    validate({ params: idp, body: lotB }),
-    h(async (req, res) => {
-      const b = validated(res, 'body', lotB);
-      const id = String(req.params.id);
-      await idem(req, res, 'mfg-fglot', [id, b], () =>
-        orderService.createFgLot(callerOf(req), 'mfg-fg', id, b.lotQty),
-      );
-    }),
-  );
-  const recvB = z
-    .object({
-      lotId: uuid,
-      qty: num,
-      batchNo: opt(60),
-      serialNos: z.array(z.string().trim().min(1).max(60)).max(500).optional(),
-    })
-    .strict();
-  router.post(
-    '/mfg/orders/:id/receive',
-    g('mfg-fg', 'post'),
-    validate({ params: idp, body: recvB }),
-    h(async (req, res) => {
-      const b = validated(res, 'body', recvB);
-      const id = String(req.params.id);
-      await idem(req, res, 'mfg-receive', [id, b], () =>
-        orderService.receiveFg(callerOf(req), 'mfg-fg', id, b),
-      );
-    }),
-  );
-
-  // ---------------------------------------------------------------- scrap and rework
-  const scrapQ = z
+  // ---------------------------------------------------------------- scrap
+  const scQ = z
     .object({
       orderId: uuid.optional(),
+      status: z.enum(['Draft', 'Submitted', 'Cancelled']).optional(),
       from: isoDate.optional(),
       to: isoDate.optional(),
       q: opt(80),
@@ -664,177 +1503,227 @@ export function createMfgRouter(): Router {
     })
     .strict();
   router.get(
-    '/mfg/scrap',
+    '/mfg/scrap-entries',
     g('mfg-scrap', 'view'),
-    validate({ query: scrapQ }),
+    validate({ query: scQ }),
     h(async (req, res) => {
-      const q = validated(res, 'query', scrapQ);
-      const r = await reportsService.listScrap(callerOf(req), 'mfg-scrap', q);
-      paged(res, r.rows, r.total, q.page, q.size, { totalQty: r.totalQty });
+      const q = validated(res, 'query', scQ);
+      const r = await scrapService.list(C(req), 'mfg-scrap', q);
+      paged(res, r.rows, r.total, q.page, q.size);
     }),
   );
-  const scrapB = z
+  router.get(
+    '/mfg/scrap-entries/:id',
+    g('mfg-scrap', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await scrapService.get(C(req), 'mfg-scrap', String(req.params.id))),
+    ),
+  );
+  const scB = z
     .object({
       orderId: uuid,
-      opId: uuid,
-      qty: num,
-      reason: txt(200),
-      operator: opt(80),
-      fromGood: z.boolean().optional(),
+      opId: uuid.optional(),
+      qty: pos,
+      reasonId: uuid.optional(),
+      reason: opt(200),
+      isNormal: z.boolean().optional(),
+      recoverableQty: num.optional(),
+      recoveryItemId: uuid.optional(),
+      recoveryValue: num.optional(),
+      disposalMethod: opt(60),
     })
     .strict();
   router.post(
-    '/mfg/scrap',
+    '/mfg/scrap-entries',
     g('mfg-scrap', 'add'),
-    validate({ body: scrapB }),
+    validate({ body: scB }),
     h(async (req, res) => {
-      const b = validated(res, 'body', scrapB);
-      await idem(req, res, 'mfg-scrap', [b], () =>
-        orderService.logOperation(callerOf(req), 'mfg-scrap', b.orderId, b.opId, {
-          scrap: b.qty,
-          reason: b.reason,
-          ...(b.operator ? { operator: b.operator } : {}),
-          ...(b.fromGood ? { fromGood: true } : {}),
-        }),
+      const b = validated(res, 'body', scB);
+      await idem(req, res, 'mfg-scrap-create', [b], () =>
+        scrapService.create(C(req), 'mfg-scrap', b),
       );
     }),
   );
+  router.post(
+    '/mfg/scrap-entries/:id/submit',
+    g('mfg-scrap', 'post'),
+    validate({ params: idp }),
+    h(async (req, res) => {
+      const id = String(req.params.id);
+      const approver = await canDo(req, 'mfg-scrap', 'approve');
+      await idem(req, res, 'mfg-scrap-submit', [id], () =>
+        scrapService.submit(C(req), 'mfg-scrap', id, approver),
+      );
+    }),
+  );
+  router.post(
+    '/mfg/scrap-entries/:id/cancel',
+    g('mfg-scrap', 'cancel'),
+    validate({ params: idp, body: reasonB }),
+    h(async (req, res) =>
+      send(
+        res,
+        await scrapService.cancel(
+          C(req),
+          'mfg-scrap',
+          String(req.params.id),
+          validated(res, 'body', reasonB).reason,
+        ),
+      ),
+    ),
+  );
+
+  // ---------------------------------------------------------------- rework orders
   const rwQ = z
     .object({
-      status: z.enum(['Open', 'Done']).optional(),
+      status: z.enum(['Open', 'Done', 'Cancelled']).optional(),
       orderId: uuid.optional(),
       q: opt(80),
       ...pageQuery,
     })
     .strict();
   router.get(
-    '/mfg/rework',
+    '/mfg/rework-orders',
     g('mfg-rework', 'view'),
     validate({ query: rwQ }),
     h(async (req, res) => {
       const q = validated(res, 'query', rwQ);
-      const r = await reportsService.listRework(callerOf(req), 'mfg-rework', q);
+      const r = await jobCardService.listRework(C(req), 'mfg-rework', q);
       paged(res, r.rows, r.total, q.page, q.size);
     }),
   );
-  const rwFin = z
-    .object({ qtyOk: num, qtyScrap: num, minutes: mins.optional(), note: opt(200) })
+  router.post(
+    '/mfg/rework-orders/:id/release',
+    g('mfg-rework', 'post'),
+    validate({ params: idp }),
+    h(async (req, res) =>
+      send(res, await jobCardService.releaseRework(C(req), 'mfg-rework', String(req.params.id))),
+    ),
+  );
+  const rwB = z
+    .object({
+      qtyOk: num,
+      qtyScrap: num,
+      hours: num.optional(),
+      materialCost: num.optional(),
+      reinspection: z.enum(['ACCEPTED', 'REJECTED', 'PENDING']).optional(),
+      note: opt(300),
+    })
     .strict();
   router.post(
-    '/mfg/rework/:id/finish',
-    g('mfg-rework', 'edit'),
-    validate({ params: idp, body: rwFin }),
+    '/mfg/rework-orders/:id/complete',
+    g('mfg-rework', 'post'),
+    validate({ params: idp, body: rwB }),
     h(async (req, res) => {
-      const b = validated(res, 'body', rwFin);
       const id = String(req.params.id);
-      await idem(req, res, 'mfg-rwfin', [id, b], () =>
-        orderService.finishRework(callerOf(req), 'mfg-rework', id, b),
+      const b = validated(res, 'body', rwB);
+      await idem(req, res, 'mfg-rework-done', [id, b], () =>
+        jobCardService.completeRework(C(req), 'mfg-rework', id, b),
       );
     }),
   );
 
-  // ---------------------------------------------------------------- WIP, costing, dashboard
+  // ---------------------------------------------------------------- reports, shop floor
   const pgQ = z.object({ ...pageQuery }).strict();
   router.get(
-    '/mfg/wip',
+    '/mfg/reports/wip',
     g('mfg-wip', 'view'),
     validate({ query: pgQ }),
-    h(async (req, res) => {
-      const q = validated(res, 'query', pgQ);
-      const r = await reportsService.wip(callerOf(req), 'mfg-wip', q);
-      paged(res, r.rows, r.total, q.page, q.size, { totalValue: r.totalValue });
-    }),
+    h(async (req, res) =>
+      send(res, await reportsService.wip(C(req), 'mfg-wip', validated(res, 'query', pgQ))),
+    ),
   );
-  const costQ = z
-    .object({
-      status: z.enum(['Released', 'In Progress', 'Completed', 'Closed']).optional(),
-      q: opt(80),
-      ...pageQuery,
-    })
-    .strict();
   router.get(
-    '/mfg/costing',
+    '/mfg/reports/wip-reconciliation',
+    g('mfg-wip', 'view'),
+    validate({ query: noQ }),
+    h(async (req, res) => send(res, await reportsService.wipReconciliation(C(req)))),
+  );
+  const costQ = z.object({ status: opt(20), q: opt(80), ...pageQuery }).strict();
+  router.get(
+    '/mfg/reports/costing',
     g('mfg-costing', 'view'),
     validate({ query: costQ }),
-    h(async (req, res) => {
-      const q = validated(res, 'query', costQ);
-      const r = await reportsService.costing(callerOf(req), 'mfg-costing', q);
-      paged(res, r.rows, r.total, q.page, q.size);
-    }),
+    h(async (req, res) =>
+      send(
+        res,
+        await reportsService.costing(C(req), 'mfg-costing', validated(res, 'query', costQ)),
+      ),
+    ),
   );
   router.get(
-    '/mfg/shopfloor',
+    '/mfg/reports/variance',
+    g('mfg-costing', 'view'),
+    validate({ query: pgQ }),
+    h(async (req, res) =>
+      send(
+        res,
+        await reportsService.variances(C(req), 'mfg-costing', validated(res, 'query', pgQ)),
+      ),
+    ),
+  );
+  router.get(
+    '/mfg/reports/yield',
+    g('mfg-costing', 'view'),
+    validate({ query: pgQ }),
+    h(async (req, res) =>
+      send(
+        res,
+        await reportsService.yieldReport(C(req), 'mfg-costing', validated(res, 'query', pgQ)),
+      ),
+    ),
+  );
+  const rangeQ = z.object({ from: isoDate, to: isoDate, workCentreId: uuid.optional() }).strict();
+  router.get(
+    '/mfg/reports/oee',
     g('mfg-shopfloor', 'view'),
+    validate({ query: rangeQ }),
     h(async (req, res) =>
-      send(res, await reportsService.shopFloor(callerOf(req), 'mfg-shopfloor')),
+      send(res, await reportsService.oee(C(req), validated(res, 'query', rangeQ))),
     ),
   );
-
-  // ---------------------------------------------------------------- MRP
-  const mrpQ = z
-    .object({ status: z.enum(['Draft', 'Applied', 'Cancelled']).optional(), ...pageQuery })
-    .strict();
+  const adhQ = z.object({ from: isoDate, to: isoDate }).strict();
   router.get(
-    '/mfg/mrp',
-    g('mfg-mrp', 'view'),
-    validate({ query: mrpQ }),
-    h(async (req, res) => {
-      const q = validated(res, 'query', mrpQ);
-      const r = await mrpService.list(callerOf(req), 'mfg-mrp', q);
-      paged(res, r.rows, r.total, q.page, q.size);
-    }),
-  );
-  router.get(
-    '/mfg/mrp/:id',
-    g('mfg-mrp', 'view'),
-    validate({ params: idp }),
+    '/mfg/reports/plan-adherence',
+    g('mfg-plan', 'view'),
+    validate({ query: adhQ }),
     h(async (req, res) =>
-      send(res, await mrpService.get(callerOf(req), 'mfg-mrp', String(req.params.id))),
+      send(
+        res,
+        await reportsService.planAdherence(C(req), 'mfg-plan', validated(res, 'query', adhQ)),
+      ),
     ),
   );
-  const mrpB = z
+  const sfQ = z.object({ date: isoDate.optional() }).strict();
+  router.get(
+    '/mfg/shopfloor/summary',
+    g('mfg-shopfloor', 'view'),
+    validate({ query: sfQ }),
+    h(async (req, res) =>
+      send(res, await reportsService.shopFloor(C(req), validated(res, 'query', sfQ))),
+    ),
+  );
+  const capQ = z
     .object({
-      fromDate: isoDate,
-      toDate: isoDate,
-      includeForecast: z.boolean().optional(),
-      bucket: z.enum(['DAY', 'WEEK', 'MONTH', 'RANGE']).optional(),
-      notes: opt(300),
+      from: isoDate.optional(),
+      days: z.coerce.number().int().min(1).max(365).optional(),
+      workDays: z
+        .string()
+        .regex(/^[0-6](,[0-6]){0,6}$/, 'Use weekday numbers 0 (Sunday) to 6, separated by commas.')
+        .optional(),
     })
     .strict();
-  router.post(
-    '/mfg/mrp',
-    g('mfg-mrp', 'add'),
-    validate({ body: mrpB }),
-    h(async (req, res) => {
-      const b = validated(res, 'body', mrpB);
-      await idem(req, res, 'mfg-mrp-run', [b], () => mrpService.run(callerOf(req), 'mfg-mrp', b));
-    }),
-  );
-  const mrpApply = z
-    .object({ warehouseId: uuid.optional(), rmWarehouseId: uuid.optional() })
-    .strict();
-  router.post(
-    '/mfg/mrp/:id/apply',
-    g('mfg-mrp', 'approve'),
-    validate({ params: idp, body: mrpApply }),
-    h(async (req, res) => {
-      const b = validated(res, 'body', mrpApply);
-      const id = String(req.params.id);
-      await idem(req, res, 'mfg-mrp-apply', [id, b], () =>
-        mrpService.apply(callerOf(req), 'mfg-mrp', id, ver(req), b),
-      );
-    }),
-  );
-  router.post(
-    '/mfg/mrp/:id/cancel',
-    g('mfg-mrp', 'cancel'),
-    validate({ params: idp }),
+  router.get(
+    '/mfg/capacity',
+    g('mfg-plan', 'view'),
+    validate({ query: capQ }),
     h(async (req, res) =>
-      send(res, await mrpService.cancel(callerOf(req), 'mfg-mrp', String(req.params.id), ver(req))),
+      send(res, await reportsService.capacity(C(req), 'mfg-plan', validated(res, 'query', capQ))),
     ),
   );
 
-  // ---------------------------------------------------------------- daily board
+  // ---------------------------------------------------------------- daily board (kept from the first build)
   const planQ = z
     .object({
       from: isoDate.optional(),
@@ -844,12 +1733,12 @@ export function createMfgRouter(): Router {
     })
     .strict();
   router.get(
-    '/mfg/plan',
+    '/mfg/day-board',
     g('mfg-plan', 'view'),
     validate({ query: planQ }),
     h(async (req, res) => {
       const q = validated(res, 'query', planQ);
-      const r = await boardService.listPlan(callerOf(req), 'mfg-plan', q);
+      const r = await boardService.listPlan(C(req), 'mfg-plan', q);
       paged(res, r.rows, r.total, q.page, q.size, { totals: r.totals });
     }),
   );
@@ -872,27 +1761,27 @@ export function createMfgRouter(): Router {
     })
     .strict();
   router.post(
-    '/mfg/plan',
+    '/mfg/day-board',
     g('mfg-plan', 'add'),
     validate({ body: planB }),
     h(async (req, res) =>
       send(
         res,
-        await boardService.createPlan(callerOf(req), 'mfg-plan', validated(res, 'body', planB)),
+        await boardService.createPlan(C(req), 'mfg-plan', validated(res, 'body', planB)),
         201,
       ),
     ),
   );
   const planU = planB.omit({ orderId: true, itemId: true }).partial().strict();
   router.patch(
-    '/mfg/plan/:id',
+    '/mfg/day-board/:id',
     g('mfg-plan', 'edit'),
     validate({ params: idp, body: planU }),
     h(async (req, res) =>
       send(
         res,
         await boardService.updatePlan(
-          callerOf(req),
+          C(req),
           'mfg-plan',
           String(req.params.id),
           ver(req),
@@ -902,11 +1791,11 @@ export function createMfgRouter(): Router {
     ),
   );
   router.delete(
-    '/mfg/plan/:id',
+    '/mfg/day-board/:id',
     g('mfg-plan', 'delete'),
     validate({ params: idp }),
     h(async (req, res) => {
-      await boardService.deletePlan(callerOf(req), 'mfg-plan', String(req.params.id));
+      await boardService.deletePlan(C(req), 'mfg-plan', String(req.params.id));
       res.status(204).end();
     }),
   );
@@ -926,7 +1815,7 @@ export function createMfgRouter(): Router {
     validate({ query: jwQ }),
     h(async (req, res) => {
       const q = validated(res, 'query', jwQ);
-      const r = await boardService.listJwLines(callerOf(req), 'mfg-orders', q);
+      const r = await boardService.listJwLines(C(req), 'mfg-orders', q);
       paged(res, r.rows, r.total, q.page, q.size);
     }),
   );
@@ -935,7 +1824,7 @@ export function createMfgRouter(): Router {
     g('mfg-orders', 'view'),
     validate({ params: idp }),
     h(async (req, res) =>
-      send(res, await boardService.getJwLine(callerOf(req), 'mfg-orders', String(req.params.id))),
+      send(res, await boardService.getJwLine(C(req), 'mfg-orders', String(req.params.id))),
     ),
   );
   const jwB = z
@@ -956,7 +1845,7 @@ export function createMfgRouter(): Router {
     h(async (req, res) =>
       send(
         res,
-        await boardService.createJwLine(callerOf(req), 'mfg-orders', validated(res, 'body', jwB)),
+        await boardService.createJwLine(C(req), 'mfg-orders', validated(res, 'body', jwB)),
         201,
       ),
     ),
@@ -976,7 +1865,7 @@ export function createMfgRouter(): Router {
       send(
         res,
         await boardService.updateJwLine(
-          callerOf(req),
+          C(req),
           'mfg-orders',
           String(req.params.id),
           ver(req),
@@ -1002,7 +1891,7 @@ export function createMfgRouter(): Router {
       const b = validated(res, 'body', jwM);
       const id = String(req.params.id);
       await idem(req, res, 'mfg-jwmove', [id, b], () =>
-        boardService.addJwMove(callerOf(req), 'mfg-orders', id, b),
+        boardService.addJwMove(C(req), 'mfg-orders', id, b),
       );
     }),
   );
@@ -1015,7 +1904,7 @@ export function createMfgRouter(): Router {
       send(
         res,
         await boardService.cancelJwMove(
-          callerOf(req),
+          C(req),
           'mfg-orders',
           String(req.params.id),
           String(req.params.moveId),
@@ -1042,7 +1931,7 @@ export function createMfgRouter(): Router {
     validate({ query: crQ }),
     h(async (req, res) => {
       const q = validated(res, 'query', crQ);
-      const r = await boardService.listChallanRework(callerOf(req), 'mfg-rework', q);
+      const r = await boardService.listChallanRework(C(req), 'mfg-rework', q);
       paged(res, r.rows, r.total, q.page, q.size);
     }),
   );
@@ -1051,10 +1940,7 @@ export function createMfgRouter(): Router {
     g('mfg-rework', 'view'),
     validate({ params: idp }),
     h(async (req, res) =>
-      send(
-        res,
-        await boardService.getChallanRework(callerOf(req), 'mfg-rework', String(req.params.id)),
-      ),
+      send(res, await boardService.getChallanRework(C(req), 'mfg-rework', String(req.params.id))),
     ),
   );
   const crB = z
@@ -1075,11 +1961,7 @@ export function createMfgRouter(): Router {
     h(async (req, res) =>
       send(
         res,
-        await boardService.createChallanRework(
-          callerOf(req),
-          'mfg-rework',
-          validated(res, 'body', crB),
-        ),
+        await boardService.createChallanRework(C(req), 'mfg-rework', validated(res, 'body', crB)),
         201,
       ),
     ),
@@ -1093,7 +1975,7 @@ export function createMfgRouter(): Router {
       const b = validated(res, 'body', crD);
       const id = String(req.params.id);
       await idem(req, res, 'mfg-crdone', [id, b], () =>
-        boardService.addReworkDone(callerOf(req), 'mfg-rework', id, b),
+        boardService.addReworkDone(C(req), 'mfg-rework', id, b),
       );
     }),
   );
@@ -1106,62 +1988,11 @@ export function createMfgRouter(): Router {
       send(
         res,
         await boardService.cancelReworkDone(
-          callerOf(req),
+          C(req),
           'mfg-rework',
           String(req.params.id),
           String(req.params.doneId),
         ),
-      ),
-    ),
-  );
-
-  // ---------------------------------------------------------------- outside processing (subcontract)
-  const outB = z
-    .object({
-      direction: z.enum(['SENT', 'RECEIVED']),
-      qty: num,
-      qtyScrap: num.optional(),
-      docNo: txt(60),
-      supplierId: uuid,
-      rate: num.optional(),
-      moveDate: isoDate.optional(),
-      reason: opt(200),
-      remark: opt(200),
-    })
-    .strict();
-  router.post(
-    '/mfg/orders/:id/ops/:opId/outside',
-    g('mfg-workorders', 'edit'),
-    validate({ params: opP, body: outB }),
-    h(async (req, res) => {
-      const b = validated(res, 'body', outB);
-      const id = String(req.params.id);
-      const opId = String(req.params.opId);
-      await idem(req, res, 'mfg-outside', [id, opId, b], () =>
-        orderService.outsideMove(callerOf(req), 'mfg-workorders', id, opId, b),
-      );
-    }),
-  );
-
-  // ---------------------------------------------------------------- capacity
-  const capQ = z
-    .object({
-      from: isoDate.optional(),
-      days: z.coerce.number().int().min(1).max(365).optional(),
-      workDays: z
-        .string()
-        .regex(/^[0-6](,[0-6]){0,6}$/, 'Use weekday numbers 0 (Sunday) to 6, separated by commas.')
-        .optional(),
-    })
-    .strict();
-  router.get(
-    '/mfg/capacity',
-    g('mfg-plan', 'view'),
-    validate({ query: capQ }),
-    h(async (req, res) =>
-      send(
-        res,
-        await reportsService.capacity(callerOf(req), 'mfg-plan', validated(res, 'query', capQ)),
       ),
     ),
   );
@@ -1191,47 +2022,55 @@ export function createMfgRouter(): Router {
       const name = String(req.params.report);
       const rep = assertReport(name);
       await needPrint(req, rep.page);
-      const rows = await rep.load(callerOf(req), validated(res, 'query', expQ));
+      const rows = await rep.load(C(req), validated(res, 'query', expQ));
       xlsx(res, `mfg-${name}`, await reportWorkbook(rep, rows));
     }),
   );
   router.get(
-    '/mfg/mrp/:id/export',
+    '/mfg/mrp-runs/:id/export',
     g('mfg-mrp', 'print'),
     validate({ params: idp }),
-    h(async (req, res) =>
-      xlsx(res, 'mfg-mrp', await mrpWorkbook(callerOf(req), String(req.params.id))),
-    ),
+    h(async (req, res) => xlsx(res, 'mfg-mrp', await mrpWorkbook(C(req), String(req.params.id)))),
   );
   router.get(
-    '/mfg/orders/:id/print',
+    '/mfg/mrp-runs/:id/print',
+    g('mfg-mrp', 'print'),
+    validate({ params: idp }),
+    h(async (req, res) => pdf(res, 'mrp', await mrpPdf(C(req), String(req.params.id)))),
+  );
+  router.get(
+    '/mfg/production-orders/:id/print',
     g('mfg-orders', 'print'),
     validate({ params: idp }),
     h(async (req, res) =>
-      pdf(res, 'production-order', await orderPdf(callerOf(req), String(req.params.id))),
+      pdf(res, 'production-order', await orderPdf(C(req), String(req.params.id))),
     ),
+  );
+  router.get(
+    '/mfg/production-orders/:id/traveller',
+    g('mfg-orders', 'print'),
+    validate({ params: idp }),
+    h(async (req, res) => pdf(res, 'traveller', await travellerPdf(C(req), String(req.params.id)))),
+  );
+  router.get(
+    '/mfg/job-cards/:id/print',
+    g('mfg-workorders', 'print'),
+    validate({ params: idp }),
+    h(async (req, res) => pdf(res, 'job-card', await jobCardPdf(C(req), String(req.params.id)))),
   );
   router.get(
     '/mfg/boms/:id/print',
     g('mfg-bom', 'print'),
     validate({ params: idp }),
     h(async (req, res) =>
-      pdf(res, 'bill-of-materials', await bomPdf(callerOf(req), String(req.params.id))),
+      pdf(res, 'bill-of-materials', await bomPdf(C(req), String(req.params.id))),
     ),
   );
   router.get(
     '/mfg/routings/:id/print',
     g('mfg-routing', 'print'),
     validate({ params: idp }),
-    h(async (req, res) =>
-      pdf(res, 'routing', await routingPdf(callerOf(req), String(req.params.id))),
-    ),
-  );
-  router.get(
-    '/mfg/mrp/:id/print',
-    g('mfg-mrp', 'print'),
-    validate({ params: idp }),
-    h(async (req, res) => pdf(res, 'mrp', await mrpPdf(callerOf(req), String(req.params.id)))),
+    h(async (req, res) => pdf(res, 'routing', await routingPdf(C(req), String(req.params.id)))),
   );
 
   return router;

@@ -22,6 +22,8 @@ export const QUEUES = {
   scmDaily: 'scm.daily',
   // Phase 12: calibration due / expired reminders.
   qmsDaily: 'qms.daily',
+  // Phase 13: one MRP run (payload jobId = the run id), one at a time per unit.
+  mfgMrp: 'mfg.mrp.run',
 } as const;
 
 /** Cron schedules (Asia/Kolkata) of the Phase 5 queues. */

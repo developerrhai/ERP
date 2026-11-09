@@ -183,6 +183,46 @@ export const NOTIFICATION_TYPES: readonly NotificationTypeDef[] = [
     severity: 'WARN',
     inAppLocked: false,
   },
+  {
+    type: 'MFG_MRP',
+    label: 'MRP run finished',
+    description: 'An MRP run is done or failed.',
+    group: 'System',
+    severity: 'INFO',
+    inAppLocked: false,
+  },
+  {
+    type: 'MFG_DOWNTIME',
+    label: 'Long downtime',
+    description: 'A work centre has been down for more than 30 minutes.',
+    group: 'System',
+    severity: 'WARN',
+    inAppLocked: false,
+  },
+  {
+    type: 'MFG_OVERDUE',
+    label: 'Production order overdue',
+    description: 'A production order is past its due date.',
+    group: 'System',
+    severity: 'WARN',
+    inAppLocked: false,
+  },
+  {
+    type: 'MFG_QC_HOLD',
+    label: 'Finished goods on QC hold',
+    description: 'Finished goods wait for the final inspection.',
+    group: 'System',
+    severity: 'ACTION',
+    inAppLocked: false,
+  },
+  {
+    type: 'MFG_SHORTAGE',
+    label: 'Material shortage at release',
+    description: 'A production order was released with a material shortage.',
+    group: 'System',
+    severity: 'WARN',
+    inAppLocked: false,
+  },
 ];
 
 export const NOTIFICATION_TYPE_NAMES: readonly string[] = NOTIFICATION_TYPES.map((t) => t.type);

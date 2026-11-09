@@ -1,104 +1,34 @@
-// Phase 13 registers and monitors: scrap, rework, WIP, costing and the shop-floor dashboard. All figures are server numbers
-// (R-15). Costing is figures only: material from the stock issues, conversion from logged minutes at the work centre's rate
-// copied onto the order at release. Nothing here posts to the ledger.
+// Phase 13 v2 reports (spec section 6 "Reports" and "Dashboard"): WIP and its reconciliation with the general ledger, cost sheets,
+// OEE per work centre, plan adherence, yield, variances and the shop-floor summary. Every figure comes from logged events; with no
+// data a report says "No data yet" (no fake numbers).
 import { prisma } from '../../core/db/prisma';
+import { Errors } from '../../core/http/errors';
 import { norm, query, scopeSql, todayIst } from '../procurement/core';
 import type { Row } from '../procurement/core';
 import type { Caller } from '../records/service';
-import { D, materialCost, scheduleLoad } from './logic';
-import { S } from './master-service';
+import { D, oee } from './calc';
+import { costing } from './costing-service';
+import { S, oneUnit } from './master-service';
+import { scheduleLoad } from './logic';
 
 interface Paged {
   page: number;
   size: number;
 }
 
+const dayRange = (from: string, to: string): string[] => {
+  const out: string[] = [];
+  for (
+    let d = new Date(`${from}T00:00:00Z`);
+    d.toISOString().slice(0, 10) <= to;
+    d.setUTCDate(d.getUTCDate() + 1)
+  )
+    out.push(d.toISOString().slice(0, 10));
+  return out;
+};
+
 export const reportsService = {
-  async listScrap(
-    caller: Caller,
-    pageId: string,
-    q: Paged & {
-      orderId?: string | undefined;
-      from?: string | undefined;
-      to?: string | undefined;
-      q?: string | undefined;
-    },
-  ) {
-    const sc = await scopeSql(caller, pageId);
-    const args = [...sc.args];
-    const where = [sc.sql, `t.status='Recorded'`];
-    if (q.orderId) {
-      args.push(q.orderId);
-      where.push(`t.order_id=$${args.length}::uuid`);
-    }
-    if (q.from) {
-      args.push(q.from);
-      where.push(`t.scrap_date >= $${args.length}::date`);
-    }
-    if (q.to) {
-      args.push(q.to);
-      where.push(`t.scrap_date <= $${args.length}::date`);
-    }
-    if (q.q) {
-      args.push(`%${q.q}%`);
-      where.push(
-        `(t.number ILIKE $${args.length} OR t.reason ILIKE $${args.length} OR i.name ILIKE $${args.length} OR o.number ILIKE $${args.length})`,
-      );
-    }
-    const w = where.join(' AND ');
-    const base = `FROM mfg_scrap t JOIN items i ON i.id=t.item_id JOIN mfg_orders o ON o.id=t.order_id LEFT JOIN mfg_order_ops p ON p.id=t.op_id WHERE ${w}`;
-    const total = Number((await query(prisma, `SELECT count(*)::int AS n ${base}`, ...args))[0]!.n);
-    const sum = (
-      await query(prisma, `SELECT COALESCE(sum(t.qty),0)::text AS q ${base}`, ...args)
-    )[0]!;
-    const rows = await query(
-      prisma,
-      `SELECT t.*, i.code AS item_code, i.name AS item_name, o.number AS order_number, p.name AS op_name ${base}
-        ORDER BY t.scrap_date DESC, t.created_at DESC LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
-      ...args,
-    );
-    return { rows: rows.map((r) => norm<Row>(r)), total, totalQty: S(sum.q) };
-  },
-
-  async listRework(
-    caller: Caller,
-    pageId: string,
-    q: Paged & {
-      status?: string | undefined;
-      orderId?: string | undefined;
-      q?: string | undefined;
-    },
-  ) {
-    const sc = await scopeSql(caller, pageId);
-    const args = [...sc.args];
-    const where = [sc.sql];
-    if (q.status) {
-      args.push(q.status);
-      where.push(`t.status=$${args.length}`);
-    }
-    if (q.orderId) {
-      args.push(q.orderId);
-      where.push(`t.order_id=$${args.length}::uuid`);
-    }
-    if (q.q) {
-      args.push(`%${q.q}%`);
-      where.push(
-        `(t.number ILIKE $${args.length} OR t.reason ILIKE $${args.length} OR i.name ILIKE $${args.length} OR o.number ILIKE $${args.length})`,
-      );
-    }
-    const w = where.join(' AND ');
-    const base = `FROM mfg_rework t JOIN items i ON i.id=t.item_id JOIN mfg_orders o ON o.id=t.order_id JOIN mfg_order_ops p ON p.id=t.op_id WHERE ${w}`;
-    const total = Number((await query(prisma, `SELECT count(*)::int AS n ${base}`, ...args))[0]!.n);
-    const rows = await query(
-      prisma,
-      `SELECT t.*, i.code AS item_code, i.name AS item_name, o.number AS order_number, p.name AS op_name ${base}
-        ORDER BY t.status, t.rework_date DESC, t.created_at DESC LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
-      ...args,
-    );
-    return { rows: rows.map((r) => norm<Row>(r)), total };
-  },
-
-  /** Orders that still hold material: issued value less the value already received as finished goods. */
+  /** Orders that hold WIP: the sum of their cost-ledger rows. */
   async wip(caller: Caller, pageId: string, q: Paged) {
     const sc = await scopeSql(caller, pageId);
     const base = `FROM mfg_orders t JOIN items i ON i.id=t.item_id WHERE ${sc.sql} AND t.status IN ('Released','In Progress','Completed')`;
@@ -108,30 +38,46 @@ export const reportsService = {
     const rows = await query(
       prisma,
       `SELECT t.id::text, t.number, t.status, t.qty, t.qty_completed, t.qty_scrapped, t.qty_received, t.due_date, i.code AS item_code, i.name AS item_name,
-              COALESCE((SELECT sum(m.issued_value - m.returned_value) FROM mfg_order_materials m WHERE m.order_id=t.id),0) AS material_value,
-              COALESCE((SELECT sum(v.total_value) FROM mfg_order_moves v WHERE v.order_id=t.id AND v.kind='FG_RECEIPT'),0) AS received_value,
+              COALESCE((SELECT sum(amount) FROM mfg_cost_ledger c WHERE c.order_id=t.id),0) AS wip_value,
               COALESCE((SELECT sum(o.qty_rework) FROM mfg_order_ops o WHERE o.order_id=t.id),0) AS qty_rework,
               (SELECT o.name FROM mfg_order_ops o WHERE o.order_id=t.id AND o.status <> 'Done' ORDER BY o.seq LIMIT 1) AS current_op
          ${base} ORDER BY t.due_date, t.number LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
       ...sc.args,
     );
-    const out = rows.map((r) => {
-      const n = norm<Row>(r);
-      const wip = D(S(n.materialValue)).minus(S(n.receivedValue));
-      return { ...n, wipValue: (wip.gt(0) ? wip : D(0)).toFixed(2) };
-    });
-    // the figure covers every live order, not only the rows of this page
     const sum = (
       await query(
         prisma,
-        `SELECT COALESCE(sum(GREATEST(
-            COALESCE((SELECT sum(m.issued_value - m.returned_value) FROM mfg_order_materials m WHERE m.order_id=t.id),0)
-          - COALESCE((SELECT sum(v.total_value) FROM mfg_order_moves v WHERE v.order_id=t.id AND v.kind='FG_RECEIPT'),0), 0)),0)::text AS v
-           ${base}`,
+        `SELECT COALESCE(sum((SELECT COALESCE(sum(amount),0) FROM mfg_cost_ledger c WHERE c.order_id=t.id)),0)::text AS v ${base}`,
         ...sc.args,
       )
     )[0]!;
-    return { rows: out, total, totalValue: D(S(sum.v)).toFixed(2) };
+    return { rows: rows.map((r) => norm<Row>(r)), total, totalValue: D(S(sum.v)).toFixed(2) };
+  },
+
+  /** WIP of the cost ledger against the INVENTORY_WIP account of the general ledger; a difference above Rs 1 is an exception. */
+  async wipReconciliation(caller: Caller) {
+    const unitId = oneUnit(caller);
+    const led = (
+      await query(
+        prisma,
+        `SELECT COALESCE(sum(amount),0)::text AS v FROM mfg_cost_ledger WHERE unit_id=$1::uuid`,
+        unitId,
+      )
+    )[0]!;
+    const gl = (
+      await query(
+        prisma,
+        `SELECT COALESCE(sum(g.debit - g.credit),0)::text AS v FROM gl_entries g JOIN accounts a ON a.id=g.account_id WHERE a.code='1302' AND g.unit_id=$1::uuid`,
+        unitId,
+      )
+    )[0]!;
+    const diff = D(S(led.v)).minus(S(gl.v));
+    return {
+      ledger: D(S(led.v)).toFixed(2),
+      generalLedger: D(S(gl.v)).toFixed(2),
+      difference: diff.toFixed(2),
+      exception: diff.abs().gt(1),
+    };
   },
 
   async costing(
@@ -141,7 +87,7 @@ export const reportsService = {
   ) {
     const sc = await scopeSql(caller, pageId);
     const args = [...sc.args];
-    const where = [sc.sql, `t.status NOT IN ('Cancelled','Planned')`];
+    const where = [sc.sql, `t.status NOT IN ('Cancelled','Planned','Pending Approval')`];
     if (q.status) {
       args.push(q.status);
       where.push(`t.status=$${args.length}`);
@@ -157,41 +103,254 @@ export const reportsService = {
     const total = Number((await query(prisma, `SELECT count(*)::int AS n ${base}`, ...args))[0]!.n);
     const rows = await query(
       prisma,
-      `SELECT t.id::text, t.number, t.status, t.qty, t.qty_completed, i.code AS item_code, i.name AS item_name, i.standard_cost,
-              COALESCE((SELECT sum(m.issued_value) FROM mfg_order_materials m WHERE m.order_id=t.id),0) AS issued_value,
-              COALESCE((SELECT sum(m.returned_value) FROM mfg_order_materials m WHERE m.order_id=t.id),0) AS returned_value,
-              COALESCE((SELECT sum(round(o.actual_minutes / 60 * o.cost_per_hour, 2)) FROM mfg_order_ops o WHERE o.order_id=t.id),0) AS conversion,
-              COALESCE((SELECT sum(o.actual_minutes) FROM mfg_order_ops o WHERE o.order_id=t.id),0) AS minutes,
-              COALESCE((SELECT sum(m.cost) FROM mfg_outside_moves m WHERE m.order_id=t.id AND m.direction='RECEIVED'),0) AS outside,
-              COALESCE((SELECT sum(r.cost) FROM mfg_rework r WHERE r.order_id=t.id AND r.status='Done'),0) AS rework_cost
+      `SELECT t.id::text, t.number, t.status, t.qty, t.qty_completed, t.qty_received, i.code AS item_code, i.name AS item_name, i.standard_cost,
+              (SELECT COALESCE(sum(amount) FILTER (WHERE event IN ('ISSUE','RETURN','BACKFLUSH')),0) FROM mfg_cost_ledger c WHERE c.order_id=t.id) AS material,
+              (SELECT COALESCE(sum(amount) FILTER (WHERE event='LABOUR'),0) FROM mfg_cost_ledger c WHERE c.order_id=t.id) AS labour,
+              (SELECT COALESCE(sum(amount) FILTER (WHERE event='OVERHEAD'),0) FROM mfg_cost_ledger c WHERE c.order_id=t.id) AS overhead,
+              (SELECT COALESCE(-sum(amount) FILTER (WHERE event='ABNORMAL_SCRAP'),0) FROM mfg_cost_ledger c WHERE c.order_id=t.id) AS abnormal_scrap,
+              (SELECT COALESCE(-sum(amount) FILTER (WHERE event='FG_RECEIPT'),0) FROM mfg_cost_ledger c WHERE c.order_id=t.id) AS fg_value,
+              (SELECT COALESCE(sum(amount),0) FROM mfg_cost_ledger c WHERE c.order_id=t.id) AS wip
          ${base} ORDER BY t.created_at DESC LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
       ...args,
     );
     const out = rows.map((r) => {
       const n = norm<Row>(r);
-      const mat = materialCost({
-        issuedValue: S(n.issuedValue),
-        returnedValue: S(n.returnedValue),
-      });
-      const conv = D(S(n.conversion));
-      const outside = D(S(n.outside));
-      const totalCost = mat.plus(conv).plus(outside);
+      const total2 = D(S(n.material)).plus(S(n.labour)).plus(S(n.overhead));
       const good = D(S(n.qtyCompleted));
-      const unit = good.gt(0) ? totalCost.div(good).toDecimalPlaces(4) : null;
-      const std =
-        n.standardCost === null || n.standardCost === undefined ? null : D(S(n.standardCost));
+      const unit = good.gt(0)
+        ? total2.minus(S(n.abnormalScrap)).div(good).toDecimalPlaces(2)
+        : null;
       return {
         ...n,
-        material: mat.toFixed(2),
-        conversion: conv.toFixed(2),
-        outside: outside.toFixed(2),
-        reworkCost: D(S(n.reworkCost)).toFixed(2),
-        total: totalCost.toFixed(2),
-        unitCost: unit ? unit.toFixed(4) : null,
-        variancePerUnit: unit && std ? unit.minus(std).toFixed(4) : null,
+        total: total2.toFixed(2),
+        unitCost: unit ? unit.toFixed(2) : null,
+        variancePerUnit:
+          unit && n.standardCost !== null && n.standardCost !== undefined
+            ? unit.minus(S(n.standardCost)).toFixed(2)
+            : null,
       };
     });
     return { rows: out, total };
+  },
+
+  async costSheet(caller: Caller, pageId: string, orderId: string): Promise<Row> {
+    const sc = await scopeSql(caller, pageId);
+    if (
+      !(
+        await query(
+          prisma,
+          `SELECT 1 FROM mfg_orders t WHERE t.id=$${sc.args.length + 1}::uuid AND ${sc.sql}`,
+          ...sc.args,
+          orderId,
+        )
+      ).length
+    )
+      throw Errors.notFound('Production order not found.');
+    return costing.sheet(prisma, orderId, false);
+  },
+
+  /**
+   * OEE per work centre over a date range, from the logs only. Planned time = calendar shift hours - planned downtime; run time =
+   * planned - unplanned downtime that counts against availability; performance = ideal cycle x pieces / run time (capped at 1);
+   * quality = good / pieces.
+   */
+  async oee(caller: Caller, q: { from: string; to: string; workCentreId?: string | undefined }) {
+    const unitId = oneUnit(caller);
+    const wcs = await query(
+      prisma,
+      `SELECT w.id::text, w.code, w.name, w.hours_per_shift::text AS hps, w.shifts_per_day, w.oee_target_pct::text AS target, c.work_days
+         FROM mfg_work_centres w LEFT JOIN mfg_wc_calendars c ON c.id=w.calendar_id
+        WHERE w.unit_id=$1::uuid AND w.deleted_at IS NULL AND w.status='ACTIVE' ${q.workCentreId ? 'AND w.id=$2::uuid' : ''} ORDER BY w.code`,
+      ...(q.workCentreId ? [unitId, q.workCentreId] : [unitId]),
+    );
+    const days = dayRange(q.from, q.to);
+    const out: Row[] = [];
+    for (const w of wcs) {
+      const exc = await query(
+        prisma,
+        `SELECT x.exc_date::text AS d, x.available_hrs::text AS h FROM mfg_wc_calendar_exceptions x JOIN mfg_work_centres w ON w.calendar_id=x.calendar_id WHERE w.id=$1::uuid`,
+        S(w.id),
+      );
+      const ex = new Map(exc.map((e) => [S(e.d), Number(S(e.h))]));
+      const workDays = new Set<number>((w.work_days as number[] | null) ?? [1, 2, 3, 4, 5, 6]);
+      let shiftMin = 0;
+      for (const d of days) {
+        const wd = new Date(`${d}T00:00:00Z`).getUTCDay();
+        shiftMin +=
+          (ex.has(d)
+            ? ex.get(d)!
+            : workDays.has(wd)
+              ? Number(S(w.hps)) * Number(w.shifts_per_day)
+              : 0) * 60;
+      }
+      const dt = (
+        await query(
+          prisma,
+          `SELECT COALESCE(sum(EXTRACT(EPOCH FROM (LEAST(COALESCE(d.to_ts, now()), $3::timestamptz) - GREATEST(d.from_ts, $2::timestamptz))) / 60) FILTER (WHERE r.category='PLANNED'),0)::text AS planned,
+                  COALESCE(sum(EXTRACT(EPOCH FROM (LEAST(COALESCE(d.to_ts, now()), $3::timestamptz) - GREATEST(d.from_ts, $2::timestamptz))) / 60) FILTER (WHERE r.category='UNPLANNED' AND r.counts_against_availability),0)::text AS unplanned
+             FROM mfg_downtime_logs d JOIN mfg_downtime_reasons r ON r.id=d.reason_id
+            WHERE d.work_centre_id=$1::uuid AND d.from_ts < $3::timestamptz AND COALESCE(d.to_ts, now()) > $2::timestamptz`,
+          S(w.id),
+          `${q.from}T00:00:00Z`,
+          `${q.to}T23:59:59Z`,
+        )
+      )[0]!;
+      const pcs = (
+        await query(
+          prisma,
+          `SELECT COALESCE(sum(l.good),0)::text AS good, COALESCE(sum(l.good + l.rejected),0)::text AS total, COALESCE(sum((l.good + l.rejected) * o.run_minutes),0)::text AS ideal
+             FROM mfg_job_card_time_logs l JOIN mfg_order_ops o ON o.id=l.op_id WHERE o.work_centre_id=$1::uuid AND l.from_ts >= $2::timestamptz AND l.from_ts <= $3::timestamptz`,
+          S(w.id),
+          `${q.from}T00:00:00Z`,
+          `${q.to}T23:59:59Z`,
+        )
+      )[0]!;
+      const total = D(S(pcs.total));
+      if (total.lte(0) && D(S(dt.planned)).plus(S(dt.unplanned)).lte(0)) {
+        out.push({
+          workCentreId: S(w.id),
+          code: S(w.code),
+          name: S(w.name),
+          noData: true,
+          target: w.target ? S(w.target) : null,
+        });
+        continue;
+      }
+      const cycle = total.gt(0) ? D(S(pcs.ideal)).div(total) : D(0);
+      const r = oee({
+        shiftMinutes: shiftMin,
+        plannedDowntimeMinutes: D(S(dt.planned)).toFixed(2),
+        unplannedDowntimeMinutes: D(S(dt.unplanned)).toFixed(2),
+        idealCycleMinutes: cycle.toFixed(6),
+        totalPieces: total,
+        goodPieces: S(pcs.good),
+      });
+      out.push({
+        workCentreId: S(w.id),
+        code: S(w.code),
+        name: S(w.name),
+        noData: false,
+        shiftMinutes: shiftMin,
+        plannedDowntime: D(S(dt.planned)).toFixed(0),
+        unplannedDowntime: D(S(dt.unplanned)).toFixed(0),
+        pieces: total.toFixed(0),
+        good: S(pcs.good),
+        ...r,
+        target: w.target ? S(w.target) : null,
+      });
+    }
+    return { from: q.from, to: q.to, rows: out };
+  },
+
+  /** Orders closed or completed in the range: how many were on or before their due date. */
+  async planAdherence(caller: Caller, pageId: string, q: { from: string; to: string }) {
+    const sc = await scopeSql(caller, pageId);
+    const args = [...sc.args, q.from, q.to];
+    const rows = await query(
+      prisma,
+      `SELECT t.number, t.due_date::text AS due, COALESCE(t.closed_at, t.updated_at)::date::text AS done, i.name AS item_name, (COALESCE(t.closed_at, t.updated_at)::date <= t.due_date) AS on_time
+         FROM mfg_orders t JOIN items i ON i.id=t.item_id
+        WHERE ${sc.sql} AND t.status IN ('Completed','Closed') AND t.due_date BETWEEN $${sc.args.length + 1}::date AND $${sc.args.length + 2}::date ORDER BY t.due_date`,
+      ...args,
+    );
+    const onTime = rows.filter((r) => r.on_time === true).length;
+    return {
+      total: rows.length,
+      onTime,
+      pct: rows.length ? ((onTime / rows.length) * 100).toFixed(1) : null,
+      rows: rows.map((r) => norm<Row>(r)),
+    };
+  },
+
+  /** Yield: good pieces out of the pieces started, per order. */
+  async yieldReport(caller: Caller, pageId: string, q: Paged) {
+    const sc = await scopeSql(caller, pageId);
+    const rows = await query(
+      prisma,
+      `SELECT t.id::text, t.number, i.name AS item_name, t.qty, t.qty_completed, t.qty_scrapped, t.qty_rejected,
+              CASE WHEN t.qty > 0 THEN round(t.qty_completed / t.qty * 100, 2) END AS yield_pct
+         FROM mfg_orders t JOIN items i ON i.id=t.item_id WHERE ${sc.sql} AND t.status IN ('In Progress','Completed','Closed') ORDER BY t.created_at DESC LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
+      ...sc.args,
+    );
+    return { rows: rows.map((r) => norm<Row>(r)) };
+  },
+
+  async variances(caller: Caller, pageId: string, q: Paged) {
+    const sc = await scopeSql(caller, pageId);
+    const ids = await query(
+      prisma,
+      `SELECT t.id::text FROM mfg_orders t WHERE ${sc.sql} AND t.status IN ('In Progress','Completed','Closed') ORDER BY t.created_at DESC LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
+      ...sc.args,
+    );
+    const out: Row[] = [];
+    for (const r of ids) {
+      const o = (
+        await query(
+          prisma,
+          `SELECT t.number, i.name AS item_name FROM mfg_orders t JOIN items i ON i.id=t.item_id WHERE t.id=$1::uuid`,
+          S(r.id),
+        )
+      )[0]!;
+      out.push({
+        number: S(o.number),
+        itemName: S(o.item_name),
+        ...(await costing.variances(caller, pageId, S(r.id))),
+      });
+    }
+    return { rows: out };
+  },
+
+  /** The supervisor dashboard for one day: OEE per work centre against its target, rejection %, downtime minutes, good pieces by hour. */
+  async shopFloor(caller: Caller, q: { date?: string | undefined }) {
+    const unitId = oneUnit(caller);
+    const date = q.date ?? todayIst();
+    const o = await reportsService.oee(caller, { from: date, to: date });
+    const dtm = (
+      await query(
+        prisma,
+        `SELECT COALESCE(sum(minutes),0)::text AS m FROM mfg_downtime_logs WHERE unit_id=$1::uuid AND from_ts::date = $2::date AND to_ts IS NOT NULL`,
+        unitId,
+        date,
+      )
+    )[0]!;
+    const pieces = (
+      await query(
+        prisma,
+        `SELECT COALESCE(sum(good),0)::text AS good, COALESCE(sum(rejected),0)::text AS rej FROM mfg_job_card_time_logs WHERE unit_id=$1::uuid AND from_ts::date = $2::date`,
+        unitId,
+        date,
+      )
+    )[0]!;
+    const hourly = await query(
+      prisma,
+      `SELECT EXTRACT(HOUR FROM (COALESCE(to_ts, from_ts) AT TIME ZONE 'Asia/Kolkata'))::int AS hour, sum(good)::text AS good FROM mfg_job_card_time_logs
+        WHERE unit_id=$1::uuid AND (COALESCE(to_ts, from_ts) AT TIME ZONE 'Asia/Kolkata')::date = $2::date GROUP BY 1 ORDER BY 1`,
+      unitId,
+      date,
+    );
+    const status = await query(
+      prisma,
+      `SELECT status, count(*)::int AS n FROM mfg_orders WHERE unit_id=$1::uuid AND deleted_at IS NULL AND status IN ('Planned','Pending Approval','Released','In Progress','Completed') GROUP BY status`,
+      unitId,
+    );
+    const late = await query(
+      prisma,
+      `SELECT t.id::text, t.number, t.due_date, t.status, i.name AS item_name FROM mfg_orders t JOIN items i ON i.id=t.item_id WHERE t.unit_id=$1::uuid AND t.deleted_at IS NULL AND t.status IN ('Planned','Pending Approval','Released','In Progress') AND t.due_date < $2::date ORDER BY t.due_date LIMIT 50`,
+      unitId,
+      date,
+    );
+    const total = D(S(pieces.good)).plus(S(pieces.rej));
+    return {
+      date,
+      empty: total.lte(0) && o.rows.every((r) => r.noData === true),
+      oee: o.rows,
+      rejectionPct: total.gt(0) ? D(S(pieces.rej)).div(total).mul(100).toFixed(2) : null,
+      downtimeMinutes: D(S(dtm.m)).toFixed(0),
+      goodPieces: S(pieces.good),
+      hourly: hourly.map((h) => ({ hour: Number(h.hour), good: S(h.good) })),
+      orders: Object.fromEntries(status.map((r) => [S(r.status), Number(r.n)])),
+      overdue: late.map((r) => norm<Row>(r)),
+    };
   },
 
   /**
@@ -216,7 +375,7 @@ export const reportsService = {
       `SELECT o.id::text AS op_id, t.id::text AS order_id, t.number, o.seq, o.name AS op_name, o.work_centre_id::text AS wc_id, w.code AS wc_code, w.name AS wc_name,
               w.capacity_hours::text AS capacity_hours,
               GREATEST(o.setup_minutes + o.run_minutes * t.qty - (o.actual_minutes - COALESCE((SELECT sum(r.minutes) FROM mfg_rework r WHERE r.op_id=o.id AND r.status='Done'),0)), 0)::text AS minutes,
-              t.due_date::text AS due, COALESCE(t.start_date, $${sc.args.length + 1}::date)::text AS start
+              t.due_date::text AS due, COALESCE(t.start_date, ${sc.args.length + 1}::date)::text AS start
          FROM mfg_order_ops o JOIN mfg_orders t ON t.id=o.order_id JOIN mfg_work_centres w ON w.id=o.work_centre_id
         WHERE ${sc.sql} AND t.status IN ('Released','In Progress') AND o.status <> 'Done' AND w.kind <> 'OUTSIDE'`,
       ...sc.args,
@@ -261,67 +420,6 @@ export const reportsService = {
       })),
     };
   },
-
-  async shopFloor(caller: Caller, pageId: string) {
-    const sc = await scopeSql(caller, pageId);
-    const today = todayIst();
-    const n = sc.args.length + 1;
-    const [byStatus, running, overdue, todayLogs, load] = await Promise.all([
-      query(
-        prisma,
-        `SELECT t.status, count(*)::int AS n FROM mfg_orders t WHERE ${sc.sql} AND t.status IN ('Planned','Released','In Progress','Completed') GROUP BY t.status`,
-        ...sc.args,
-      ),
-      query(
-        prisma,
-        `SELECT o.id::text AS op_id, t.id::text AS order_id, t.number, i.name AS item_name, o.seq, o.name AS op_name, w.code AS work_centre_code,
-                o.qty_done, o.qty_scrap, o.qty_rework, o.inspection_required
-           FROM mfg_order_ops o JOIN mfg_orders t ON t.id=o.order_id JOIN items i ON i.id=t.item_id JOIN mfg_work_centres w ON w.id=o.work_centre_id
-          WHERE ${sc.sql} AND t.status IN ('Released','In Progress') AND o.status='In Progress' ORDER BY w.code, t.number`,
-        ...sc.args,
-      ),
-      query(
-        prisma,
-        `SELECT t.id::text, t.number, t.due_date, t.status, t.qty, t.qty_completed, i.name AS item_name FROM mfg_orders t JOIN items i ON i.id=t.item_id
-          WHERE ${sc.sql} AND t.status IN ('Planned','Released','In Progress') AND t.due_date < $${n}::date ORDER BY t.due_date LIMIT 50`,
-        ...sc.args,
-        today,
-      ),
-      query(
-        prisma,
-        `SELECT COALESCE(sum(l.qty_good),0)::text AS good, COALESCE(sum(l.qty_scrap),0)::text AS scrap, COALESCE(sum(l.qty_rework),0)::text AS rework, COALESCE(sum(l.minutes),0)::text AS minutes
-           FROM mfg_op_logs l JOIN mfg_orders t ON t.id=l.order_id WHERE ${sc.sql} AND l.log_date = $${n}::date`,
-        ...sc.args,
-        today,
-      ),
-      query(
-        prisma,
-        `SELECT w.code, w.name, w.capacity_hours,
-                COALESCE(sum((o.setup_minutes + o.run_minutes * t.qty) - o.actual_minutes) FILTER (WHERE o.status <> 'Done'),0)::text AS minutes_left
-           FROM mfg_work_centres w
-           LEFT JOIN mfg_order_ops o ON o.work_centre_id=w.id
-           LEFT JOIN mfg_orders t ON t.id=o.order_id AND t.status IN ('Released','In Progress')
-          WHERE w.unit_id = $1::uuid AND w.deleted_at IS NULL AND w.status='ACTIVE' GROUP BY w.id ORDER BY w.code`,
-        caller.ctx.unitId ?? '00000000-0000-0000-0000-000000000000',
-      ),
-    ]);
-    return {
-      date: today,
-      orders: Object.fromEntries(byStatus.map((r) => [S(r.status), Number(r.n)])),
-      running: running.map((r) => norm<Row>(r)),
-      overdue: overdue.map((r) => norm<Row>(r)),
-      today: norm<Row>(todayLogs[0]!),
-      load: load.map((r) => {
-        const x = norm<Row>(r);
-        const left = D(S(x.minutesLeft));
-        const pos = left.gt(0) ? left : D(0);
-        const days = D(S(x.capacityHours)).gt(0) ? pos.div(60).div(S(x.capacityHours)) : D(0);
-        return {
-          ...x,
-          minutesLeft: pos.toFixed(0),
-          daysOfWork: days.toDecimalPlaces(1).toFixed(1),
-        };
-      }),
-    };
-  },
 };
+
+void scheduleLoad;

@@ -1,5 +1,5 @@
-// Phase 13 screens: logging an operation on the work-order screen, receiving finished goods only after the Usage Decision,
-// and the MRP proposal with its single confirm.
+// Phase 13 screens: completing a job card, releasing a production order, BOM approval rights, the MRP suggestions with their
+// pegging, and the "No data yet" state of the shop-floor dashboard.
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -24,310 +24,235 @@ const ALL = permissionsRoute({
   cancel: true,
   controls: true,
 });
-
-const order = (lots: unknown[] = []) => ({
-  id: 'o1',
-  version: 4,
-  number: 'PRO/TAL/26-27/0001',
-  status: 'In Progress',
-  itemCode: 'FG1',
-  itemName: 'Bracket',
-  uom: 'Nos',
-  qty: '10',
-  qtyCompleted: '8',
-  qtyScrapped: '2',
-  qtyReceived: '0',
-  dueDate: '2026-11-20',
-  customerName: null,
-  rmWarehouseCode: 'W1',
-  batchTracked: false,
-  materials: [
-    {
-      id: 'm1',
-      itemId: 'i1',
-      itemCode: 'RM1',
-      itemName: 'Plate',
-      uom: 'Kg',
-      requiredQty: '21',
-      issuedQty: '21',
-      returnedQty: '0',
-      issuedValue: '210',
-      returnedValue: '0',
-      customerSupplied: false,
-    },
-  ],
-  ops: [
-    {
-      id: 'p1',
-      seq: 10,
-      name: 'Cutting',
-      workCentreCode: 'CUT',
-      qtyDone: '8',
-      qtyScrap: '2',
-      qtyRework: '0',
-      remaining: '0',
-      status: 'Done',
-      inspectionRequired: false,
-    },
-    {
-      id: 'p2',
-      seq: 20,
-      name: 'Assembly',
-      workCentreCode: 'ASM',
-      qtyDone: '0',
-      qtyScrap: '0',
-      qtyRework: '0',
-      remaining: '8',
-      status: 'Pending',
-      inspectionRequired: true,
-    },
-  ],
-  lots,
-  moves: [],
-  outsideMoves: [],
-  cost: {
-    material: '210.00',
-    conversion: '0.00',
-    outside: '0.00',
-    total: '210.00',
-    unitCost: null,
-  },
-});
-const listRow = {
-  id: 'o1',
-  number: 'PRO/TAL/26-27/0001',
-  status: 'In Progress',
-  itemCode: 'FG1',
-  itemName: 'Bracket',
-  uom: 'Nos',
-  qty: '10',
-  qtyCompleted: '8',
-  qtyReceived: '0',
-  dueDate: '2026-11-20',
-};
+const VIEW_ONLY = permissionsRoute({ view: true });
 const page = (rows: unknown[]) =>
   json(200, { data: rows, meta: { page: 1, size: 100, total: rows.length } });
 
-describe('Work Orders', () => {
-  it('logs what an operation made and sends it once', async () => {
+const card = {
+  id: 'p2',
+  orderNumber: 'PRO/TAL/26-27/0001',
+  itemName: 'Bracket',
+  seq: 20,
+  name: 'Assembly',
+  workCentreCode: 'ASM',
+  status: 'In Progress',
+  qtyIn: '8',
+  qtyDone: '0',
+  qtyRejected: '0',
+  qtyScrap: '0',
+  qtyRework: '0',
+  remaining: '8',
+  timeLogs: [],
+  downtime: [],
+  dueDate: '2026-11-20',
+};
+
+describe('Work Orders (job cards)', () => {
+  it('completes a card with the counts and sends it once', async () => {
     const { calls } = signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/mfg/orders/for/mfg-workorders': () => page([listRow]),
-      'GET /api/v1/mfg/orders/for/mfg-workorders/o1': () => json(200, { data: order() }),
-      'POST /api/v1/mfg/orders/o1/ops/p2/log': () => json(200, { data: order() }),
+      'GET /api/v1/mfg/work-centers': () => page([]),
+      'GET /api/v1/mfg/job-cards': () => page([card]),
+      'GET /api/v1/mfg/job-cards/p2': () => json(200, { data: card }),
+      'GET /api/v1/mfg/downtime-reasons': () => json(200, { data: [] }),
+      'GET /api/v1/mfg/scrap-reasons': () => json(200, { data: [] }),
+      'POST /api/v1/mfg/job-cards/p2/complete': () =>
+        json(200, { data: { ...card, status: 'Done' } }),
     });
     renderApp('/m/mfg-workorders');
     const ue = userEvent.setup();
-    await ue.click(await screen.findByRole('button', { name: 'PRO/TAL/26-27/0001' }));
+    await ue.click(await screen.findByRole('button', { name: 'Open' }));
     const panel = await screen.findByRole('dialog');
-    expect(await within(panel).findByText('Assembly')).toBeInTheDocument();
-    expect(within(panel).getByText('Cutting')).toBeInTheDocument();
-    // a finished operation offers nothing; the pending one can be logged
-    const logs = within(panel).getAllByRole('button', { name: 'Log' });
-    expect(logs).toHaveLength(1);
-    await ue.click(logs[0]!);
-    const dialogs = await screen.findAllByRole('dialog');
-    const form = dialogs[dialogs.length - 1]!;
-    await ue.type(within(form).getByLabelText('Good pieces'), '8');
-    await ue.type(within(form).getByLabelText('Minutes taken'), '60');
-    await ue.click(within(form).getByRole('button', { name: 'Save' }));
-    await within(panel).findByText('Assembly');
-    expect(countCalls(calls, 'POST', '/mfg/orders/o1/ops/p2/log')).toBe(1);
+    await ue.type(await within(panel).findByLabelText('Good pieces'), '8');
+    await ue.click(within(panel).getByRole('button', { name: 'Complete this card' }));
+    await screen.findAllByText('Done');
+    expect(countCalls(calls, 'POST', '/mfg/job-cards/p2/complete')).toBe(1);
+    expect(calls.find((c) => c.path.endsWith('/complete'))?.body).toMatchObject({ good: '8' });
   });
 });
 
-describe('Finished Goods Receipt', () => {
-  const decided = [
-    {
-      id: 'l1',
-      kind: 'FG',
-      lotNo: 1,
-      lotQty: '8',
-      receivedQty: '0',
-      inspectionNo: 'PDI/TAL/26-27/0001',
-      inspectionStatus: 'Decided',
-      acceptedQty: '7',
-      rejectedQty: '1',
-    },
-  ];
-  it('offers the receipt for a decided lot, for the accepted pieces only', async () => {
+describe('Production Orders', () => {
+  const order = {
+    id: 'o1',
+    version: 2,
+    number: 'PRO/TAL/26-27/0001',
+    status: 'Planned',
+    itemCode: 'FG1',
+    itemName: 'Bracket',
+    uom: 'Nos',
+    qty: '10',
+    qtyCompleted: '0',
+    qtyReceived: '0',
+    dueDate: '2026-11-20',
+    materials: [],
+    ops: [],
+    receipts: [],
+    cost: { material: '0', labour: '0', overhead: '0', abnormalScrap: '0', fgValue: '0', wip: '0' },
+  };
+  it('releases a planned order once', async () => {
     const { calls } = signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/mfg/orders/for/mfg-fg': () => page([listRow]),
-      'GET /api/v1/mfg/orders/for/mfg-fg/o1': () => json(200, { data: order(decided) }),
-      'POST /api/v1/mfg/orders/o1/receive': () => json(200, { data: order(decided) }),
+      'GET /api/v1/mfg/production-orders': () => page([order]),
+      'GET /api/v1/mfg/production-orders/o1': () => json(200, { data: order }),
+      'POST /api/v1/mfg/production-orders/o1/release': () =>
+        json(200, { data: { ...order, status: 'Released' } }),
     });
-    renderApp('/m/mfg-fg');
+    renderApp('/m/mfg-orders');
     const ue = userEvent.setup();
-    await ue.click(await screen.findByRole('button', { name: 'PRO/TAL/26-27/0001' }));
+    await ue.click(await screen.findByRole('button', { name: 'Open' }));
     const panel = await screen.findByRole('dialog');
-    await ue.click(await within(panel).findByRole('button', { name: 'Receive' }));
-    const dialogs = await screen.findAllByRole('dialog');
-    const form = dialogs[dialogs.length - 1]!;
-    expect(within(form).getByLabelText(/Quantity/)).toHaveValue(7);
-    await ue.click(within(form).getByRole('button', { name: 'Save' }));
-    await within(panel).findByText('Inspection lots');
-    expect(countCalls(calls, 'POST', '/mfg/orders/o1/receive')).toBe(1);
+    await ue.click(await within(panel).findByRole('button', { name: 'Release' }));
+    await screen.findAllByText('Released');
+    expect(countCalls(calls, 'POST', '/mfg/production-orders/o1/release')).toBe(1);
+    expect(calls.find((c) => c.path.endsWith('/release'))?.headers['If-Match']).toBe('"2"');
   });
-
-  it('shows no receive button until the Usage Decision is made, or without the post right', async () => {
-    const pending = [{ ...decided[0], inspectionStatus: 'Submitted', acceptedQty: null }];
+  it('shows nothing to approve for a viewer, and approval for a big order to an approver', async () => {
+    const pending = { ...order, status: 'Pending Approval' };
     signedIn(owner, {
-      'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/mfg/orders/for/mfg-fg': () => page([listRow]),
-      'GET /api/v1/mfg/orders/for/mfg-fg/o1': () => json(200, { data: order(pending) }),
+      'GET /api/v1/me/permissions': VIEW_ONLY,
+      'GET /api/v1/mfg/production-orders': () => page([pending]),
+      'GET /api/v1/mfg/production-orders/o1': () => json(200, { data: pending }),
     });
-    renderApp('/m/mfg-fg');
+    renderApp('/m/mfg-orders');
     const ue = userEvent.setup();
-    await ue.click(await screen.findByRole('button', { name: 'PRO/TAL/26-27/0001' }));
+    await ue.click(await screen.findByRole('button', { name: 'Open' }));
     const panel = await screen.findByRole('dialog');
-    await within(panel).findByText('PDI/TAL/26-27/0001');
-    expect(within(panel).queryByRole('button', { name: 'Receive' })).toBeNull();
+    await within(panel).findByText(/Pending Approval/);
+    expect(within(panel).queryByRole('button', { name: /Approve/ })).toBeNull();
+    expect(within(panel).queryByRole('button', { name: 'Release' })).toBeNull();
+  });
+});
+
+describe('Bill of Materials', () => {
+  const bom = {
+    id: 'b1',
+    version: 3,
+    number: 'BOM/TAL/26-27/0001',
+    itemCode: 'FG1',
+    itemName: 'Bracket',
+    status: 'PENDING_APPROVAL',
+    revision: 1,
+    baseQty: '1',
+    uom: 'Nos',
+    lineCount: 1,
+    lines: [],
+  };
+  it('lets an approver release a BOM that is waiting for approval', async () => {
+    const { calls } = signedIn(owner, {
+      'GET /api/v1/me/permissions': ALL,
+      'GET /api/v1/mfg/boms': () => page([bom]),
+      'GET /api/v1/mfg/boms/b1': () => json(200, { data: bom }),
+      'POST /api/v1/mfg/boms/b1/release': () => json(200, { data: { ...bom, status: 'RELEASED' } }),
+    });
+    renderApp('/m/mfg-bom');
+    const ue = userEvent.setup();
+    await ue.click(await screen.findByRole('button', { name: 'Open' }));
+    const panel = await screen.findByRole('dialog');
+    await ue.click(await within(panel).findByRole('button', { name: 'Release' }));
+    await screen.findAllByText('RELEASED');
+    expect(countCalls(calls, 'POST', '/mfg/boms/b1/release')).toBe(1);
+  });
+  it('hides Release from a person without the approve right', async () => {
+    signedIn(owner, {
+      'GET /api/v1/me/permissions': permissionsRoute({ view: true, edit: true }),
+      'GET /api/v1/mfg/boms': () => page([bom]),
+      'GET /api/v1/mfg/boms/b1': () => json(200, { data: bom }),
+    });
+    renderApp('/m/mfg-bom');
+    const ue = userEvent.setup();
+    await ue.click(await screen.findByRole('button', { name: 'Open' }));
+    const panel = await screen.findByRole('dialog');
+    await within(panel).findByText(/PENDING_APPROVAL/);
+    expect(within(panel).queryByRole('button', { name: 'Release' })).toBeNull();
   });
 });
 
 describe('MRP', () => {
-  it('shows the proposal and creates the requisition and orders with one confirm', async () => {
+  it('shows the suggestions with their pegging and firms one', async () => {
     const run = {
       id: 'r1',
-      version: 1,
       number: 'MRP/TAL/26-27/0001',
-      status: 'Draft',
-      fromDate: '2026-11-01',
-      toDate: '2026-11-30',
-      prNumber: null,
-      lines: [
-        {
-          id: 'a',
-          itemId: 'f',
-          itemCode: 'FG1',
-          itemName: 'Bracket',
-          uom: 'Nos',
-          level: 0,
-          action: 'PRODUCE',
-          grossQty: '100',
-          onHandQty: '7',
-          scheduledQty: '0',
-          netQty: '93',
-          needDate: '2026-11-10',
-          orderId: null,
-          sources: [{ type: 'FORECAST', ref: 'Forecast 2026-11', qty: '100' }],
-        },
-        {
-          id: 'b',
-          itemId: 'g',
-          itemCode: 'RM1',
-          itemName: 'Plate',
-          uom: 'Kg',
-          level: 1,
-          action: 'BUY',
-          grossQty: '195.3',
-          onHandQty: '80',
-          scheduledQty: '0',
-          netQty: '115.3',
-          needDate: '2026-11-10',
-          orderId: null,
-          sources: [],
-        },
-      ],
+      status: 'DONE',
+      horizonDays: 30,
+      makeCount: 1,
+      buyCount: 1,
+      exceptionCount: 0,
+      createdAt: '2026-11-09T10:00:00Z',
     };
-    let applied = false;
+    const sug = [
+      {
+        id: 's1',
+        itemCode: 'FG1',
+        itemName: 'Bracket',
+        type: 'MAKE',
+        qty: '20',
+        uom: 'Nos',
+        dueDate: '2026-11-20',
+        releaseDate: '2026-11-18',
+        status: 'OPEN',
+        pegging: [{ type: 'SALES_ORDER', ref: 'SO-1', qty: '20' }],
+      },
+      {
+        id: 's2',
+        itemCode: 'RM1',
+        itemName: 'Plate',
+        type: 'BUY',
+        qty: '60',
+        uom: 'Kg',
+        dueDate: '2026-11-18',
+        releaseDate: '2026-11-10',
+        status: 'OPEN',
+        pegging: [],
+      },
+    ];
     const { calls } = signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/mfg/mrp': () => page([{ ...run, produceLines: 1, buyLines: 1 }]),
-      'GET /api/v1/mfg/mrp/r1': () =>
-        json(200, { data: applied ? { ...run, status: 'Applied', prNumber: 'PR/1' } : run }),
-      'GET /api/v1/lookups/warehouses': () =>
-        json(200, { data: [{ id: 'w1', code: 'W1', name: 'Store' }] }),
-      'POST /api/v1/mfg/mrp/r1/apply': () => {
-        applied = true;
-        return json(200, { data: { ...run, status: 'Applied', prNumber: 'PR/1' } });
-      },
+      'GET /api/v1/lookups/warehouses': () => json(200, { data: [] }),
+      'GET /api/v1/mfg/mrp-runs': () => page([run]),
+      'GET /api/v1/mfg/mrp-runs/r1': () => json(200, { data: run }),
+      'GET /api/v1/mfg/mrp-runs/r1/suggestions': () => json(200, { data: sug }),
+      'GET /api/v1/mfg/mrp-runs/r1/buckets': () => json(200, { data: [] }),
+      'GET /api/v1/mfg/mrp-runs/r1/exceptions': () => json(200, { data: [] }),
+      'POST /api/v1/mfg/mrp-suggestions/s1/firm': () =>
+        json(200, { data: { ...sug[0], status: 'FIRMED' } }),
     });
     renderApp('/m/mfg-mrp');
     const ue = userEvent.setup();
-    await ue.click(await screen.findByRole('button', { name: 'MRP/TAL/26-27/0001' }));
+    await ue.click(await screen.findByRole('button', { name: 'Open' }));
     const panel = await screen.findByRole('dialog');
     expect(await within(panel).findByText('Make')).toBeInTheDocument();
     expect(within(panel).getByText('Buy')).toBeInTheDocument();
-    expect(within(panel).getByText('115.3')).toBeInTheDocument();
-    await ue.click(
-      within(panel).getByRole('button', { name: 'Create requisition and planned orders' }),
-    );
-    await within(panel).findByText(/requisition PR\/1/);
-    expect(countCalls(calls, 'POST', '/mfg/mrp/r1/apply')).toBe(1);
+    expect(within(panel).getByText(/SALES_ORDER SO-1: 20/)).toBeInTheDocument();
+    await ue.click(within(panel).getAllByRole('button', { name: 'Firm' })[0]!);
+    await screen.findAllByText('Done');
+    expect(countCalls(calls, 'POST', '/mfg/mrp-suggestions/s1/firm')).toBe(1);
   });
 });
 
-describe('Capacity', () => {
-  it('shows which orders finish late and how full each work center is', async () => {
+describe('Shop Floor', () => {
+  it('says "No data yet" instead of zeros when nothing was logged', async () => {
     signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/mfg/plan': () => page([]),
-      'GET /api/v1/mfg/capacity': () =>
+      'GET /api/v1/mfg/work-centers': () => page([]),
+      'GET /api/v1/mfg/downtime-reasons': () => json(200, { data: [] }),
+      'GET /api/v1/mfg/shopfloor/summary': () =>
         json(200, {
           data: {
-            from: '2026-11-20',
-            workDays: [0, 1, 2, 3, 4, 5, 6],
-            ops: [],
-            orders: [
-              {
-                orderId: 'o1',
-                orderNo: 'PRO/TAL/26-27/0001',
-                due: '2026-11-20',
-                finish: '2026-11-25',
-                late: true,
-              },
-              {
-                orderId: 'o2',
-                orderNo: 'PRO/TAL/26-27/0002',
-                due: '2026-12-20',
-                finish: '2026-11-26',
-                late: false,
-              },
-            ],
-            days: [
-              {
-                day: '2026-11-23',
-                workCentreId: 'w1',
-                workCentre: 'CUT',
-                load: 480,
-                capacity: 480,
-              },
-            ],
+            date: '2026-11-09',
+            empty: true,
+            oee: [],
+            rejectionPct: null,
+            downtimeMinutes: '0',
+            goodPieces: '0',
+            hourly: [],
+            orders: {},
+            overdue: [],
           },
         }),
     });
-    renderApp('/m/mfg-plan');
+    renderApp('/m/mfg-shopfloor');
     const ue = userEvent.setup();
-    await ue.click(await screen.findByRole('tab', { name: 'Capacity' }));
-    expect(await screen.findByText('Late')).toBeInTheDocument();
-    expect(screen.getByText('On time')).toBeInTheDocument();
-    expect(screen.getByText('100 %')).toBeInTheDocument();
-  });
-});
-
-describe('Outside processing', () => {
-  it('offers send / receive instead of the shop-floor log for an outside operation', async () => {
-    const o = order();
-    (o.ops as Record<string, unknown>[])[1] = {
-      ...(o.ops as Record<string, unknown>[])[1],
-      workCentreKind: 'OUTSIDE',
-      status: 'Pending',
-    };
-    (o as Record<string, unknown>).outsideMoves = [];
-    signedIn(owner, {
-      'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/mfg/orders/for/mfg-workorders': () => page([listRow]),
-      'GET /api/v1/mfg/orders/for/mfg-workorders/o1': () => json(200, { data: o }),
-    });
-    renderApp('/m/mfg-workorders');
-    const ue = userEvent.setup();
-    await ue.click(await screen.findByRole('button', { name: 'PRO/TAL/26-27/0001' }));
-    const panel = await screen.findByRole('dialog');
-    expect(
-      await within(panel).findByRole('button', { name: 'Send / receive' }),
-    ).toBeInTheDocument();
-    expect(within(panel).queryByRole('button', { name: 'Log' })).toBeNull();
+    await ue.click(await screen.findByRole('tab', { name: 'Supervisor dashboard' }));
+    expect((await screen.findAllByText(/No data yet/)).length).toBeGreaterThan(0);
   });
 });

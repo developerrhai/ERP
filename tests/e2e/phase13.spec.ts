@@ -1,7 +1,7 @@
 // Why: browser smoke test of the Phase 13 manufacturing screens (docs/phases/PHASE-13.md and PHASE-13-REPORT.md): each page opens
 // for the owner through the real Vite -> API -> PostgreSQL chain. The rules and the numbers (BOM scrap, material issue and its
 // stock value, operation quantities, the inspection checkpoint, FG receipt after the Usage Decision, MRP netting, job-work
-// balances) are proved by apps/api/tests/phase13-mfg.test.ts. Runs after the earlier specs on the same e2e database.
+// balances) are proved by apps/api/tests/phase13-v2.test.ts. Runs after the earlier specs on the same e2e database.
 import { test, expect, type Page } from '@playwright/test';
 import { E2E } from './e2e-env.mjs';
 
@@ -38,7 +38,7 @@ const PAGES: [string, RegExp][] = [
   ['mfg-orders', /Production Orders/],
   ['mfg-mrp', /Material Requirement Planning/],
   ['mfg-workorders', /Work Orders/],
-  ['mfg-shopfloor', /Shop Floor Dashboard/],
+  ['mfg-shopfloor', /Shop Floor/],
   ['mfg-wip', /WIP Tracking/],
   ['mfg-fg', /Finished Goods Receipt/],
   ['mfg-scrap', /Scrap Management/],

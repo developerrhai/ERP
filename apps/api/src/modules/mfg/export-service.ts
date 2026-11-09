@@ -1,6 +1,7 @@
 // Phase 13 print and export: the Excel file of each register and the PDF of an order (job card), a BOM, a routing and an MRP
 // run. Everything printed is the server's own figure; text cells that start with = + - or @ are made harmless (safeCell).
 import ExcelJS from 'exceljs';
+import QRCode from 'qrcode';
 import { prisma } from '../../core/db/prisma';
 import { Errors } from '../../core/http/errors';
 import { finishPdf, newPdf } from '../../core/pdf';
@@ -9,11 +10,14 @@ import type { Caller } from '../records/service';
 import { query } from '../procurement/core';
 import type { Row } from '../procurement/core';
 import { boardService } from './board-service';
+import { bomService } from './bom-service';
+import { jobCardService } from './jobcard-service';
 import { S } from './master-service';
-import { masterService } from './master-service';
 import { mrpService } from './mrp-service';
 import { orderService } from './order-service';
 import { reportsService } from './reports-service';
+import { routingService } from './routing-service';
+import { scrapService } from './scrap-service';
 
 type Kind = 'text' | 'qty' | 'money' | 'date';
 interface Col {
@@ -66,7 +70,7 @@ export const REPORTS: Record<string, Report> = {
       { key: 'qty', label: 'Quantity', kind: 'qty' },
       { key: 'reason', label: 'Reason' },
     ],
-    load: async (c) => (await reportsService.listScrap(c, 'mfg-scrap', ALL)).rows,
+    load: async (c) => (await scrapService.list(c, 'mfg-scrap', ALL)).rows,
   },
   rework: {
     page: 'mfg-rework',
@@ -85,7 +89,7 @@ export const REPORTS: Record<string, Report> = {
       { key: 'cost', label: 'Rework cost', kind: 'money' },
       { key: 'status', label: 'Status' },
     ],
-    load: async (c) => (await reportsService.listRework(c, 'mfg-rework', ALL)).rows,
+    load: async (c) => (await jobCardService.listRework(c, 'mfg-rework', ALL)).rows,
   },
   wip: {
     page: 'mfg-wip',
@@ -113,12 +117,13 @@ export const REPORTS: Record<string, Report> = {
       { key: 'itemName', label: 'Item' },
       { key: 'qtyCompleted', label: 'Good pieces', kind: 'qty' },
       { key: 'material', label: 'Material', kind: 'money' },
-      { key: 'conversion', label: 'Conversion', kind: 'money' },
-      { key: 'outside', label: 'Outside processing', kind: 'money' },
-      { key: 'reworkCost', label: 'Of which rework', kind: 'money' },
+      { key: 'labour', label: 'Labour', kind: 'money' },
+      { key: 'overhead', label: 'Overhead', kind: 'money' },
+      { key: 'abnormalScrap', label: 'Abnormal scrap', kind: 'money' },
       { key: 'total', label: 'Total', kind: 'money' },
       { key: 'unitCost', label: 'Cost per piece', kind: 'money' },
       { key: 'standardCost', label: 'Standard cost', kind: 'money' },
+      { key: 'variancePerUnit', label: 'Variance per piece', kind: 'money' },
     ],
     load: async (c) => (await reportsService.costing(c, 'mfg-costing', ALL)).rows,
   },
@@ -193,7 +198,7 @@ export const REPORTS: Record<string, Report> = {
       { key: 'lineCount', label: 'Components' },
       { key: 'status', label: 'Status' },
     ],
-    load: async (c) => (await masterService.listBoms(c, 'mfg-bom', ALL)).rows,
+    load: async (c) => (await bomService.list(c, 'mfg-bom', ALL)).rows,
   },
   routings: {
     page: 'mfg-routing',
@@ -206,7 +211,7 @@ export const REPORTS: Record<string, Report> = {
       { key: 'opCount', label: 'Operations' },
       { key: 'status', label: 'Status' },
     ],
-    load: async (c) => (await masterService.listRoutings(c, 'mfg-routing', ALL)).rows,
+    load: async (c) => (await routingService.list(c, 'mfg-routing', ALL)).rows,
   },
 };
 
@@ -256,12 +261,12 @@ export async function reportWorkbook(rep: Report, rows: Row[]): Promise<Buffer> 
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
-/** The Excel file of one MRP run: its lines with the reason for each. */
+/** The Excel file of one MRP run: every suggestion with the demand it serves. */
 export async function mrpWorkbook(caller: Caller, id: string): Promise<Buffer> {
   const run = await mrpService.get(caller, 'mfg-mrp', id);
-  const rows = (run.lines as Row[]).map((l) => ({
+  const rows = (await mrpService.suggestions(caller, 'mfg-mrp', id)).map((l) => ({
     ...l,
-    why: ((l.sources as Row[]) ?? [])
+    why: ((l.pegging as Row[] | null) ?? [])
       .map((x) => `${S(x.type)} ${S(x.ref)}: ${S(x.qty)}`)
       .join('; '),
   }));
@@ -270,16 +275,13 @@ export async function mrpWorkbook(caller: Caller, id: string): Promise<Buffer> {
       page: 'mfg-mrp',
       title: `MRP ${S(run.number)}`,
       cols: [
-        { key: 'level', label: 'Level', kind: 'qty' },
         { key: 'itemCode', label: 'Item code' },
         { key: 'itemName', label: 'Item' },
-        { key: 'bucketStart', label: 'Week / period from', kind: 'date' },
-        { key: 'action', label: 'Action' },
-        { key: 'grossQty', label: 'Gross need', kind: 'qty' },
-        { key: 'onHandQty', label: 'Stock at start', kind: 'qty' },
-        { key: 'scheduledQty', label: 'Coming in', kind: 'qty' },
-        { key: 'netQty', label: 'To arrange', kind: 'qty' },
-        { key: 'needDate', label: 'Needed by', kind: 'date' },
+        { key: 'type', label: 'Make / Buy' },
+        { key: 'qty', label: 'Quantity', kind: 'qty' },
+        { key: 'dueDate', label: 'Needed by', kind: 'date' },
+        { key: 'releaseDate', label: 'Start by', kind: 'date' },
+        { key: 'status', label: 'Status' },
         { key: 'why', label: 'Why' },
       ],
       load: () => Promise.resolve([]),
@@ -317,7 +319,7 @@ async function unitHead(caller: Caller): Promise<{ name: string; address: string
   };
 }
 
-async function renderPdf(caller: Caller, d: PdfDoc): Promise<Buffer> {
+async function renderPdf(caller: Caller, d: PdfDoc, qrs: Buffer[] = []): Promise<Buffer> {
   const unit = await unitHead(caller);
   const doc = newPdf({ title: d.title });
   doc
@@ -370,6 +372,29 @@ async function renderPdf(caller: Caller, d: PdfDoc): Promise<Buffer> {
     d.signatures.forEach((t, i) =>
       doc.text(`${t}\n\n________________`, 40 + i * w, y, { width: w - 6 }),
     );
+  }
+  if (qrs.length) {
+    doc.addPage();
+    doc.fontSize(11).font('Sans-Bold').text('Scan codes');
+    let x = 40;
+    let y = doc.y + 8;
+    qrs.forEach((q, i) => {
+      if (x > 450) {
+        x = 40;
+        y += 150;
+      }
+      if (y > doc.page.height - 170) {
+        doc.addPage();
+        y = 40;
+        x = 40;
+      }
+      doc.image(q, x, y, { width: 90 });
+      doc
+        .fontSize(8)
+        .font('Sans')
+        .text(`Operation ${i + 1}`, x, y + 94, { width: 100 });
+      x += 130;
+    });
   }
   return finishPdf(doc);
 }
@@ -425,7 +450,7 @@ export async function orderPdf(caller: Caller, id: string): Promise<Buffer> {
           S(p.workCentreCode),
           S(p.setupMinutes),
           S(p.runMinutes),
-          p.inspectionRequired === true ? 'Inspection first' : '',
+          p.qcRequired === true ? 'Inspection' : '',
         ]),
       },
     ],
@@ -434,7 +459,7 @@ export async function orderPdf(caller: Caller, id: string): Promise<Buffer> {
 }
 
 export async function bomPdf(caller: Caller, id: string): Promise<Buffer> {
-  const b = await masterService.getBom(caller, 'mfg-bom', id);
+  const b = await bomService.get(caller, 'mfg-bom', id);
   return renderPdf(caller, {
     title: 'Bill of materials',
     subtitle: S(b.status),
@@ -456,7 +481,7 @@ export async function bomPdf(caller: Caller, id: string): Promise<Buffer> {
         rows: (b.lines as Row[]).map((l, i) => [
           String(i + 1),
           `${S(l.itemCode)} ${S(l.itemName)}${l.isCustomerSupplied === true ? ' (customer)' : ''}`,
-          `${S(l.qtyPer)} ${S(l.uom)}`,
+          `${S(l.qtyPerBase)} ${S(l.uom)}`,
           S(l.scrapPct),
         ]),
       },
@@ -466,7 +491,7 @@ export async function bomPdf(caller: Caller, id: string): Promise<Buffer> {
 }
 
 export async function routingPdf(caller: Caller, id: string): Promise<Buffer> {
-  const r = await masterService.getRouting(caller, 'mfg-routing', id);
+  const r = await routingService.get(caller, 'mfg-routing', id);
   return renderPdf(caller, {
     title: 'Routing',
     subtitle: S(r.status),
@@ -491,7 +516,7 @@ export async function routingPdf(caller: Caller, id: string): Promise<Buffer> {
           S(p.workCentreCode),
           S(p.setupMinutes),
           S(p.runMinutes),
-          p.inspectionRequired === true ? 'Yes' : '',
+          p.qcRequired === true ? 'Yes' : '',
         ]),
       },
     ],
@@ -501,39 +526,122 @@ export async function routingPdf(caller: Caller, id: string): Promise<Buffer> {
 
 export async function mrpPdf(caller: Caller, id: string): Promise<Buffer> {
   const m = await mrpService.get(caller, 'mfg-mrp', id);
+  const sug = await mrpService.suggestions(caller, 'mfg-mrp', id);
   return renderPdf(caller, {
     title: 'Material requirement plan',
     subtitle: S(m.status),
     head: [
       ['Run', S(m.number)],
-      ['Range', `${dmy(m.fromDate)} to ${dmy(m.toDate)}`],
-      ['Period', S(m.bucket)],
-      ['Requisition', S(m.prNumber) || '—'],
+      ['Horizon', `${S(m.horizonDays)} days`],
     ],
     sections: [
       {
-        heading: 'Proposal',
+        heading: 'Suggestions',
         cols: [
-          { label: 'Item', w: 160 },
-          { label: 'Period', w: 62 },
-          { label: 'Action', w: 55 },
-          { label: 'Gross', w: 56, right: true },
-          { label: 'Stock', w: 56, right: true },
-          { label: 'Coming', w: 56, right: true },
-          { label: 'To arrange', w: 70, right: true },
+          { label: 'Item', w: 210 },
+          { label: 'Make / Buy', w: 60 },
+          { label: 'Quantity', w: 75, right: true },
+          { label: 'Start by', w: 70 },
+          { label: 'Needed by', w: 70 },
         ],
-        rows: (m.lines as Row[]).map((l) => [
+        rows: sug.map((l) => [
           `${S(l.itemCode)} ${S(l.itemName)}`,
-          dmy(l.bucketStart),
-          S(l.action),
-          S(l.grossQty),
-          S(l.onHandQty),
-          S(l.scheduledQty),
-          S(l.netQty),
+          S(l.type),
+          S(l.qty),
+          dmy(l.releaseDate),
+          dmy(l.dueDate),
         ]),
       },
     ],
   });
+}
+
+async function qrPng(text: string): Promise<Buffer> {
+  return QRCode.toBuffer(text, { margin: 1, width: 120 });
+}
+
+/** A job card: one operation of an order with its quantities, a QR code to open it on the tablet, and the sign-offs. */
+export async function jobCardPdf(caller: Caller, opId: string): Promise<Buffer> {
+  const c = await jobCardService.get(caller, 'mfg-workorders', opId);
+  return renderPdf(
+    caller,
+    {
+      title: 'Job card',
+      subtitle: S(c.status),
+      head: [
+        ['Order', S(c.orderNumber)],
+        ['Due', dmy(c.dueDate)],
+        ['Item', S(c.itemName)],
+        ['Operation', `${S(c.seq)} ${S(c.name)}`],
+        ['Work centre', S(c.workCentreCode)],
+        ['Quantity in', S(c.qtyIn)],
+        ['Setup min / run min per piece', `${S(c.setupMinutes)} / ${S(c.runMinutes)}`],
+        ['Code', `JC:${opId}`],
+      ],
+      sections: [
+        {
+          heading: 'Time log',
+          cols: [
+            { label: 'Kind', w: 70 },
+            { label: 'From', w: 150 },
+            { label: 'To', w: 150 },
+            { label: 'Good', w: 60, right: true },
+            { label: 'Rejected', w: 65, right: true },
+          ],
+          rows: (c.timeLogs as Row[]).map((l) => [
+            S(l.kind),
+            S(l.fromTs).slice(0, 16).replace('T', ' '),
+            S(l.toTs).slice(0, 16).replace('T', ' '),
+            S(l.good),
+            S(l.rejected),
+          ]),
+        },
+      ],
+      signatures: ['Operator', 'Supervisor', 'Quality'],
+    },
+    [await qrPng(`JC:${opId}`)],
+  );
+}
+
+/** The traveller: the whole order on one sheet, then one scan code per operation. */
+export async function travellerPdf(caller: Caller, id: string): Promise<Buffer> {
+  const o = await orderService.get(caller, 'mfg-orders', id);
+  const ops = o.ops as Row[];
+  const qrs = await Promise.all(ops.map((p) => qrPng(`JC:${S(p.id)}`)));
+  return renderPdf(
+    caller,
+    {
+      title: 'Traveller',
+      subtitle: S(o.status),
+      head: [
+        ['Order no', S(o.number)],
+        ['Due', dmy(o.dueDate)],
+        ['Item', `${S(o.itemCode)} ${S(o.itemName)}`],
+        ['Quantity', `${S(o.qty)} ${S(o.uom)}`],
+      ],
+      sections: [
+        {
+          heading: 'Operations (scan the code on the tablet to open the card)',
+          cols: [
+            { label: 'No.', w: 35 },
+            { label: 'Operation', w: 190 },
+            { label: 'Work centre', w: 90 },
+            { label: 'Qty in', w: 70, right: true },
+            { label: 'Done / Sign', w: 110 },
+          ],
+          rows: ops.map((p) => [
+            S(p.seq),
+            S(p.name),
+            S(p.workCentreCode),
+            S(p.qtyIn),
+            S(p.status) === 'Done' ? 'Done' : '______',
+          ]),
+        },
+      ],
+      signatures: ['Planned by', 'Production in-charge', 'Quality'],
+    },
+    qrs,
+  );
 }
 
 export function assertReport(name: string): Report {

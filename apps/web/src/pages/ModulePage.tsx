@@ -79,8 +79,9 @@ import { GenericModulePage } from './generic/GenericModulePage';
 import { NotFoundPage } from './NotFoundPage';
 import { BomPage, RoutingPage, WorkCentresPage } from './mfg/MasterPages';
 import { FgPage, OrdersPage, WorkOrdersPage } from './mfg/OrderPages';
-import { BoardPage, MrpPage } from './mfg/PlanPages';
-import { CostingPage, ReworkPage, ScrapPage, ShopFloorPage, WipPage } from './mfg/RegisterPages';
+import { MrpPage, ProductionPlansPage } from './mfg/PlanPages';
+import { CostingPage, ReworkPage, ScrapPage, WipPage } from './mfg/RegisterPages';
+import { ShopFloorPage } from './mfg/ShopFloor';
 import { CapaPage } from './qms/FormPages';
 import { InspectionPage } from './qms/InspectionPages';
 import { NcrPage } from './qms/RegisterPages';
@@ -321,7 +322,7 @@ function PageBody({
     case 'mfg-routing':
       return <RoutingPage actions={actions} />;
     case 'mfg-plan':
-      return <BoardPage actions={actions} />;
+      return <ProductionPlansPage actions={actions} />;
     case 'mfg-orders':
       return <OrdersPage actions={actions} />;
     case 'mfg-mrp':
@@ -329,7 +330,7 @@ function PageBody({
     case 'mfg-workorders':
       return <WorkOrdersPage actions={actions} />;
     case 'mfg-shopfloor':
-      return <ShopFloorPage />;
+      return <ShopFloorPage actions={actions} />;
     case 'mfg-wip':
       return <WipPage actions={actions} />;
     case 'mfg-fg':

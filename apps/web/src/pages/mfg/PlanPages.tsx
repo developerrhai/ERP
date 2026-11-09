@@ -1,37 +1,240 @@
-// Phase 13 planning screens: MRP (net requirements from sales orders and forecasts, then a requisition and planned orders)
-// and the daily board / line planning. The netting and the balances are calculated on the server.
-import { useState } from 'react';
-import { Modal } from '../../components/Modal';
+// Phase 13 planning: production plans (demand pulled from sales orders, capacity and material checks, release, run MRP), the
+// daily board and capacity view kept from the first build, and MRP runs with their suggestions, pegging and exceptions.
+import { useEffect, useState } from 'react';
 import { useToast } from '../../components/Toast';
 import { toUiError } from '../../lib/errors';
-import { mdelete, mget, mlist, mpatch, mpost } from '../../lib/mfgApi';
+import { mget, mlist, mpost } from '../../lib/mfgApi';
 import type { Row } from '../../lib/mfgApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
-import { dmy, Empty, ErrorBox, PageHead, Pill, todayIso } from '../finance/shared';
-import { Tabs } from '../qms/Shared';
-import { FileButton, FormModal, ORDER_TONE, OptionSelect, s, useWarehouses } from './Kit';
+import { dmy, ErrorBox, PageHead, Pill, todayIso } from '../finance/shared';
+import { RefPicker, Tabs } from '../qms/Shared';
+import { CapacityTab, DailyBoard } from './BoardTabs';
+import { FileButton, ORDER_TONE, OptionSelect, s, useWarehouses } from './Kit';
+import { Act, Dialog, Grid, num } from './Ui';
 
-const ACTION_TEXT: Record<string, string> = {
-  PRODUCE: 'Make',
-  BUY: 'Buy',
-  NONE: 'Covered',
-  CUSTOMER: "Customer's material",
-};
-const SOURCE_TEXT: Record<string, string> = {
-  SALES_ORDER: 'Sales order',
-  FORECAST: 'Forecast',
-  BOM: 'Needed by',
-  ORDER: 'Open order',
-};
-const addDays = (iso: string, d: number): string => {
-  const x = new Date(`${iso}T00:00:00Z`);
-  x.setUTCDate(x.getUTCDate() + d);
-  return x.toISOString().slice(0, 10);
-};
+// ------------------------------------------------------------------------------------------------ production plans
+export function ProductionPlansPage({ actions }: { actions: ActionSet }) {
+  const [tab, setTab] = useState<'plans' | 'board' | 'capacity'>('plans');
+  return (
+    <>
+      <PageHead
+        title="Production Planning"
+        sub="Decide what to make and when: pull demand from sales orders, check capacity and material, release the plan, then run MRP on it."
+      />
+      <Tabs
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          ['plans', 'Production plans'],
+          ['board', 'Daily board'],
+          ['capacity', 'Capacity'],
+        ]}
+      />
+      {tab === 'plans' ? <PlanList actions={actions} /> : null}
+      {tab === 'board' ? <DailyBoard actions={actions} /> : null}
+      {tab === 'capacity' ? <CapacityTab /> : null}
+    </>
+  );
+}
 
-// ------------------------------------------------------------------------------------------------ MRP
-function RunPanel({
+interface PlanLineDraft {
+  itemId: string;
+  itemLabel: string;
+  plannedQty: string;
+  requiredDate: string;
+}
+
+function PlanList({ actions }: { actions: ActionSet }) {
+  const [status, setStatus] = useState('');
+  const [view, setView] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const list = useLoad(() => mlist('/production-plans', { status }), [status]);
+  return (
+    <>
+      <div className="toolbar">
+        <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">All statuses</option>
+          {['DRAFT', 'SUBMITTED', 'RELEASED', 'CLOSED'].map((x) => (
+            <option key={x} value={x}>
+              {x}
+            </option>
+          ))}
+        </select>
+        {actions.add ? (
+          <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+            + New plan
+          </button>
+        ) : null}
+      </div>
+      <ErrorBox message={list.error} />
+      <Grid
+        rows={list.data?.rows ?? []}
+        loading={list.loading}
+        empty="No production plans yet."
+        rowKey={(r) => s(r.id)}
+        cols={[
+          { h: 'Plan', r: (r) => s(r.number) },
+          { h: 'Date', r: (r) => dmy(s(r.planDate)) },
+          { h: 'Horizon (days)', r: (r) => s(r.horizonDays) },
+          { h: 'Lines', r: (r) => s(r.lineCount) },
+          { h: 'Status', r: (r) => <Pill tone={ORDER_TONE[s(r.status)]}>{s(r.status)}</Pill> },
+          {
+            h: '',
+            r: (r) => (
+              <button type="button" className="btn" onClick={() => setView(s(r.id))}>
+                Open
+              </button>
+            ),
+          },
+        ]}
+      />
+      {view ? (
+        <PlanView
+          id={view}
+          actions={actions}
+          onClose={() => setView(null)}
+          onChanged={() => list.reload()}
+        />
+      ) : null}
+      {adding ? (
+        <PlanForm
+          onClose={() => setAdding(false)}
+          onSaved={(id) => {
+            setAdding(false);
+            list.reload();
+            setView(id);
+          }}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function PlanForm({ onClose, onSaved }: { onClose: () => void; onSaved: (id: string) => void }) {
+  const [horizon, setHorizon] = useState('30');
+  const [lines, setLines] = useState<PlanLineDraft[]>([
+    { itemId: '', itemLabel: '', plannedQty: '', requiredDate: todayIso() },
+  ]);
+  const [msg, setMsg] = useState('');
+  const set = (i: number, p: Partial<PlanLineDraft>) =>
+    setLines((o) => o.map((x, j) => (j === i ? { ...x, ...p } : x)));
+  return (
+    <Dialog
+      title="New production plan"
+      onClose={onClose}
+      error={msg}
+      footer={
+        <button
+          type="button"
+          className="btn primary"
+          onClick={() => {
+            setMsg('');
+            mpost('/production-plans', {
+              horizonDays: Number(horizon),
+              lines: lines
+                .filter((l) => l.itemId)
+                .map((l) => ({
+                  itemId: l.itemId,
+                  plannedQty: l.plannedQty,
+                  requiredDate: l.requiredDate,
+                })),
+            })
+              .then((r) => onSaved(s(r.id)))
+              .catch((e: unknown) => setMsg(toUiError(e).message));
+          }}
+        >
+          Save draft
+        </button>
+      }
+    >
+      <div className="field">
+        <label htmlFor="pp-h">Horizon in days</label>
+        <input
+          id="pp-h"
+          type="number"
+          min={1}
+          max={365}
+          value={horizon}
+          onChange={(e) => setHorizon(e.target.value)}
+        />
+      </div>
+      <p className="hint">
+        Add lines by hand here, or open the plan afterwards and pull demand from sales orders.
+      </p>
+      <div className="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Quantity to make</th>
+              <th>Needed by</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {lines.map((l, i) => (
+              <tr key={i}>
+                <td>
+                  <RefPicker
+                    id={`pp-item-${i}`}
+                    kind="item"
+                    value={l.itemId}
+                    label={l.itemLabel}
+                    onChange={(x, lab) => set(i, { itemId: x, itemLabel: lab })}
+                  />
+                </td>
+                <td>
+                  <input
+                    aria-label={`Planned quantity ${i + 1}`}
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={l.plannedQty}
+                    onChange={(e) => set(i, { plannedQty: e.target.value })}
+                  />
+                </td>
+                <td>
+                  <input
+                    aria-label={`Needed by ${i + 1}`}
+                    type="date"
+                    value={l.requiredDate}
+                    onChange={(e) => set(i, { requiredDate: e.target.value })}
+                  />
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() =>
+                      setLines((o) => (o.length > 1 ? o.filter((_, j) => j !== i) : o))
+                    }
+                  >
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <button
+        type="button"
+        className="btn"
+        onClick={() =>
+          setLines((o) => [
+            ...o,
+            { itemId: '', itemLabel: '', plannedQty: '', requiredDate: todayIso() },
+          ])
+        }
+      >
+        + Add line
+      </button>
+    </Dialog>
+  );
+}
+
+function PlanView({
   id,
   actions,
   onClose,
@@ -42,564 +245,368 @@ function RunPanel({
   onClose: () => void;
   onChanged: () => void;
 }) {
-  const toast = useToast();
-  const doc = useLoad(() => mget(`/mrp/${id}`), [id]);
-  const wh = useWarehouses();
-  const [fg, setFg] = useState('');
-  const [rm, setRm] = useState('');
-  const [msg, setMsg] = useState('');
-  const run = doc.data;
-  const lines = (run?.lines as Row[] | undefined) ?? [];
-  const needsWarehouses = lines.some((l) => s(l.action) === 'PRODUCE' && !l.orderId);
-  const act = (fn: () => Promise<unknown>, ok: string) => {
-    setMsg('');
-    fn()
-      .then(() => {
-        toast(ok);
-        doc.reload();
-        onChanged();
-      })
-      .catch((e: unknown) => setMsg(toUiError(e).message));
+  const doc = useLoad(() => mget(`/production-plans/${id}`), [id]);
+  const p = doc.data;
+  const st = s(p?.status);
+  const ver = Number(p?.version ?? 0);
+  const after = () => {
+    doc.reload();
+    onChanged();
   };
   return (
-    <Modal
-      title={
-        run ? `${s(run.number)} · ${dmy(s(run.fromDate))} to ${dmy(s(run.toDate))}` : 'MRP run'
-      }
-      sub={run ? `${s(run.status)}${run.prNumber ? ` · requisition ${s(run.prNumber)}` : ''}` : ''}
+    <Dialog
+      title={p ? s(p.number) : 'Production plan'}
+      sub={p ? `${st} · horizon ${s(p.horizonDays)} days` : ''}
       onClose={onClose}
+      error={doc.error}
       footer={
-        run ? (
+        p ? (
           <>
-            {actions.print ? (
+            {st === 'DRAFT' && actions.edit ? (
               <>
-                <FileButton path={`/mrp/${id}/print`} name="mrp.pdf" label="Print" />
-                <FileButton path={`/mrp/${id}/export`} name="mfg-mrp.xlsx" label="Export Excel" />
+                <Act
+                  label="Pull demand from sales orders"
+                  run={() => mpost(`/production-plans/${id}/pull-demand`)}
+                  done={after}
+                />
+                <Act
+                  label="Send for approval"
+                  run={() => mpost(`/production-plans/${id}/submit`, {}, ver)}
+                  done={after}
+                />
               </>
             ) : null}
-            {s(run.status) === 'Draft' ? (
+            <Act
+              label="Check capacity"
+              run={() => mpost(`/production-plans/${id}/check-capacity`)}
+              done={after}
+            />
+            <Act
+              label="Check material"
+              run={() => mpost(`/production-plans/${id}/check-material`)}
+              done={after}
+            />
+            {(st === 'DRAFT' || st === 'SUBMITTED') && actions.approve ? (
+              <Act
+                label="Release plan"
+                primary
+                run={() => mpost(`/production-plans/${id}/release`, {}, ver)}
+                done={after}
+              />
+            ) : null}
+            {st === 'RELEASED' ? (
               <>
+                <Act
+                  label="Run MRP on this plan"
+                  primary
+                  run={() => mpost(`/production-plans/${id}/run-mrp`)}
+                  ok="MRP started: see the MRP page"
+                  done={after}
+                />
                 {actions.approve ? (
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={() =>
-                      act(
-                        () =>
-                          mpost(
-                            `/mrp/${id}/apply`,
-                            {
-                              ...(fg ? { warehouseId: fg } : {}),
-                              ...(rm ? { rmWarehouseId: rm } : {}),
-                            },
-                            Number(run.version),
-                          ),
-                        'Requisition and planned orders created',
-                      )
-                    }
-                  >
-                    Create requisition and planned orders
-                  </button>
-                ) : null}
-                {actions.cancel ? (
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() =>
-                      act(
-                        () => mpost(`/mrp/${id}/cancel`, {}, Number(run.version)),
-                        'Run cancelled',
-                      )
-                    }
-                  >
-                    Cancel run
-                  </button>
+                  <Act
+                    label="Close plan"
+                    run={() => mpost(`/production-plans/${id}/close`, {}, ver)}
+                    done={after}
+                  />
                 ) : null}
               </>
             ) : null}
           </>
-        ) : undefined
+        ) : null
       }
     >
-      <ErrorBox message={msg || doc.error} />
-      {run && s(run.status) === 'Draft' && needsWarehouses && actions.approve ? (
-        <div className="form-grid">
-          <div className="field">
-            <label htmlFor="mrp-fg">Finished goods warehouse (new orders)</label>
-            <OptionSelect id="mrp-fg" value={fg} options={wh.data ?? []} onChange={setFg} />
-          </div>
-          <div className="field">
-            <label htmlFor="mrp-rm">Raw material warehouse (new orders)</label>
-            <OptionSelect id="mrp-rm" value={rm} options={wh.data ?? []} onChange={setRm} />
-          </div>
-        </div>
-      ) : null}
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Level</th>
-              <th>Item</th>
-              <th>Period from</th>
-              <th>Action</th>
-              <th>Gross need</th>
-              <th>In stock</th>
-              <th>Coming</th>
-              <th>To arrange</th>
-              <th>Needed by</th>
-              <th>Why</th>
-            </tr>
-          </thead>
-          <tbody>
-            {run && lines.length === 0 ? <Empty cols={10}>Nothing to plan.</Empty> : null}
-            {lines.map((l) => (
-              <tr key={s(l.id)}>
-                <td>{s(l.level)}</td>
-                <td>
-                  {s(l.itemCode)} · {s(l.itemName)}
-                </td>
-                <td>{l.bucketStart ? dmy(s(l.bucketStart)) : '—'}</td>
-                <td>
-                  <Pill
-                    tone={
-                      s(l.action) === 'NONE'
-                        ? 'approved'
-                        : s(l.action) === 'BUY'
-                          ? 'rejected'
-                          : 'pending'
-                    }
-                  >
-                    {ACTION_TEXT[s(l.action)] ?? s(l.action)}
-                  </Pill>
-                  {l.orderNumber ? <div className="hint">{s(l.orderNumber)}</div> : null}
-                </td>
-                <td>{s(l.grossQty)}</td>
-                <td>{s(l.onHandQty)}</td>
-                <td>{s(l.scheduledQty)}</td>
-                <td>
-                  <b>{s(l.netQty)}</b> {s(l.uom)}
-                </td>
-                <td>{l.needDate ? dmy(s(l.needDate)) : '—'}</td>
-                <td className="hint">
-                  {((l.sources as Row[]) ?? []).slice(0, 3).map((x, i) => (
-                    <div key={i}>
-                      {SOURCE_TEXT[s(x.type)] ?? s(x.type)} {s(x.ref)}: {s(x.qty)}
-                    </div>
-                  ))}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Modal>
+      {p ? (
+        <Grid
+          rows={(p.lines as Row[] | undefined) ?? []}
+          rowKey={(r) => s(r.id)}
+          cols={[
+            { h: 'Item', r: (r) => `${s(r.itemCode)} · ${s(r.itemName)}` },
+            { h: 'Source', r: (r) => s(r.soNumber) || s(r.demandSource) },
+            { h: 'Demand', r: (r) => num(r.demandQty) },
+            { h: 'To make', r: (r) => num(r.plannedQty) },
+            { h: 'Needed by', r: (r) => dmy(s(r.requiredDate)) },
+            {
+              h: 'Capacity load %',
+              r: (r) =>
+                r.capacityLoadPct === null || r.capacityLoadPct === undefined
+                  ? '—'
+                  : num(r.capacityLoadPct),
+            },
+            {
+              h: 'Material available %',
+              r: (r) =>
+                r.materialAvailPct === null || r.materialAvailPct === undefined
+                  ? '—'
+                  : num(r.materialAvailPct),
+            },
+          ]}
+        />
+      ) : (
+        <p>Loading…</p>
+      )}
+    </Dialog>
   );
 }
 
+// ------------------------------------------------------------------------------------------------ MRP
+const TYPE_TEXT: Record<string, string> = { MAKE: 'Make', BUY: 'Buy' };
+
 export function MrpPage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
-  const [open, setOpen] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
-  const list = useLoad(() => mlist('/mrp'), []);
-  const today = todayIso();
+  const [view, setView] = useState<string | null>(null);
+  const [days, setDays] = useState('30');
+  const [msg, setMsg] = useState('');
+  const list = useLoad(() => mlist('/mrp-runs'), []);
+  const live = (list.data?.rows ?? []).some((r) => ['QUEUED', 'RUNNING'].includes(s(r.status)));
+  useEffect(() => {
+    if (!live) return;
+    const t = setInterval(() => list.reload(), 3000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload is stable enough for a poll
+  }, [live]);
   return (
     <>
       <PageHead
         title="Material Requirement Planning"
-        sub="Demand is the approved sales orders still to dispatch plus the forecasts. The BOM explodes level by level, and stock and open orders are netted off. Nothing is created until you confirm."
+        sub="MRP nets demand against stock, open orders, safety stock and lead time, then suggests what to make and what to buy. Each suggestion shows the demand behind it."
       />
       <div className="toolbar">
-        {actions.add ? (
-          <button type="button" className="btn primary" onClick={() => setAdding(true)}>
-            + New MRP run
-          </button>
+        {actions.post ? (
+          <>
+            <label htmlFor="mrp-days">Look ahead (days)</label>
+            <input
+              id="mrp-days"
+              type="number"
+              min={1}
+              max={365}
+              value={days}
+              onChange={(e) => setDays(e.target.value)}
+            />
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => {
+                setMsg('');
+                mpost('/mrp-runs', { horizonDays: Number(days) })
+                  .then(() => {
+                    toast('MRP started');
+                    list.reload();
+                  })
+                  .catch((e: unknown) => setMsg(toUiError(e).message));
+              }}
+            >
+              Run MRP
+            </button>
+          </>
         ) : null}
       </div>
-      <ErrorBox message={list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Run</th>
-              <th>Range</th>
-              <th>To make</th>
-              <th>To buy</th>
-              <th>Requisition</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.data && list.data.rows.length === 0 && !list.loading ? (
-              <Empty cols={6}>No MRP runs yet.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((r) => (
-              <tr key={s(r.id)}>
-                <td>
-                  <button type="button" className="link" onClick={() => setOpen(s(r.id))}>
-                    {s(r.number)}
-                  </button>
-                </td>
-                <td>
-                  {dmy(s(r.fromDate))} – {dmy(s(r.toDate))}
-                </td>
-                <td>{s(r.produceLines)}</td>
-                <td>{s(r.buyLines)}</td>
-                <td>{s(r.prNumber) || '—'}</td>
-                <td>
-                  <Pill tone={ORDER_TONE[s(r.status)]}>{s(r.status)}</Pill>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {open ? (
-        <RunPanel
-          id={open}
-          actions={actions}
-          onClose={() => setOpen(null)}
-          onChanged={list.reload}
-        />
-      ) : null}
-      {adding ? (
-        <FormModal
-          title="New MRP run"
-          sub="Sales orders due up to the end date are included (late ones too). Forecast months inside the range are added."
-          fields={[
-            { key: 'fromDate', label: 'From', type: 'date', required: true },
-            { key: 'toDate', label: 'To', type: 'date', required: true },
-            { key: 'includeForecast', label: 'Include forecasts', type: 'check' },
-            {
-              key: 'bucket',
-              label: 'Plan by',
-              type: 'select',
-              options: [
-                { id: 'DAY', label: 'Day' },
-                { id: 'WEEK', label: 'Week (Monday to Sunday)' },
-                { id: 'MONTH', label: 'Month' },
-                { id: 'RANGE', label: 'The whole range at once' },
-              ],
-            },
-            { key: 'notes', label: 'Notes' },
-          ]}
-          initial={{
-            fromDate: today,
-            toDate: addDays(today, 30),
-            includeForecast: true,
-            bucket: 'WEEK',
-          }}
-          onClose={() => setAdding(false)}
-          onSubmit={async (v) => {
-            const { includeForecast, ...rest } = v;
-            const r = await mpost('/mrp', { ...rest, includeForecast: includeForecast === 'true' });
-            toast(`Created ${s(r.number)}`);
-            setAdding(false);
-            list.reload();
-            setOpen(s(r.id));
-          }}
-        />
-      ) : null}
+      <ErrorBox message={msg || list.error} />
+      <Grid
+        rows={list.data?.rows ?? []}
+        loading={list.loading}
+        empty="No MRP runs yet."
+        rowKey={(r) => s(r.id)}
+        cols={[
+          { h: 'Run', r: (r) => s(r.number) },
+          { h: 'Started', r: (r) => dmy(s(r.createdAt).slice(0, 10)) },
+          { h: 'Horizon', r: (r) => `${s(r.horizonDays)} days` },
+          { h: 'Make', r: (r) => s(r.makeCount) },
+          { h: 'Buy', r: (r) => s(r.buyCount) },
+          { h: 'Exceptions', r: (r) => s(r.exceptionCount) },
+          { h: 'Status', r: (r) => <Pill tone={ORDER_TONE[s(r.status)]}>{s(r.status)}</Pill> },
+          {
+            h: '',
+            r: (r) => (
+              <button type="button" className="btn" onClick={() => setView(s(r.id))}>
+                Open
+              </button>
+            ),
+          },
+        ]}
+      />
+      {view ? <RunView id={view} actions={actions} onClose={() => setView(null)} /> : null}
     </>
   );
 }
 
-// ------------------------------------------------------------------------------------------------ daily board
-const QTY_COLS: [string, string][] = [
-  ['lineQty', 'Line qty'],
-  ['unit2Qty', 'Unit 2 qty'],
-  ['coatingQty', 'Coating qty'],
-  ['dispatchQty', 'Dispatch qty'],
-];
-
-const WEEKDAYS: [string, string][] = [
-  ['1', 'Mon'],
-  ['2', 'Tue'],
-  ['3', 'Wed'],
-  ['4', 'Thu'],
-  ['5', 'Fri'],
-  ['6', 'Sat'],
-  ['0', 'Sun'],
-];
-
-/** Where released orders land on the work centers: forward loading by free minutes per day, no holiday calendar. */
-function CapacityTab() {
-  const [from, setFrom] = useState(todayIso());
-  const [days, setDays] = useState<string[]>(['0', '1', '2', '3', '4', '5', '6']);
-  const key = days.join(',');
-  const data = useLoad(
-    () => (days.length ? mget('/capacity', { from, workDays: key }) : Promise.resolve(null)),
-    [from, key],
-  );
-  const orders = (data.data?.orders as Row[] | undefined) ?? [];
-  const load = (data.data?.days as Row[] | undefined) ?? [];
+function RunView({
+  id,
+  actions,
+  onClose,
+}: {
+  id: string;
+  actions: ActionSet;
+  onClose: () => void;
+}) {
+  const [tab, setTab] = useState<'sug' | 'buckets' | 'exc'>('sug');
+  const [wh, setWh] = useState('');
+  const [rm, setRm] = useState('');
+  const [picked, setPicked] = useState<string[]>([]);
+  const whs = useWarehouses();
+  const run = useLoad(() => mget(`/mrp-runs/${id}`), [id]);
+  const sug = useLoad(() => mget<Row[]>(`/mrp-runs/${id}/suggestions`), [id]);
+  const buckets = useLoad(() => mget<Row[]>(`/mrp-runs/${id}/buckets`), [id]);
+  const exc = useLoad(() => mget<Row[]>(`/mrp-runs/${id}/exceptions`), [id]);
+  const where = { ...(wh ? { warehouseId: wh } : {}), ...(rm ? { rmWarehouseId: rm } : {}) };
+  const r = run.data;
+  const open = (sug.data ?? []).filter((x) => ['OPEN', 'FIRMED'].includes(s(x.status)));
   return (
-    <>
-      <div className="toolbar">
-        <label htmlFor="cap-from">From</label>
-        <input id="cap-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-        <span>Working days:</span>
-        {WEEKDAYS.map(([k, label]) => (
-          <label key={k}>
-            <input
-              type="checkbox"
-              checked={days.includes(k)}
-              onChange={(e) =>
-                setDays((d) => (e.target.checked ? [...d, k] : d.filter((x) => x !== k)))
-              }
-            />{' '}
-            {label}
-          </label>
-        ))}
-      </div>
-      <p className="hint">
-        Each operation takes the free minutes of its work center day by day, and an order&apos;s
-        operations follow one another. Holidays are not known yet (the calendars come later): untick
-        the days that are not worked.
-      </p>
-      {days.length === 0 ? <ErrorBox message="Choose at least one working day." /> : null}
-      <ErrorBox message={data.error} />
-      <h4>Orders</h4>
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Order</th>
-              <th>Due</th>
-              <th>Planned to finish</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {data.data && orders.length === 0 ? (
-              <Empty cols={4}>No released order with work left.</Empty>
-            ) : null}
-            {orders.map((o) => (
-              <tr key={s(o.orderId)}>
-                <td>{s(o.orderNo)}</td>
-                <td>{dmy(s(o.due))}</td>
-                <td>{o.finish ? dmy(s(o.finish)) : 'Not within the horizon'}</td>
-                <td>
-                  {o.late === true ? (
-                    <Pill tone="rejected">Late</Pill>
-                  ) : (
-                    <Pill tone="approved">On time</Pill>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <h4>Load per work center</h4>
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Day</th>
-              <th>Work center</th>
-              <th>Minutes planned</th>
-              <th>Minutes available</th>
-              <th>Load</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.data && load.length === 0 ? <Empty cols={5}>Nothing is planned.</Empty> : null}
-            {load.map((d) => (
-              <tr key={`${s(d.day)}-${s(d.workCentreId)}`}>
-                <td>{dmy(s(d.day))}</td>
-                <td>{s(d.workCentre)}</td>
-                <td>{s(d.load)}</td>
-                <td>{s(d.capacity)}</td>
-                <td>
-                  {Number(d.capacity) > 0
-                    ? `${Math.round((Number(d.load) / Number(d.capacity)) * 100)} %`
-                    : '—'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
-}
-
-export function BoardPage({ actions }: { actions: ActionSet }) {
-  const [tab, setTab] = useState<'board' | 'capacity'>('board');
-  return (
-    <>
+    <Dialog
+      title={r ? `MRP ${s(r.number)}` : 'MRP run'}
+      sub={r ? `${s(r.status)}${r.error ? ` · ${s(r.error)}` : ''}` : ''}
+      onClose={onClose}
+      error={run.error || sug.error}
+      footer={
+        <>
+          {actions.print ? (
+            <>
+              <FileButton path={`/mrp-runs/${id}/export`} name="mrp.xlsx" label="Excel" />
+              <FileButton path={`/mrp-runs/${id}/print`} name="mrp.pdf" label="Print" />
+            </>
+          ) : null}
+          {actions.approve && picked.length ? (
+            <Act
+              label={`Convert ${picked.length} selected`}
+              primary
+              run={() => mpost('/mrp-suggestions/convert-bulk', { ids: picked, ...where })}
+              done={() => {
+                setPicked([]);
+                sug.reload();
+              }}
+            />
+          ) : null}
+        </>
+      }
+    >
       <Tabs
         value={tab}
         onChange={setTab}
         tabs={[
-          ['board', 'Daily board'],
-          ['capacity', 'Capacity'],
+          ['sug', 'Suggestions'],
+          ['buckets', 'Time buckets'],
+          ['exc', 'Exceptions'],
         ]}
       />
-      {tab === 'board' ? <DailyBoard actions={actions} /> : <CapacityTab />}
-    </>
-  );
-}
-
-function DailyBoard({ actions }: { actions: ActionSet }) {
-  const toast = useToast();
-  const [from, setFrom] = useState(todayIso());
-  const [to, setTo] = useState(addDays(todayIso(), 7));
-  const [edit, setEdit] = useState<Row | 'new' | null>(null);
-  const [msg, setMsg] = useState('');
-  const list = useLoad(() => mlist('/plan', { from, to }), [from, to]);
-  const totals = (list.data?.meta.totals ?? {}) as Record<string, string>;
-  const cur = edit && edit !== 'new' ? edit : null;
-  return (
-    <>
-      <PageHead
-        title="Production Planning"
-        sub="The daily board: per day, the customer PO, delivery date and what each stage is to make, with the owner of every stage."
-      />
-      <div className="toolbar">
-        <label htmlFor="pl-from">From</label>
-        <input id="pl-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-        <label htmlFor="pl-to">To</label>
-        <input id="pl-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-        {actions.add ? (
-          <button type="button" className="btn primary" onClick={() => setEdit('new')}>
-            + Add to the board
-          </button>
-        ) : null}
-        {actions.print ? (
-          <FileButton
-            path={`/export/plan?from=${from}&to=${to}`}
-            name="mfg-plan.xlsx"
-            label="Export Excel"
+      {tab === 'sug' ? (
+        <>
+          <div className="toolbar">
+            <label htmlFor="mrp-wh">Finished goods store</label>
+            <OptionSelect id="mrp-wh" value={wh} options={whs.data ?? []} onChange={setWh} />
+            <label htmlFor="mrp-rm">Raw material store</label>
+            <OptionSelect id="mrp-rm" value={rm} options={whs.data ?? []} onChange={setRm} />
+          </div>
+          <Grid
+            rows={sug.data ?? []}
+            loading={sug.loading}
+            empty="Nothing to make or buy: demand is covered."
+            rowKey={(x) => s(x.id)}
+            cols={[
+              {
+                h: '',
+                r: (x) =>
+                  ['OPEN', 'FIRMED'].includes(s(x.status)) && actions.approve ? (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${s(x.itemCode)}`}
+                      checked={picked.includes(s(x.id))}
+                      onChange={(e) =>
+                        setPicked((o) =>
+                          e.target.checked ? [...o, s(x.id)] : o.filter((i) => i !== s(x.id)),
+                        )
+                      }
+                    />
+                  ) : null,
+              },
+              { h: 'Item', r: (x) => `${s(x.itemCode)} · ${s(x.itemName)}` },
+              { h: 'Action', r: (x) => TYPE_TEXT[s(x.type)] ?? s(x.type) },
+              { h: 'Quantity', r: (x) => `${num(x.qty)} ${s(x.uom)}` },
+              {
+                h: 'Start by',
+                r: (x) => (x.releaseDate ? dmy(s(x.releaseDate).slice(0, 10)) : '—'),
+              },
+              { h: 'Needed by', r: (x) => dmy(s(x.dueDate).slice(0, 10)) },
+              {
+                h: 'Why (pegging)',
+                r: (x) =>
+                  ((x.pegging as Row[] | null) ?? [])
+                    .map((p) => `${s(p.type)} ${s(p.ref)}: ${num(p.qty)}`)
+                    .join('; ') || '—',
+              },
+              { h: 'Status', r: (x) => <Pill tone={ORDER_TONE[s(x.status)]}>{s(x.status)}</Pill> },
+              {
+                h: '',
+                r: (x) =>
+                  ['OPEN', 'FIRMED'].includes(s(x.status)) ? (
+                    <>
+                      {s(x.status) === 'OPEN' && actions.edit ? (
+                        <Act
+                          label="Firm"
+                          run={() => mpost(`/mrp-suggestions/${s(x.id)}/firm`)}
+                          done={() => sug.reload()}
+                        />
+                      ) : null}
+                      {actions.edit ? (
+                        <Act
+                          label="Ignore"
+                          run={() => mpost(`/mrp-suggestions/${s(x.id)}/ignore`)}
+                          done={() => sug.reload()}
+                        />
+                      ) : null}
+                      {actions.approve ? (
+                        <Act
+                          label="Convert"
+                          primary
+                          run={() => mpost(`/mrp-suggestions/${s(x.id)}/convert`, where)}
+                          ok="Converted"
+                          done={() => sug.reload()}
+                        />
+                      ) : null}
+                    </>
+                  ) : s(x.convertedDocType) ? (
+                    s(x.convertedDocType)
+                  ) : null,
+              },
+            ]}
           />
-        ) : null}
-      </div>
-      <ErrorBox message={msg || list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Customer PO</th>
-              <th>Item</th>
-              <th>Delivery</th>
-              {QTY_COLS.map(([, l]) => (
-                <th key={l}>{l}</th>
-              ))}
-              <th>Owners (line / unit 2 / coating / dispatch)</th>
-              <th>Remark</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {list.data && list.data.rows.length === 0 && !list.loading ? (
-              <Empty cols={11}>Nothing planned in this range.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((r) => (
-              <tr key={s(r.id)}>
-                <td>{dmy(s(r.planDate))}</td>
-                <td>{s(r.customerPoNo)}</td>
-                <td>{r.itemName ? `${s(r.itemCode)} · ${s(r.itemName)}` : '—'}</td>
-                <td>{r.deliveryDate ? dmy(s(r.deliveryDate)) : '—'}</td>
-                {QTY_COLS.map(([k]) => (
-                  <td key={k}>{s(r[k])}</td>
-                ))}
-                <td>
-                  {[r.ownerLine, r.ownerUnit2, r.ownerCoating, r.ownerDispatch]
-                    .map((x) => s(x) || '–')
-                    .join(' / ')}
-                </td>
-                <td>{s(r.remark)}</td>
-                <td>
-                  {actions.edit ? (
-                    <button type="button" className="btn" onClick={() => setEdit(r)}>
-                      Edit
-                    </button>
-                  ) : null}
-                  {actions.delete ? (
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() => {
-                        setMsg('');
-                        mdelete(`/plan/${s(r.id)}`)
-                          .then(() => {
-                            toast('Removed');
-                            list.reload();
-                          })
-                          .catch((e: unknown) => setMsg(toUiError(e).message));
-                      }}
-                    >
-                      Remove
-                    </button>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-            {list.data && list.data.rows.length ? (
-              <tr>
-                <td colSpan={4}>
-                  <b>Total</b>
-                </td>
-                {QTY_COLS.map(([k]) => (
-                  <td key={k}>
-                    <b>{s(totals[k])}</b>
-                  </td>
-                ))}
-                <td colSpan={3} />
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
-      {edit ? (
-        <FormModal
-          title={cur ? 'Edit the board row' : 'Add to the board'}
-          fields={[
-            { key: 'planDate', label: 'Date', type: 'date', required: true },
-            { key: 'customerPoNo', label: 'Customer PO' },
-            ...(cur ? [] : [{ key: 'itemId', label: 'Item', type: 'item' as const }]),
-            { key: 'deliveryDate', label: 'Delivery date', type: 'date' },
-            { key: 'lineQty', label: 'Line qty', type: 'number' },
-            { key: 'unit2Qty', label: 'Unit 2 qty', type: 'number' },
-            { key: 'coatingQty', label: 'Coating qty', type: 'number' },
-            { key: 'dispatchQty', label: 'Dispatch qty', type: 'number' },
-            { key: 'ownerLine', label: 'Line owner' },
-            { key: 'ownerUnit2', label: 'Unit 2 owner' },
-            { key: 'ownerCoating', label: 'Coating owner' },
-            { key: 'ownerDispatch', label: 'Dispatch owner' },
-            { key: 'remark', label: 'Remark', type: 'textarea' },
+          {open.length === 0 ? null : (
+            <p className="hint">
+              Buy suggestions become one draft requisition; make suggestions become draft production
+              orders.
+            </p>
+          )}
+        </>
+      ) : null}
+      {tab === 'buckets' ? (
+        <Grid
+          rows={buckets.data ?? []}
+          loading={buckets.loading}
+          empty="No data yet."
+          rowKey={(b) => s(b.id)}
+          cols={[
+            { h: 'Item', r: (b) => `${s(b.itemCode)} · ${s(b.itemName)}` },
+            { h: 'Period', r: (b) => dmy(s(b.bucketDate).slice(0, 10)) },
+            { h: 'Gross need', r: (b) => num(b.gross) },
+            { h: 'Coming in', r: (b) => num(b.scheduledReceipts) },
+            { h: 'Projected on hand', r: (b) => num(b.projectedOnHand) },
+            { h: 'Net need', r: (b) => num(b.net) },
+            { h: 'Planned order', r: (b) => num(b.plannedReceipt) },
           ]}
-          initial={
-            cur
-              ? Object.fromEntries(
-                  [
-                    'planDate',
-                    'customerPoNo',
-                    'deliveryDate',
-                    'lineQty',
-                    'unit2Qty',
-                    'coatingQty',
-                    'dispatchQty',
-                    'ownerLine',
-                    'ownerUnit2',
-                    'ownerCoating',
-                    'ownerDispatch',
-                    'remark',
-                  ].map((k) => [k, k.endsWith('Date') ? s(cur[k]).slice(0, 10) : s(cur[k])]),
-                )
-              : { planDate: from }
-          }
-          onClose={() => setEdit(null)}
-          onSubmit={async (v) => {
-            if (cur) await mpatch(`/plan/${s(cur.id)}`, Number(cur.version), v);
-            else await mpost('/plan', v);
-            toast('Saved');
-            setEdit(null);
-            list.reload();
-          }}
         />
       ) : null}
-    </>
+      {tab === 'exc' ? (
+        <Grid
+          rows={exc.data ?? []}
+          loading={exc.loading}
+          empty="No exceptions."
+          rowKey={(e) => s(e.id)}
+          cols={[
+            { h: 'Item', r: (e) => `${s(e.itemCode)} ${s(e.itemName)}` },
+            { h: 'Problem', r: (e) => s(e.code).replace(/_/g, ' ').toLowerCase() },
+            { h: 'Detail', r: (e) => s(e.message) },
+          ]}
+        />
+      ) : null}
+    </Dialog>
   );
 }

@@ -22,7 +22,8 @@ export type CounterKey =
   | 'GRIR'
   | 'CONSUMPTION_EXPENSE'
   | 'STOCK_ADJUSTMENT'
-  | 'INTER_UNIT_CLEARING';
+  | 'INTER_UNIT_CLEARING'
+  | 'INVENTORY_WIP';
 
 interface Leg {
   unitId: string;

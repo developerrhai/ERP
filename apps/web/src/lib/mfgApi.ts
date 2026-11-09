@@ -56,6 +56,9 @@ export async function mpost<T = Row>(
 export async function mpatch<T = Row>(path: string, version: number, body: unknown): Promise<T> {
   return (await request<T>(`/mfg${path}`, { method: 'PATCH', body, headers: ifm(version) })).data;
 }
+export async function mput<T = Row>(path: string, body: unknown): Promise<T> {
+  return (await request<T>(`/mfg${path}`, { method: 'PUT', body })).data;
+}
 export async function mdelete(path: string): Promise<void> {
   await request<unknown>(`/mfg${path}`, { method: 'DELETE' });
 }
@@ -67,7 +70,7 @@ export async function lookupWarehouseOptions(): Promise<Option[]> {
   return r.data.map((x) => ({ id: x.id, label: `${x.code} · ${x.name}` }));
 }
 export async function lookupWorkCentreOptions(): Promise<Option[]> {
-  const r = await request<Row[]>('/mfg/work-centres?status=ACTIVE&size=200');
+  const r = await request<Row[]>('/mfg/work-centers?status=ACTIVE&size=200');
   return r.data.map((x) => ({ id: String(x.id), label: `${String(x.code)} · ${String(x.name)}` }));
 }
 

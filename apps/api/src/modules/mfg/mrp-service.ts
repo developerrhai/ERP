@@ -1,47 +1,82 @@
-// Phase 13 MRP. Demand = approved sales-order lines still to dispatch (delivery date up to the end of the range) plus the
-// independent monthly forecasts. Supply = unrestricted stock of the unit, open purchase-order lines, open requisition
-// lines (so a second run does not ask twice) and open production orders. The BOM explodes level by level (logic.planMrp).
-// A run is a Draft proposal; Apply raises the Purchase Requisition (Phase 9 gateway) and the Planned production orders.
-// Lot-for-lot: no lead time, safety stock or lot size is applied because the spec names none.
-import { prisma } from '../../core/db/prisma';
+// Phase 13 v2 MRP (spec section 5). A run is queued and executed by the background job mfg.mrp.run, one at a time per unit.
+// Items are processed by ascending low-level code. Per bucket: POH = previous POH + receipts - gross; below the safety stock the
+// shortfall is a net requirement, ordered in lots (lot-for-lot / fixed / EOQ with minimum and multiple), released one lead time
+// before the due date. Gross demand = open sales-order quantity + plan lines + the parents' planned releases x BOM + what open
+// production orders still have to draw. A re-run replaces the OPEN suggestions; FIRMED ones count as scheduled receipts.
 import { Errors } from '../../core/http/errors';
+import { QUEUES, enqueue, jobsRunning, registerJobHandler } from '../../core/jobs';
+import { logger } from '../../core/logger';
+import { prisma } from '../../core/db/prisma';
+import type { Db } from '../../core/db/prisma';
 import { NumberingService } from '../../core/numbering';
+import { notificationService } from '../notifications/service';
 import { PurchaseRequestGateway } from '../procurement/reports-service';
 import {
   TX,
   audit,
-  checkVersion,
   departmentOf,
   exec,
   fyOfCaller,
   insertRow,
   norm,
+  pageRecipients,
   query,
   scopeSql,
+  todayIst,
 } from '../procurement/core';
 import type { Row } from '../procurement/core';
 import type { Caller } from '../records/service';
-import { D, planMrp } from './logic';
-import type { Demand } from './logic';
-import { activeBoms, dateOf, S, oneUnit } from './master-service';
+import { mfgError, releasedBoms } from './bom-service';
+import { D, explode, lowLevelCodes, mrpNet } from './calc';
+import type { BucketDemand, Planning } from './calc';
+import { bucketStart } from './logic';
+import { S, dateOf, oneUnit } from './master-service';
 import { orderService } from './order-service';
 
-const monthsBetween = (from: string, to: string): string[] => {
-  const out: string[] = [];
-  let y = Number(from.slice(0, 4));
-  let m = Number(from.slice(5, 7));
-  const ey = Number(to.slice(0, 4));
-  const em = Number(to.slice(5, 7));
-  while (y < ey || (y === ey && m <= em)) {
-    out.push(`${y}-${String(m).padStart(2, '0')}`);
-    m += 1;
-    if (m > 12) {
-      m = 1;
-      y += 1;
-    }
-  }
-  return out;
-};
+interface Demand {
+  bucket: string;
+  qty: string;
+  type: 'SO_LINE' | 'PLAN_LINE' | 'PARENT_SUGGESTION' | 'ORDER_REQUIREMENT';
+  id: string | null;
+  ref: string;
+}
+
+async function suggestionOf(caller: Caller, pageId: string, id: string): Promise<Row> {
+  const sc = await scopeSql(caller, pageId, 'r');
+  const s = (
+    await query(
+      prisma,
+      `SELECT s.* FROM mfg_mrp_suggestions s JOIN mfg_mrp_runs r ON r.id=s.run_id WHERE s.id=$${sc.args.length + 1}::uuid AND ${sc.sql}`,
+      ...sc.args,
+      id,
+    )
+  )[0];
+  if (!s) throw Errors.notFound('Suggestion not found.');
+  return s;
+}
+/** A run that never finished (the server stopped, or it could not be queued) must not block the unit for ever. */
+async function sweepStuck(db: Db, unitId: string): Promise<void> {
+  await exec(
+    db,
+    `UPDATE mfg_mrp_runs SET status='FAILED', error='Timed out: the run did not finish.', finished_at=now()
+      WHERE unit_id=$1::uuid AND status IN ('QUEUED','RUNNING') AND COALESCE(started_at, created_at) < now() - interval '30 minutes'`,
+    unitId,
+  );
+}
+
+async function notRunning(unitId: string): Promise<void> {
+  await sweepStuck(prisma, unitId);
+  if (
+    (
+      await query(
+        prisma,
+        `SELECT 1 FROM mfg_mrp_runs WHERE unit_id=$1::uuid AND status IN ('QUEUED','RUNNING')`,
+        unitId,
+      )
+    ).length
+  )
+    throw mfgError('MRP_ALREADY_RUNNING', 'MRP is already running for this unit.', undefined, 409);
+}
 
 export const mrpService = {
   async list(
@@ -63,11 +98,10 @@ export const mrpService = {
     );
     const rows = await query(
       prisma,
-      `SELECT t.*, (SELECT count(*)::int FROM mfg_mrp_lines l WHERE l.run_id=t.id AND l.action='PRODUCE') AS produce_lines,
-              (SELECT count(*)::int FROM mfg_mrp_lines l WHERE l.run_id=t.id AND l.action='BUY') AS buy_lines,
-              p.number AS pr_number
-         FROM mfg_mrp_runs t LEFT JOIN purchase_requisitions p ON p.id=t.pr_id
-        WHERE ${w} ORDER BY t.created_at DESC LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
+      `SELECT t.*, (SELECT count(*)::int FROM mfg_mrp_suggestions s WHERE s.run_id=t.id AND s.type='MAKE') AS make_count,
+              (SELECT count(*)::int FROM mfg_mrp_suggestions s WHERE s.run_id=t.id AND s.type='BUY') AS buy_count,
+              (SELECT count(*)::int FROM mfg_mrp_exceptions e WHERE e.run_id=t.id) AS exception_count
+         FROM mfg_mrp_runs t WHERE ${w} ORDER BY t.created_at DESC LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
       ...args,
     );
     return { rows: rows.map((r) => norm<Row>(r)), total };
@@ -78,395 +112,673 @@ export const mrpService = {
     const h = (
       await query(
         prisma,
-        `SELECT t.*, p.number AS pr_number FROM mfg_mrp_runs t LEFT JOIN purchase_requisitions p ON p.id=t.pr_id
-          WHERE t.id=$${sc.args.length + 1}::uuid AND ${sc.sql}`,
+        `SELECT t.* FROM mfg_mrp_runs t WHERE t.id=$${sc.args.length + 1}::uuid AND ${sc.sql}`,
         ...sc.args,
         id,
       )
     )[0];
     if (!h) throw Errors.notFound('MRP run not found.');
-    const lines = await query(
-      prisma,
-      `SELECT l.id::text, l.item_id::text, l.level, l.bucket_start, l.action, l.gross_qty, l.on_hand_qty, l.scheduled_qty, l.net_qty, l.need_date, l.sources,
-              l.order_id::text, i.code AS item_code, i.name AS item_name, i.base_uom AS uom, o.number AS order_number
-         FROM mfg_mrp_lines l JOIN items i ON i.id=l.item_id LEFT JOIN mfg_orders o ON o.id=l.order_id
-        WHERE l.run_id=$1::uuid ORDER BY l.level, i.code, l.bucket_start`,
-      id,
-    );
-    return { ...norm<Row>(h), lines: lines.map((r) => norm<Row>(r)) };
+    return norm<Row>(h);
   },
 
-  /** Computes and stores a Draft proposal for the unit chosen in the top bar. */
-  async run(
+  async suggestions(caller: Caller, pageId: string, id: string, status?: string): Promise<Row[]> {
+    await mrpService.get(caller, pageId, id);
+    const rows = await query(
+      prisma,
+      `SELECT s.*, i.code AS item_code, i.name AS item_name, i.base_uom AS uom,
+              (SELECT json_agg(json_build_object('type', p.source_type, 'ref', p.source_ref, 'qty', p.qty::text)) FROM mfg_mrp_pegging p WHERE p.suggestion_id=s.id) AS pegging
+         FROM mfg_mrp_suggestions s JOIN items i ON i.id=s.item_id WHERE s.run_id=$1::uuid ${status ? 'AND s.status=$2' : ''} ORDER BY i.code, s.due_date`,
+      ...(status ? [id, status] : [id]),
+    );
+    return rows.map((r) => norm<Row>(r));
+  },
+  async buckets(caller: Caller, pageId: string, id: string, itemId?: string): Promise<Row[]> {
+    await mrpService.get(caller, pageId, id);
+    const rows = await query(
+      prisma,
+      `SELECT b.*, i.code AS item_code, i.name AS item_name FROM mfg_mrp_buckets b JOIN items i ON i.id=b.item_id WHERE b.run_id=$1::uuid ${itemId ? 'AND b.item_id=$2::uuid' : ''} ORDER BY i.code, b.bucket_date`,
+      ...(itemId ? [id, itemId] : [id]),
+    );
+    return rows.map((r) => norm<Row>(r));
+  },
+  async exceptions(caller: Caller, pageId: string, id: string): Promise<Row[]> {
+    await mrpService.get(caller, pageId, id);
+    const rows = await query(
+      prisma,
+      `SELECT e.*, i.code AS item_code, i.name AS item_name FROM mfg_mrp_exceptions e LEFT JOIN items i ON i.id=e.item_id WHERE e.run_id=$1::uuid ORDER BY e.code, i.code`,
+      id,
+    );
+    return rows.map((r) => norm<Row>(r));
+  },
+  async pegging(caller: Caller, pageId: string, id: string): Promise<Row[]> {
+    await mrpService.get(caller, pageId, id);
+    const rows = await query(
+      prisma,
+      `SELECT p.*, s.item_id::text AS item_id, i.code AS item_code FROM mfg_mrp_pegging p JOIN mfg_mrp_suggestions s ON s.id=p.suggestion_id JOIN items i ON i.id=s.item_id WHERE s.run_id=$1::uuid ORDER BY i.code`,
+      id,
+    );
+    return rows.map((r) => norm<Row>(r));
+  },
+
+  /** Queues a run. Only one run per unit is queued or running at a time (MRP_ALREADY_RUNNING). */
+  async enqueueRun(
     caller: Caller,
     pageId: string,
     b: {
-      fromDate: string;
-      toDate: string;
-      includeForecast?: boolean | undefined;
-      bucket?: 'DAY' | 'WEEK' | 'MONTH' | 'RANGE' | undefined;
+      horizonDays?: number | undefined;
+      bucket?: 'DAY' | 'WEEK' | undefined;
+      includeSo?: boolean | undefined;
+      planId?: string | undefined;
       notes?: string | undefined;
     },
   ): Promise<Row> {
     const unitId = oneUnit(caller);
     const fy = await fyOfCaller(caller);
-    if (b.toDate < b.fromDate)
-      throw Errors.validation({ toDate: 'The end date cannot be before the start date.' });
-    const include = b.includeForecast !== false;
     const id = await prisma.$transaction(async (tx) => {
-      // ---- demand
-      const so = await query(
-        tx,
-        `SELECT l.item_id::text, (l.qty - l.dispatched_qty - l.closed_qty)::text AS open_qty,
-                COALESCE(l.delivery_date, s.delivery_date, s.order_date)::text AS due, s.number
-           FROM sales_order_lines l JOIN sales_orders s ON s.id=l.order_id
-          WHERE s.unit_id=$1::uuid AND s.deleted_at IS NULL AND s.status='Approved' AND s.closed_at IS NULL
-            AND l.qty - l.dispatched_qty - l.closed_qty > 0
-            AND COALESCE(l.delivery_date, s.delivery_date, s.order_date) <= $2::date`,
-        unitId,
-        b.toDate,
-      );
-      const demands: Demand[] = so.map((r) => ({
-        itemId: S(r.item_id),
-        qty: S(r.open_qty),
-        date: S(r.due),
-        type: 'SALES_ORDER',
-        ref: S(r.number),
-      }));
-      if (include) {
-        const fc = await query(
-          tx,
-          `SELECT item_id::text, qty::text, month FROM demand_forecasts WHERE unit_id=$1::uuid AND month = ANY($2::text[])`,
-          unitId,
-          monthsBetween(b.fromDate, b.toDate),
+      await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext($1))`, `mfg.mrp:${unitId}`);
+      await sweepStuck(tx, unitId);
+      if (
+        (
+          await query(
+            tx,
+            `SELECT 1 FROM mfg_mrp_runs WHERE unit_id=$1::uuid AND status IN ('QUEUED','RUNNING')`,
+            unitId,
+          )
+        ).length
+      )
+        throw mfgError(
+          'MRP_ALREADY_RUNNING',
+          'MRP is already running for this unit.',
+          undefined,
+          409,
         );
-        for (const r of fc) {
-          const first = `${S(r.month)}-01`;
-          demands.push({
-            itemId: S(r.item_id),
-            qty: S(r.qty),
-            date: first < b.fromDate ? b.fromDate : first,
-            type: 'FORECAST',
-            ref: `Forecast ${S(r.month)}`,
-          });
-        }
-      }
-      if (demands.length === 0)
-        throw Errors.validation({
-          toDate: 'There is no approved sales order or forecast in this range.',
-        });
-      // material that open production orders still have to draw is demand too (it is not in stock for anyone else)
-      const committed = await query(
-        tx,
-        `SELECT m.item_id::text, GREATEST(m.required_qty - m.issued_qty + m.returned_qty,0)::text AS q, o.due_date::text AS due, o.number
-           FROM mfg_order_materials m JOIN mfg_orders o ON o.id=m.order_id
-          WHERE o.unit_id=$1::uuid AND o.deleted_at IS NULL AND o.status IN ('Planned','Released','In Progress')
-            AND m.customer_supplied=false AND m.required_qty - m.issued_qty + m.returned_qty > 0
-            AND o.due_date <= $2::date`,
-        unitId,
-        b.toDate,
-      );
-      for (const r of committed)
-        demands.push({
-          itemId: S(r.item_id),
-          qty: S(r.q),
-          date: S(r.due),
-          type: 'ORDER',
-          ref: S(r.number),
-        });
-      // ---- supply
-      const boms = await activeBoms(tx, unitId);
-      const wanted = new Set<string>();
-      const stack = demands.map((d) => d.itemId);
-      while (stack.length) {
-        const i = stack.pop()!;
-        if (wanted.has(i)) continue;
-        wanted.add(i);
-        for (const l of boms.get(i)?.lines ?? []) stack.push(l.itemId);
-      }
-      const ids = [...wanted];
-      const [stock, po, pr, mo, items] = await Promise.all([
-        query(
-          tx,
-          `SELECT s.item_id::text, sum(s.qty)::text AS q FROM stock_slices s JOIN warehouses w ON w.id=s.warehouse_id
-            WHERE w.unit_id=$1::uuid AND w.is_transit=false AND s.stock_status='UNRESTRICTED' AND s.item_id = ANY($2::uuid[]) GROUP BY s.item_id`,
-          unitId,
-          ids,
-        ),
-        query(
-          tx,
-          `SELECT l.item_id::text, GREATEST(l.base_qty - l.received_qty - l.closed_qty,0)::text AS q, l.delivery_date::text AS due
-             FROM purchase_order_lines l JOIN purchase_orders p ON p.id=l.po_id
-            WHERE p.unit_id=$1::uuid AND p.deleted_at IS NULL AND p.status='Approved' AND p.closed_at IS NULL AND l.item_id = ANY($2::uuid[])
-              AND l.base_qty - l.received_qty - l.closed_qty > 0`,
-          unitId,
-          ids,
-        ),
-        query(
-          tx,
-          `SELECT l.item_id::text, GREATEST(l.qty - l.closed_qty,0)::text AS q, l.required_date::text AS due
-             FROM purchase_requisition_lines l JOIN purchase_requisitions p ON p.id=l.pr_id
-            WHERE p.unit_id=$1::uuid AND p.deleted_at IS NULL AND p.status IN ('Draft','Pending Approval','Approved') AND l.item_id = ANY($2::uuid[])
-              AND l.qty - l.closed_qty > 0`,
-          unitId,
-          ids,
-        ),
-        query(
-          tx,
-          `SELECT item_id::text, GREATEST(qty - qty_scrapped - qty_received,0)::text AS q, due_date::text AS due
-             FROM mfg_orders WHERE unit_id=$1::uuid AND deleted_at IS NULL AND status IN ('Planned','Released','In Progress') AND item_id = ANY($2::uuid[])
-              AND qty - qty_scrapped - qty_received > 0`,
-          unitId,
-          ids,
-        ),
-        query(
-          tx,
-          `SELECT id::text, is_customer_supplied FROM items WHERE id = ANY($1::uuid[])`,
-          ids,
-        ),
-      ]);
-      const sum = (...parts: Row[][]): Map<string, string> => {
-        const m = new Map<string, ReturnType<typeof D>>();
-        for (const part of parts)
-          for (const r of part) m.set(S(r.item_id), (m.get(S(r.item_id)) ?? D(0)).plus(S(r.q)));
-        return new Map([...m].map(([k, v]) => [k, v.toFixed(3)]));
-      };
-      const receipts = new Map<string, { qty: string; date: string | null }[]>();
-      for (const r of [...po, ...pr, ...mo])
-        receipts.set(S(r.item_id), [
-          ...(receipts.get(S(r.item_id)) ?? []),
-          { qty: S(r.q), date: r.due ? S(r.due) : null },
-        ]);
-      let lines;
-      try {
-        lines = planMrp({
-          demands,
-          boms,
-          customerSupplied: new Set(
-            items.filter((i) => i.is_customer_supplied === true).map((i) => S(i.id)),
-          ),
-          onHand: sum(stock),
-          scheduled: receipts,
-          bucket: b.bucket ?? 'WEEK',
-          rangeStart: b.fromDate,
-        });
-      } catch (e) {
-        if (e instanceof Error && e.message.startsWith('BOM_CYCLE'))
-          throw Errors.validation({
-            bom: 'The bills of materials make a loop. Fix the BOM first.',
-          });
-        throw e;
-      }
+      if (
+        b.planId &&
+        !(
+          await query(
+            tx,
+            `SELECT 1 FROM mfg_production_plans WHERE id=$1::uuid AND unit_id=$2::uuid AND deleted_at IS NULL`,
+            b.planId,
+            unitId,
+          )
+        ).length
+      )
+        throw Errors.validation({ planId: 'Production plan not found in this unit.' });
+      const horizon = b.horizonDays ?? 30;
+      if (horizon < 1 || horizon > 366)
+        throw Errors.validation({ horizonDays: 'Use 1 to 366 days.' });
       const number = await NumberingService.allocate(tx, {
         pageId: 'mfg:MRP',
         unitId,
         fyId: fy.id,
         prefix: 'MRP',
       });
-      const rid = await insertRow(tx, 'mfg_mrp_runs', {
+      const today = todayIst();
+      const end = new Date(`${today}T00:00:00Z`);
+      end.setUTCDate(end.getUTCDate() + horizon);
+      return insertRow(tx, 'mfg_mrp_runs', {
         unitId,
         fyId: fy.id,
         number,
-        fromDate: b.fromDate,
-        toDate: b.toDate,
-        includeForecast: include,
+        fromDate: today,
+        toDate: end.toISOString().slice(0, 10),
+        horizonDays: horizon,
         bucket: b.bucket ?? 'WEEK',
+        includeSo: b.includeSo !== false,
+        planId: b.planId ?? null,
+        status: 'QUEUED',
         notes: b.notes ?? null,
+        params: JSON.stringify({ requestedBy: caller.auth.userId }),
         createdById: caller.auth.userId,
         updatedById: caller.auth.userId,
       });
-      for (const l of lines)
-        await insertRow(tx, 'mfg_mrp_lines', {
-          runId: rid,
-          itemId: l.itemId,
-          level: l.level,
-          bucketStart: l.bucketStart,
-          action: l.action,
-          grossQty: l.gross,
-          onHandQty: l.onHand,
-          scheduledQty: l.scheduled,
-          netQty: l.net,
-          needDate: l.needDate,
-          sources: JSON.stringify(l.sources),
-        });
-      await audit(
-        tx,
-        caller,
-        caller.auth.userId,
-        'MFG_MRP_RUN',
-        'mfg_mrp_run',
-        { id: rid, code: number },
-        pageId,
-        { lines: lines.length },
-      );
-      return rid;
     }, TX);
+    await audit(
+      prisma,
+      caller,
+      caller.auth.userId,
+      'MFG_MRP_QUEUED',
+      'mfg_mrp_run',
+      { id, code: id },
+      pageId,
+      {},
+    );
+    if (jobsRunning()) {
+      await enqueue(QUEUES.mfgMrp, { jobId: id });
+      await exec(prisma, `UPDATE mfg_mrp_runs SET job_id=$1 WHERE id=$2::uuid`, id, id);
+    } else await runMrp(id); // no job runner (tests, scripts): run it now
     return mrpService.get(caller, pageId, id);
   },
 
-  /** Raises one Draft Purchase Requisition for the BUY lines and one Planned production order per PRODUCE line. Safe to repeat after a failure. */
-  async apply(
+  async firm(caller: Caller, pageId: string, id: string): Promise<Row> {
+    return mrpService.setStatus(caller, pageId, id, 'OPEN', 'FIRMED');
+  },
+  async ignore(caller: Caller, pageId: string, id: string): Promise<Row> {
+    return mrpService.setStatus(caller, pageId, id, null, 'IGNORED');
+  },
+  async setStatus(
     caller: Caller,
     pageId: string,
     id: string,
-    version: number | undefined,
-    b: { warehouseId?: string | undefined; rmWarehouseId?: string | undefined },
+    from: string | null,
+    to: string,
   ): Promise<Row> {
-    const sc = await scopeSql(caller, pageId);
-    const run = (
-      await query(
-        prisma,
-        `SELECT t.* FROM mfg_mrp_runs t WHERE t.id=$${sc.args.length + 1}::uuid AND ${sc.sql}`,
-        ...sc.args,
-        id,
-      )
-    )[0];
-    if (!run) throw Errors.notFound('MRP run not found.');
-    checkVersion(norm<Row>(run), version);
-    if (S(run.status) !== 'Draft')
-      throw Errors.conflict('This run was already applied or cancelled.');
-    const lines = await query(
+    const s = await suggestionOf(caller, pageId, id);
+    if (from ? S(s.status) !== from : !['OPEN', 'FIRMED'].includes(S(s.status)))
+      throw Errors.conflict('This suggestion cannot change like that.');
+    await notRunning(S(s.unit_id));
+    await exec(
       prisma,
-      `SELECT * FROM mfg_mrp_lines WHERE run_id=$1::uuid AND net_qty > 0 ORDER BY level`,
+      `UPDATE mfg_mrp_suggestions SET status=$1, version=version+1 WHERE id=$2::uuid`,
+      to,
       id,
     );
-    const produce = lines.filter((l) => S(l.action) === 'PRODUCE');
-    const buy = lines.filter((l) => S(l.action) === 'BUY');
-    if (produce.some((l) => !l.order_id) && (!b.warehouseId || !b.rmWarehouseId))
-      throw Errors.validation({
-        warehouseId:
-          'Choose the finished-goods and the raw-material warehouse for the new production orders.',
-      });
-    // claim the run: a second apply at the same moment (or a retry within 5 minutes of a crash) is refused
-    const claimed = await exec(
+    await audit(
       prisma,
-      `UPDATE mfg_mrp_runs SET applying_at=now() WHERE id=$1::uuid AND status='Draft' AND (applying_at IS NULL OR applying_at < now() - interval '5 minutes')`,
-      id,
+      caller,
+      caller.auth.userId,
+      `MFG_MRP_SUGGESTION_${to}`,
+      'mfg_mrp_suggestion',
+      { id, code: id },
+      pageId,
+      {},
     );
-    if (!claimed)
-      throw Errors.conflict('This run is being applied right now, or was already applied.');
-    try {
-      // production orders first (each in its own transaction); a retry skips the lines that already have an order
-      for (const l of produce) {
-        if (l.order_id) continue;
-        const o = await orderService.create(caller, 'mfg-orders', {
-          itemId: S(l.item_id),
-          qty: S(l.net_qty),
-          dueDate: l.need_date ? dateOf(l.need_date) : dateOf(run.to_date),
-          warehouseId: b.warehouseId!,
-          rmWarehouseId: b.rmWarehouseId!,
-          sourceType: 'MRP',
-          sourceId: id,
-          notes: `From ${S(run.number)}`,
-        });
-        await exec(
-          prisma,
-          `UPDATE mfg_mrp_lines SET order_id=$1::uuid WHERE id=$2::uuid`,
-          S(o.id),
-          S(l.id),
-        );
-      }
-      await prisma.$transaction(async (tx) => {
-        const cur = (
-          await query(tx, `SELECT * FROM mfg_mrp_runs WHERE id=$1::uuid FOR UPDATE`, id)
-        )[0]!;
-        if (S(cur.status) !== 'Draft')
-          throw Errors.conflict('This run was already applied or cancelled.');
-        let prId: string | null = cur.pr_id ? S(cur.pr_id) : null;
-        if (buy.length && !prId) {
-          const items = await query(
+    return norm<Row>(await suggestionOf(caller, pageId, id));
+  },
+
+  /** BUY -> one Draft requisition (Phase 9 gateway); MAKE -> a draft production order, with the pegging kept on the suggestion. */
+  async convert(
+    caller: Caller,
+    pageId: string,
+    id: string,
+    w: { warehouseId?: string | undefined; rmWarehouseId?: string | undefined },
+  ): Promise<Row> {
+    const s = await suggestionOf(caller, pageId, id);
+    if (!['OPEN', 'FIRMED'].includes(S(s.status)))
+      throw Errors.conflict('This suggestion was already converted or ignored.');
+    await notRunning(S(s.unit_id));
+    let docType: string;
+    let docId: string;
+    if (S(s.type) === 'BUY') {
+      const doc = await prisma.$transaction(async (tx) => {
+        const it = (
+          await query(
             tx,
-            `SELECT id::text, base_uom, standard_cost::text FROM items WHERE id = ANY($1::uuid[])`,
-            buy.map((l) => S(l.item_id)),
-          );
-          const m = new Map(items.map((i) => [S(i.id), i]));
-          const pr = await PurchaseRequestGateway.create(tx, {
-            unitId: S(cur.unit_id),
-            fyId: S(cur.fy_id),
-            userId: caller.auth.userId,
-            department: await departmentOf(tx, 'scm-pr', caller),
-            purpose: `MRP ${S(cur.number)}`,
-            lines: buy.map((l) => ({
-              itemId: S(l.item_id),
-              qty: D(S(l.net_qty)).toFixed(3),
-              uom: S(m.get(S(l.item_id))?.base_uom),
-              estRate: S(m.get(S(l.item_id))?.standard_cost ?? '0') || '0',
-              ...(l.need_date ? { requiredDate: dateOf(l.need_date) } : {}),
-            })),
-          });
-          prId = pr.id;
-        }
-        await exec(
-          tx,
-          `UPDATE mfg_mrp_runs SET applying_at=NULL, status='Applied', pr_id=$1::uuid, applied_at=now(), applied_by_id=$2::uuid, updated_by_id=$2::uuid, updated_at=now(), version=version+1 WHERE id=$3::uuid`,
-          prId,
-          caller.auth.userId,
-          id,
-        );
-        await audit(
-          tx,
-          caller,
-          caller.auth.userId,
-          'MFG_MRP_APPLIED',
-          'mfg_mrp_run',
-          { id, code: S(cur.number) },
-          pageId,
-          { produce: produce.length, buy: buy.length },
-        );
+            `SELECT base_uom, standard_cost::text AS c FROM items WHERE id=$1::uuid`,
+            S(s.item_id),
+          )
+        )[0]!;
+        const run = (
+          await query(tx, `SELECT fy_id::text FROM mfg_mrp_runs WHERE id=$1::uuid`, S(s.run_id))
+        )[0]!;
+        return PurchaseRequestGateway.create(tx, {
+          unitId: S(s.unit_id),
+          fyId: S(run.fy_id),
+          userId: caller.auth.userId,
+          department: await departmentOf(tx, 'scm-pr', caller),
+          purpose: 'MRP suggestion',
+          lines: [
+            {
+              itemId: S(s.item_id),
+              qty: D(S(s.qty)).toFixed(3),
+              uom: S(it.base_uom),
+              estRate: S(it.c ?? '0') || '0',
+              requiredDate: dateOf(s.due_date),
+            },
+          ],
+        });
       }, TX);
-    } catch (e) {
-      // let the user (or a retry) try again
-      await exec(prisma, `UPDATE mfg_mrp_runs SET applying_at=NULL WHERE id=$1::uuid`, id);
-      throw e;
-    }
-    return mrpService.get(caller, pageId, id);
-  },
-
-  async cancel(
-    caller: Caller,
-    pageId: string,
-    id: string,
-    version: number | undefined,
-  ): Promise<Row> {
-    const sc = await scopeSql(caller, pageId);
-    await prisma.$transaction(async (tx) => {
-      const cur = (
+      docType = 'PURCHASE_REQUISITION';
+      docId = doc.id;
+    } else {
+      const plan = (
         await query(
-          tx,
-          `SELECT t.* FROM mfg_mrp_runs t WHERE t.id=$${sc.args.length + 1}::uuid AND ${sc.sql} FOR UPDATE OF t`,
-          ...sc.args,
-          id,
+          prisma,
+          `SELECT fg_wh_id::text, backflush_wh_id::text FROM mfg_item_planning WHERE item_id=$1::uuid`,
+          S(s.item_id),
         )
       )[0];
-      if (!cur) throw Errors.notFound('MRP run not found.');
-      checkVersion(norm<Row>(cur), version);
-      if (S(cur.status) !== 'Draft') throw Errors.conflict('Only a draft run can be cancelled.');
-      const made = await query(
-        tx,
-        `SELECT 1 FROM mfg_mrp_lines WHERE run_id=$1::uuid AND order_id IS NOT NULL LIMIT 1`,
-        id,
-      );
-      if (made.length)
-        throw Errors.conflict(
-          'Production orders were already raised from this run. Apply it to finish, or cancel those orders first.',
-        );
-      await exec(
-        tx,
-        `UPDATE mfg_mrp_runs SET status='Cancelled', updated_by_id=$1::uuid, updated_at=now(), version=version+1 WHERE id=$2::uuid`,
-        caller.auth.userId,
-        id,
-      );
-      await audit(
-        tx,
-        caller,
-        caller.auth.userId,
-        'MFG_MRP_CANCELLED',
-        'mfg_mrp_run',
-        { id, code: S(cur.number) },
-        pageId,
-        {},
-      );
-    }, TX);
-    return mrpService.get(caller, pageId, id);
+      const fg = w.warehouseId ?? (plan?.fg_wh_id ? S(plan.fg_wh_id) : '');
+      const rm = w.rmWarehouseId ?? (plan?.backflush_wh_id ? S(plan.backflush_wh_id) : '');
+      if (!fg || !rm)
+        throw Errors.validation({
+          warehouseId:
+            'Choose the finished-goods and the raw-material warehouse for the new production order.',
+        });
+      const o = await orderService.create(caller, 'mfg-orders', {
+        itemId: S(s.item_id),
+        qty: S(s.qty),
+        dueDate: dateOf(s.due_date),
+        startDate: dateOf(s.release_date),
+        warehouseId: fg,
+        rmWarehouseId: rm,
+        sourceType: 'MRP',
+        sourceId: S(s.run_id),
+        suggestionId: id,
+        notes: 'From an MRP suggestion',
+      });
+      docType = 'PRODUCTION_ORDER';
+      docId = S(o.id);
+    }
+    await exec(
+      prisma,
+      `UPDATE mfg_mrp_suggestions SET status='CONVERTED', converted_doc_type=$1, converted_doc_id=$2::uuid, version=version+1 WHERE id=$3::uuid`,
+      docType,
+      docId,
+      id,
+    );
+    await audit(
+      prisma,
+      caller,
+      caller.auth.userId,
+      'MFG_MRP_CONVERTED',
+      'mfg_mrp_suggestion',
+      { id, code: id },
+      pageId,
+      { docType },
+    );
+    return norm<Row>(
+      (await query(prisma, `SELECT * FROM mfg_mrp_suggestions WHERE id=$1::uuid`, id))[0]!,
+    );
+  },
+
+  async convertBulk(
+    caller: Caller,
+    pageId: string,
+    ids: string[],
+    w: { warehouseId?: string | undefined; rmWarehouseId?: string | undefined },
+  ): Promise<{ converted: string[]; failed: { id: string; error: string }[] }> {
+    const converted: string[] = [];
+    const failed: { id: string; error: string }[] = [];
+    for (const id of ids) {
+      try {
+        await mrpService.convert(caller, pageId, id, w);
+        converted.push(id);
+      } catch (e) {
+        failed.push({ id, error: e instanceof Error ? e.message : 'Failed' });
+      }
+    }
+    return { converted, failed };
   },
 };
+
+/** The run itself (the job handler). QUEUED -> RUNNING -> DONE / FAILED, and tells the planner. */
+export async function runMrp(runId: string): Promise<void> {
+  const run = (await query(prisma, `SELECT * FROM mfg_mrp_runs WHERE id=$1::uuid`, runId))[0];
+  if (!run || S(run.status) !== 'QUEUED') return;
+  const unitId = S(run.unit_id);
+  try {
+    await exec(
+      prisma,
+      `UPDATE mfg_mrp_runs SET status='RUNNING', started_at=now() WHERE id=$1::uuid AND status='QUEUED'`,
+      runId,
+    );
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRawUnsafe(
+          `SELECT pg_advisory_xact_lock(hashtext($1))`,
+          `mfg.mrp.exec:${unitId}`,
+        );
+        const counts = await compute(tx, run);
+        await exec(
+          tx,
+          `UPDATE mfg_mrp_runs SET status='DONE', finished_at=now(), params = params || $1::jsonb WHERE id=$2::uuid`,
+          JSON.stringify(counts),
+          runId,
+        );
+      },
+      { maxWait: 20_000, timeout: 120_000 },
+    );
+    await notifyPlanner(runId, 'DONE');
+  } catch (err) {
+    logger.error({ err, runId }, 'MRP run failed');
+    await exec(
+      prisma,
+      `UPDATE mfg_mrp_runs SET status='FAILED', finished_at=now(), error=$1 WHERE id=$2::uuid`,
+      (err instanceof Error ? err.message : 'Failed').slice(0, 480),
+      runId,
+    );
+    await notifyPlanner(runId, 'FAILED');
+  }
+}
+registerJobHandler(QUEUES.mfgMrp, async (payload) => {
+  const id = (payload as { jobId?: string }).jobId;
+  if (id) await runMrp(id);
+});
+
+async function notifyPlanner(runId: string, outcome: 'DONE' | 'FAILED'): Promise<void> {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const to = await pageRecipients(tx, 'mfg-mrp');
+      const r = (
+        await query(tx, `SELECT number, error FROM mfg_mrp_runs WHERE id=$1::uuid`, runId)
+      )[0]!;
+      await notificationService.notify(tx, to, {
+        type: 'MFG_MRP',
+        title:
+          outcome === 'DONE' ? `MRP run ${S(r.number)} is done` : `MRP run ${S(r.number)} failed`,
+        body: outcome === 'DONE' ? 'The suggestions are ready to review.' : S(r.error),
+        link: '/m/mfg-mrp',
+        entityType: 'mfg_mrp_run',
+        entityId: runId,
+        dedupeKey: `mfg-mrp:${runId}:${outcome}`,
+      });
+    }, TX);
+  } catch (err) {
+    logger.error({ err }, 'MRP notification failed');
+  }
+}
+
+async function compute(
+  tx: Db,
+  run: Row,
+): Promise<{ items: number; suggestions: number; exceptions: number }> {
+  const runId = S(run.id);
+  const unitId = S(run.unit_id);
+  const today = todayIst();
+  const horizonEnd = dateOf(run.to_date);
+  const bucketKind = S(run.bucket) === 'DAY' ? 'DAY' : 'WEEK';
+  const b0 = (date: string) => bucketStart(date, bucketKind, today);
+  const boms = await releasedBoms(tx, unitId);
+  const exceptions: { itemId: string | null; code: string; message: string }[] = [];
+  let llc: Map<string, number>;
+  try {
+    llc = lowLevelCodes(boms);
+  } catch (e) {
+    const path = e instanceof Error ? e.message.replace('BOM_CYCLE:', '') : '';
+    throw new Error(`BOM loop: ${path}. A part can't contain itself.`);
+  }
+  // ---- independent demand
+  const demand = new Map<string, Demand[]>();
+  const add = (item: string, d: Demand) => demand.set(item, [...(demand.get(item) ?? []), d]);
+  if (run.include_so === true) {
+    const so = await query(
+      tx,
+      `SELECT l.id::text AS id, l.item_id::text, (l.qty - l.dispatched_qty - l.closed_qty)::text AS q, COALESCE(l.delivery_date, s.delivery_date, s.order_date)::text AS due, s.number
+         FROM sales_order_lines l JOIN sales_orders s ON s.id=l.order_id
+        WHERE s.unit_id=$1::uuid AND s.deleted_at IS NULL AND s.status='Approved' AND s.closed_at IS NULL AND l.qty - l.dispatched_qty - l.closed_qty > 0
+          AND COALESCE(l.delivery_date, s.delivery_date, s.order_date) <= $2::date`,
+      unitId,
+      horizonEnd,
+    );
+    for (const r of so)
+      add(S(r.item_id), {
+        bucket: b0(S(r.due)),
+        qty: S(r.q),
+        type: 'SO_LINE',
+        id: S(r.id),
+        ref: S(r.number),
+      });
+  }
+  const plans = await query(
+    tx,
+    run.plan_id
+      ? `SELECT l.id::text AS id, l.item_id::text, l.planned_qty::text AS q, l.required_date::text AS due, p.number, l.so_line_id::text AS so_line_id FROM mfg_production_plan_lines l JOIN mfg_production_plans p ON p.id=l.plan_id WHERE p.id=$1::uuid AND p.deleted_at IS NULL`
+      : `SELECT l.id::text AS id, l.item_id::text, l.planned_qty::text AS q, l.required_date::text AS due, p.number, l.so_line_id::text AS so_line_id FROM mfg_production_plan_lines l JOIN mfg_production_plans p ON p.id=l.plan_id WHERE p.unit_id=$1::uuid AND p.status='RELEASED' AND p.deleted_at IS NULL`,
+    run.plan_id ? S(run.plan_id) : unitId,
+  );
+  for (const r of plans) {
+    // a plan line pulled from a sales order is the same demand as that order line: count it once
+    if (run.include_so === true && r.so_line_id) continue;
+    add(S(r.item_id), {
+      bucket: b0(S(r.due)),
+      qty: S(r.q),
+      type: 'PLAN_LINE',
+      id: S(r.id),
+      ref: S(r.number),
+    });
+  }
+  const reqs = await query(
+    tx,
+    `SELECT * FROM (
+       SELECT m.item_id::text, o.due_date::text AS due, o.number, o.id::text AS id,
+              GREATEST(CASE WHEN m.issue_method='BACKFLUSH' THEN m.required_qty - m.consumed_qty ELSE m.required_qty - m.issued_qty + m.returned_qty END,0)::text AS q
+         FROM mfg_order_materials m JOIN mfg_orders o ON o.id=m.order_id
+        WHERE o.unit_id=$1::uuid AND o.deleted_at IS NULL AND o.status IN ('Planned','Pending Approval','Released','In Progress') AND NOT m.customer_supplied
+     ) x WHERE q::numeric > 0`,
+    unitId,
+  );
+  for (const r of reqs)
+    add(S(r.item_id), {
+      bucket: b0(S(r.due)),
+      qty: S(r.q),
+      type: 'ORDER_REQUIREMENT',
+      id: S(r.id),
+      ref: S(r.number),
+    });
+  // firmed MAKE suggestions are not orders yet: their components are still needed
+  const firmedMake = await query(
+    tx,
+    `SELECT id::text, item_id::text, qty::text AS q, release_date::text AS rel FROM mfg_mrp_suggestions WHERE unit_id=$1::uuid AND status='FIRMED' AND type='MAKE'`,
+    unitId,
+  );
+  for (const f of firmedMake)
+    for (const rq of explode(S(f.item_id), S(f.q), S(f.rel), boms))
+      add(rq.itemId, {
+        bucket: b0(S(f.rel)),
+        qty: rq.qty,
+        type: 'ORDER_REQUIREMENT',
+        id: S(f.id),
+        ref: 'Firmed suggestion',
+      });
+  // ---- every item that can be reached from the demand
+  const wanted = new Set<string>();
+  const stack = [...demand.keys()];
+  while (stack.length) {
+    const i = stack.pop()!;
+    if (wanted.has(i)) continue;
+    wanted.add(i);
+    for (const l of boms.get(i)?.lines ?? []) stack.push(l.itemId);
+  }
+  const ids = [...wanted];
+  if (!ids.length) return { items: 0, suggestions: 0, exceptions: 0 };
+  // ---- supply
+  const [stock, reserved, po, pr, mo, firm, planRows, items, supp] = await Promise.all([
+    query(
+      tx,
+      `SELECT s.item_id::text, sum(s.qty)::text AS q FROM stock_slices s JOIN warehouses w ON w.id=s.warehouse_id WHERE w.unit_id=$1::uuid AND w.is_transit=false AND s.stock_status='UNRESTRICTED' AND s.item_id = ANY($2::uuid[]) GROUP BY s.item_id`,
+      unitId,
+      ids,
+    ),
+    query(
+      tx,
+      `SELECT b.item_id::text, sum(b.reserved_qty)::text AS q FROM stock_balances b JOIN warehouses w ON w.id=b.warehouse_id WHERE w.unit_id=$1::uuid AND b.item_id = ANY($2::uuid[]) GROUP BY b.item_id`,
+      unitId,
+      ids,
+    ),
+    query(
+      tx,
+      `SELECT l.item_id::text, GREATEST(l.base_qty - l.received_qty - l.closed_qty,0)::text AS q, l.delivery_date::text AS due FROM purchase_order_lines l JOIN purchase_orders p ON p.id=l.po_id WHERE p.unit_id=$1::uuid AND p.deleted_at IS NULL AND p.status='Approved' AND p.closed_at IS NULL AND l.item_id = ANY($2::uuid[]) AND l.base_qty - l.received_qty - l.closed_qty > 0`,
+      unitId,
+      ids,
+    ),
+    query(
+      tx,
+      `SELECT l.item_id::text, GREATEST(l.qty - l.closed_qty,0)::text AS q, l.required_date::text AS due FROM purchase_requisition_lines l JOIN purchase_requisitions p ON p.id=l.pr_id WHERE p.unit_id=$1::uuid AND p.deleted_at IS NULL AND p.status IN ('Draft','Pending Approval','Approved') AND l.item_id = ANY($2::uuid[]) AND l.qty - l.closed_qty > 0`,
+      unitId,
+      ids,
+    ),
+    query(
+      tx,
+      `SELECT item_id::text, GREATEST(qty - qty_scrapped - qty_received,0)::text AS q, due_date::text AS due FROM mfg_orders WHERE unit_id=$1::uuid AND deleted_at IS NULL AND status IN ('Planned','Pending Approval','Released','In Progress') AND item_id = ANY($2::uuid[]) AND qty - qty_scrapped - qty_received > 0`,
+      unitId,
+      ids,
+    ),
+    query(
+      tx,
+      `SELECT s.item_id::text, s.qty::text AS q, s.due_date::text AS due FROM mfg_mrp_suggestions s WHERE s.unit_id=$1::uuid AND s.status='FIRMED' AND s.item_id = ANY($2::uuid[])`,
+      unitId,
+      ids,
+    ),
+    query(tx, `SELECT * FROM mfg_item_planning WHERE item_id = ANY($1::uuid[])`, ids),
+    query(
+      tx,
+      `SELECT id::text, code, name, standard_cost::text AS c FROM items WHERE id = ANY($1::uuid[])`,
+      ids,
+    ),
+    query(
+      tx,
+      `SELECT DISTINCT item_id::text FROM supplier_items WHERE item_id = ANY($1::uuid[])`,
+      ids,
+    ),
+  ]);
+  const onHand = new Map<string, string>();
+  for (const r of stock) onHand.set(S(r.item_id), S(r.q));
+  for (const r of reserved)
+    onHand.set(
+      S(r.item_id),
+      D(onHand.get(S(r.item_id)) ?? 0)
+        .minus(S(r.q))
+        .toFixed(3),
+    );
+  const receipts = new Map<string, { bucket: string; qty: string }[]>();
+  for (const r of [...po, ...pr, ...mo, ...firm])
+    receipts.set(S(r.item_id), [
+      ...(receipts.get(S(r.item_id)) ?? []),
+      { bucket: b0(r.due ? S(r.due) : today), qty: S(r.q) },
+    ]);
+  const plan = new Map(planRows.map((p) => [S(p.item_id), p]));
+  const info = new Map(items.map((i) => [S(i.id), i]));
+  const hasSupplier = new Set(supp.map((s) => S(s.item_id)));
+  // a re-run replaces the OPEN suggestions of the unit
+  await exec(
+    tx,
+    `DELETE FROM mfg_mrp_suggestions WHERE unit_id=$1::uuid AND status='OPEN'`,
+    unitId,
+  );
+  let nSug = 0;
+  const order = [...ids].sort(
+    (a, b) => (llc.get(a) ?? 0) - (llc.get(b) ?? 0) || a.localeCompare(b),
+  );
+  for (const item of order) {
+    const p = plan.get(item);
+    const planning: Planning = {
+      leadTimeDays: Number(p?.lead_time_days ?? 0),
+      safetyStock: S(p?.safety_stock ?? '0'),
+      lotSizing: (S(p?.lot_sizing) || 'LFL') as Planning['lotSizing'],
+      fixedLotQty: p?.fixed_lot_qty ? S(p.fixed_lot_qty) : null,
+      minOrderQty: p?.min_order_qty ? S(p.min_order_qty) : null,
+      orderMultiple: p?.order_multiple ? S(p.order_multiple) : null,
+      eoq: null,
+    };
+    // EOQ = sqrt(2 x yearly demand x setup cost / holding cost per unit), the demand of the horizon scaled to a year
+    if (planning.lotSizing === 'EOQ' && p?.eoq_setup_cost && p?.eoq_holding_rate) {
+      const hold = D(S(info.get(item)?.c ?? 0))
+        .mul(S(p.eoq_holding_rate))
+        .div(100);
+      const yearly = (demand.get(item) ?? [])
+        .reduce((a, d) => a.plus(d.qty), D(0))
+        .mul(365)
+        .div(Math.max(Number(run.horizon_days), 1));
+      if (hold.gt(0) && yearly.gt(0))
+        planning.eoq = D(
+          Math.sqrt(Number(D(2).mul(yearly).mul(S(p.eoq_setup_cost)).div(hold))),
+        ).toFixed(3);
+    }
+    const bkts = new Map<string, { gross: ReturnType<typeof D>; receipts: ReturnType<typeof D> }>();
+    for (const d of demand.get(item) ?? []) {
+      const c = bkts.get(d.bucket) ?? { gross: D(0), receipts: D(0) };
+      c.gross = c.gross.plus(d.qty);
+      bkts.set(d.bucket, c);
+    }
+    for (const r of receipts.get(item) ?? []) {
+      const c = bkts.get(r.bucket) ?? { gross: D(0), receipts: D(0) };
+      c.receipts = c.receipts.plus(r.qty);
+      bkts.set(r.bucket, c);
+    }
+    const input: BucketDemand[] = [...bkts].map(([bucket, c]) => ({
+      bucket,
+      gross: c.gross.toFixed(3),
+      receipts: c.receipts.toFixed(3),
+    }));
+    if (!input.length) continue;
+    const rows = mrpNet(onHand.get(item) ?? '0', input, planning, today);
+    const isMake = boms.has(item);
+    for (const r of rows) {
+      await insertRow(tx, 'mfg_mrp_buckets', {
+        runId,
+        itemId: item,
+        bucketDate: r.bucket,
+        gross: r.gross,
+        scheduledReceipts: r.receipts,
+        projectedOnHand: r.pohAfter,
+        net: r.net,
+        plannedReceipt: r.plannedReceipt,
+        plannedRelease: r.releaseDate,
+      });
+      if (D(r.plannedReceipt).lte(0)) continue;
+      const release = r.releaseDate && r.releaseDate > today ? r.releaseDate : today;
+      const code = S(info.get(item)?.code);
+      if (r.pastDueRelease)
+        exceptions.push({
+          itemId: item,
+          code: 'PAST_DUE_RELEASE',
+          message: `${code}: the release date ${r.releaseDate} is already past. Release today or expedite.`,
+        });
+      if (!isMake && S(p?.make_or_buy) === 'MAKE')
+        exceptions.push({
+          itemId: item,
+          code: 'NO_BOM',
+          message: `${code} is made in-house but has no released bill of materials.`,
+        });
+      else if (!isMake && !hasSupplier.has(item))
+        exceptions.push({
+          itemId: item,
+          code: 'NO_SUPPLIER',
+          message: `${code} has no supplier. Add one before it can be bought.`,
+        });
+      const sid = await insertRow(tx, 'mfg_mrp_suggestions', {
+        runId,
+        unitId,
+        itemId: item,
+        type: isMake ? 'MAKE' : 'BUY',
+        qty: r.plannedReceipt,
+        releaseDate: release,
+        dueDate: r.bucket,
+      });
+      nSug += 1;
+      const here = (demand.get(item) ?? []).filter((d) => d.bucket === r.bucket);
+      for (const d of here)
+        await insertRow(tx, 'mfg_mrp_pegging', {
+          suggestionId: sid,
+          sourceType: d.type,
+          sourceId: d.id,
+          sourceRef: d.ref,
+          qty: D(d.qty).toFixed(3),
+        });
+      if (D(planning.safetyStock).gt(0) && D(r.net).gt(0) && !here.length)
+        await insertRow(tx, 'mfg_mrp_pegging', {
+          suggestionId: sid,
+          sourceType: 'SAFETY_STOCK',
+          sourceId: null,
+          sourceRef: 'Safety stock',
+          qty: planning.safetyStock,
+        });
+      // the components of a made item are needed in the bucket of its release date
+      if (isMake) {
+        let req;
+        try {
+          req = explode(item, r.plannedReceipt, release, boms);
+        } catch {
+          continue;
+        }
+        for (const q of req)
+          add(q.itemId, {
+            bucket: b0(release),
+            qty: q.qty,
+            type: 'PARENT_SUGGESTION',
+            id: sid,
+            ref: `Suggestion for ${code}`,
+          });
+      }
+    }
+  }
+  for (const e of exceptions)
+    await insertRow(tx, 'mfg_mrp_exceptions', {
+      runId,
+      itemId: e.itemId,
+      code: e.code,
+      message: e.message,
+    });
+  return { items: order.length, suggestions: nSug, exceptions: exceptions.length };
+}

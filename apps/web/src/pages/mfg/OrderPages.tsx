@@ -1,871 +1,28 @@
-// Phase 13 production orders: the order list, and one order panel that serves three screens. Production Orders (plan, release,
-// issue material, close), Work Orders (log each operation, close it, start the inspection checkpoint) and Finished Goods
-// (final-inspection lot, receipt after the Usage Decision). All quantities and money are server figures.
+// Phase 13 production orders, job cards (work orders) and finished-goods receipts. The server holds every rule: approval above
+// the limit, material issue limits, WIP posting, the quality hold on finished goods. The screens collect and show.
 import { useState } from 'react';
-import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { toUiError } from '../../lib/errors';
-import { cmLots } from '../../lib/inventoryApi';
-import { mget, mlist, mpatch, mpost } from '../../lib/mfgApi';
+import { mget, mlist, mpost } from '../../lib/mfgApi';
 import type { Row } from '../../lib/mfgApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
-import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
-import { Tabs } from '../qms/Shared';
+import { dmy, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
+import { RefPicker, Tabs } from '../qms/Shared';
 import { JobWorkTab } from './JobWork';
-import { FileButton, FormModal, ORDER_TONE, s, useWarehouses } from './Kit';
+import { JobCardPanel } from './JobCard';
+import { FileButton, ORDER_TONE, OptionSelect, s, useWarehouses, useWorkCentres } from './Kit';
+import { Act, Dialog, Grid, ReasonAct, num } from './Ui';
 
-export type Mode = 'orders' | 'work' | 'fg';
-const SCOPE: Record<Mode, string> = { orders: 'mfg-orders', work: 'mfg-workorders', fg: 'mfg-fg' };
-const base = (m: Mode): string => (m === 'orders' ? '/orders' : `/orders/for/${SCOPE[m]}`);
-const STATUSES = ['Planned', 'Released', 'In Progress', 'Completed', 'Closed', 'Cancelled'];
-const n3 = (v: unknown): number => Number(s(v) || 0);
-/** Left to arrange on a material line / accepted but not received, rounded to the 3 decimals the server uses. */ const left =
-  (m: Row): number =>
-    Number((n3(m.requiredQty) - (n3(m.issuedQty) - n3(m.returnedQty))).toFixed(3));
-const receivable = (l: Row): number => Number((n3(l.acceptedQty) - n3(l.receivedQty)).toFixed(3));
-
-// ------------------------------------------------------------------------------------------------ dialogs
-function IssueDialog({
-  order,
-  onClose,
-  onDone,
-}: {
-  order: Row;
-  onClose: () => void;
-  onDone: () => void;
-}) {
-  const toast = useToast();
-  const materials = (order.materials as Row[]).filter((m) => left(m) > 0);
-  const lots = useLoad(
-    () =>
-      order.customerId
-        ? cmLots({ customerId: s(order.customerId), withBalanceOnly: true })
-        : Promise.resolve(null),
-    [order.customerId],
-  );
-  const [qty, setQty] = useState<Record<string, string>>(() =>
-    Object.fromEntries(materials.map((m) => [s(m.id), String(left(m))])),
-  );
-  const [lot, setLot] = useState<Record<string, string>>({});
-  const [msg, setMsg] = useState('');
-  return (
-    <Modal
-      title="Issue material"
-      sub={`To ${s(order.number)} from warehouse ${s(order.rmWarehouseCode)}. Only what the order still needs can be issued.`}
-      onClose={onClose}
-      footer={
-        <button
-          type="button"
-          className="btn primary"
-          onClick={() => {
-            setMsg('');
-            const lines = materials
-              .filter((m) => Number(qty[s(m.id)] || 0) > 0)
-              .map((m) => ({
-                materialId: s(m.id),
-                qty: qty[s(m.id)],
-                ...(m.customerSupplied === true && lot[s(m.id)]
-                  ? { customerLotId: lot[s(m.id)] }
-                  : {}),
-              }));
-            mpost(`/orders/${s(order.id)}/issue`, { lines })
-              .then(() => {
-                toast('Material issued');
-                onDone();
-              })
-              .catch((e: unknown) => setMsg(toUiError(e).message));
-          }}
-        >
-          Issue
-        </button>
-      }
-    >
-      <ErrorBox message={msg} />
-      {materials.length === 0 ? <p>Everything the order needs is already issued.</p> : null}
-      <table>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Still needed</th>
-            <th>Issue now</th>
-          </tr>
-        </thead>
-        <tbody>
-          {materials.map((m) => (
-            <tr key={s(m.id)}>
-              <td>
-                {s(m.itemCode)} · {s(m.itemName)}
-                {m.customerSupplied === true ? <div className="hint">Customer material</div> : null}
-              </td>
-              <td>
-                {left(m)} {s(m.uom)}
-              </td>
-              <td>
-                <input
-                  aria-label={`Issue ${s(m.itemCode)}`}
-                  type="number"
-                  step="any"
-                  min={0}
-                  value={qty[s(m.id)] ?? ''}
-                  onChange={(e) => setQty((o) => ({ ...o, [s(m.id)]: e.target.value }))}
-                />
-                {m.customerSupplied === true ? (
-                  <select
-                    aria-label={`Customer lot ${s(m.itemCode)}`}
-                    value={lot[s(m.id)] ?? ''}
-                    onChange={(e) => setLot((o) => ({ ...o, [s(m.id)]: e.target.value }))}
-                  >
-                    <option value="">— customer lot —</option>
-                    {(lots.data?.rows ?? [])
-                      .filter((l) => l.itemId === s(m.itemId))
-                      .map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.challanNo} · balance {l.balanceQty}
-                        </option>
-                      ))}
-                  </select>
-                ) : null}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </Modal>
-  );
-}
-
-function ReturnDialog({
-  order,
-  onClose,
-  onDone,
-}: {
-  order: Row;
-  onClose: () => void;
-  onDone: () => void;
-}) {
-  const toast = useToast();
-  const materials = (order.materials as Row[]).filter(
-    (m) => m.customerSupplied !== true && n3(m.issuedQty) - n3(m.returnedQty) > 0,
-  );
-  const [qty, setQty] = useState<Record<string, string>>({});
-  const [msg, setMsg] = useState('');
-  return (
-    <Modal
-      title="Return material to the store"
-      sub="Unused components go back at the rate they were issued at."
-      onClose={onClose}
-      footer={
-        <button
-          type="button"
-          className="btn primary"
-          onClick={() => {
-            setMsg('');
-            const lines = materials
-              .filter((m) => Number(qty[s(m.id)] || 0) > 0)
-              .map((m) => ({ materialId: s(m.id), qty: qty[s(m.id)] }));
-            mpost(`/orders/${s(order.id)}/return`, { lines })
-              .then(() => {
-                toast('Material returned');
-                onDone();
-              })
-              .catch((e: unknown) => setMsg(toUiError(e).message));
-          }}
-        >
-          Return
-        </button>
-      }
-    >
-      <ErrorBox message={msg} />
-      {materials.length === 0 ? <p>No material is with this order.</p> : null}
-      <table>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>With the order</th>
-            <th>Return</th>
-          </tr>
-        </thead>
-        <tbody>
-          {materials.map((m) => (
-            <tr key={s(m.id)}>
-              <td>
-                {s(m.itemCode)} · {s(m.itemName)}
-              </td>
-              <td>{n3(m.issuedQty) - n3(m.returnedQty)}</td>
-              <td>
-                <input
-                  aria-label={`Return ${s(m.itemCode)}`}
-                  type="number"
-                  step="any"
-                  min={0}
-                  value={qty[s(m.id)] ?? ''}
-                  onChange={(e) => setQty((o) => ({ ...o, [s(m.id)]: e.target.value }))}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </Modal>
-  );
-}
-
-// ------------------------------------------------------------------------------------------------ the order panel
-function OrderPanel({
-  id,
-  mode,
-  actions,
-  onClose,
-  onChanged,
-}: {
-  id: string;
-  mode: Mode;
-  actions: ActionSet;
-  onClose: () => void;
-  onChanged: () => void;
-}) {
-  const toast = useToast();
-  const doc = useLoad(() => mget(`${base(mode)}/${id}`), [id, mode]);
-  const [dlg, setDlg] = useState<
-    | { t: 'issue' | 'return' | 'edit' | 'cancel' | 'close' }
-    | { t: 'log'; op: Row }
-    | { t: 'lot'; op: Row | null }
-    | { t: 'outside'; op: Row }
-    | { t: 'receive'; lot: Row }
-    | null
-  >(null);
-  const [msg, setMsg] = useState('');
-  const o = doc.data;
-  const done = () => {
-    setDlg(null);
-    doc.reload();
-    onChanged();
-  };
-  const act = (fn: () => Promise<unknown>, ok: string) => {
-    setMsg('');
-    fn()
-      .then(() => {
-        toast(ok);
-        done();
-      })
-      .catch((e: unknown) => setMsg(toUiError(e).message));
-  };
-  if (!o)
-    return (
-      <Modal
-        title="Production order"
-        onClose={onClose}
-        footer={
-          <button type="button" className="btn" onClick={onClose}>
-            Close
-          </button>
-        }
-      >
-        <ErrorBox message={doc.error} />
-        {doc.loading ? <p>Loading…</p> : null}
-      </Modal>
-    );
-  const status = s(o.status);
-  const live = status === 'Released' || status === 'In Progress';
-  const ops = o.ops as Row[];
-  const cost = o.cost as Row;
-  const lots = o.lots as Row[];
-  return (
-    <Modal
-      title={`${s(o.number)} · ${s(o.itemCode)} ${s(o.itemName)}`}
-      sub={`${s(o.qty)} ${s(o.uom)} due ${dmy(s(o.dueDate))}${o.customerName ? ` · ${s(o.customerName)}` : ''}`}
-      onClose={onClose}
-      footer={
-        <>
-          {mode === 'orders' && actions.print ? (
-            <FileButton path={`/orders/${id}/print`} name="production-order.pdf" label="Print" />
-          ) : null}
-          {mode === 'orders' && status === 'Planned' && actions.edit ? (
-            <button type="button" className="btn" onClick={() => setDlg({ t: 'edit' })}>
-              Edit
-            </button>
-          ) : null}
-          {mode === 'orders' && status === 'Planned' && actions.approve ? (
-            <button
-              type="button"
-              className="btn primary"
-              onClick={() =>
-                act(() => mpost(`/orders/${id}/release`, {}, n3(o.version)), 'Order released')
-              }
-            >
-              Release
-            </button>
-          ) : null}
-          {mode === 'orders' && live && actions.post ? (
-            <>
-              <button type="button" className="btn primary" onClick={() => setDlg({ t: 'issue' })}>
-                Issue material
-              </button>
-              <button type="button" className="btn" onClick={() => setDlg({ t: 'return' })}>
-                Return material
-              </button>
-            </>
-          ) : null}
-          {mode === 'orders' && status === 'Completed' && actions.post ? (
-            <button type="button" className="btn" onClick={() => setDlg({ t: 'close' })}>
-              Close order
-            </button>
-          ) : null}
-          {mode === 'orders' &&
-          (status === 'Planned' || status === 'Released') &&
-          actions.cancel ? (
-            <button type="button" className="btn" onClick={() => setDlg({ t: 'cancel' })}>
-              Cancel order
-            </button>
-          ) : null}
-          {mode === 'fg' && (live || status === 'Completed') && actions.add ? (
-            <button
-              type="button"
-              className="btn primary"
-              onClick={() => setDlg({ t: 'lot', op: null })}
-            >
-              Send finished pieces for final inspection
-            </button>
-          ) : null}
-        </>
-      }
-    >
-      <ErrorBox message={msg || doc.error} />
-      <p>
-        <Pill tone={ORDER_TONE[status]}>{status}</Pill> Made (good) <b>{s(o.qtyCompleted)}</b> ·
-        scrapped <b>{s(o.qtyScrapped)}</b> · in stock <b>{s(o.qtyReceived)}</b>
-      </p>
-
-      <h4>Material</h4>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Needed</th>
-              <th>Issued</th>
-              <th>Returned</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(o.materials as Row[]).map((m) => (
-              <tr key={s(m.id)}>
-                <td>
-                  {s(m.itemCode)} · {s(m.itemName)}
-                  {m.customerSupplied === true ? ' (customer material)' : ''}
-                </td>
-                <td>{s(m.requiredQty)}</td>
-                <td>{s(m.issuedQty)}</td>
-                <td>{s(m.returnedQty)}</td>
-                <td>
-                  {m.customerSupplied === true ? '—' : inr(n3(m.issuedValue) - n3(m.returnedValue))}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <h4>Operations</h4>
-      {ops.length === 0 ? (
-        <p>The operations are copied from the routing when the order is released.</p>
-      ) : null}
-      {ops.length ? (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>No.</th>
-                <th>Operation</th>
-                <th>Work center</th>
-                <th>Good</th>
-                <th>Scrap</th>
-                <th>Rework</th>
-                <th>Left</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {ops.map((p) => (
-                <tr key={s(p.id)}>
-                  <td>{s(p.seq)}</td>
-                  <td>
-                    {s(p.name)}
-                    {p.inspectionRequired === true ? (
-                      <span className="hint"> · inspection</span>
-                    ) : null}
-                  </td>
-                  <td>{s(p.workCentreCode)}</td>
-                  <td>{s(p.qtyDone)}</td>
-                  <td>{s(p.qtyScrap)}</td>
-                  <td>{s(p.qtyRework)}</td>
-                  <td>{s(p.remaining)}</td>
-                  <td>
-                    <Pill tone={ORDER_TONE[s(p.status)]}>{s(p.status)}</Pill>
-                  </td>
-                  <td>
-                    {mode === 'work' && live && s(p.status) !== 'Done' && actions.edit ? (
-                      <>
-                        {s(p.workCentreKind) === 'OUTSIDE' ? (
-                          <button
-                            type="button"
-                            className="btn"
-                            onClick={() => setDlg({ t: 'outside', op: p })}
-                          >
-                            Send / receive
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn"
-                            onClick={() => setDlg({ t: 'log', op: p })}
-                          >
-                            Log
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="btn"
-                          onClick={() =>
-                            act(
-                              () => mpost(`/orders/${id}/ops/${s(p.id)}/complete`, {}),
-                              'Operation complete',
-                            )
-                          }
-                        >
-                          Complete
-                        </button>
-                      </>
-                    ) : null}
-                    {mode === 'work' &&
-                    live &&
-                    p.inspectionRequired === true &&
-                    s(p.status) !== 'Pending' &&
-                    actions.edit ? (
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => setDlg({ t: 'lot', op: p })}
-                      >
-                        Send for inspection
-                      </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-
-      {lots.length ? (
-        <>
-          <h4>Inspection lots</h4>
-          <p className="hint">
-            The readings and the Usage Decision are entered on the quality screens (In-Process
-            Quality, Final Quality).
-          </p>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Lot</th>
-                  <th>For</th>
-                  <th>Sheet</th>
-                  <th>Pieces</th>
-                  <th>Sheet status</th>
-                  <th>Accepted</th>
-                  <th>Received</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {lots.map((l) => {
-                  const room = n3(l.acceptedQty) - n3(l.receivedQty);
-                  return (
-                    <tr key={s(l.id)}>
-                      <td>{s(l.lotNo)}</td>
-                      <td>{s(l.kind) === 'FG' ? 'Final inspection' : 'In-process'}</td>
-                      <td>{s(l.inspectionNo)}</td>
-                      <td>{s(l.lotQty)}</td>
-                      <td>
-                        <Pill tone={ORDER_TONE[s(l.inspectionStatus)]}>
-                          {s(l.inspectionStatus)}
-                        </Pill>
-                      </td>
-                      <td>
-                        {l.acceptedQty === null || l.acceptedQty === undefined
-                          ? '—'
-                          : s(l.acceptedQty)}
-                      </td>
-                      <td>{s(s(l.kind) === 'FG' ? l.receivedQty : '—')}</td>
-                      <td>
-                        {mode === 'fg' &&
-                        s(l.kind) === 'FG' &&
-                        s(l.inspectionStatus) === 'Decided' &&
-                        room > 0 &&
-                        actions.post ? (
-                          <button
-                            type="button"
-                            className="btn primary"
-                            onClick={() => setDlg({ t: 'receive', lot: l })}
-                          >
-                            Receive
-                          </button>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
-      ) : null}
-
-      <h4>Cost (figures only)</h4>
-      <p>
-        Material {inr(s(cost.material))} · conversion {inr(s(cost.conversion))} · outside processing{' '}
-        {inr(s(cost.outside))} · total <b>{inr(s(cost.total))}</b>
-        {cost.unitCost ? ` · ${s(cost.unitCost)} per good piece` : ''}
-      </p>
-
-      {(o.outsideMoves as Row[]).length ? (
-        <>
-          <h4>Outside processing</h4>
-          <ul>
-            {(o.outsideMoves as Row[]).map((m) => (
-              <li key={s(m.id)}>
-                {dmy(s(m.moveDate))} · {s(m.docNo)} · {s(m.supplierName)} ·{' '}
-                {s(m.direction) === 'SENT'
-                  ? `sent ${s(m.qty)}`
-                  : `received ${s(m.qty)} good, ${s(m.qtyScrap)} scrap at ${s(m.rate)} = ${inr(s(m.cost))}`}
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : null}
-
-      {(o.moves as Row[]).length ? (
-        <>
-          <h4>Stock documents</h4>
-          <ul>
-            {(o.moves as Row[]).map((m) => (
-              <li key={s(m.id)}>
-                {s(m.number)} ·{' '}
-                {s(m.kind) === 'ISSUE'
-                  ? 'material issued'
-                  : s(m.kind) === 'RETURN'
-                    ? 'material returned'
-                    : 'finished goods received'}{' '}
-                · {s(m.totalQty)} · {inr(s(m.totalValue))} · {dmy(s(m.moveDate))}
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : null}
-
-      {dlg?.t === 'issue' ? (
-        <IssueDialog order={o} onClose={() => setDlg(null)} onDone={done} />
-      ) : null}
-      {dlg?.t === 'return' ? (
-        <ReturnDialog order={o} onClose={() => setDlg(null)} onDone={done} />
-      ) : null}
-      {dlg?.t === 'edit' ? (
-        <FormModal
-          title="Edit the planned order"
-          fields={[
-            { key: 'qty', label: 'Quantity', type: 'number' },
-            { key: 'dueDate', label: 'Due date', type: 'date' },
-            { key: 'startDate', label: 'Start date', type: 'date' },
-            { key: 'notes', label: 'Notes' },
-          ]}
-          initial={{
-            qty: s(o.qty),
-            dueDate: s(o.dueDate).slice(0, 10),
-            startDate: s(o.startDate).slice(0, 10),
-            notes: s(o.notes),
-          }}
-          onClose={() => setDlg(null)}
-          onSubmit={async (v) => {
-            await mpatch(`/orders/${id}`, n3(o.version), v);
-            toast('Saved');
-            done();
-          }}
-        />
-      ) : null}
-      {dlg?.t === 'cancel' ? (
-        <FormModal
-          title="Cancel the order"
-          size="sm"
-          fields={[{ key: 'reason', label: 'Reason', required: true }]}
-          submitLabel="Cancel order"
-          onClose={() => setDlg(null)}
-          onSubmit={async (v) => {
-            await mpost(`/orders/${id}/cancel`, v, n3(o.version));
-            toast('Order cancelled');
-            done();
-          }}
-        />
-      ) : null}
-      {dlg?.t === 'close' ? (
-        <FormModal
-          title="Close the order"
-          size="sm"
-          fields={[{ key: 'note', label: 'Note' }]}
-          submitLabel="Close order"
-          onClose={() => setDlg(null)}
-          onSubmit={async (v) => {
-            await mpost(`/orders/${id}/close`, v, n3(o.version));
-            toast('Order closed');
-            done();
-          }}
-        />
-      ) : null}
-      {dlg?.t === 'outside' ? (
-        <FormModal
-          title={`Outside processing: ${s(dlg.op.name)}`}
-          sub="Pieces sent to a supplier on a challan, and what comes back. The cost is pieces processed times the rate."
-          fields={[
-            {
-              key: 'direction',
-              label: 'Entry',
-              type: 'select',
-              options: ['SENT', 'RECEIVED'],
-              required: true,
-            },
-            {
-              key: 'qty',
-              label: 'Pieces (sent, or good pieces received)',
-              type: 'number',
-              required: true,
-            },
-            { key: 'qtyScrap', label: 'Scrap pieces (on receipt)', type: 'number' },
-            { key: 'docNo', label: 'Challan / document no.', required: true },
-            { key: 'supplierId', label: 'Supplier', type: 'supplier', required: true },
-            { key: 'rate', label: 'Rate per piece (on receipt)', type: 'number' },
-            { key: 'moveDate', label: 'Date', type: 'date' },
-            { key: 'reason', label: 'Reason (needed for scrap)' },
-          ]}
-          initial={{ direction: 'SENT', moveDate: todayIso() }}
-          onClose={() => setDlg(null)}
-          onSubmit={async (v) => {
-            await mpost(`/orders/${id}/ops/${s((dlg as { op: Row }).op.id)}/outside`, v);
-            toast('Recorded');
-            done();
-          }}
-        />
-      ) : null}
-      {dlg?.t === 'log' ? (
-        <FormModal
-          title={`Log ${s(dlg.op.name)}`}
-          sub={`Pieces still unaccounted at this operation: ${s(dlg.op.remaining)}`}
-          fields={[
-            { key: 'good', label: 'Good pieces', type: 'number' },
-            { key: 'scrap', label: 'Scrap pieces', type: 'number' },
-            { key: 'rework', label: 'Pieces for rework', type: 'number' },
-            { key: 'minutes', label: 'Minutes taken', type: 'number' },
-            { key: 'operator', label: 'Operator' },
-            { key: 'reason', label: 'Reason (needed for scrap or rework)' },
-            {
-              key: 'fromGood',
-              label: 'Move pieces that were logged good (failed inspection)',
-              type: 'check',
-            },
-          ]}
-          onClose={() => setDlg(null)}
-          onSubmit={async (v) => {
-            const { fromGood, ...rest } = v;
-            await mpost(`/orders/${id}/ops/${s((dlg as { op: Row }).op.id)}/log`, {
-              ...rest,
-              ...(fromGood === 'true' ? { fromGood: true } : {}),
-            });
-            toast('Logged');
-            done();
-          }}
-        />
-      ) : null}
-      {dlg?.t === 'lot' ? (
-        <FormModal
-          title={dlg.op ? `Inspection of ${s(dlg.op.name)}` : 'Final inspection lot'}
-          sub="Creates the inspection sheet. Leave the quantity empty to send everything that is waiting."
-          fields={[{ key: 'lotQty', label: 'Pieces in the lot', type: 'number' }]}
-          onClose={() => setDlg(null)}
-          onSubmit={async (v) => {
-            const l = dlg as { op: Row | null };
-            await mpost(
-              l.op ? `/orders/${id}/ops/${s(l.op.id)}/inspection` : `/orders/${id}/fg-lots`,
-              v,
-            );
-            toast('Inspection sheet created');
-            done();
-          }}
-        />
-      ) : null}
-      {dlg?.t === 'receive' ? (
-        <FormModal
-          title={`Receive lot ${s(dlg.lot.lotNo)}`}
-          sub={`${receivable(dlg.lot)} accepted pieces can go into stock.`}
-          fields={[
-            { key: 'qty', label: 'Quantity', type: 'number', required: true },
-            ...(o.batchTracked === true
-              ? [{ key: 'batchNo', label: 'Batch number', hint: `Default: ${s(o.number)}` }]
-              : []),
-          ]}
-          initial={{ qty: String(receivable(dlg.lot)) }}
-          onClose={() => setDlg(null)}
-          onSubmit={async (v) => {
-            await mpost(`/orders/${id}/receive`, { lotId: s((dlg as { lot: Row }).lot.id), ...v });
-            toast('Finished goods received');
-            done();
-          }}
-        />
-      ) : null}
-    </Modal>
-  );
-}
-
-// ------------------------------------------------------------------------------------------------ lists
-function OrderList({
-  mode,
-  actions,
-  title,
-  sub,
-}: {
-  mode: Mode;
-  actions: ActionSet;
-  title: string;
-  sub: string;
-}) {
-  const toast = useToast();
-  const [status, setStatus] = useState('');
-  const [q, setQ] = useState('');
-  const [open, setOpen] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
-  const wh = useWarehouses();
-  const list = useLoad(() => mlist(base(mode), { status, q }), [mode, status, q]);
-  return (
-    <>
-      <PageHead title={title} sub={sub} />
-      <div className="toolbar">
-        <label htmlFor="po-status">Status</label>
-        <select id="po-status" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">All</option>
-          {STATUSES.map((x) => (
-            <option key={x}>{x}</option>
-          ))}
-        </select>
-        <input
-          aria-label="Search orders"
-          placeholder="Search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        {mode === 'orders' && actions.add ? (
-          <button type="button" className="btn primary" onClick={() => setAdding(true)}>
-            + New production order
-          </button>
-        ) : null}
-        {mode === 'orders' && actions.print ? (
-          <FileButton path="/export/orders" name="mfg-orders.xlsx" label="Export Excel" />
-        ) : null}
-      </div>
-      <ErrorBox message={list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Order</th>
-              <th>Item</th>
-              <th>Customer</th>
-              <th>Quantity</th>
-              <th>Made</th>
-              <th>In stock</th>
-              <th>Due</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.data && list.data.rows.length === 0 && !list.loading ? (
-              <Empty cols={8}>No production orders.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((r) => (
-              <tr key={s(r.id)}>
-                <td>
-                  <button type="button" className="link" onClick={() => setOpen(s(r.id))}>
-                    {s(r.number)}
-                  </button>
-                </td>
-                <td>
-                  {s(r.itemCode)} · {s(r.itemName)}
-                </td>
-                <td>{s(r.customerName)}</td>
-                <td>
-                  {s(r.qty)} {s(r.uom)}
-                </td>
-                <td>{s(r.qtyCompleted)}</td>
-                <td>{s(r.qtyReceived)}</td>
-                <td>{dmy(s(r.dueDate))}</td>
-                <td>
-                  <Pill tone={ORDER_TONE[s(r.status)]}>{s(r.status)}</Pill>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {open ? (
-        <OrderPanel
-          id={open}
-          mode={mode}
-          actions={actions}
-          onClose={() => setOpen(null)}
-          onChanged={list.reload}
-        />
-      ) : null}
-      {adding ? (
-        <FormModal
-          title="New production order"
-          sub="Needs an active bill of materials for the item. Material and operations come from it."
-          fields={[
-            { key: 'itemId', label: 'Item', type: 'item', required: true },
-            { key: 'qty', label: 'Quantity', type: 'number', required: true },
-            { key: 'dueDate', label: 'Due date', type: 'date', required: true },
-            { key: 'startDate', label: 'Start date', type: 'date' },
-            {
-              key: 'warehouseId',
-              label: 'Finished goods warehouse',
-              type: 'select',
-              options: wh.data ?? [],
-              required: true,
-            },
-            {
-              key: 'rmWarehouseId',
-              label: 'Raw material warehouse',
-              type: 'select',
-              options: wh.data ?? [],
-              required: true,
-            },
-            { key: 'customerId', label: 'Customer', type: 'customer' },
-            { key: 'customerPoNo', label: 'Customer PO no.' },
-            { key: 'notes', label: 'Notes' },
-          ]}
-          initial={{ dueDate: todayIso() }}
-          onClose={() => setAdding(false)}
-          onSubmit={async (v) => {
-            const r = await mpost('/orders', v);
-            toast(`Created ${s(r.number)}`);
-            setAdding(false);
-            list.reload();
-          }}
-        />
-      ) : null}
-    </>
-  );
-}
+const STATUSES = [
+  'Planned',
+  'Pending Approval',
+  'Released',
+  'In Progress',
+  'Completed',
+  'Closed',
+  'Cancelled',
+];
 
 export function OrdersPage({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<'orders' | 'jobwork'>('orders');
@@ -879,38 +36,629 @@ export function OrdersPage({ actions }: { actions: ActionSet }) {
           ['jobwork', 'Job work (customer PO lines)'],
         ]}
       />
-      {tab === 'orders' ? (
-        <OrderList
-          mode="orders"
-          actions={actions}
-          title="Production Orders"
-          sub="Plan an order from an active BOM, release it to copy the routing, issue material, and close it when everything is in stock."
-        />
-      ) : (
-        <JobWorkTab actions={actions} />
-      )}
+      {tab === 'orders' ? <OrderList actions={actions} /> : <JobWorkTab actions={actions} />}
     </>
   );
 }
 
-export function WorkOrdersPage({ actions }: { actions: ActionSet }) {
+function OrderList({ actions }: { actions: ActionSet }) {
+  const [status, setStatus] = useState('');
+  const [q, setQ] = useState('');
+  const [view, setView] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const list = useLoad(() => mlist('/production-orders', { status, q }), [status, q]);
   return (
-    <OrderList
-      mode="work"
-      actions={actions}
-      title="Work Orders"
-      sub="Log what each operation made. The next operation starts when this one is complete; an inspection checkpoint holds the order until the Usage Decision."
-    />
+    <>
+      <PageHead
+        title="Production Orders"
+        sub="Plan an order from a released BOM, release it (a big order waits for approval), issue material, run the job cards, receive finished goods and close."
+      />
+      <div className="toolbar">
+        <input
+          aria-label="Search orders"
+          placeholder="Search order or item"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">All statuses</option>
+          {STATUSES.map((x) => (
+            <option key={x} value={x}>
+              {x}
+            </option>
+          ))}
+        </select>
+        {actions.add ? (
+          <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+            + New production order
+          </button>
+        ) : null}
+        {actions.print ? (
+          <FileButton path="/export/orders" name="mfg-orders.xlsx" label="Export Excel" />
+        ) : null}
+      </div>
+      <ErrorBox message={list.error} />
+      <Grid
+        rows={list.data?.rows ?? []}
+        loading={list.loading}
+        empty="No production orders yet."
+        rowKey={(r) => s(r.id)}
+        cols={[
+          { h: 'Order', r: (r) => s(r.number) },
+          { h: 'Item', r: (r) => `${s(r.itemCode)} · ${s(r.itemName)}` },
+          { h: 'Quantity', r: (r) => num(r.qty) },
+          { h: 'Made', r: (r) => num(r.qtyCompleted) },
+          { h: 'In stock', r: (r) => num(r.qtyReceived) },
+          { h: 'Due', r: (r) => dmy(s(r.dueDate).slice(0, 10)) },
+          { h: 'Status', r: (r) => <Pill tone={ORDER_TONE[s(r.status)]}>{s(r.status)}</Pill> },
+          {
+            h: '',
+            r: (r) => (
+              <button type="button" className="btn" onClick={() => setView(s(r.id))}>
+                Open
+              </button>
+            ),
+          },
+        ]}
+      />
+      {view ? (
+        <OrderView
+          id={view}
+          actions={actions}
+          onClose={() => setView(null)}
+          onChanged={() => list.reload()}
+        />
+      ) : null}
+      {adding ? (
+        <OrderForm
+          onClose={() => setAdding(false)}
+          onSaved={(id) => {
+            setAdding(false);
+            list.reload();
+            setView(id);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 
-export function FgPage({ actions }: { actions: ActionSet }) {
+function OrderForm({ onClose, onSaved }: { onClose: () => void; onSaved: (id: string) => void }) {
+  const whs = useWarehouses();
+  const [f, setF] = useState({
+    itemId: '',
+    itemLabel: '',
+    qty: '',
+    dueDate: todayIso(),
+    warehouseId: '',
+    rmWarehouseId: '',
+    customerPoNo: '',
+  });
+  const [msg, setMsg] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const set = (p: Partial<typeof f>) => setF((o) => ({ ...o, ...p }));
+  const err = (k: string) =>
+    errors[k] ? (
+      <div className="field-error" role="alert">
+        {errors[k]}
+      </div>
+    ) : null;
   return (
-    <OrderList
-      mode="fg"
-      actions={actions}
-      title="Finished Goods Receipt"
-      sub="Send finished pieces for final inspection. Only the pieces a Usage Decision accepted can be received into stock."
-    />
+    <Dialog
+      title="New production order"
+      onClose={onClose}
+      error={msg}
+      footer={
+        <button
+          type="button"
+          className="btn primary"
+          onClick={() => {
+            setMsg('');
+            setErrors({});
+            mpost('/production-orders', {
+              itemId: f.itemId,
+              qty: f.qty,
+              dueDate: f.dueDate,
+              warehouseId: f.warehouseId,
+              rmWarehouseId: f.rmWarehouseId,
+              ...(f.customerPoNo ? { customerPoNo: f.customerPoNo } : {}),
+            })
+              .then((r) => onSaved(s(r.id)))
+              .catch((e: unknown) => {
+                const u = toUiError(e);
+                setMsg(u.message);
+                setErrors(u.fields);
+              });
+          }}
+        >
+          Create
+        </button>
+      }
+    >
+      <div className="form-grid">
+        <div className="field">
+          <label htmlFor="po-item">Item to make *</label>
+          <RefPicker
+            id="po-item"
+            kind="item"
+            value={f.itemId}
+            label={f.itemLabel}
+            onChange={(i, l) => set({ itemId: i, itemLabel: l })}
+          />
+          {err('itemId')}
+        </div>
+        <div className="field">
+          <label htmlFor="po-qty">Quantity *</label>
+          <input
+            id="po-qty"
+            type="number"
+            min={0}
+            step="any"
+            value={f.qty}
+            onChange={(e) => set({ qty: e.target.value })}
+          />
+          {err('qty')}
+        </div>
+        <div className="field">
+          <label htmlFor="po-due">Due date *</label>
+          <input
+            id="po-due"
+            type="date"
+            value={f.dueDate}
+            onChange={(e) => set({ dueDate: e.target.value })}
+          />
+          {err('dueDate')}
+        </div>
+        <div className="field">
+          <label htmlFor="po-fg">Finished goods store *</label>
+          <OptionSelect
+            id="po-fg"
+            value={f.warehouseId}
+            options={whs.data ?? []}
+            onChange={(v) => set({ warehouseId: v })}
+          />
+          {err('warehouseId')}
+        </div>
+        <div className="field">
+          <label htmlFor="po-rm">Raw material store *</label>
+          <OptionSelect
+            id="po-rm"
+            value={f.rmWarehouseId}
+            options={whs.data ?? []}
+            onChange={(v) => set({ rmWarehouseId: v })}
+          />
+          {err('rmWarehouseId')}
+        </div>
+        <div className="field">
+          <label htmlFor="po-cpo">Customer PO</label>
+          <input
+            id="po-cpo"
+            value={f.customerPoNo}
+            onChange={(e) => set({ customerPoNo: e.target.value })}
+          />
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
+function OrderView({
+  id,
+  actions,
+  onClose,
+  onChanged,
+}: {
+  id: string;
+  actions: ActionSet;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const toast = useToast();
+  const doc = useLoad(() => mget(`/production-orders/${id}`), [id]);
+  const [qtys, setQtys] = useState<Record<string, string>>({});
+  const [openCard, setOpenCard] = useState<string | null>(null);
+  const msg = '';
+  const o = doc.data;
+  const st = s(o?.status);
+  const ver = Number(o?.version ?? 0);
+  const after = () => {
+    doc.reload();
+    onChanged();
+  };
+  const lines = () =>
+    Object.entries(qtys)
+      .filter(([, v]) => v !== '' && Number(v) > 0)
+      .map(([materialId, qty]) => ({ materialId, qty }));
+  const live = ['Released', 'In Progress'].includes(st);
+  const cost = (o?.cost ?? {}) as Row;
+  return (
+    <Dialog
+      title={o ? `${s(o.number)} · ${s(o.itemName)}` : 'Production order'}
+      sub={o ? `${st} · ${num(o.qty)} ${s(o.uom)} · due ${dmy(s(o.dueDate).slice(0, 10))}` : ''}
+      onClose={onClose}
+      error={msg || doc.error}
+      footer={
+        o ? (
+          <>
+            {st === 'Planned' && actions.post ? (
+              <Act
+                label="Release"
+                primary
+                run={() => mpost(`/production-orders/${id}/release`, {}, ver)}
+                done={after}
+              />
+            ) : null}
+            {st === 'Pending Approval' && actions.approve ? (
+              <Act
+                label="Approve and release"
+                primary
+                run={() => mpost(`/production-orders/${id}/approve`, {}, ver)}
+                done={after}
+              />
+            ) : null}
+            {live && actions.post ? (
+              <Act
+                label="Work is finished"
+                run={() => mpost(`/production-orders/${id}/start-complete`, {})}
+                sure="All operations are done? The order will move to Completed."
+                done={after}
+              />
+            ) : null}
+            {st === 'Completed' && actions.approve ? (
+              <Act
+                label="Close order"
+                primary
+                sure="Close the order? Leftover WIP is cleared to scrap loss."
+                run={() => mpost(`/production-orders/${id}/close`, {}, ver)}
+                done={after}
+              />
+            ) : null}
+            {['Planned', 'Pending Approval', 'Released'].includes(st) && actions.cancel ? (
+              <ReasonAct
+                label="Cancel order"
+                question="Why is it cancelled?"
+                run={(reason) => mpost(`/production-orders/${id}/cancel`, { reason }, ver)}
+                done={after}
+              />
+            ) : null}
+            {actions.print ? (
+              <>
+                <FileButton
+                  path={`/production-orders/${id}/print`}
+                  name="production-order.pdf"
+                  label="Print"
+                />
+                <FileButton
+                  path={`/production-orders/${id}/traveller`}
+                  name="traveller.pdf"
+                  label="Traveller"
+                />
+              </>
+            ) : null}
+          </>
+        ) : null
+      }
+    >
+      {o ? (
+        <>
+          <h4>Material</h4>
+          <Grid
+            rows={(o.materials as Row[] | undefined) ?? []}
+            rowKey={(r) => s(r.id)}
+            cols={[
+              { h: 'Item', r: (r) => `${s(r.itemCode)} · ${s(r.itemName)}` },
+              { h: 'Needed', r: (r) => num(r.requiredQty) },
+              { h: 'Issued', r: (r) => num(r.issuedQty) },
+              { h: 'Returned', r: (r) => num(r.returnedQty) },
+              { h: 'How', r: (r) => (s(r.issueMethod) === 'BACKFLUSH' ? 'Backflush' : 'Manual') },
+              {
+                h: live && actions.post ? 'Issue / return now' : '',
+                r: (r) =>
+                  live && actions.post && s(r.issueMethod) !== 'BACKFLUSH' ? (
+                    <input
+                      aria-label={`Quantity ${s(r.itemCode)}`}
+                      type="number"
+                      min={0}
+                      step="any"
+                      value={qtys[s(r.id)] ?? ''}
+                      onChange={(e) => setQtys((x) => ({ ...x, [s(r.id)]: e.target.value }))}
+                    />
+                  ) : null,
+              },
+            ]}
+          />
+          {live && actions.post ? (
+            <div className="toolbar">
+              <Act
+                label="Issue material"
+                primary
+                run={() => {
+                  const l = lines();
+                  if (!l.length) return Promise.reject(new Error('Enter a quantity to issue.'));
+                  return mpost(`/production-orders/${id}/issue`, { lines: l });
+                }}
+                done={() => {
+                  setQtys({});
+                  after();
+                }}
+              />
+              <Act
+                label="Return to store"
+                run={() => {
+                  const l = lines();
+                  if (!l.length) return Promise.reject(new Error('Enter a quantity to return.'));
+                  return mpost(`/production-orders/${id}/return`, { lines: l });
+                }}
+                done={() => {
+                  setQtys({});
+                  after();
+                }}
+              />
+            </div>
+          ) : null}
+          <h4>Job cards</h4>
+          <Grid
+            rows={(o.ops as Row[] | undefined) ?? []}
+            rowKey={(r) => s(r.id)}
+            empty="Job cards are made when the order is released."
+            cols={[
+              { h: 'No.', r: (r) => s(r.seq) },
+              { h: 'Operation', r: (r) => s(r.name) },
+              { h: 'Work center', r: (r) => s(r.workCentreCode) },
+              { h: 'Qty in', r: (r) => num(r.qtyIn) },
+              { h: 'Good', r: (r) => num(r.qtyDone) },
+              { h: 'Scrap', r: (r) => num(r.qtyScrap) },
+              { h: 'Status', r: (r) => <Pill tone={ORDER_TONE[s(r.status)]}>{s(r.status)}</Pill> },
+              {
+                h: '',
+                r: (r) => (
+                  <button type="button" className="btn" onClick={() => setOpenCard(s(r.id))}>
+                    Open card
+                  </button>
+                ),
+              },
+            ]}
+          />
+          <h4>Cost so far</h4>
+          <p>
+            Material <b>{inr(s(cost.material))}</b> · labour <b>{inr(s(cost.labour))}</b> · overhead{' '}
+            <b>{inr(s(cost.overhead))}</b> · abnormal scrap <b>{inr(s(cost.abnormalScrap))}</b> ·
+            finished goods <b>{inr(s(cost.fgValue))}</b> · still in WIP <b>{inr(s(cost.wip))}</b>
+          </p>
+          {((o.receipts as Row[]) ?? []).length ? (
+            <>
+              <h4>Finished goods received</h4>
+              <Grid
+                rows={(o.receipts as Row[]) ?? []}
+                rowKey={(r) => s(r.id)}
+                cols={[
+                  { h: 'Receipt', r: (r) => s(r.number) },
+                  { h: 'Qty', r: (r) => num(r.qty) },
+                  { h: 'Quality', r: (r) => s(r.qcStatus) },
+                  { h: 'Unit cost', r: (r) => inr(s(r.unitCost)) },
+                  { h: 'Status', r: (r) => s(r.status) },
+                ]}
+              />
+            </>
+          ) : null}
+          {openCard ? (
+            <Dialog title="Job card" onClose={() => setOpenCard(null)} error={msg}>
+              <JobCardPanel
+                id={openCard}
+                actions={actions}
+                onChanged={() => {
+                  after();
+                  toast('Updated');
+                }}
+              />
+            </Dialog>
+          ) : null}
+        </>
+      ) : (
+        <p>Loading…</p>
+      )}
+    </Dialog>
+  );
+}
+
+// ------------------------------------------------------------------------------------------------ job cards
+export function WorkOrdersPage({ actions }: { actions: ActionSet }) {
+  const [status, setStatus] = useState('');
+  const [wc, setWc] = useState('');
+  const [view, setView] = useState<string | null>(null);
+  const wcs = useWorkCentres();
+  const list = useLoad(() => mlist('/job-cards', { status, workCentreId: wc }), [status, wc]);
+  return (
+    <>
+      <PageHead
+        title="Work Orders (Job Cards)"
+        sub="One card per operation. Start setup or run, pause with a reason, and complete with the good, rejected, scrap and rework counts. The next card opens when the previous one has pieces."
+      />
+      <div className="toolbar">
+        <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">All cards</option>
+          {['Pending', 'In Progress', 'Paused', 'Done'].map((x) => (
+            <option key={x} value={x}>
+              {x}
+            </option>
+          ))}
+        </select>
+        <OptionSelect
+          id="jc-wc"
+          value={wc}
+          options={wcs.data ?? []}
+          onChange={setWc}
+          blank="All work centers"
+        />
+      </div>
+      <ErrorBox message={list.error} />
+      <Grid
+        rows={list.data?.rows ?? []}
+        loading={list.loading}
+        empty="No job cards yet. Release a production order to create them."
+        rowKey={(r) => s(r.id)}
+        cols={[
+          { h: 'Order', r: (r) => s(r.orderNumber) },
+          { h: 'Item', r: (r) => s(r.itemName) },
+          { h: 'Operation', r: (r) => `${s(r.seq)} ${s(r.name)}` },
+          { h: 'Work center', r: (r) => s(r.workCentreCode) },
+          { h: 'Good', r: (r) => num(r.qtyDone) },
+          { h: 'Due', r: (r) => (r.dueDate ? dmy(s(r.dueDate).slice(0, 10)) : '—') },
+          { h: 'Status', r: (r) => <Pill tone={ORDER_TONE[s(r.status)]}>{s(r.status)}</Pill> },
+          {
+            h: '',
+            r: (r) => (
+              <button type="button" className="btn" onClick={() => setView(s(r.id))}>
+                Open
+              </button>
+            ),
+          },
+        ]}
+      />
+      {view ? (
+        <Dialog title="Job card" onClose={() => setView(null)}>
+          <JobCardPanel id={view} actions={actions} onChanged={() => list.reload()} />
+        </Dialog>
+      ) : null}
+    </>
+  );
+}
+
+// ------------------------------------------------------------------------------------------------ finished goods
+export function FgPage({ actions }: { actions: ActionSet }) {
+  const list = useLoad(() => mlist('/production-orders'), []);
+  const [view, setView] = useState<string | null>(null);
+  const rows = (list.data?.rows ?? []).filter((r) =>
+    ['Released', 'In Progress', 'Completed', 'Closed'].includes(s(r.status)),
+  );
+  return (
+    <>
+      <PageHead
+        title="Finished Goods Receipt"
+        sub="Receive good pieces into stock at their WIP cost. If the item needs inspection, the stock waits in quality hold until the Usage Decision."
+      />
+      <ErrorBox message={list.error} />
+      <Grid
+        rows={rows}
+        loading={list.loading}
+        empty="Nothing to receive yet."
+        rowKey={(r) => s(r.id)}
+        cols={[
+          { h: 'Order', r: (r) => s(r.number) },
+          { h: 'Item', r: (r) => `${s(r.itemCode)} · ${s(r.itemName)}` },
+          { h: 'Made (good)', r: (r) => num(r.qtyCompleted) },
+          { h: 'Received', r: (r) => num(r.qtyReceived) },
+          { h: 'Status', r: (r) => <Pill tone={ORDER_TONE[s(r.status)]}>{s(r.status)}</Pill> },
+          {
+            h: '',
+            r: (r) => (
+              <button type="button" className="btn" onClick={() => setView(s(r.id))}>
+                Open
+              </button>
+            ),
+          },
+        ]}
+      />
+      {view ? (
+        <ReceiptView
+          id={view}
+          actions={actions}
+          onClose={() => setView(null)}
+          onChanged={() => list.reload()}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function ReceiptView({
+  id,
+  actions,
+  onClose,
+  onChanged,
+}: {
+  id: string;
+  actions: ActionSet;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const doc = useLoad(() => mget(`/production-orders/${id}`), [id]);
+  const [qty, setQty] = useState('');
+  const [batch, setBatch] = useState('');
+  const o = doc.data;
+  const after = () => {
+    doc.reload();
+    onChanged();
+  };
+  const receipts = (o?.receipts as Row[] | undefined) ?? [];
+  return (
+    <Dialog
+      title={o ? `${s(o.number)} · ${s(o.itemName)}` : 'Receipt'}
+      sub={o ? `Made ${num(o.qtyCompleted)} · received ${num(o.qtyReceived)}` : ''}
+      onClose={onClose}
+      error={doc.error}
+    >
+      {actions.post && o && ['Released', 'In Progress', 'Completed'].includes(s(o.status)) ? (
+        <div className="toolbar">
+          <input
+            aria-label="Receive quantity"
+            type="number"
+            min={0}
+            step="any"
+            placeholder="Quantity"
+            value={qty}
+            onChange={(e) => setQty(e.target.value)}
+          />
+          {o.batchTracked === true ? (
+            <input
+              aria-label="Batch number"
+              placeholder="Batch no."
+              value={batch}
+              onChange={(e) => setBatch(e.target.value)}
+            />
+          ) : null}
+          <Act
+            label="Receive into stock"
+            primary
+            run={() =>
+              mpost('/production-receipts', {
+                orderId: id,
+                qty,
+                ...(batch ? { batchNo: batch } : {}),
+              })
+            }
+            done={() => {
+              setQty('');
+              after();
+            }}
+          />
+        </div>
+      ) : null}
+      <Grid
+        rows={receipts}
+        rowKey={(r) => s(r.id)}
+        empty="No receipts yet."
+        cols={[
+          { h: 'Receipt', r: (r) => s(r.number) },
+          { h: 'Date', r: (r) => dmy(s(r.receiptDate).slice(0, 10)) },
+          { h: 'Qty', r: (r) => num(r.qty) },
+          { h: 'Quality', r: (r) => s(r.qcStatus) },
+          { h: 'Value', r: (r) => inr(s(r.amount)) },
+          { h: 'Status', r: (r) => s(r.status) },
+          {
+            h: '',
+            r: (r) =>
+              actions.cancel && s(r.status) !== 'Cancelled' ? (
+                <ReasonAct
+                  label="Cancel"
+                  question="Why is it cancelled? The stock and the value go back to WIP."
+                  run={(reason) => mpost(`/production-receipts/${s(r.id)}/cancel`, { reason })}
+                  done={after}
+                />
+              ) : null,
+          },
+        ]}
+      />
+    </Dialog>
   );
 }
