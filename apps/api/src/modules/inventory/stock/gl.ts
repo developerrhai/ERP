@@ -23,7 +23,8 @@ export type CounterKey =
   | 'CONSUMPTION_EXPENSE'
   | 'STOCK_ADJUSTMENT'
   | 'INTER_UNIT_CLEARING'
-  | 'INVENTORY_WIP';
+  | 'INVENTORY_WIP'
+  | 'MAINT_EXPENSE';
 
 interface Leg {
   unitId: string;
@@ -133,7 +134,11 @@ export const StockGl = {
     );
     if (legs.length === 0) return null;
     const needsCc = new Set<string>();
-    if (p.counter === 'CONSUMPTION_EXPENSE' || p.counter === 'STOCK_ADJUSTMENT') {
+    if (
+      p.counter === 'CONSUMPTION_EXPENSE' ||
+      p.counter === 'STOCK_ADJUSTMENT' ||
+      p.counter === 'MAINT_EXPENSE'
+    ) {
       for (const l of legs) if (l.key === p.counter) needsCc.add(l.unitId);
     }
     const cc = new Map<string, string>();

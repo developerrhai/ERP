@@ -9,6 +9,7 @@ import { notificationService } from '../notifications/service';
 import { istDate } from './errors';
 import { runInventoryDaily } from '../inventory/ops-service';
 import { runScmDaily } from '../procurement/jobs';
+import { runAssetsDaily } from '../assets/daily';
 import { runQmsDaily } from '../qms/instruments-service';
 import { escalateOverdue, sendApprovalReminders } from './jobs';
 
@@ -50,4 +51,5 @@ export function registerApprovalJobHandlers(): void {
   guarded(QUEUES.inventoryDaily, () => runInventoryDaily());
   guarded(QUEUES.scmDaily, () => runScmDaily());
   guarded(QUEUES.qmsDaily, () => runQmsDaily());
+  guarded(QUEUES.assetsDaily, () => runAssetsDaily());
 }

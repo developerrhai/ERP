@@ -30,7 +30,9 @@ export type LedgerVoucherType =
   | 'MFG_ISSUE'
   | 'MFG_RETURN'
   | 'FG_RECEIPT'
-  | 'SCRAP';
+  | 'SCRAP'
+  | 'MWO_ISSUE'
+  | 'MWO_RETURN';
 
 export type StockStatus = 'UNRESTRICTED' | 'QUALITY_INSPECTION' | 'BLOCKED';
 

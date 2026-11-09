@@ -195,6 +195,21 @@ export const reportsService = {
           `${q.to}T23:59:59Z`,
         )
       )[0]!;
+      // Phase 14: the maintenance downtime events of the machine behind this work centre count as well (planned or not)
+      const dte = (
+        await query(
+          prisma,
+          `SELECT COALESCE(sum(EXTRACT(EPOCH FROM (LEAST(COALESCE(e.end_at, now()), $3::timestamptz) - GREATEST(e.start_at, $2::timestamptz))) / 60) FILTER (WHERE e.dt_type='PLANNED'),0)::text AS planned,
+                  COALESCE(sum(EXTRACT(EPOCH FROM (LEAST(COALESCE(e.end_at, now()), $3::timestamptz) - GREATEST(e.start_at, $2::timestamptz))) / 60) FILTER (WHERE e.dt_type='UNPLANNED'),0)::text AS unplanned
+             FROM downtime_events e
+            WHERE e.work_centre_id=$1::uuid AND e.deleted_at IS NULL AND e.start_at < $3::timestamptz AND COALESCE(e.end_at, now()) > $2::timestamptz`,
+          S(w.id),
+          `${q.from}T00:00:00Z`,
+          `${q.to}T23:59:59Z`,
+        )
+      )[0]!;
+      dt.planned = D(S(dt.planned)).plus(S(dte.planned)).toFixed(2);
+      dt.unplanned = D(S(dt.unplanned)).plus(S(dte.unplanned)).toFixed(2);
       const pcs = (
         await query(
           prisma,

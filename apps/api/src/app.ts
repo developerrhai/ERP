@@ -52,6 +52,7 @@ import { createProcurementRouter } from './modules/procurement/routes';
 import { createSalesRouter } from './modules/sales/routes';
 import { createTaxRouter } from './modules/tax/routes';
 import { createQmsRouter } from './modules/qms/routes';
+import { createAssetsRouter } from './modules/assets/routes';
 import { createMfgRouter } from './modules/mfg/routes';
 import { createMastersRouter } from './modules/masters/routes';
 import { createSimpleMastersRouter } from './modules/masters/simple-masters';
@@ -158,6 +159,7 @@ export function createApp(options: AppOptions = {}): Express {
   api.use(createTaxRouter()); // Phase 11: /tax
   api.use(createQmsRouter()); // Phase 12: /qms
   api.use(createMfgRouter()); // Phase 13: /mfg
+  api.use(createAssetsRouter()); // Phase 14: /maint and /assets
   api.use(createProcurementRouter()); // Phase 9: /scm, /wms/putaway, /fin/debitnote, /fin/ap
   api.use(createInventoryRouter()); // Phase 8: /inventory (vouchers with lines, batches, serials, bins, reservations, counts, reports)
   api.use('/approval-matrix', createApprovalMatrixRouter());

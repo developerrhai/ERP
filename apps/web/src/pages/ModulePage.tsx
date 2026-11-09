@@ -82,6 +82,24 @@ import { FgPage, OrdersPage, WorkOrdersPage } from './mfg/OrderPages';
 import { MrpPage, ProductionPlansPage } from './mfg/PlanPages';
 import { CostingPage, ReworkPage, ScrapPage, WipPage } from './mfg/RegisterPages';
 import { ShopFloorPage } from './mfg/ShopFloor';
+import { AssetMasterPage, EquipmentPage, MachinesPage, QrPage } from './assets/AssetPages';
+import {
+  AllocationPage,
+  CapitalisationPage,
+  DepreciationPage,
+  DisposalPage,
+  TransferPage,
+} from './assets/DocPages';
+import {
+  AlertsPage as MaintAlertsPage,
+  BreakdownPage,
+  DowntimePage,
+  MtbfPage,
+  PreventivePage,
+  SchedulePage,
+  SparesPage,
+  WorkOrdersPage as MaintWorkOrdersPage,
+} from './assets/MaintPages';
 import { CapaPage } from './qms/FormPages';
 import { InspectionPage } from './qms/InspectionPages';
 import { NcrPage } from './qms/RegisterPages';
@@ -341,6 +359,57 @@ function PageBody({
       return <ReworkPage actions={actions} />;
     case 'mfg-costing':
       return <CostingPage actions={actions} />;
+    // Phase 14 maintenance and assets
+    case 'maint-machines':
+      return <MachinesPage actions={actions} />;
+    case 'maint-equipment':
+      return <EquipmentPage actions={actions} />;
+    case 'maint-preventive':
+      return <PreventivePage actions={actions} />;
+    case 'maint-schedule':
+      return <SchedulePage actions={actions} />;
+    case 'maint-breakdown':
+      return <BreakdownPage actions={actions} />;
+    case 'maint-workorders':
+      return (
+        <MaintWorkOrdersPage
+          actions={actions}
+          page="maint-workorders"
+          base="/maint/work-orders"
+          title="Maintenance Work Orders"
+        />
+      );
+    case 'maint-spares':
+      return <SparesPage />;
+    case 'maint-downtime':
+      return <DowntimePage actions={actions} />;
+    case 'maint-mtbf':
+      return <MtbfPage />;
+    case 'maint-alerts':
+      return <MaintAlertsPage actions={actions} />;
+    case 'asset-master':
+      return <AssetMasterPage actions={actions} />;
+    case 'asset-capitalization':
+      return <CapitalisationPage actions={actions} />;
+    case 'asset-allocation':
+      return <AllocationPage actions={actions} />;
+    case 'asset-transfer':
+      return <TransferPage actions={actions} />;
+    case 'asset-maintenance':
+      return (
+        <MaintWorkOrdersPage
+          actions={actions}
+          page="asset-maintenance"
+          base="/assets/maintenance"
+          title="Asset Maintenance"
+        />
+      );
+    case 'asset-depreciation':
+      return <DepreciationPage actions={actions} />;
+    case 'asset-disposal':
+      return <DisposalPage actions={actions} />;
+    case 'asset-qr':
+      return <QrPage actions={actions} />;
     case 'fin-trial':
       return <TrialBalancePage />;
     case 'fin-pnl':

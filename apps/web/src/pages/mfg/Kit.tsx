@@ -1,6 +1,7 @@
 // Small shared pieces of the Phase 13 manufacturing screens: a field-driven form dialog, option selects for warehouses and
 // work centres, and the status colours. Business rules live on the server; the screens only collect and show.
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Modal } from '../../components/Modal';
 import { toUiError } from '../../lib/errors';
 import { useToast } from '../../components/Toast';
@@ -53,6 +54,7 @@ export type FieldType =
   | 'number'
   | 'date'
   | 'month'
+  | 'datetime'
   | 'textarea'
   | 'select'
   | 'item'
@@ -108,6 +110,7 @@ export function FormModal({
   initial = {},
   submitLabel = 'Save',
   size,
+  extra,
   onSubmit,
   onClose,
 }: {
@@ -117,6 +120,8 @@ export function FormModal({
   initial?: Record<string, string | boolean>;
   submitLabel?: string;
   size?: 'sm' | 'lg';
+  /** shown above the fields (for a pick the field list cannot draw) */
+  extra?: ReactNode;
   onSubmit: (v: Record<string, string>) => Promise<unknown>;
   onClose: () => void;
 }) {
@@ -164,6 +169,7 @@ export function FormModal({
       }
     >
       <ErrorBox message={msg} />
+      {extra}
       <div className="form-grid">
         {fields.map((f) => {
           const id = `mf-${f.key}`;
@@ -222,7 +228,9 @@ export function FormModal({
                       ? 'date'
                       : f.type === 'month'
                         ? 'month'
-                        : 'text'
+                        : f.type === 'datetime'
+                          ? 'datetime-local'
+                          : 'text'
                 }
                 {...(f.type === 'number' ? { step: 'any', min: 0 } : {})}
                 value={str(f.key)}

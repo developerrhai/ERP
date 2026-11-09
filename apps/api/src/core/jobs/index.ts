@@ -24,6 +24,8 @@ export const QUEUES = {
   qmsDaily: 'qms.daily',
   // Phase 13: one MRP run (payload jobId = the run id), one at a time per unit.
   mfgMrp: 'mfg.mrp.run',
+  // Phase 14: PM schedules and work orders that fall due, alerts and escalations.
+  assetsDaily: 'assets.daily',
 } as const;
 
 /** Cron schedules (Asia/Kolkata) of the Phase 5 queues. */
@@ -36,6 +38,7 @@ export const PHASE5_SCHEDULES: Readonly<Record<string, string>> = {
   [QUEUES.inventoryDaily]: '0 2 * * *',
   [QUEUES.scmDaily]: '30 1 * * *',
   [QUEUES.qmsDaily]: '15 2 * * *',
+  [QUEUES.assetsDaily]: '45 2 * * *',
 };
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 
