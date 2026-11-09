@@ -15,7 +15,7 @@ import type { RecordBody } from './phase4-helpers';
 
 const app = newApp();
 const client = api(app);
-const PAGE = 'scm-pr';
+const PAGE = 'scm-approval';
 const MONEY = schemaOf(PAGE).fields.find((f) => f.type === 'money')?.key ?? '';
 const HOUR = 3600 * 1000;
 

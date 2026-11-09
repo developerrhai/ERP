@@ -6,7 +6,7 @@ import { LEAD_ROWS, LEAD_SCHEMA, recordsHandler } from '../../test/engine-fixtur
 import type { PageSchema } from './engineApi';
 
 const owner = makeUser({ role: 'SUPER_ADMIN', roleLabel: 'Super Admin', name: 'Owner Person' });
-const P = '/api/v1/pages/crm-leads';
+const P = '/api/v1/pages/service-tickets';
 
 const DEMO_SCHEMA: PageSchema = {
   ...LEAD_SCHEMA,
@@ -49,8 +49,8 @@ beforeEach(() => {
 describe('GenericModulePage with Engine Kit extensions', () => {
   it('places [ADD] tabs after Audit Trail', async () => {
     setup();
-    renderApp('/m/crm-leads');
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    renderApp('/m/service-tickets');
+    await screen.findByRole('heading', { name: 'Service Tickets' });
 
     const tabs = within(screen.getByRole('tablist')).getAllByRole('tab');
     const tabNames = tabs.map((t) => t.textContent);
@@ -66,8 +66,8 @@ describe('GenericModulePage with Engine Kit extensions', () => {
 
   it('renders PanelView for declared tabPanels and PhaseNotice for undeclared tabs', async () => {
     setup();
-    renderApp('/m/crm-leads');
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    renderApp('/m/service-tickets');
+    await screen.findByRole('heading', { name: 'Service Tickets' });
 
     // Undeclared profile tab shows PhaseNotice
     const unbuiltTab = screen.getByRole('tab', { name: 'Qualification Desk' });
@@ -82,16 +82,16 @@ describe('GenericModulePage with Engine Kit extensions', () => {
 
   it('hides ＋ Add button when readOnlyCreate is true', async () => {
     setup({ ...DEMO_SCHEMA, readOnlyCreate: true });
-    renderApp('/m/crm-leads');
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    renderApp('/m/service-tickets');
+    await screen.findByRole('heading', { name: 'Service Tickets' });
 
     expect(screen.queryByRole('button', { name: '＋ Add' })).not.toBeInTheDocument();
   });
 
   it('shows ＋ Add button when readOnlyCreate is false or omitted', async () => {
     setup({ ...DEMO_SCHEMA, readOnlyCreate: false });
-    renderApp('/m/crm-leads');
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    renderApp('/m/service-tickets');
+    await screen.findByRole('heading', { name: 'Service Tickets' });
 
     expect(screen.getByRole('button', { name: '＋ Add' })).toBeInTheDocument();
   });
@@ -99,8 +99,8 @@ describe('GenericModulePage with Engine Kit extensions', () => {
   it('shows Open workspace button on rows when record panels exist, navigates with ?rec=', async () => {
     const user = userEvent.setup();
     setup();
-    renderApp('/m/crm-leads?tab=Lead%20Register');
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    renderApp('/m/service-tickets?tab=Ticket%20Queue');
+    await screen.findByRole('heading', { name: 'Service Tickets' });
     await screen.findByText('Lead 1');
 
     const wsBtns = await screen.findAllByRole('button', { name: /Open workspace/i });
@@ -121,8 +121,8 @@ describe('GenericModulePage with Engine Kit extensions', () => {
       tabPanels: [{ tab: 'Lead Extra Tab', key: 'lead-extra', scope: 'page' }],
     };
     setup(pageOnlySchema);
-    renderApp('/m/crm-leads?tab=Lead%20Register');
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    renderApp('/m/service-tickets?tab=Ticket%20Queue');
+    await screen.findByRole('heading', { name: 'Service Tickets' });
     await screen.findByText('Lead 1');
 
     expect(screen.queryByRole('button', { name: /Open workspace/i })).not.toBeInTheDocument();

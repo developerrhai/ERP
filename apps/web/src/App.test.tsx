@@ -26,7 +26,7 @@ const salesMember = makeUser({
 describe('App routing', () => {
   it('redirects a signed-out user to the login page', async () => {
     mockFetch({ 'POST /api/v1/auth/refresh': () => apiError(401, 'UNAUTHENTICATED', 'x') });
-    renderApp('/m/crm-leads');
+    renderApp('/m/service-tickets');
     expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
   });
 
@@ -89,8 +89,8 @@ describe('App routing', () => {
 
   it('other module pages show the later-phase notice; unknown ids show 404', async () => {
     signedInAs(salesMember);
-    renderApp('/m/crm-leads');
-    expect(await screen.findByRole('heading', { name: 'Lead Management' })).toBeInTheDocument();
+    renderApp('/m/service-tickets');
+    expect(await screen.findByRole('heading', { name: 'Service Tickets' })).toBeInTheDocument();
     expect(screen.getByText('This module will be enabled in a later phase.')).toBeInTheDocument();
   });
 

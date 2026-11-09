@@ -11,7 +11,7 @@ export const TEST_ENV: Record<string, string> = {
   SESSION_IDLE_MINUTES: '30',
   REFRESH_REUSE_GRACE_SECONDS: '10',
   WEB_ORIGIN: 'http://localhost:5173',
-  LOG_LEVEL: 'silent',
+  LOG_LEVEL: process.env.TEST_LOG_LEVEL ?? 'silent',
   RATE_LIMIT_DISABLED: 'true',
   TRUST_PROXY: 'loopback',
   // High so the parallel lockout test is not cut short by 503s; the gate test lowers it per app.

@@ -11,6 +11,7 @@ import { knownStates } from '../masters/tax-service';
 import { validateGstin } from '../masters/party-rules';
 import type { Actor } from './accounts-service';
 import { cashBankService } from './cash-bank-service';
+import { assertJournalNotFiled } from '../tax/period-lock';
 import { FinErrors } from './errors';
 import { D, ZERO, isoDate, money, parseMoney } from './money';
 import type { Dec } from './money';
@@ -86,6 +87,7 @@ export const taxService = {
 
   /** Reversal / cancel of the journal: the register rows are cancelled; a deposited TDS entry blocks it. */
   async cancelForJournal(tx: Db, journalId: string): Promise<void> {
+    await assertJournalNotFiled(tx, journalId);
     const deposited = await tx.$queryRaw<{ n: bigint }[]>`
       SELECT COUNT(*)::bigint AS n FROM tds_entries WHERE journal_id = ${journalId}::uuid AND challan_id IS NOT NULL AND status = 'Active'`;
     if (Number(deposited[0]?.n ?? 0) > 0) {

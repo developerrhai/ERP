@@ -236,38 +236,35 @@ describe('Budgeting and ageing pages', () => {
     expect(await screen.findByText(/No budgets yet\. Click/)).toBeInTheDocument();
   });
 
-  it('Accounts Payable ageing asks the PAYABLE side', async () => {
+  it('Accounts Payable (Phase 9) shows the supplier ageing from /fin/ap/ageing', async () => {
+    const buckets = {
+      NOT_DUE: '250.00',
+      '0-30': '0.00',
+      '31-60': '500.00',
+      '61-90': '0.00',
+      '90+': '0.00',
+    };
     const { calls } = signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/finance/reports/ageing': () =>
+      'GET /api/v1/fin/ap/payables': () =>
+        json(200, { data: { asOf: '2026-11-07', rows: [], suppliers: [] } }),
+      'GET /api/v1/fin/ap/due-schedule': () => json(200, { data: [] }),
+      'GET /api/v1/fin/ap/payments': () =>
+        json(200, { data: [], meta: { page: 1, size: 50, total: 0 } }),
+      'GET /api/v1/fin/ap/ageing': () =>
         json(200, {
           data: {
-            parties: [
-              {
-                partyId: 's1',
-                name: 'Steel Traders',
-                notDue: '250.00',
-                d1_30: '0.00',
-                d31_60: '500.00',
-                d61_90: '0.00',
-                d90plus: '0.00',
-                total: '750.00',
-              },
-            ],
-            total: {
-              notDue: '250.00',
-              d1_30: '0.00',
-              d31_60: '500.00',
-              d61_90: '0.00',
-              d90plus: '0.00',
-              total: '750.00',
-            },
+            asOf: '2026-11-07',
+            totals: buckets,
+            total: '750.00',
+            suppliers: [{ supplierId: 's1', supplierName: 'Steel Traders', buckets }],
           },
         }),
     });
     renderApp('/m/fin-ap');
+    await userEvent.setup().click(await screen.findByRole('tab', { name: 'Ageing' }));
     expect(await screen.findByText('Steel Traders')).toBeInTheDocument();
-    expect(calls.some((c) => c.url.includes('side=PAYABLE'))).toBe(true);
-    expect(screen.getAllByText('₹ 750.00').length).toBeGreaterThan(0);
+    expect(calls.some((c) => c.url.includes('/fin/ap/ageing'))).toBe(true);
+    expect(screen.getAllByText('₹ 500.00').length).toBeGreaterThan(0);
   });
 });

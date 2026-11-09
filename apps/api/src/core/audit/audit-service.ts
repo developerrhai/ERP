@@ -243,6 +243,22 @@ export const PHASE7_AUDIT_ACTIONS = [
 ] as const;
 
 /** Phase 6B: Format & Settings engine (docs/phases/PHASE-06B.md §9). Target = the format / rule-set version. */
+/** Phase 9: procurement. Target = the document; before/after in detail. */
+export const PHASE9_AUDIT_ACTIONS = [
+  'SCM_CREATED',
+  'SCM_UPDATED',
+  'SCM_DELETED',
+  'SCM_POSTED',
+  'SCM_CANCELLED',
+  'SCM_MATCH_OVERRIDDEN',
+  'SCM_ITC_FLAG_SET',
+  'SCM_DUE_DATE_OVERRIDE',
+  'SCM_QC_DECIDED',
+  'SCM_TDS_RECALC',
+  'SCM_PUTAWAY',
+  'SCM_ITC_180',
+] as const;
+
 export const PHASE6B_AUDIT_ACTIONS = [
   'FORMAT_DRAFTED',
   'FORMAT_PUBLISHED',
@@ -263,6 +279,7 @@ export const AUDIT_ACTIONS: string[] = [
   ...PHASE6_AUDIT_ACTIONS,
   ...PHASE7_AUDIT_ACTIONS,
   ...PHASE6B_AUDIT_ACTIONS,
+  ...PHASE9_AUDIT_ACTIONS,
 ];
 
 export type AuditAction = string;

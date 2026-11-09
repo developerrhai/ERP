@@ -18,14 +18,14 @@ import type { SettingsVersion } from '../../lib/settingsApi';
 import { LEAD_SCHEMA } from '../../test/engine-fixtures';
 
 const owner = makeUser({ role: 'SUPER_ADMIN', roleLabel: 'Super Admin', name: 'Owner Person' });
-const P = '/api/v1/pages/crm-leads';
+const P = '/api/v1/pages/service-tickets';
 const S = `${P}/settings`;
 
 function version(over: Partial<SettingsVersion> = {}): SettingsVersion {
   return {
     id: 'f-1',
     target: 'FORMAT',
-    pageId: 'crm-leads',
+    pageId: 'service-tickets',
     version: 3,
     versionNo: 2,
     status: 'ACTIVE',
@@ -83,7 +83,7 @@ function setup(
 }
 
 async function openSettings() {
-  renderApp('/m/crm-leads');
+  renderApp('/m/service-tickets');
   const button = await screen.findByRole('button', { name: /Settings/ });
   await userEvent.click(button);
   return screen.findByRole('dialog', { name: /Settings — / });
@@ -253,7 +253,7 @@ describe('admin-formats', () => {
               id: 'c1',
               targetType: 'RULE_SET',
               targetId: 'r-1',
-              pageId: 'crm-leads',
+              pageId: 'service-tickets',
               versionNo: 2,
               action: 'PUBLISHED',
               reason: 'Rate review',
@@ -330,9 +330,9 @@ describe('customer-wise format on a form', () => {
         });
       },
     });
-    renderApp('/m/crm-leads?tab=Lead%20Register');
+    renderApp('/m/service-tickets?tab=Ticket%20Queue');
     await userEvent.click(await screen.findByRole('button', { name: '＋ Add' }));
-    const form = await screen.findByRole('dialog', { name: 'Add Lead Management' });
+    const form = await screen.findByRole('dialog', { name: 'Add Service Tickets' });
     expect(within(form).queryByText(/Format:/)).toBeNull();
     expect(await within(form).findByLabelText('Customer')).toBeInTheDocument();
     await userEvent.type(within(form).getByLabelText('Customer'), 'Acme Works');

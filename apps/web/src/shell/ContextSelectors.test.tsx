@@ -232,7 +232,7 @@ describe('top-bar context selectors', () => {
 
   it('module placeholder pages show Unit and FY context chips', async () => {
     signedIn(owner);
-    renderApp('/m/sales-orders');
+    renderApp('/m/service-requests');
     const chips = await screen.findByLabelText('Working context');
     await waitFor(() => expect(within(chips).getByText('Unit: Talwade')).toBeInTheDocument());
     expect(within(chips).getByText('FY: FY 2026-27')).toBeInTheDocument();

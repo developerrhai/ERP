@@ -8,6 +8,8 @@ import { drainOutbox } from '../notifications/email';
 import { notificationService } from '../notifications/service';
 import { istDate } from './errors';
 import { runInventoryDaily } from '../inventory/ops-service';
+import { runScmDaily } from '../procurement/jobs';
+import { runQmsDaily } from '../qms/instruments-service';
 import { escalateOverdue, sendApprovalReminders } from './jobs';
 
 async function alertAdministrators(job: string, err: unknown): Promise<void> {
@@ -46,4 +48,6 @@ export function registerApprovalJobHandlers(): void {
   guarded(QUEUES.emailSend, () => drainOutbox());
   guarded(QUEUES.notificationsPurge, () => notificationService.purge());
   guarded(QUEUES.inventoryDaily, () => runInventoryDaily());
+  guarded(QUEUES.scmDaily, () => runScmDaily());
+  guarded(QUEUES.qmsDaily, () => runQmsDaily());
 }

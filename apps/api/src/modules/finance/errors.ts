@@ -55,6 +55,8 @@ export const FinErrors = {
   notDraft: e(409, 'NOT_DRAFT'),
   taxPayloadMismatch: e(422, 'TAX_PAYLOAD_MISMATCH'),
   tdsAlreadyDeposited: e(409, 'TDS_ALREADY_DEPOSITED'),
+  gstPeriodFiled: e(409, 'GST_PERIOD_FILED'),
+  gstReturnInvalid: e(422, 'GST_RETURN_INVALID'),
   challanMismatch: e(422, 'CHALLAN_MISMATCH'),
   noFxRate: e(422, 'NO_FX_RATE'),
   expenseLimit: e(422, 'EXPENSE_LIMIT'),

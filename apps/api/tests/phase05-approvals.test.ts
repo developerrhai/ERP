@@ -23,7 +23,7 @@ import type { RecordBody } from './phase4-helpers';
 
 const app = newApp();
 const client = api(app);
-const PAGE = 'scm-po';
+const PAGE = 'scm-approval';
 const MONEY = schemaOf(PAGE).fields.find((f) => f.type === 'money')?.key ?? 'subtotal';
 const DEPT = 'Purchase';
 
@@ -287,8 +287,8 @@ describe('rule set resolution', () => {
     const at = (doc: string, u: string) => resolveRuleSet(prisma, d.id, doc, u).then((s) => s?.id);
     expect(await at(PAGE, unit as string)).toBe(both.id);
     expect(await at(PAGE, TAL)).toBe(byDoc.id);
-    expect(await at('scm-pr', unit as string)).toBe(byUnit.id);
-    expect(await at('scm-pr', TAL)).toBe(dflt.id);
+    expect(await at('scm-rfq', unit as string)).toBe(byUnit.id);
+    expect(await at('scm-rfq', TAL)).toBe(dflt.id);
     await prisma.approvalRuleSet.update({ where: { id: both.id }, data: { active: false } });
     expect(await at(PAGE, unit as string)).toBe(byDoc.id);
   });
@@ -391,7 +391,7 @@ describe('lifecycle', () => {
   });
 
   it('approval_required = false goes straight to Approved with AUTO_APPROVED evidence', async () => {
-    const page = 'scm-pr';
+    const page = 'scm-approval';
     await prisma.moduleControl.update({
       where: { pageId: page },
       data: { approvalRequired: false },

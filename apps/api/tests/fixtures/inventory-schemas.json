@@ -175,6 +175,13 @@
         "readOnly": false
       },
       {
+        "key": "isCustomerSupplied",
+        "label": "Customer Supplied Material",
+        "type": "bool",
+        "required": false,
+        "readOnly": false
+      },
+      {
         "key": "shelfLifeDays",
         "label": "Shelf Life Days",
         "type": "qty",

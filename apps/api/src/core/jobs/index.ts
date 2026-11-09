@@ -18,6 +18,10 @@ export const QUEUES = {
   notificationsPurge: 'notifications.purge',
   // Phase 8: reservations that ran out, reorder suggestions, expiry / reorder alerts.
   inventoryDaily: 'inventory.daily',
+  // Phase 9: ITC-180 reversal + alerts, MSME / contract / delay alerts, monthly supplier evaluation.
+  scmDaily: 'scm.daily',
+  // Phase 12: calibration due / expired reminders.
+  qmsDaily: 'qms.daily',
 } as const;
 
 /** Cron schedules (Asia/Kolkata) of the Phase 5 queues. */
@@ -28,6 +32,8 @@ export const PHASE5_SCHEDULES: Readonly<Record<string, string>> = {
   [QUEUES.emailSend]: '* * * * *',
   [QUEUES.notificationsPurge]: '0 3 * * 0',
   [QUEUES.inventoryDaily]: '0 2 * * *',
+  [QUEUES.scmDaily]: '30 1 * * *',
+  [QUEUES.qmsDaily]: '15 2 * * *',
 };
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 

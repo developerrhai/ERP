@@ -27,6 +27,34 @@ export const DOC_PREFIX: Record<string, string> = {
   'wms-cycle': 'CYC',
   'wms-physical': 'PHY',
   'wms-transfer': 'WTR',
+  // Procurement (Phase 9)
+  'scm-pr': 'PR',
+  'scm-rfq': 'RFQ',
+  'scm-vendorquote': 'VQ',
+  'scm-comparison': 'CMP',
+  'scm-po': 'PO',
+  'scm-contracts': 'CON',
+  'scm-grn': 'GRN',
+  'scm-purchaseinvoice': 'PINV',
+  'scm-purchaseinvoice:rcm': 'SINV',
+  'scm-debitnote': 'PDN',
+  'fin-ap': 'SPP',
+  'fin-ap:pay': 'SPAY',
+  'scm-evaluation': 'EVL',
+  // CRM & Sales (Phase 10)
+  'crm-leads': 'LD',
+  'crm-opportunities': 'OPP',
+  'crm-followups': 'FU',
+  'crm-meetings': 'MTG',
+  'crm-feedback': 'FB',
+  'sales-rfq': 'CRFQ',
+  'sales-quotations': 'QT',
+  'sales-orders': 'SO',
+  'sales-dispatch': 'DC',
+  'sales-invoices': 'INV',
+  'sales-collections': 'RCT',
+  'sales-returns': 'SRT',
+  'sales-returns:cn': 'CN',
 };
 
 export interface AllocateOptions {
@@ -165,10 +193,15 @@ export const NumberingService = {
     const padding = opts.padding ?? row?.padding ?? 4;
     const fyPart = fy.code.length > 4 && fy.code.startsWith('20') ? fy.code.slice(2) : fy.code;
 
-    const dateObj = opts.date ? (typeof opts.date === 'string' ? new Date(opts.date) : opts.date) : undefined;
+    const dateObj = opts.date
+      ? typeof opts.date === 'string'
+        ? new Date(opts.date)
+        : opts.date
+      : undefined;
 
     let code: string;
-    const customDbPattern = row?.pattern && row.pattern !== '{prefix}/{unit}/{fy}/{number:4}' ? row.pattern : null;
+    const customDbPattern =
+      row?.pattern && row.pattern !== '{prefix}/{unit}/{fy}/{number:4}' ? row.pattern : null;
     const pattern = customDbPattern || opts.pattern;
     if (pattern && pattern !== '{prefix}/{unit}/{fy}/{number:4}') {
       code = formatNumberPattern(pattern, {

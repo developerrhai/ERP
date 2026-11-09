@@ -164,6 +164,7 @@ const configs: MasterConfig[] = [
         effectiveFrom: isoDate,
         einvoiceEnabled: z.boolean().optional(),
         ewayEnabled: z.boolean().optional(),
+        filingFrequency: z.enum(['MONTHLY', 'QRMP']).optional(),
         minHsnDigits: z.union([z.literal(4), z.literal(6), z.literal(8)]).optional(),
         status: status.optional(),
       })
@@ -179,6 +180,7 @@ const configs: MasterConfig[] = [
           effectiveFrom: 'effectiveFrom',
           einvoiceEnabled: 'einvoiceEnabled',
           ewayEnabled: 'ewayEnabled',
+          filingFrequency: 'filingFrequency',
           minHsnDigits: 'minHsnDigits',
           status: 'status',
         },
@@ -193,6 +195,7 @@ const configs: MasterConfig[] = [
         tradeName: 'tradeName',
         einvoiceEnabled: 'einvoiceEnabled',
         ewayEnabled: 'ewayEnabled',
+        filingFrequency: 'filingFrequency',
         minHsnDigits: 'minHsnDigits',
         status: 'status',
       }),

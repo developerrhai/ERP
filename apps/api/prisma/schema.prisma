@@ -556,6 +556,7 @@ model Item {
   reorderLevel      Decimal?       @map("reorder_level") @db.Decimal(18, 3)
   valuationMethod   String         @default("MOVING_AVG") @map("valuation_method") @db.VarChar(12)
   qcRequired        Boolean        @default(false) @map("qc_required")
+  isCustomerSupplied Boolean       @default(false) @map("is_customer_supplied")
   unitWeightKg      Decimal?       @map("unit_weight_kg") @db.Decimal(18, 3)
   /// Phase 6: HSN master link (required for new / edited items), item group, GST rate override with a reason.
   itemGroupId       String?        @map("item_group_id") @db.Uuid
@@ -1142,6 +1143,7 @@ model GstRegistration {
   einvoiceEnabled  Boolean   @default(false) @map("einvoice_enabled")
   ewayEnabled      Boolean   @default(false) @map("eway_enabled")
   minHsnDigits     Int       @default(6) @map("min_hsn_digits") @db.SmallInt
+  filingFrequency  String    @default("MONTHLY") @map("filing_frequency") @db.VarChar(8)
   status           String    @default("ACTIVE") @db.VarChar(10)
   version          Int       @default(1)
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)

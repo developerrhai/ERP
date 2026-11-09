@@ -20,7 +20,13 @@ export type LedgerVoucherType =
   | 'REVERSAL'
   | 'RECONCILIATION'
   | 'REVALUATION'
-  | 'STATUS_CHANGE';
+  | 'STATUS_CHANGE'
+  | 'GRN'
+  | 'GRN_QC'
+  | 'PUTAWAY'
+  | 'PURCH_RETURN'
+  | 'DISPATCH'
+  | 'SALES_RETURN';
 
 export type StockStatus = 'UNRESTRICTED' | 'QUALITY_INSPECTION' | 'BLOCKED';
 

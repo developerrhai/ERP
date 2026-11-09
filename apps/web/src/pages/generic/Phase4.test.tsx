@@ -8,8 +8,8 @@ import { LEAD_ROWS, LEAD_SCHEMA, leadRow, recordsHandler } from '../../test/engi
 import type { PageSchema } from './engineApi';
 
 const owner = makeUser({ role: 'SUPER_ADMIN', roleLabel: 'Super Admin', name: 'Owner Person' });
-const P = '/api/v1/pages/crm-leads';
-const REGISTER = '/m/crm-leads?tab=Lead%20Register';
+const P = '/api/v1/pages/service-tickets';
+const REGISTER = '/m/service-tickets?tab=Ticket%20Queue';
 const row = (status: string) =>
   ({
     Draft: {
@@ -67,7 +67,7 @@ function setup(extra: Record<string, Handler> = {}, rows = LEAD_ROWS) {
     [`GET ${P}/records/summary`]: () =>
       json(200, {
         data: {
-          pageId: 'crm-leads',
+          pageId: 'service-tickets',
           total: 3,
           amountTotal: 0,
           hasAmount: false,
@@ -221,7 +221,7 @@ describe('Submit', () => {
 
 describe('Import wizard and report extras', () => {
   const UPLOAD = {
-    job: { id: 'j1', kind: 'IMPORT_VALIDATE', pageId: 'crm-leads', status: 'DONE', totalRows: 2 },
+    job: { id: 'j1', kind: 'IMPORT_VALIDATE', pageId: 'service-tickets', status: 'DONE', totalRows: 2 },
     headers: ['Lead Name', 'Company'],
     sample: [['A', 'B']],
     suggestedMapping: { leadName: 0, company: 1 },
@@ -237,7 +237,7 @@ describe('Import wizard and report extras', () => {
     const jobDone = {
       id: 'j1',
       kind: 'IMPORT_VALIDATE',
-      pageId: 'crm-leads',
+      pageId: 'service-tickets',
       status: 'DONE',
       totalRows: 2,
       okRows: 2,
@@ -262,7 +262,7 @@ describe('Import wizard and report extras', () => {
       [`GET /api/v1/jobs/c1`]: () =>
         json(200, { data: { ...jobDone, id: 'c1', kind: 'IMPORT_COMMIT', okRows: 2 } }),
     });
-    renderApp('/m/crm-leads?tab=Reports');
+    renderApp('/m/service-tickets?tab=Reports');
     const ue = userEvent.setup();
     await ue.click(await screen.findByRole('button', { name: 'Import…' }));
     const dlg = within(await screen.findByRole('dialog'));
@@ -290,7 +290,7 @@ describe('Import wizard and report extras', () => {
       [`POST ${P}/imports`]: () =>
         json(201, { data: { ...UPLOAD, suggestedMapping: { company: 1 } } }),
     });
-    renderApp('/m/crm-leads?tab=Reports');
+    renderApp('/m/service-tickets?tab=Reports');
     const ue = userEvent.setup();
     await ue.click(await screen.findByRole('button', { name: 'Import…' }));
     const dlg = within(await screen.findByRole('dialog'));
@@ -311,7 +311,7 @@ describe('Import wizard and report extras', () => {
             {
               id: 'e1',
               kind: 'EXPORT',
-              pageId: 'crm-leads',
+              pageId: 'service-tickets',
               status: 'DONE',
               totalRows: 5,
               okRows: 5,
@@ -328,10 +328,10 @@ describe('Import wizard and report extras', () => {
       [`GET /api/v1/jobs/e1/download`]: () =>
         new Response('a,b', {
           status: 200,
-          headers: { 'Content-Disposition': 'attachment; filename="crm-leads.csv"' },
+          headers: { 'Content-Disposition': 'attachment; filename="service-tickets.csv"' },
         }),
     });
-    renderApp('/m/crm-leads?tab=Reports');
+    renderApp('/m/service-tickets?tab=Reports');
     const ue = userEvent.setup();
     await ue.click(await screen.findByRole('button', { name: 'Download' }));
     await waitFor(() =>
@@ -347,7 +347,7 @@ describe('Import wizard and report extras', () => {
           data: {
             id: 'e2',
             kind: 'EXPORT',
-            pageId: 'crm-leads',
+            pageId: 'service-tickets',
             status: 'QUEUED',
             totalRows: null,
             okRows: null,
@@ -360,7 +360,7 @@ describe('Import wizard and report extras', () => {
           },
         }),
     });
-    renderApp('/m/crm-leads?tab=Reports');
+    renderApp('/m/service-tickets?tab=Reports');
     await userEvent
       .setup()
       .click(await screen.findByRole('button', { name: 'Export in background' }));

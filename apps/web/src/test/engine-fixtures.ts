@@ -4,12 +4,12 @@ import { json, type Call, type Handler } from './helpers';
 import type { FieldMeta, PageSchema, RecordRow } from '../pages/generic/engineApi';
 
 export const LEAD_SCHEMA: PageSchema = {
-  pageId: 'crm-leads',
-  title: 'Lead Management',
+  pageId: 'service-tickets',
+  title: 'Service Tickets',
   family: 'CRM',
   purpose: 'Manage prospect engagement, qualification and conversion.',
   tabs: [
-    'Lead Register',
+    'Ticket Queue',
     'Qualification Desk',
     'Communication Timeline',
     'Follow-up Queue',

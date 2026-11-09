@@ -1,5 +1,13 @@
 // /m/:pageId[/:sub] — resolves the page in the registry (unknown → 404), asks the server what the
 // user may do there (no view → Access denied), then renders the real screen or a placeholder.
+import {
+  EinvoicePage,
+  EwayPage,
+  Gstr1Page,
+  Gstr3bPage,
+  RegisterExport,
+  TdsReturnsSection,
+} from './tax/GstPages';
 import { useParams } from 'react-router-dom';
 import { isAdminRole, lookupPage, type PageLookup } from '../lib/registry';
 import { usePagePermissions } from '../lib/usePagePermissions';
@@ -45,8 +53,38 @@ import { ExpiryPage, ScanPage, StockAgeingPage, ValuationPage } from './inventor
 import { BatchesPage, BinsPage, SerialsPage } from './inventory/MastersPages';
 import { CountsPage, CycleCountsPage, ReorderPage, ReservationsPage } from './inventory/StockPages';
 import { VouchersPage } from './inventory/VouchersPage';
+import { DocPage } from './procurement/DocPage';
+import { CON_CFG, PO_CFG, PR_CFG, RFQ_CFG, VQ_CFG } from './procurement/configs';
+import { FB_CFG, FU_CFG, LEAD_CFG, MTG_CFG, OPP_CFG, SO_CFG } from './procurement/salesConfigs';
+import {
+  CollectionsPage,
+  CreditPage,
+  DeliveryPlanPage,
+  DispatchPage,
+  PipelinePage,
+  SalesInvoicesPage,
+  SalesQuotationsPage,
+  SalesReturnsPage,
+  SourcesPage,
+} from './procurement/SalesPages';
+import {
+  ApPage,
+  ComparisonPage,
+  EvaluationPage,
+  GrnPage,
+  InvoicePage,
+  PutawayPage,
+} from './procurement/SpecialPages';
 import { GenericModulePage } from './generic/GenericModulePage';
 import { NotFoundPage } from './NotFoundPage';
+import { BomPage, RoutingPage, WorkCentresPage } from './mfg/MasterPages';
+import { FgPage, OrdersPage, WorkOrdersPage } from './mfg/OrderPages';
+import { BoardPage, MrpPage } from './mfg/PlanPages';
+import { CostingPage, ReworkPage, ScrapPage, ShopFloorPage, WipPage } from './mfg/RegisterPages';
+import { CapaPage } from './qms/FormPages';
+import { InspectionPage } from './qms/InspectionPages';
+import { NcrPage } from './qms/RegisterPages';
+import { CalibrationPage, PlansPage } from './qms/SetupPages';
 import { UserMasterPage } from './users/UserMasterPage';
 import { AdminFormatsPage } from './settings/AdminFormatsPage';
 import { SettingsLauncher } from './settings/SettingsLauncher';
@@ -183,13 +221,125 @@ function PageBody({
     case 'fin-cashflow':
       return <CashFlowPage />;
     case 'tax-salesreg':
-      return <TaxRegisterPage kind="sales" />;
+      return (
+        <>
+          <TaxRegisterPage kind="sales" />
+          <RegisterExport kind="sales" />
+        </>
+      );
     case 'tax-purchasereg':
-      return <TaxRegisterPage kind="purchase" />;
+      return (
+        <>
+          <TaxRegisterPage kind="purchase" />
+          <RegisterExport kind="purchase" />
+        </>
+      );
     case 'tax-tds':
-      return <TdsPage kind="tds" actions={actions} />;
+      return (
+        <>
+          <TdsPage kind="tds" actions={actions} />
+          <RegisterExport kind="tds" />
+          <TdsReturnsSection kind="tds" actions={actions} />
+        </>
+      );
     case 'tax-tcs':
-      return <TdsPage kind="tcs" actions={actions} />;
+      return (
+        <>
+          <TdsPage kind="tcs" actions={actions} />
+          <RegisterExport kind="tcs" />
+          <TdsReturnsSection kind="tcs" actions={actions} />
+        </>
+      );
+    case 'tax-gstr1':
+      return <Gstr1Page actions={actions} />;
+    case 'tax-gstr3b':
+      return <Gstr3bPage actions={actions} />;
+    case 'tax-einvoice':
+      return <EinvoicePage actions={actions} />;
+    case 'tax-eway':
+      return <EwayPage actions={actions} />;
+    // Phase 12 quality screens
+    case 'qms-plans':
+      return <PlansPage actions={actions} />;
+    case 'qms-incoming':
+      return (
+        <InspectionPage
+          kinds={['INCOMING']}
+          title="Incoming Quality"
+          sub="Raw-material inspection sheets. A goods receipt of an item that needs inspection creates the lot; the usage decision releases or blocks the stock."
+          actions={actions}
+        />
+      );
+    case 'qms-process':
+      return (
+        <InspectionPage
+          kinds={['IN_PROCESS']}
+          title="In-Process Quality"
+          sub="In-process inspection by machine and operation, with readings for parts 1 to 5."
+          actions={actions}
+        />
+      );
+    case 'qms-final':
+      return (
+        <InspectionPage
+          kinds={['PRE_DISPATCH', 'WELDING', 'VT']}
+          title="Final Quality"
+          sub="Pre-dispatch inspection, welding inspection (before and after) and visual test reports."
+          actions={actions}
+        />
+      );
+    case 'qms-supplier':
+      return (
+        <InspectionPage
+          kinds={['ISIR']}
+          title="Supplier Quality (ISIR)"
+          sub="Initial sample inspection reports of supplier parts: dimensions against tolerance, per sample."
+          actions={actions}
+        />
+      );
+    case 'qms-inspections':
+      return (
+        <InspectionPage
+          kinds={[]}
+          title="Quality Inspections"
+          sub="Every inspection sheet of the unit in one list. Open a sheet to see its readings and decision."
+          actions={actions}
+          allowNew={false}
+        />
+      );
+    case 'qms-ncr':
+      return <NcrPage actions={actions} />;
+    case 'qms-capa':
+      return <CapaPage actions={actions} />;
+    case 'qms-calibration':
+      return <CalibrationPage actions={actions} />;
+    // Phase 13 manufacturing screens
+    case 'mfg-workcenters':
+      return <WorkCentresPage actions={actions} />;
+    case 'mfg-bom':
+      return <BomPage actions={actions} />;
+    case 'mfg-routing':
+      return <RoutingPage actions={actions} />;
+    case 'mfg-plan':
+      return <BoardPage actions={actions} />;
+    case 'mfg-orders':
+      return <OrdersPage actions={actions} />;
+    case 'mfg-mrp':
+      return <MrpPage actions={actions} />;
+    case 'mfg-workorders':
+      return <WorkOrdersPage actions={actions} />;
+    case 'mfg-shopfloor':
+      return <ShopFloorPage />;
+    case 'mfg-wip':
+      return <WipPage actions={actions} />;
+    case 'mfg-fg':
+      return <FgPage actions={actions} />;
+    case 'mfg-scrap':
+      return <ScrapPage actions={actions} />;
+    case 'mfg-rework':
+      return <ReworkPage actions={actions} />;
+    case 'mfg-costing':
+      return <CostingPage actions={actions} />;
     case 'fin-trial':
       return <TrialBalancePage />;
     case 'fin-pnl':
@@ -202,7 +352,61 @@ function PageBody({
     case 'fin-ageing':
       return <AgeingPage side="RECEIVABLE" />;
     case 'fin-ap':
-      return <AgeingPage side="PAYABLE" />;
+      return <ApPage actions={actions} />;
+    // Phase 10 CRM and sales screens
+    case 'crm-leads':
+      return <DocPage cfg={LEAD_CFG} actions={actions} />;
+    case 'crm-opportunities':
+      return <DocPage cfg={OPP_CFG} actions={actions} />;
+    case 'crm-pipeline':
+      return <PipelinePage actions={actions} />;
+    case 'crm-followups':
+      return <DocPage cfg={FU_CFG} actions={actions} />;
+    case 'crm-meetings':
+      return <DocPage cfg={MTG_CFG} actions={actions} />;
+    case 'crm-feedback':
+      return <DocPage cfg={FB_CFG} actions={actions} />;
+    case 'crm-sources':
+      return <SourcesPage actions={actions} />;
+    case 'sales-quotations':
+      return <SalesQuotationsPage actions={actions} />;
+    case 'sales-orders':
+      return <DocPage cfg={SO_CFG} actions={actions} />;
+    case 'sales-reservations':
+      return <ReservationsPage actions={actions} />;
+    case 'sales-credit':
+      return <CreditPage />;
+    case 'sales-delivery':
+      return <DeliveryPlanPage />;
+    case 'sales-dispatch':
+      return <DispatchPage actions={actions} />;
+    case 'sales-invoices':
+      return <SalesInvoicesPage actions={actions} />;
+    case 'sales-collections':
+      return <CollectionsPage actions={actions} />;
+    case 'sales-returns':
+      return <SalesReturnsPage actions={actions} />;
+    // Phase 9 procurement screens
+    case 'scm-pr':
+      return <DocPage cfg={PR_CFG} actions={actions} />;
+    case 'scm-rfq':
+      return <DocPage cfg={RFQ_CFG} actions={actions} />;
+    case 'scm-vendorquote':
+      return <DocPage cfg={VQ_CFG} actions={actions} />;
+    case 'scm-comparison':
+      return <ComparisonPage actions={actions} />;
+    case 'scm-po':
+      return <DocPage cfg={PO_CFG} actions={actions} />;
+    case 'scm-contracts':
+      return <DocPage cfg={CON_CFG} actions={actions} />;
+    case 'scm-grn':
+      return <GrnPage actions={actions} />;
+    case 'scm-purchaseinvoice':
+      return <InvoicePage actions={actions} />;
+    case 'scm-evaluation':
+      return <EvaluationPage actions={actions} />;
+    case 'wms-putaway':
+      return <PutawayPage actions={actions} />;
     // Phase 8 inventory screens
     case 'inv-opening':
       return <VouchersPage kind="opening" actions={actions} />;

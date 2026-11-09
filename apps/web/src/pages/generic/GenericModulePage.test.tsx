@@ -18,8 +18,8 @@ import {
 import { LEAD_ROWS, LEAD_SCHEMA, leadRow, recordsHandler } from '../../test/engine-fixtures';
 
 const owner = makeUser({ role: 'SUPER_ADMIN', roleLabel: 'Super Admin', name: 'Owner Person' });
-const P = '/api/v1/pages/crm-leads';
-const REGISTER = '/m/crm-leads?tab=Lead%20Register';
+const P = '/api/v1/pages/service-tickets';
+const REGISTER = '/m/service-tickets?tab=Ticket%20Queue';
 
 function setup(extra: Record<string, Handler> = {}, rows = LEAD_ROWS) {
   return signedIn(owner, {
@@ -49,12 +49,12 @@ beforeEach(() => {
 describe('tabs and honest notices', () => {
   it('shows the 16 prototype tabs in order with the real context chips', async () => {
     setup();
-    renderApp('/m/crm-leads');
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    renderApp('/m/service-tickets');
+    await screen.findByRole('heading', { name: 'Service Tickets' });
     const tabs = within(screen.getByRole('tablist')).getAllByRole('tab');
     expect(tabs.map((t) => t.textContent)).toEqual([
       'Module Dashboard',
-      'Lead Register',
+      'Ticket Queue',
       'Qualification Desk',
       'Communication Timeline',
       'Follow-up Queue',
@@ -81,7 +81,7 @@ describe('tabs and honest notices', () => {
 
   it('every tab without data says which phase builds it (no numbers)', async () => {
     setup();
-    renderApp('/m/crm-leads');
+    renderApp('/m/service-tickets');
     const ue = userEvent.setup();
     const expected: Record<string, number> = {
       'AI Decision Center': 19,
@@ -90,7 +90,7 @@ describe('tabs and honest notices', () => {
       'Qualification Desk': 10,
       'Lead Scoring': 10,
     };
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    await screen.findByRole('heading', { name: 'Service Tickets' });
     for (const [tab, phase] of Object.entries(expected)) {
       await ue.click(screen.getByRole('tab', { name: tab }));
       expect(await screen.findByText(`This view is built in Phase ${phase}.`)).toBeInTheDocument();
@@ -99,9 +99,9 @@ describe('tabs and honest notices', () => {
 
   it('the Documents tab is live on generic pages and a notice shows the phase map', async () => {
     setup();
-    renderApp('/m/crm-leads');
+    renderApp('/m/service-tickets');
     const ue = userEvent.setup();
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    await screen.findByRole('heading', { name: 'Service Tickets' });
     await ue.click(screen.getByRole('tab', { name: 'Documents' }));
     expect(await screen.findByLabelText('Find a record')).toBeInTheDocument();
     expect(screen.queryByText(/This view is built in Phase/)).toBeNull();
@@ -117,7 +117,7 @@ describe('tabs and honest notices', () => {
     signedIn(owner, {
       [`GET ${P}/schema`]: () => apiError(404, 'NOT_GENERIC', 'This page is not generic.'),
     });
-    renderApp('/m/crm-leads');
+    renderApp('/m/service-tickets');
     expect(
       await screen.findByText('This module will be enabled in a later phase.'),
     ).toBeInTheDocument();
@@ -128,7 +128,7 @@ describe('tabs and honest notices', () => {
     signedIn(owner, {
       [`GET ${P}/schema`]: () => apiError(500, 'INTERNAL', 'Schema service down.'),
     });
-    renderApp('/m/crm-leads');
+    renderApp('/m/service-tickets');
     expect(await screen.findByText('Schema service down.')).toBeInTheDocument();
   });
 });
@@ -139,7 +139,7 @@ describe('Module Dashboard', () => {
       [`GET ${P}/records/summary`]: () =>
         json(200, {
           data: {
-            pageId: 'crm-leads',
+            pageId: 'service-tickets',
             total: 13,
             amountTotal: 0,
             hasAmount: false,
@@ -156,7 +156,7 @@ describe('Module Dashboard', () => {
       [`GET ${P}/records`]: () =>
         json(200, { data: LEAD_ROWS, meta: { page: 1, size: 20, total: 13 } }),
     });
-    renderApp('/m/crm-leads');
+    renderApp('/m/service-tickets');
     const kpis = await screen.findByText('Records');
     const card = (label: string): HTMLElement => {
       const el = screen.getByText(label).closest('.kpi');
@@ -211,7 +211,7 @@ describe('Register', () => {
 
   it('keeps search, status, sort, page and size in the URL and sends them to the API', async () => {
     const { calls } = setup();
-    renderApp('/m/crm-leads?tab=Lead%20Register&q=lead&status=Draft&sort=-leadName&page=2&size=20');
+    renderApp('/m/service-tickets?tab=Ticket%20Queue&q=lead&status=Draft&sort=-leadName&page=2&size=20');
     await waitFor(() => {
       const u = lastList(calls);
       expect(u.searchParams.get('q')).toBe('lead');
@@ -220,7 +220,7 @@ describe('Register', () => {
       expect(u.searchParams.get('page')).toBe('2');
       expect(u.searchParams.get('size')).toBe('20');
     });
-    expect(screen.getByLabelText('Search Lead Management')).toHaveValue('lead');
+    expect(screen.getByLabelText('Search Service Tickets')).toHaveValue('lead');
     expect(screen.getByLabelText('Filter by status')).toHaveValue('Draft');
     expect(screen.getByLabelText('Rows per page')).toHaveValue('20');
     expect(screen.getByRole('button', { name: /Lead Name ▼/ })).toBeInTheDocument();
@@ -231,11 +231,11 @@ describe('Register', () => {
     renderApp(REGISTER);
     await screen.findByText('Lead 1');
     const ue = userEvent.setup();
-    await ue.type(screen.getByLabelText('Search Lead Management'), 'lead 2');
+    await ue.type(screen.getByLabelText('Search Service Tickets'), 'lead 2');
     await waitFor(() => expect(lastList(calls).searchParams.get('q')).toBe('lead 2'));
     await waitFor(() => expect(screen.queryByText('Lead 1')).toBeNull());
     expect(screen.getByText('Lead 2')).toBeInTheDocument();
-    await ue.clear(screen.getByLabelText('Search Lead Management'));
+    await ue.clear(screen.getByLabelText('Search Service Tickets'));
     await ue.selectOptions(screen.getByLabelText('Filter by status'), 'Active');
     await waitFor(() => expect(lastList(calls).searchParams.get('status')).toBe('Active'));
     await ue.selectOptions(screen.getByLabelText('Rows per page'), '25');
@@ -310,7 +310,7 @@ describe('Register', () => {
       },
       many,
     );
-    renderApp('/m/crm-leads?tab=Lead%20Register&size=20');
+    renderApp('/m/service-tickets?tab=Ticket%20Queue&size=20');
     await screen.findByText('Lead 12');
     const ue = userEvent.setup();
     await ue.click(screen.getByRole('checkbox', { name: 'Select all rows on this page' }));
@@ -375,7 +375,7 @@ describe('Add / Edit modal from the schema', () => {
     renderApp(REGISTER);
     await screen.findByText('Lead 1');
     await userEvent.setup().click(screen.getByRole('button', { name: '＋ Add' }));
-    const d = within(screen.getByRole('dialog', { name: 'Add Lead Management' }));
+    const d = within(screen.getByRole('dialog', { name: 'Add Service Tickets' }));
     expect(d.getByText('Lead Name').className).toContain('is-required');
     expect(d.getByLabelText('Lead No')).toBeDisabled();
     expect(d.getByLabelText('Lead No')).toHaveValue('Auto-generated');
@@ -401,7 +401,7 @@ describe('Add / Edit modal from the schema', () => {
     await screen.findByText('Lead 1');
     const ue = userEvent.setup();
     await ue.click(screen.getByRole('button', { name: '＋ Add' }));
-    const d = within(screen.getByRole('dialog', { name: 'Add Lead Management' }));
+    const d = within(screen.getByRole('dialog', { name: 'Add Service Tickets' }));
     await ue.type(d.getByLabelText('GSTIN'), '27abc');
     expect(d.getByLabelText('GSTIN')).toHaveValue('27ABC');
     expect(d.getByText('GSTIN must be 15 characters, e.g. 27ABCDE1234F1Z5.')).toBeInTheDocument();
@@ -458,7 +458,7 @@ describe('Add / Edit modal from the schema', () => {
     await screen.findByText('Lead 2');
     const ue = userEvent.setup();
     await ue.click(screen.getByRole('button', { name: 'Edit LEA/TAL/26-27/00002' }));
-    const d = within(screen.getByRole('dialog', { name: 'Edit Lead Management' }));
+    const d = within(screen.getByRole('dialog', { name: 'Edit Service Tickets' }));
     expect(d.getByLabelText('Lead No')).toHaveValue('LEA/TAL/26-27/00002');
     expect(d.getByLabelText('Lead No')).toBeDisabled();
     expect(d.getByLabelText('Status')).toHaveValue('Active');
@@ -497,15 +497,15 @@ describe('Add / Edit modal from the schema', () => {
     await ue.click(screen.getByRole('button', { name: '＋ Add' }));
     await ue.type(within(screen.getByRole('dialog')).getByLabelText('Lead Name'), 'Draft');
     await ue.click(
-      within(screen.getByRole('dialog', { name: 'Add Lead Management' })).getByRole('button', {
+      within(screen.getByRole('dialog', { name: 'Add Service Tickets' })).getByRole('button', {
         name: 'Cancel',
       }),
     );
     const confirm = screen.getByRole('dialog', { name: 'Discard unsaved changes?' });
     await ue.click(within(confirm).getByRole('button', { name: 'Keep editing' }));
-    expect(screen.getByRole('dialog', { name: 'Add Lead Management' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Add Service Tickets' })).toBeInTheDocument();
     await ue.click(
-      within(screen.getByRole('dialog', { name: 'Add Lead Management' })).getByRole('button', {
+      within(screen.getByRole('dialog', { name: 'Add Service Tickets' })).getByRole('button', {
         name: 'Cancel',
       }),
     );
@@ -531,14 +531,14 @@ describe('View drawer, delete and undo', () => {
     await screen.findByText('Lead 1');
     const ue = userEvent.setup();
     await ue.click(screen.getByRole('button', { name: 'View LEA/TAL/26-27/00001' }));
-    const dr = within(screen.getByRole('dialog', { name: 'Lead Management Details' }));
+    const dr = within(screen.getByRole('dialog', { name: 'Service Tickets Details' }));
     expect(dr.getByText('Lead No')).toBeInTheDocument();
     expect(dr.getByText('LEA/TAL/26-27/00001')).toBeInTheDocument();
     expect(dr.getByText('₹ 1,000.5')).toBeInTheDocument();
     expect(dr.getByText('05 Dec 2026')).toBeInTheDocument();
     expect(dr.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
     await ue.click(dr.getByRole('button', { name: 'Delete' }));
-    expect(screen.getByRole('dialog', { name: 'Delete Lead Management' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Delete Service Tickets' })).toBeInTheDocument();
   });
 
   it('Delete is soft: an "Deleted. Undo" toast restores the record', async () => {
@@ -551,7 +551,7 @@ describe('View drawer, delete and undo', () => {
     const ue = userEvent.setup();
     await ue.click(screen.getByRole('button', { name: 'Delete LEA/TAL/26-27/00001' }));
     await ue.click(
-      within(screen.getByRole('dialog', { name: 'Delete Lead Management' })).getByRole('button', {
+      within(screen.getByRole('dialog', { name: 'Delete Service Tickets' })).getByRole('button', {
         name: 'Delete',
       }),
     );
@@ -573,7 +573,7 @@ describe('View drawer, delete and undo', () => {
       await screen.findByText('Lead 1');
       fireEvent.click(screen.getByRole('button', { name: 'Delete LEA/TAL/26-27/00001' }));
       fireEvent.click(
-        within(screen.getByRole('dialog', { name: 'Delete Lead Management' })).getByRole('button', {
+        within(screen.getByRole('dialog', { name: 'Delete Service Tickets' })).getByRole('button', {
           name: 'Delete',
         }),
       );
@@ -592,7 +592,7 @@ describe('Data Quality, audit tabs and Reports', () => {
       [`GET ${P}/records/quality`]: () =>
         json(200, {
           data: {
-            pageId: 'crm-leads',
+            pageId: 'service-tickets',
             total: 9,
             staleDrafts: 2,
             missingRequired: [{ field: 'leadName', label: 'Lead Name', count: 1 }],
@@ -601,7 +601,7 @@ describe('Data Quality, audit tabs and Reports', () => {
           },
         }),
     });
-    renderApp('/m/crm-leads?tab=Data%20Quality');
+    renderApp('/m/service-tickets?tab=Data%20Quality');
     expect(await screen.findByText(/Checked all 9 records/)).toBeInTheDocument();
     expect(screen.getByText('Drafts older than 30 days').closest('tr')).toHaveTextContent('2');
     expect(screen.getByText(/Lead Name: 1/)).toBeInTheDocument();
@@ -613,7 +613,7 @@ describe('Data Quality, audit tabs and Reports', () => {
       [`GET ${P}/records/quality`]: () =>
         json(200, {
           data: {
-            pageId: 'crm-leads',
+            pageId: 'service-tickets',
             total: 0,
             staleDrafts: 0,
             missingRequired: [],
@@ -622,7 +622,7 @@ describe('Data Quality, audit tabs and Reports', () => {
           },
         }),
     });
-    renderApp('/m/crm-leads?tab=Data%20Quality');
+    renderApp('/m/service-tickets?tab=Data%20Quality');
     expect(await screen.findByText(/No data yet/)).toBeInTheDocument();
   });
 
@@ -647,7 +647,7 @@ describe('Data Quality, audit tabs and Reports', () => {
       });
     };
     setup({ [`GET ${P}/audit`]: audit });
-    renderApp('/m/crm-leads?tab=Audit%20Trail');
+    renderApp('/m/service-tickets?tab=Audit%20Trail');
     expect(await screen.findByText('record created')).toBeInTheDocument();
     expect(screen.getByText('Asha Patil')).toBeInTheDocument();
     expect(screen.getByText('LEA/TAL/26-27/00001')).toBeInTheDocument();
@@ -660,7 +660,7 @@ describe('Data Quality, audit tabs and Reports', () => {
     setup({
       [`GET ${P}/audit`]: () => json(200, { data: [], meta: { page: 1, size: 20, total: 0 } }),
     });
-    renderApp('/m/crm-leads?tab=Audit%20Trail');
+    renderApp('/m/service-tickets?tab=Audit%20Trail');
     expect(
       await screen.findByText('No activity has been recorded for this page yet.'),
     ).toBeInTheDocument();
@@ -670,10 +670,10 @@ describe('Data Quality, audit tabs and Reports', () => {
     const { calls } = setup({
       [`GET ${P}/records/export.xlsx`]: () => new Response(new Blob(['x']), { status: 200 }),
     });
-    renderApp('/m/crm-leads?tab=Reports&q=lead&status=Draft&sort=company');
+    renderApp('/m/service-tickets?tab=Reports&q=lead&status=Draft&sort=company');
     await screen.findByText(/matching records/);
     const ue = userEvent.setup();
-    const bar = within(screen.getByText('Lead Management Report').parentElement as HTMLElement);
+    const bar = within(screen.getByText('Service Tickets Report').parentElement as HTMLElement);
     await ue.click(bar.getByRole('button', { name: 'Excel' }));
     await waitFor(() => expect(countCalls(calls, 'GET', '/export.xlsx')).toBe(1));
     const u = new URL(calls.find((c) => c.path.endsWith('/export.xlsx'))?.url ?? '', 'http://test');
@@ -689,8 +689,8 @@ describe('Data Quality, audit tabs and Reports', () => {
     const { calls } = setup({
       [`GET ${P}/records/export.xlsx`]: () => new Response(new Blob(['x']), { status: 200 }),
     });
-    renderApp('/m/crm-leads');
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    renderApp('/m/service-tickets');
+    await screen.findByRole('heading', { name: 'Service Tickets' });
     const ue = userEvent.setup();
     await ue.click(screen.getByRole('button', { name: 'Excel' }));
     await waitFor(() => expect(countCalls(calls, 'GET', '/export.xlsx')).toBe(1));
@@ -703,8 +703,8 @@ describe('Data Quality, audit tabs and Reports', () => {
       [`GET ${P}/records/export.xlsx`]: () =>
         apiError(422, 'TOO_MANY_ROWS', 'More than 10,000 rows.'),
     });
-    renderApp('/m/crm-leads');
-    await screen.findByRole('heading', { name: 'Lead Management' });
+    renderApp('/m/service-tickets');
+    await screen.findByRole('heading', { name: 'Service Tickets' });
     await userEvent.setup().click(screen.getByRole('button', { name: 'Excel' }));
     expect(await screen.findByText('More than 10,000 rows.')).toBeInTheDocument();
   });
@@ -787,7 +787,7 @@ describe('activity, free-text enums and keyboard search', () => {
     const { calls } = setup();
     renderApp(REGISTER);
     await screen.findByText('Lead 1');
-    const box = screen.getByLabelText('Search Lead Management');
+    const box = screen.getByLabelText('Search Service Tickets');
     await userEvent.setup().type(box, 'lead 2{Enter}');
     // No 300 ms wait: the request is already on its way when typing finishes.
     expect(lastList(calls).searchParams.get('q')).toBe('lead 2');

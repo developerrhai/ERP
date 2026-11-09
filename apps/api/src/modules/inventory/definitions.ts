@@ -204,6 +204,7 @@ const ITEMS = define({
     f('batchTracked', 'Batch Tracked', 'bool'),
     f('serialTracked', 'Serial Tracked', 'bool'),
     f('qcRequired', 'Quality Inspection Required', 'bool'),
+    f('isCustomerSupplied', 'Customer Supplied Material', 'bool'),
     qty('shelfLifeDays', 'Shelf Life Days'),
     money('standardCost', 'Standard Cost'),
     money('sellingPrice', 'Selling Price'),

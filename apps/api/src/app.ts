@@ -48,6 +48,11 @@ import { createPagesRouter } from './modules/records/routes';
 import { createUnitsRouter } from './modules/units/routes';
 import { createFinanceRouter } from './modules/finance/routes';
 import { createInventoryRouter } from './modules/inventory/routes';
+import { createProcurementRouter } from './modules/procurement/routes';
+import { createSalesRouter } from './modules/sales/routes';
+import { createTaxRouter } from './modules/tax/routes';
+import { createQmsRouter } from './modules/qms/routes';
+import { createMfgRouter } from './modules/mfg/routes';
 import { createMastersRouter } from './modules/masters/routes';
 import { createSimpleMastersRouter } from './modules/masters/simple-masters';
 import { createApprovalMatrixRouter, createApprovalsRouter } from './modules/approvals/routes';
@@ -149,6 +154,11 @@ export function createApp(options: AppOptions = {}): Express {
   api.use(createSimpleMastersRouter());
   api.use(createMastersRouter()); // Phase 6: /statutory, /parties, /tax, /pricing, /customers, /suppliers
   api.use(createFinanceRouter()); // Phase 7: /finance (accounts, journals, cash & bank, budgets, reports, close, reconciliation)
+  api.use(createSalesRouter()); // Phase 10: /crm, /sales
+  api.use(createTaxRouter()); // Phase 11: /tax
+  api.use(createQmsRouter()); // Phase 12: /qms
+  api.use(createMfgRouter()); // Phase 13: /mfg
+  api.use(createProcurementRouter()); // Phase 9: /scm, /wms/putaway, /fin/debitnote, /fin/ap
   api.use(createInventoryRouter()); // Phase 8: /inventory (vouchers with lines, batches, serials, bins, reservations, counts, reports)
   api.use('/approval-matrix', createApprovalMatrixRouter());
   api.use('/approvals', createApprovalsRouter());
