@@ -138,6 +138,7 @@ import { AutomationStudioPage } from './bi/AutomationStudioPage';
 import { CommCenterPage } from './bi/CommCenterPage';
 import { AdminNotifConsolePage } from './admin/AdminNotifConsolePage';
 import { NotificationPrefsPage } from './notifications/NotificationPrefsPage';
+import { DashboardPage } from './DashboardPage';
 
 const SUB_PAGES: Record<string, readonly string[]> = {
   'admin-settings': ['controls', 'letterhead', 'finance-limits'],
@@ -179,7 +180,7 @@ function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: 
 
   return (
     <>
-      {pageId === 'admin-formats' ? null : (
+      {pageId === 'admin-formats' || pageId === 'dashboard' ? null : (
         <SettingsLauncher pageId={pageId} title={page.item.title} />
       )}
       <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
@@ -200,6 +201,8 @@ function PageBody({
 }) {
   const pageId = page.item.id;
   switch (pageId) {
+    case 'dashboard':
+      return <DashboardPage user={user} />;
     case 'admin-formats':
       return <AdminFormatsPage />;
     case 'admin-users':
