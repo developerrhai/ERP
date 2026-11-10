@@ -1,22 +1,44 @@
 // apps/web/src/lib/hrApi.ts
-import { request } from './api';
+import { api, request } from './api';
 
 export interface HrEmployee {
   id: string;
-  emp_code: string;
-  full_name: string;
+  empCode: string;
+  firstName: string;
+  middleName?: string | null;
+  lastName: string;
   gender: string;
-  date_of_birth: string;
-  date_of_joining: string;
+  dob: string;
+  joiningDate: string;
   mobile: string;
-  personal_email?: string;
-  department?: string;
-  designation?: string;
+  personalEmail?: string | null;
+  officialEmail?: string | null;
+  department?: string | null;
+  designationId?: string | null;
+  designationName?: string | null;
+  unitId?: string | null;
+  unitName?: string | null;
   status: string;
-  unit_name?: string;
-  has_disability: boolean;
-  biometric_pin?: string;
-  created_at: string;
+  biometricCode?: string | null;
+  pan?: string | null;
+  aadhaarLast4?: string | null;
+  uan?: string | null;
+  esicIp?: string | null;
+  createdAt?: string;
+}
+
+export interface CreateHrEmployeeInput {
+  firstName: string;
+  lastName: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  dob: string;
+  joiningDate: string;
+  mobile: string;
+  personalEmail?: string;
+  pan?: string;
+  aadhaar?: string;
+  unitId: string;
+  department: string;
 }
 
 export async function getHrEmployees(params: Record<string, string | number | undefined> = {}) {
@@ -25,30 +47,29 @@ export async function getHrEmployees(params: Record<string, string | number | un
     if (v !== undefined) q.set(k, String(v));
   }
   const res = await request<HrEmployee[]>(`/hr/employees?${q.toString()}`);
-  return { rows: res.data, total: (res.meta as any)?.total ?? res.data.length };
+  return { rows: res.data, total: (res.meta as { total?: number } | undefined)?.total ?? res.data.length };
 }
 
 export async function getHrEmployee(id: string) {
-  const res = await request<any>(`/hr/employees/${id}`);
-  return res.data;
+  return api<HrEmployee>(`/hr/employees/${encodeURIComponent(id)}`);
 }
 
-export async function createHrEmployee(data: any) {
-  const res = await request<any>('/hr/employees', {
+export async function createHrEmployee(data: CreateHrEmployeeInput) {
+  return api<HrEmployee>('/hr/employees', {
     method: 'POST',
-    body: JSON.stringify(data),
-    headers: { 'Content-Type': 'application/json' },
+    body: data,
   });
-  return res.data;
 }
 
-export async function revealSensitiveEmployeeData(id: string, reason: string) {
-  const res = await request<any>(`/hr/employees/${id}/sensitive`, {
+export async function revealSensitiveEmployeeData(
+  id: string,
+  field: 'aadhaar' | 'bankAccount',
+  purpose: string,
+) {
+  return api<{ value: string }>(`/hr/employees/${encodeURIComponent(id)}/reveal`, {
     method: 'POST',
-    body: JSON.stringify({ reason }),
-    headers: { 'Content-Type': 'application/json' },
+    body: { field, purpose },
   });
-  return res.data;
 }
 
 export async function getLeaveBalances(employeeId: string) {
@@ -59,8 +80,7 @@ export async function getLeaveBalances(employeeId: string) {
 export async function applyLeave(data: any) {
   const res = await request<any>('/hr/leave/applications', {
     method: 'POST',
-    body: JSON.stringify(data),
-    headers: { 'Content-Type': 'application/json' },
+    body: data,
   });
   return res.data;
 }
@@ -80,8 +100,7 @@ export async function getExpenseClaims() {
 export async function createExpenseClaim(data: any) {
   const res = await request<any>('/hr/expenses/claims', {
     method: 'POST',
-    body: JSON.stringify(data),
-    headers: { 'Content-Type': 'application/json' },
+    body: data,
   });
   return res.data;
 }
@@ -94,9 +113,7 @@ export async function getEssDashboard() {
 export async function acceptPrivacyNotice(noticeId: string) {
   const res = await request<any>('/hr/ess/privacy-notice/accept', {
     method: 'POST',
-    body: JSON.stringify({ notice_id: noticeId }),
-    headers: { 'Content-Type': 'application/json' },
+    body: { notice_id: noticeId },
   });
   return res.data;
 }
-

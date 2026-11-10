@@ -1,391 +1,479 @@
 // apps/web/src/pages/hr/HrEmployeesPage.tsx
 import type { FormEvent } from 'react';
-import { useEffect, useState } from 'react';
-import { getHrEmployees, getHrEmployee, revealSensitiveEmployeeData, createHrEmployee, type HrEmployee } from '../../lib/hrApi';
-import { PageHead, Pill, ErrorBox, Empty } from '../finance/shared';
+import { useCallback, useEffect, useState } from 'react';
+import { Field, SelectField } from '../../components/Field';
+import { Modal } from '../../components/Modal';
+import { useToast } from '../../components/Toast';
+import { useAppContext } from '../../lib/context';
+import { toUiError, type UiError } from '../../lib/errors';
+import {
+  createHrEmployee,
+  getHrEmployee,
+  getHrEmployees,
+  revealSensitiveEmployeeData,
+  type HrEmployee,
+} from '../../lib/hrApi';
+import { fetchDepartments } from '../users/usersApi';
+import { dmy, Empty, ErrorBox, PageHead, Pill } from '../finance/shared';
+
+interface OnboardFormState {
+  firstName: string;
+  lastName: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  dob: string;
+  joiningDate: string;
+  mobile: string;
+  personalEmail: string;
+  unitId: string;
+  department: string;
+  aadhaar: string;
+  pan: string;
+}
+
+const emptyForm = (unitId: string, department: string): OnboardFormState => ({
+  firstName: '',
+  lastName: '',
+  gender: 'MALE',
+  dob: '',
+  joiningDate: '',
+  mobile: '',
+  personalEmail: '',
+  unitId,
+  department,
+  aadhaar: '',
+  pan: '',
+});
 
 export function HrEmployeesPage() {
+  const toast = useToast();
+  const ctx = useAppContext().data;
+  const units = ctx?.units ?? [];
+  const defaultUnitId = ctx?.current.unitId ?? units[0]?.id ?? '';
+
+  const [departments, setDepartments] = useState<string[]>([]);
   const [employees, setEmployees] = useState<HrEmployee[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [selectedEmp, setSelectedEmp] = useState<any>(null);
+  const [selectedEmp, setSelectedEmp] = useState<HrEmployee | null>(null);
   const [sensitiveReason, setSensitiveReason] = useState('');
-  const [sensitiveData, setSensitiveData] = useState<any>(null);
-  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
-  const [newForm, setNewForm] = useState({
-    emp_code: '',
-    first_name: '',
-    last_name: '',
-    gender: 'MALE',
-    date_of_birth: '',
-    date_of_joining: '',
-    mobile: '',
-    personal_email: '',
-    department: '',
-    designation: '',
-    aadhaar_number: '',
-    pan: '',
-  });
+  const [revealedAadhaar, setRevealedAadhaar] = useState<string | null>(null);
+  const [revealError, setRevealError] = useState('');
 
-  const loadData = async () => {
+  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formErr, setFormErr] = useState<UiError | null>(null);
+  const [newForm, setNewForm] = useState<OnboardFormState>(() =>
+    emptyForm(defaultUnitId, ''),
+  );
+
+  useEffect(() => {
+    let alive = true;
+    fetchDepartments()
+      .then((list) => {
+        if (alive) setDepartments(list);
+      })
+      .catch(() => {
+        // Department dropdown still falls back cleanly if metadata request fails
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-      const res = await getHrEmployees({ q: search || undefined });
+      const res = await getHrEmployees({ q: search.trim() || undefined });
       setEmployees(res.rows);
-    } catch (e: any) {
-      setError(e.message || 'Failed to load employees');
+    } catch (e: unknown) {
+      setError(toUiError(e).message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [search]);
 
   useEffect(() => {
-    loadData();
-  }, [search]);
+    void loadData();
+  }, [loadData]);
+
+  const openModal = () => {
+    setFormErr(null);
+    setNewForm(emptyForm(defaultUnitId, departments[0] ?? 'Production'));
+    setIsNewModalOpen(true);
+  };
 
   const handleSelect = async (emp: HrEmployee) => {
     try {
-      setSensitiveData(null);
+      setRevealedAadhaar(null);
+      setRevealError('');
       setSensitiveReason('');
       const full = await getHrEmployee(emp.id);
       setSelectedEmp(full);
-    } catch (e: any) {
-      setError(e.message || 'Failed to fetch employee details');
+    } catch (e: unknown) {
+      setError(toUiError(e).message);
     }
   };
 
   const handleReveal = async () => {
-    if (!sensitiveReason || sensitiveReason.trim().length < 5) {
-      alert('Please enter a valid reason (min 5 characters) for audit trail.');
+    if (!selectedEmp) return;
+    if (sensitiveReason.trim().length < 5) {
+      setRevealError('Enter a reason of at least 5 characters for the audit trail.');
       return;
     }
     try {
-      const data = await revealSensitiveEmployeeData(selectedEmp.id, sensitiveReason);
-      setSensitiveData(data);
-    } catch (e: any) {
-      alert(e.message || 'Failed to reveal sensitive data');
+      setRevealError('');
+      const res = await revealSensitiveEmployeeData(
+        selectedEmp.id,
+        'aadhaar',
+        sensitiveReason.trim(),
+      );
+      setRevealedAadhaar(res.value);
+    } catch (e: unknown) {
+      setRevealError(toUiError(e).message);
     }
   };
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
+    if (saving) return;
+
+    const unitId = newForm.unitId || defaultUnitId;
+    const fields: Record<string, string> = {};
+    if (!newForm.firstName.trim()) fields.firstName = 'First name is required.';
+    if (!newForm.lastName.trim()) fields.lastName = 'Last name is required.';
+    if (!unitId) fields.unitId = 'Select a factory unit.';
+    if (!newForm.department.trim()) fields.department = 'Department is required.';
+    if (!newForm.dob) fields.dob = 'Date of birth is required.';
+    if (!newForm.joiningDate) fields.joiningDate = 'Date of joining is required.';
+    if (!/^[6-9]\d{9}$/.test(newForm.mobile.trim())) {
+      fields.mobile = 'Enter a valid 10-digit Indian mobile number.';
+    }
+    if (Object.keys(fields).length > 0) {
+      setFormErr({ message: 'Please check the highlighted fields.', fields, code: 'LOCAL' });
+      return;
+    }
+
+    setSaving(true);
+    setFormErr(null);
     try {
-      await createHrEmployee({
-        ...newForm,
-        unit_id: '00000000-0000-0000-0000-000000000000', // default company unit
+      const created = await createHrEmployee({
+        firstName: newForm.firstName.trim(),
+        lastName: newForm.lastName.trim(),
+        gender: newForm.gender,
+        dob: newForm.dob,
+        joiningDate: newForm.joiningDate,
+        mobile: newForm.mobile.trim(),
+        ...(newForm.personalEmail.trim() ? { personalEmail: newForm.personalEmail.trim() } : {}),
+        ...(newForm.pan.trim() ? { pan: newForm.pan.trim().toUpperCase() } : {}),
+        ...(newForm.aadhaar.trim() ? { aadhaar: newForm.aadhaar.replace(/\s+/g, '') } : {}),
+        unitId,
+        department: newForm.department.trim(),
       });
       setIsNewModalOpen(false);
-      setNewForm({
-        emp_code: '',
-        first_name: '',
-        last_name: '',
-        gender: 'MALE',
-        date_of_birth: '',
-        date_of_joining: '',
-        mobile: '',
-        personal_email: '',
-        department: '',
-        designation: '',
-        aadhaar_number: '',
-        pan: '',
-      });
-      loadData();
-    } catch (err: any) {
-      alert(err.message || 'Failed to create employee');
+      toast(`Employee ${created.empCode} (${created.firstName} ${created.lastName}) onboarded.`);
+      await loadData();
+    } catch (err: unknown) {
+      setFormErr(toUiError(err));
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <>
       <PageHead
         title="Employee Directory"
         sub="Comprehensive Employee Master, Identity Vault, Assignments & DPDP Compliance"
       >
-        <button
-          onClick={() => setIsNewModalOpen(true)}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium"
-        >
+        <button type="button" className="btn primary" onClick={openModal}>
           + Onboard Employee
         </button>
       </PageHead>
 
       <ErrorBox message={error} />
 
-      {/* Filter Toolbar */}
-      <div className="flex gap-4 items-center bg-white p-4 rounded-lg border border-gray-200">
+      <div className="recordbar" style={{ marginBottom: 16 }}>
         <input
-          type="text"
-          placeholder="Search by Code, Name, Mobile or Department..."
+          type="search"
+          aria-label="Search employees"
+          placeholder="Search by Code, Name, or Mobile..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
-        <button
-          onClick={loadData}
-          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium"
-        >
+        <button type="button" className="btn" onClick={() => void loadData()}>
           Refresh
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Employee List */}
-        <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50 text-gray-600 font-medium">
-                <tr>
-                  <th className="px-4 py-3 text-left">Code</th>
-                  <th className="px-4 py-3 text-left">Name</th>
-                  <th className="px-4 py-3 text-left">Department</th>
-                  <th className="px-4 py-3 text-left">Designation</th>
-                  <th className="px-4 py-3 text-left">Mobile</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {employees.length === 0 ? (
-                  <Empty cols={6}>{loading ? 'Loading employees...' : 'No employees found'}</Empty>
-                ) : (
-                  employees.map((emp) => (
-                    <tr
-                      key={emp.id}
-                      onClick={() => handleSelect(emp)}
-                      className={`cursor-pointer hover:bg-indigo-50 transition-colors ${
-                        selectedEmp?.id === emp.id ? 'bg-indigo-50 font-medium' : ''
-                      }`}
-                    >
-                      <td className="px-4 py-3 text-indigo-600 font-mono">{emp.emp_code}</td>
-                      <td className="px-4 py-3 text-gray-900">{emp.full_name}</td>
-                      <td className="px-4 py-3 text-gray-600">{emp.department || '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">{emp.designation || '—'}</td>
-                      <td className="px-4 py-3 text-gray-500">{emp.mobile}</td>
-                      <td className="px-4 py-3">
-                        <Pill tone={emp.status === 'ACTIVE' ? 'good' : 'warn'}>{emp.status}</Pill>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+      <div className="grid2" style={{ alignItems: 'start', gap: 16 }}>
+        <div className="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Code</th>
+                <th scope="col">Name</th>
+                <th scope="col">Department</th>
+                <th scope="col">Designation</th>
+                <th scope="col">Mobile</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.length === 0 ? (
+                <Empty cols={6}>{loading ? 'Loading employees…' : 'No employees found'}</Empty>
+              ) : (
+                employees.map((emp) => (
+                  <tr
+                    key={emp.id}
+                    onClick={() => void handleSelect(emp)}
+                    style={{
+                      cursor: 'pointer',
+                      background:
+                        selectedEmp?.id === emp.id ? 'var(--primary-subtle, #eef2ff)' : undefined,
+                    }}
+                  >
+                    <td>
+                      <strong>{emp.empCode}</strong>
+                    </td>
+                    <td>
+                      {emp.firstName} {emp.lastName}
+                    </td>
+                    <td>{emp.department || '—'}</td>
+                    <td>{emp.designationName || '—'}</td>
+                    <td>{emp.mobile}</td>
+                    <td>
+                      <Pill tone={emp.status === 'ACTIVE' ? 'good' : 'warn'}>{emp.status}</Pill>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
 
-        {/* Selected Employee Details & Identity Vault */}
-        <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm space-y-4">
-          <h3 className="text-base font-semibold text-gray-900 border-b pb-2">Employee Details & Vault</h3>
+        <div className="card" style={{ padding: 16 }}>
+          <h3 style={{ marginTop: 0 }}>Employee Details & Vault</h3>
           {selectedEmp ? (
-            <div className="space-y-4 text-sm">
+            <div style={{ display: 'grid', gap: 12 }}>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider">Employee</p>
-                <p className="text-lg font-bold text-gray-900">{selectedEmp.full_name}</p>
-                <p className="text-gray-500 font-mono text-xs">{selectedEmp.emp_code} • {selectedEmp.gender}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-gray-400">DOJ:</span> {selectedEmp.date_of_joining}
+                <div style={{ fontWeight: 700, fontSize: 16 }}>
+                  {selectedEmp.firstName} {selectedEmp.lastName}
                 </div>
-                <div>
-                  <span className="text-gray-400">DOB:</span> {selectedEmp.date_of_birth}
-                </div>
-                <div>
-                  <span className="text-gray-400">Mobile:</span> {selectedEmp.mobile}
-                </div>
-                <div>
-                  <span className="text-gray-400">Biometric PIN:</span> {selectedEmp.biometric_pin || 'Not set'}
+                <div className="v8-sub">
+                  {selectedEmp.empCode} · {selectedEmp.gender}
+                  {selectedEmp.unitName ? ` · ${selectedEmp.unitName}` : ''}
                 </div>
               </div>
 
-              {/* Statutory Masked Info */}
-              <div className="bg-gray-50 p-3 rounded border border-gray-200 space-y-2">
-                <p className="font-semibold text-xs text-gray-700">Identity & Statutory Vault (DPDP Masked)</p>
-                <div className="text-xs space-y-1">
-                  <p><span className="text-gray-400">Aadhaar:</span> {selectedEmp.identity?.aadhaar_masked || 'XXXX-XXXX-XXXX'}</p>
-                  <p><span className="text-gray-400">PAN:</span> {selectedEmp.identity?.pan_masked || 'XXXXX0000X'}</p>
-                  <p><span className="text-gray-400">UAN:</span> {selectedEmp.identity?.uan || '—'}</p>
-                  <p><span className="text-gray-400">ESIC:</span> {selectedEmp.identity?.esic_number || '—'}</p>
+              <div className="grid2" style={{ fontSize: 13, gap: 8 }}>
+                <div>
+                  <span className="v8-sub">DOJ:</span> {dmy(selectedEmp.joiningDate)}
+                </div>
+                <div>
+                  <span className="v8-sub">DOB:</span> {dmy(selectedEmp.dob)}
+                </div>
+                <div>
+                  <span className="v8-sub">Mobile:</span> {selectedEmp.mobile}
+                </div>
+                <div>
+                  <span className="v8-sub">Biometric:</span> {selectedEmp.biometricCode || 'Not set'}
                 </div>
               </div>
 
-              {/* Sensitive Reveal Action */}
-              <div className="border-t pt-3 space-y-2">
-                <p className="text-xs font-medium text-gray-700">Audited Sensitive Reveal (PII Logged)</p>
-                {sensitiveData ? (
-                  <div className="bg-amber-50 p-3 rounded border border-amber-200 text-xs font-mono space-y-1">
-                    <p className="text-red-700 font-bold">REVEALED (LOGGED TO AUDIT):</p>
-                    <p>Aadhaar: {sensitiveData.aadhaar}</p>
-                    <p>PAN: {sensitiveData.pan}</p>
-                    <p>Bank Acc: {sensitiveData.bank_account}</p>
+              <div
+                style={{
+                  background: 'var(--card2, #f8fafc)',
+                  border: '1px solid var(--line)',
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 13,
+                }}
+              >
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                  Identity & Statutory Vault (DPDP Masked)
+                </div>
+                <div>
+                  <span className="v8-sub">Aadhaar:</span>{' '}
+                  {selectedEmp.aadhaarLast4 ? `XXXX-XXXX-${selectedEmp.aadhaarLast4}` : '—'}
+                </div>
+                <div>
+                  <span className="v8-sub">PAN:</span> {selectedEmp.pan || '—'}
+                </div>
+                <div>
+                  <span className="v8-sub">UAN:</span> {selectedEmp.uan || '—'}
+                </div>
+                <div>
+                  <span className="v8-sub">ESIC:</span> {selectedEmp.esicIp || '—'}
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12, display: 'grid', gap: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 600 }}>
+                  Audited Sensitive Reveal (PII Logged)
+                </div>
+                {revealedAadhaar ? (
+                  <div
+                    style={{
+                      background: '#fffbeb',
+                      border: '1px solid #fcd34d',
+                      borderRadius: 8,
+                      padding: 10,
+                      fontSize: 13,
+                    }}
+                  >
+                    <strong>REVEALED (LOGGED TO AUDIT):</strong> Aadhaar {revealedAadhaar}
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <>
                     <input
                       type="text"
-                      placeholder="Audit reason (e.g. Bank verification)..."
+                      aria-label="Audit reveal reason"
+                      placeholder="Audit reason (min 5 chars)..."
                       value={sensitiveReason}
                       onChange={(e) => setSensitiveReason(e.target.value)}
-                      className="w-full text-xs px-2 py-1.5 border border-gray-300 rounded focus:outline-none"
                     />
-                    <button
-                      onClick={handleReveal}
-                      className="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-medium"
-                    >
-                      Reveal Full Aadhaar / Bank
+                    <ErrorBox message={revealError} />
+                    <button type="button" className="btn" onClick={() => void handleReveal()}>
+                      Reveal Full Aadhaar
                     </button>
-                  </div>
+                  </>
                 )}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-500 text-center py-10">Select an employee to view details</p>
+            <p className="v8-sub">Select an employee to view details.</p>
           )}
         </div>
       </div>
 
-      {/* Onboarding Modal */}
-      {isNewModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Onboard New Employee</h3>
-            <form onSubmit={handleCreate} className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">Emp Code *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newForm.emp_code}
-                    onChange={(e) => setNewForm({ ...newForm, emp_code: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">Gender *</label>
-                  <select
-                    value={newForm.gender}
-                    onChange={(e) => setNewForm({ ...newForm, gender: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded focus:outline-none"
-                  >
-                    <option value="MALE">MALE</option>
-                    <option value="FEMALE">FEMALE</option>
-                    <option value="OTHER">OTHER</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">First Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newForm.first_name}
-                    onChange={(e) => setNewForm({ ...newForm, first_name: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">Last Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newForm.last_name}
-                    onChange={(e) => setNewForm({ ...newForm, last_name: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">Date of Birth *</label>
-                  <input
-                    type="date"
-                    required
-                    value={newForm.date_of_birth}
-                    onChange={(e) => setNewForm({ ...newForm, date_of_birth: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">Date of Joining *</label>
-                  <input
-                    type="date"
-                    required
-                    value={newForm.date_of_joining}
-                    onChange={(e) => setNewForm({ ...newForm, date_of_joining: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">Mobile (10 digits) *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={newForm.mobile}
-                    onChange={(e) => setNewForm({ ...newForm, mobile: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">Personal Email</label>
-                  <input
-                    type="email"
-                    value={newForm.personal_email}
-                    onChange={(e) => setNewForm({ ...newForm, personal_email: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">Aadhaar (12 digits) *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newForm.aadhaar_number}
-                    onChange={(e) => setNewForm({ ...newForm, aadhaar_number: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">PAN Card *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newForm.pan}
-                    onChange={(e) => setNewForm({ ...newForm, pan: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => setIsNewModalOpen(false)}
-                  className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-50"
+      {isNewModalOpen ? (
+        <Modal
+          title="Onboard New Employee"
+          sub="Employee code is automatically assigned on save."
+          onClose={() => setIsNewModalOpen(false)}
+          footer={
+            <>
+              <button type="button" className="btn" onClick={() => setIsNewModalOpen(false)}>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="hr-onboard-form"
+                className="btn primary"
+                disabled={saving}
+              >
+                {saving ? 'Saving…' : 'Save & Encrypt Vault'}
+              </button>
+            </>
+          }
+        >
+          <form id="hr-onboard-form" onSubmit={(e) => void handleCreate(e)} noValidate>
+            <ErrorBox message={formErr?.message ?? ''} />
+            <div className="form-grid">
+              <Field
+                label="First Name *"
+                value={newForm.firstName}
+                error={formErr?.fields.firstName}
+                onChange={(e) => setNewForm({ ...newForm, firstName: e.target.value })}
+              />
+              <Field
+                label="Last Name *"
+                value={newForm.lastName}
+                error={formErr?.fields.lastName}
+                onChange={(e) => setNewForm({ ...newForm, lastName: e.target.value })}
+              />
+              <SelectField
+                label="Gender *"
+                value={newForm.gender}
+                onChange={(v) =>
+                  setNewForm({ ...newForm, gender: v as OnboardFormState['gender'] })
+                }
+              >
+                <option value="MALE">MALE</option>
+                <option value="FEMALE">FEMALE</option>
+                <option value="OTHER">OTHER</option>
+              </SelectField>
+              <SelectField
+                label="Unit *"
+                value={newForm.unitId || defaultUnitId}
+                error={formErr?.fields.unitId}
+                onChange={(v) => setNewForm({ ...newForm, unitId: v })}
+              >
+                <option value="">Select unit…</option>
+                {units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </SelectField>
+              {departments.length > 0 ? (
+                <SelectField
+                  label="Department *"
+                  value={newForm.department}
+                  error={formErr?.fields.department}
+                  onChange={(v) => setNewForm({ ...newForm, department: v })}
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium"
-                >
-                  Save & Encrypt Vault
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+                  <option value="">Select department…</option>
+                  {departments.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </SelectField>
+              ) : (
+                <Field
+                  label="Department *"
+                  value={newForm.department}
+                  error={formErr?.fields.department}
+                  onChange={(e) => setNewForm({ ...newForm, department: e.target.value })}
+                />
+              )}
+              <Field
+                label="Date of Birth *"
+                type="date"
+                value={newForm.dob}
+                error={formErr?.fields.dob}
+                onChange={(e) => setNewForm({ ...newForm, dob: e.target.value })}
+              />
+              <Field
+                label="Date of Joining *"
+                type="date"
+                value={newForm.joiningDate}
+                error={formErr?.fields.joiningDate}
+                onChange={(e) => setNewForm({ ...newForm, joiningDate: e.target.value })}
+              />
+              <Field
+                label="Mobile (10 digits) *"
+                type="tel"
+                value={newForm.mobile}
+                error={formErr?.fields.mobile}
+                onChange={(e) => setNewForm({ ...newForm, mobile: e.target.value })}
+              />
+              <Field
+                label="Personal Email"
+                type="email"
+                value={newForm.personalEmail}
+                error={formErr?.fields.personalEmail}
+                onChange={(e) => setNewForm({ ...newForm, personalEmail: e.target.value })}
+              />
+              <Field
+                label="Aadhaar (12 digits) *"
+                value={newForm.aadhaar}
+                error={formErr?.fields.aadhaar}
+                onChange={(e) => setNewForm({ ...newForm, aadhaar: e.target.value })}
+              />
+              <Field
+                label="PAN Card *"
+                value={newForm.pan}
+                error={formErr?.fields.pan}
+                onChange={(e) => setNewForm({ ...newForm, pan: e.target.value })}
+              />
+            </div>
+          </form>
+        </Modal>
+      ) : null}
+    </>
   );
 }
