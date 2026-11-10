@@ -23,22 +23,22 @@ export interface PrivacyNoticeDto {
 export const hardeningApi = {
   getLocale: () => api<{ locale: 'en' | 'hi' }>('/me/locale'),
   setLocale: (locale: 'en' | 'hi') =>
-    api<{ locale: 'en' | 'hi' }>('/me/locale', { method: 'PUT', body: JSON.stringify({ locale }) }),
+    api<{ locale: 'en' | 'hi' }>('/me/locale', { method: 'PUT', body: { locale } }),
 
   getPrivacyNotice: (locale: 'en' | 'hi' | 'mr' = 'en') =>
     api<PrivacyNoticeDto>(`/hardening/privacy/notice?locale=${encodeURIComponent(locale)}`),
   acknowledgePrivacy: (noticeId: string) =>
     api<{ accepted: boolean }>('/hardening/privacy/acknowledge', {
       method: 'POST',
-      body: JSON.stringify({ noticeId }),
+      body: { noticeId },
     }),
 
   listDpdpRequests: (status?: string) =>
     api<any[]>(`/hardening/privacy/requests${status ? `?status=${encodeURIComponent(status)}` : ''}`),
   createDpdpRequest: (body: any) =>
-    api<any>('/hardening/privacy/requests', { method: 'POST', body: JSON.stringify(body) }),
+    api<any>('/hardening/privacy/requests', { method: 'POST', body }),
   updateDpdpRequest: (id: string, body: any) =>
-    api<any>(`/hardening/privacy/requests/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    api<any>(`/hardening/privacy/requests/${id}`, { method: 'PATCH', body }),
   listRetentionPolicies: () => api<any[]>('/hardening/privacy/retention'),
   runRetentionSweep: () => api<any>('/hardening/privacy/retention/run', { method: 'POST' }),
 
@@ -48,10 +48,10 @@ export const hardeningApi = {
   getCutoverTemplate: (dataset: string) => api<any>(`/hardening/cutover/templates/${dataset}`),
   listCutoverBatches: () => api<any[]>('/hardening/cutover/batches'),
   runCutoverDryRun: (body: any) =>
-    api<any>('/hardening/cutover/dry-run', { method: 'POST', body: JSON.stringify(body) }),
+    api<any>('/hardening/cutover/dry-run', { method: 'POST', body }),
   commitCutoverBatch: (batchId: string) =>
     api<any>(`/hardening/cutover/${batchId}/commit`, { method: 'POST' }),
   signOffCutoverBatch: (batchId: string, body: any) =>
-    api<any>(`/hardening/cutover/${batchId}/signoff`, { method: 'POST', body: JSON.stringify(body) }),
+    api<any>(`/hardening/cutover/${batchId}/signoff`, { method: 'POST', body }),
 };
 

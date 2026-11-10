@@ -45,6 +45,8 @@ export function PrivacyNoticeModal({ open, onClose, forceOnUnaccepted }: Privacy
       setNotice({ ...notice, accepted: true });
       toast(t('dpdp.acknowledge'));
       onClose();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Could not acknowledge privacy notice.');
     } finally {
       setBusy(false);
     }

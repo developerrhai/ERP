@@ -100,7 +100,9 @@ async function send(path: string, opts: RequestOptions, token: string | null): P
           ? undefined
           : isForm
             ? (opts.body as FormData)
-            : JSON.stringify(opts.body),
+            : typeof opts.body === 'string' && (opts.body.startsWith('{') || opts.body.startsWith('['))
+              ? opts.body
+              : JSON.stringify(opts.body),
       signal: controller.signal,
     });
   } catch {
