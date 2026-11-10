@@ -78,6 +78,24 @@ export function createDocumentsRouter(): Router {
     asyncHandler(async (req: Request, res: Response) => {
       const { pageId, id, docId } = validated(res, 'params', docParamsSchema);
       const file = await documentService.download(callerOf(req), pageId, id, docId);
+      if (file.presignedUrl) {
+        if (req.query.mode === 'json') {
+          res.json({
+            data: {
+              url: file.presignedUrl,
+              expiresInSeconds: file.expiresInSeconds,
+              fileName: file.fileName,
+              mimeType: file.mimeType,
+              sha256: file.sha256,
+            },
+          });
+          return;
+        }
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.redirect(302, file.presignedUrl);
+        return;
+      }
+      if (!file.buffer) throw Errors.notFound('Document not found.');
       res
         .set({
           'Content-Type': file.mimeType,

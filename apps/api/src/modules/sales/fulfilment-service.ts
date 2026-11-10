@@ -1002,7 +1002,13 @@ export const invoiceService = {
       await loadDoc(tx, caller, INV_DEF, id);
       await postInvoice(tx, id, { userId: caller.auth.userId });
     }, TX);
-    return getInvoice(prisma, caller, id);
+    const posted = await getInvoice(prisma, caller, id);
+    void import('../notifications/email-automation-service.js')
+      .then(({ emailAutomationService }) =>
+        emailAutomationService.emitEvent('sales_invoice.posted', 'SALES_INVOICE', id, Number((posted as Record<string, unknown>).version ?? 1)),
+      )
+      .catch(() => undefined);
+    return posted;
   },
   cancel: cancelInvoice,
   /** Dispatch lines still to be invoiced. */

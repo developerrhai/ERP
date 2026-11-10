@@ -294,10 +294,9 @@ export const permissionService = {
         },
         tx,
       );
+      await invalidateAccessCache(tx);
       return after;
     });
-
-    invalidateAccessCache();
 
     return buildRolePermissionsDto(role, result, { level: actor.level, roleId: actor.roleId });
   },

@@ -1,9 +1,11 @@
 // Vite + Vitest config: dev server on VITE_PORT (default 5173) with /api proxied to VITE_API_TARGET
-// (default http://localhost:4000) for same-origin cookies, and the @registry alias so the menu is
-// read straight from packages/registry (never copied).
+// (default http://localhost:4000) for same-origin cookies, the @registry alias so the menu is read
+// straight from packages/registry, and vite-plugin-pwa (injectManifest) for installable PWA shell.
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
+import { pwaPluginOptions } from './src/lib/pwaManifest';
 
 const registryPath = fileURLToPath(
   new URL('../../packages/registry/registry.json', import.meta.url),
@@ -17,7 +19,7 @@ const apiTarget = process.env.VITE_API_TARGET ?? 'http://localhost:4000';
 const proxy = { '/api': { target: apiTarget, changeOrigin: false } };
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), ...(process.env.VITEST ? [] : [VitePWA(pwaPluginOptions)])],
   resolve: {
     alias: { '@registry': registryPath },
   },

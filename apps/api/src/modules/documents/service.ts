@@ -306,6 +306,29 @@ export const documentService = {
     if (!doc) throw Errors.notFound('Document not found.');
     const file = await prisma.storedFile.findFirst({ where: { id: doc.fileId, deletedAt: null } });
     if (!file || file.scanStatus !== 'CLEAN') throw Errors.notFound('Document not found.');
+
+    if (defaultStorage.getDownloadUrl) {
+      const presigned = await defaultStorage.getDownloadUrl(file.id);
+      if (presigned) {
+        await recordAudit({
+          action: 'DOCUMENT_DOWNLOADED',
+          actorId: caller.auth.userId,
+          targetType: 'Record',
+          targetId: recordId,
+          meta: caller.meta,
+          detail: { pageId, code: target.code, documentId: doc.id, via: 's3_presigned' },
+        });
+        return {
+          presignedUrl: presigned.url,
+          expiresInSeconds: presigned.expiresInSeconds,
+          fileName: file.originalFilename,
+          mimeType: file.mimeType,
+          sha256: file.sha256Hash,
+          buffer: null as Buffer | null,
+        };
+      }
+    }
+
     const blob = await defaultStorage.get(file.id);
     if (!blob) throw Errors.notFound('Document not found.');
     await recordAudit({
@@ -314,8 +337,15 @@ export const documentService = {
       targetType: 'Record',
       targetId: recordId,
       meta: caller.meta,
-      detail: { pageId, code: target.code, documentId: doc.id },
+      detail: { pageId, code: target.code, documentId: doc.id, via: 'stream' },
     });
-    return { buffer: blob.buffer, fileName: file.originalFilename, mimeType: file.mimeType };
+    return {
+      presignedUrl: null as string | null,
+      expiresInSeconds: 0,
+      buffer: blob.buffer,
+      fileName: file.originalFilename,
+      mimeType: file.mimeType,
+      sha256: file.sha256Hash,
+    };
   },
 };

@@ -93,6 +93,7 @@ model User {
   mfaPendingSecretEnc    String?               @map("mfa_pending_secret_enc") @db.Text
   mfaEnrolledAt          DateTime?             @map("mfa_enrolled_at") @db.Timestamptz(3)
   mfaLastStep            BigInt?               @map("mfa_last_step")
+  preferredLocale        String                @default("en") @map("preferred_locale") @db.VarChar(8)
   createdById            String?               @map("created_by_id") @db.Uuid
   createdBy              User?                 @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdUsers           User[]                @relation("UserCreatedBy")
@@ -874,6 +875,11 @@ model StoredFile {
   createdById      String?   @map("created_by_id") @db.Uuid
   deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(3)
   deletedById      String?   @map("deleted_by_id") @db.Uuid
+  storageDriver    String    @default("local") @map("storage_driver") @db.VarChar(16)
+  s3Bucket         String?   @map("s3_bucket") @db.VarChar(128)
+  s3Key            String?   @map("s3_key") @db.VarChar(512)
+  migratedAt       DateTime? @map("migrated_at") @db.Timestamptz(3)
+  s3VerifiedAt     DateTime? @map("s3_verified_at") @db.Timestamptz(3)
 
   @@index([sha256Hash], map: "stored_files_hash_idx")
   @@index([createdById], map: "stored_files_created_by_idx")
@@ -1747,6 +1753,8 @@ model JournalLine {
   currencyCode   String    @default("INR") @map("currency_code") @db.Char(3)
   fxRate         Decimal   @default(1) @map("fx_rate") @db.Decimal(18, 6)
   amountFc       Decimal?  @map("amount_fc") @db.Decimal(18, 2)
+  projectId      String?   @map("project_id") @db.Uuid
+  amcContractId  String?   @map("amc_contract_id") @db.Uuid
 
   @@unique([journalId, lineNo])
   @@index([accountId])
@@ -1779,6 +1787,8 @@ model GlEntry {
   isReversal     Boolean  @default(false) @map("is_reversal")
   reversesGlId   String?  @map("reverses_gl_id") @db.Uuid
   currencyCode   String   @default("INR") @map("currency_code") @db.Char(3)
+  projectId      String?  @map("project_id") @db.Uuid
+  amcContractId  String?  @map("amc_contract_id") @db.Uuid
   fxRate         Decimal  @default(1) @map("fx_rate") @db.Decimal(18, 6)
   amountFc       Decimal? @map("amount_fc") @db.Decimal(18, 2)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)

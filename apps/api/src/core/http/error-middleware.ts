@@ -3,6 +3,7 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { ZodError } from 'zod';
 import { logger } from '../logger';
+import { captureApiException } from '../observability/sentry';
 import { AppError, Errors } from './errors';
 import type { FieldErrors } from './errors';
 
@@ -52,6 +53,7 @@ export const errorHandler: ErrorRequestHandler = (err: unknown, req, res, _next)
   const requestId = req.requestId ?? 'unknown';
   if (!appError) {
     logger.error({ err, requestId }, 'Unhandled error');
+    captureApiException(err, req);
     if (process.env.DEBUG_UNHANDLED) console.error('UNHANDLED', err);
     res.status(500).json({
       error: { code: 'INTERNAL', message: 'Something went wrong.', status: 500, requestId },

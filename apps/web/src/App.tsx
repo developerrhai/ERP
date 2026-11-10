@@ -2,6 +2,7 @@
 // Signed-out users go to /login?next=…, and a user who must change their password sees only that screen.
 // A user with mfaSetupRequired is forced to /account/security.
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import './i18n';
 import { useSession } from './auth/AuthProvider';
 import { loginPathFor } from './lib/next-path';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
@@ -10,7 +11,10 @@ import { LoginPage } from './pages/LoginPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { AccountSecurityPage } from './pages/account/AccountSecurityPage';
 import { ModulePage } from './pages/ModulePage';
+import { GateKioskPage } from './pages/logistics/GateKioskPage';
 import { ApprovalCenterPage } from './pages/approvals/ApprovalCenterPage';
+import { HardeningPage } from './pages/admin/HardeningPage';
+import { InstallGuidePage } from './pages/notifications/InstallGuidePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { AppShell } from './shell/AppShell';
 import { IdleWarningModal } from './components/IdleWarningModal';
@@ -46,6 +50,10 @@ function ProtectedApp() {
           <Route index element={<DashboardPage user={user} />} />
           <Route path="account/security" element={<AccountSecurityPage user={user} />} />
           <Route path="approvals" element={<ApprovalCenterPage user={user} />} />
+          <Route path="hardening" element={<HardeningPage />} />
+          <Route path="install" element={<InstallGuidePage />} />
+          <Route path="notifications" element={<Navigate to="/m/notif-center" replace />} />
+          <Route path="gate/kiosk" element={<GateKioskPage />} />
           <Route path="m/approval-matrix" element={<Navigate to="/m/admin-approval" replace />} />
           <Route path="m/:pageId" element={<ModulePage user={user} />} />
           <Route path="m/:pageId/:sub" element={<ModulePage user={user} />} />

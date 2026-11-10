@@ -1,0 +1,14 @@
+# Phase 20-F: OWASP ZAP Baseline / API Scan Rules
+# Format: <ruleId>\t<IGNORE|WARN|FAIL>\t<note>
+10010	WARN	Cookie No HttpOnly Flag (evaluated per endpoint; auth refresh cookie sets HttpOnly)
+10015	INFO	Re-examine Cache-control Directives (API sends Cache-Control: no-store)
+10021	FAIL	X-Content-Type-Options Header Missing
+10035	FAIL	Strict-Transport-Security Header Not Set
+10038	FAIL	Content Security Policy (CSP) Header Not Set
+10096	WARN	Timestamp Disclosure - Unix
+10202	IGNORE	Absence of Anti-CSRF Tokens (Bearer JWT + X-Requested-With API design)
+40012	FAIL	Cross Site Scripting (Reflected)
+40014	FAIL	Cross Site Scripting (Persistent)
+40018	FAIL	SQL Injection
+90022	FAIL	Application Error Disclosure
+

@@ -1,0 +1,57 @@
+{
+  "app": {
+    "brandName": "Sawant Group ERP",
+    "skipToMain": "Skip to main content",
+    "menu": "Menu",
+    "searchPlaceholder": "Search all ERP records...",
+    "quickAdd": "Quick add",
+    "help": "Help & Guide",
+    "whatsNew": "What's New",
+    "language": "Language"
+  },
+  "health": {
+    "checking": "CHECKING…",
+    "ok": "SYSTEM GREEN",
+    "degraded": "DATABASE ISSUE",
+    "down": "API OFFLINE"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "forgotPassword": "Forgot Password",
+    "userIdOrEmail": "Email / User ID",
+    "password": "Password",
+    "mfaPrompt": "Enter the 6-digit authenticator code",
+    "recoveryPrompt": "Use a backup recovery code",
+    "changePassword": "Change Password"
+  },
+  "dpdp": {
+    "title": "Data Privacy Notice (DPDP Act, 2023)",
+    "acknowledge": "I Acknowledge & Continue",
+    "grievanceOfficer": "Grievance Officer",
+    "requestRegister": "Data-Principal Request Register (30-Day SLA)",
+    "retentionPolicies": "Retention & Anonymisation Policies",
+    "privacyLink": "Privacy Notice (DPDP)"
+  },
+  "cutover": {
+    "title": "Opening Balance Cut-Over & Sign-Off",
+    "dryRun": "Run Dry-Run Validation",
+    "commit": "Commit Opening Batch",
+    "signOff": "Dual Sign-Off (CFO + Dept Head)",
+    "difference": "Reconciliation Difference",
+    "balanced": "Balanced (Difference: ₹ 0.00)",
+    "downloadPdf": "Download Reconciliation PDF"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "status": "Status",
+    "actions": "Actions",
+    "noDataYet": "No data yet.",
+    "loading": "Loading…",
+    "unit": "Unit",
+    "financialYear": "Financial Year"
+  }
+}
+

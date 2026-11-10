@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline — Sawant Group ERP</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; display: grid; place-items: center; min-height: 100vh; }
+      .card { max-width: 420px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 28px; text-align: center; }
+      h1 { font-size: 20px; margin: 0 0 8px; }
+      p { color: #475569; font-size: 14px; line-height: 1.5; margin: 0 0 18px; }
+      button { background: #0f766e; color: #fff; border: 0; border-radius: 8px; padding: 10px 18px; font-weight: 600; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>You are offline — data needs the network</h1>
+      <p>Financial balances, approvals, and live stock figures require a live connection. Saved offline drafts stay safely in this browser until you reconnect.</p>
+      <button type="button" onclick="window.location.reload()">Try Again</button>
+    </div>
+  </body>
+</html>
+

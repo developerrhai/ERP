@@ -524,6 +524,8 @@ export const authService = {
 
   async logoutAll(auth: AuthContext, meta: RequestMeta): Promise<void> {
     const revoked = await sessionRepository.revokeAllForUser(auth.userId, 'logout_all', auth.userId);
+    const { pushService } = await import('../notifications/push-service.js');
+    await pushService.revokeAllForUser(auth.userId, 'LOGOUT').catch(() => 0);
     await recordAudit({
       action: 'LOGOUT_ALL',
       actorId: auth.userId,

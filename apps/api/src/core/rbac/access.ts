@@ -4,7 +4,9 @@
 // Cached for 60 s per user profile; cache invalidated on any permission-related write.
 import type { RequestHandler } from 'express';
 import { prisma } from '../db/prisma';
+import type { Db } from '../db/prisma';
 import { asyncHandler } from '../http/async-handler';
+import { onAccessCacheInvalidated } from './cache-bus';
 import { Errors } from '../http/errors';
 import { ADMIN_FAMILY, pageInfo, registry } from '../registry';
 import { TYPED_PAGES } from '../../engine/kinds';
@@ -387,9 +389,25 @@ export function cacheKey(user: AccessUser, roleVersion: number, unitIds: string)
   return `${user.id}|${user.roleId}|${roleVersion}|${depts}|${unitIds}`;
 }
 
-export function invalidateAccessCache(): void {
+export function clearLocalAccessCache(): void {
   generation += 1;
   cache.clear();
+}
+
+onAccessCacheInvalidated(clearLocalAccessCache);
+
+/**
+ * Clears local cache immediately AND emits `pg_notify('erp_cache', '{"scope":"access"}')`.
+ * Pass the writing `tx` when inside `prisma.$transaction(...)` so notification is delivered only on commit.
+ */
+export async function invalidateAccessCache(tx?: Db): Promise<void> {
+  clearLocalAccessCache();
+  const db = tx ?? prisma;
+  try {
+    await db.$executeRaw`SELECT pg_notify('erp_cache', '{"scope":"access"}')`;
+  } catch {
+    // Best-effort in disconnected unit tests; production readiness checks LISTEN health via /health/ready.
+  }
 }
 
 export function accessCacheSize(): number {

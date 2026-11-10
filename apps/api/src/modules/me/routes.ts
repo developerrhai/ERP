@@ -6,7 +6,7 @@ import { authenticate, requirePasswordChanged } from '../../core/auth/authentica
 import { asyncHandler } from '../../core/http/async-handler';
 import { validate } from '../../core/http/validate';
 import { meController } from './controller';
-import { mePermissionsQuerySchema, putContextSchema } from './schemas';
+import { mePermissionsQuerySchema, putContextSchema, putLocaleSchema } from './schemas';
 
 export function createMeRouter(): Router {
   const router = Router();
@@ -23,5 +23,7 @@ export function createMeRouter(): Router {
     validate({ body: putContextSchema }),
     asyncHandler(meController.putContext),
   );
+  router.get('/locale', asyncHandler(meController.getLocale));
+  router.put('/locale', validate({ body: putLocaleSchema }), asyncHandler(meController.putLocale));
   return router;
 }

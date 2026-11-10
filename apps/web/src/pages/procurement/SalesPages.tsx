@@ -2,6 +2,7 @@
 // (customer RFQs + quotations), dispatch with the delivery challan, sales invoices from a dispatch, sales returns,
 // collections (receipts against invoices) and delivery scheduling (open order balance by month).
 import { useState } from 'react';
+import { EmailDocButton } from '../../components/EmailDocDialog';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { toUiError } from '../../lib/errors';
@@ -365,6 +366,9 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
                   Post
                 </button>
               ) : null}
+              {open.status === 'Posted' ? (
+                <EmailDocButton docType="SALES_DISPATCH" docId={s(open.id)} />
+              ) : null}
               {open.status === 'Posted' && actions.cancel ? (
                 <button
                   type="button"
@@ -717,6 +721,9 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
                 >
                   Post
                 </button>
+              ) : null}
+              {open.status === 'Posted' ? (
+                <EmailDocButton docType="SALES_INVOICE" docId={s(open.id)} />
               ) : null}
               {open.status === 'Posted' && actions.cancel ? (
                 <button

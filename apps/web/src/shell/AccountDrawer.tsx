@@ -1,10 +1,12 @@
 // Account drawer (prototype .drawer): who am I (avatar, name, login ID, department, role),
 // change password, sign out of all devices, and Sign Out.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChangePasswordForm } from '../components/ChangePasswordForm';
 import { Drawer } from '../components/Drawer';
 import { useToast } from '../components/Toast';
 import { ApiError, logout, logoutAll } from '../lib/api';
+import { clearPushAndSwOnLogout } from '../lib/pushClient';
 import { initials } from '../lib/format';
 import type { User } from '../types';
 
@@ -12,6 +14,16 @@ export function AccountDrawer({ user, onClose }: { user: User; onClose: () => vo
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const onBip = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', onBip);
+    return () => window.removeEventListener('beforeinstallprompt', onBip);
+  }, []);
 
   const run = async (action: () => Promise<void>): Promise<void> => {
     if (busy) return;
@@ -73,14 +85,51 @@ export function AccountDrawer({ user, onClose }: { user: User; onClose: () => vo
         >
           Security & Devices
         </a>
-        <button type="button" className="btn" disabled={busy} onClick={() => void run(logoutAll)}>
+        {installPrompt ? (
+          <button
+            type="button"
+            className="btn"
+            onClick={() =>
+              void installPrompt.prompt().finally(() => {
+                setInstallPrompt(null);
+              })
+            }
+          >
+            Install App
+          </button>
+        ) : (
+          <Link
+            to="/install"
+            className="btn"
+            onClick={onClose}
+            style={{ textAlign: 'center', textDecoration: 'none' }}
+          >
+            Install App
+          </Link>
+        )}
+        <button
+          type="button"
+          className="btn"
+          disabled={busy}
+          onClick={() =>
+            void run(async () => {
+              await clearPushAndSwOnLogout();
+              await logoutAll();
+            })
+          }
+        >
           Sign out of all devices
         </button>
         <button
           type="button"
           className="btn danger"
           disabled={busy}
-          onClick={() => void logout(toast)}
+          onClick={() =>
+            void (async () => {
+              await clearPushAndSwOnLogout();
+              await logout(toast);
+            })()
+          }
         >
           Sign Out
         </button>

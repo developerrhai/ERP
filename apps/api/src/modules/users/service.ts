@@ -521,6 +521,12 @@ export const userService = {
         const sessionsRevoked = deactivating
           ? await sessionRepository.revokeAllForUser(target.id, 'deactivated', tx)
           : 0;
+        if (deactivating) {
+          await tx.$executeRaw`
+            UPDATE push_subscriptions SET revoked_at = now(), revoke_reason = 'DEACTIVATED'
+            WHERE user_id = ${target.id}::uuid AND revoked_at IS NULL
+          `;
+        }
 
         if (roleChanged) {
           await recordAudit(

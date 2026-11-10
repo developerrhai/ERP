@@ -88,7 +88,35 @@ const envSchema = z
     /** Express `trust proxy` value. `loopback` trusts only a proxy on this machine (the Vite dev proxy). */
     TRUST_PROXY: z.string().trim().min(1).default('loopback'),
     /** Max Argon2 hash/verify operations in flight; beyond that requests get 503 SERVER_BUSY. */
-    ARGON2_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(256).default(8),
+    ARGON2_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(256).default(4),
+    /** Pool caps across multi-process workers (Phase 20 §4.4: 2 processes × (10+5) ≈ 30 DB conns). */
+    PRISMA_CONNECTION_LIMIT: z.coerce.number().int().min(1).max(50).default(10),
+    PGBOSS_MAX_POOL: z.coerce.number().int().min(1).max(20).default(5),
+    PGBOSS_TEAM_SIZE: z.coerce.number().int().min(1).max(10).default(2),
+    /** Phase 20-C Storage driver ('local' in dev/test; 's3' in staging/prod with IAM instance role). */
+    STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+    S3_BUCKET: z.string().optional(),
+    AWS_REGION: z.string().default('ap-south-1'),
+    S3_PREFIX: z.string().default('docs/'),
+    S3_ENDPOINT: z.string().optional(),
+    S3_FORCE_PATH_STYLE: booleanString,
+    S3_SSE_KMS_KEY_ID: z.string().optional(),
+    S3_PRESIGN_TTL_SECONDS: z.coerce.number().int().min(30).max(3600).default(300),
+    /** Phase 20-B Observability (Sentry without PII). */
+    SENTRY_DSN: z.string().optional(),
+    SENTRY_ENVIRONMENT: z.string().optional(),
+    RELEASE_SHA: z.string().default('dev'),
+    /** N+1 guard threshold (Phase 20 §5(a): alert/fail above 25 SQL queries per request). */
+    N_PLUS_ONE_THRESHOLD: z.coerce.number().int().min(5).max(500).default(25),
+    /** Phase 21 Web Push VAPID keys (stored in env only, never in DB) & Amazon SES settings. */
+    VAPID_PUBLIC_KEY: z.string().optional(),
+    VAPID_PRIVATE_KEY: z.string().optional(),
+    VAPID_SUBJECT: z.string().default('mailto:it@sawantgroup.example'),
+    SES_REGION: z.string().default('ap-south-1'),
+    SES_CONFIG_SET_TXN: z.string().optional(),
+    SES_CONFIG_SET_MKT: z.string().optional(),
+    SES_SNS_TOPIC_ARN: z.string().optional(),
+    MAIL_FROM_DOMAIN: z.string().default('sawantgroup.example'),
     /** Optional previous JWT secret for verification during key rotation. */
     JWT_ACCESS_SECRET_PREVIOUS: z.string().min(32).optional(),
     /** AES-256-GCM encryption key for MFA secrets (32 bytes base64 or 64 hex chars). */

@@ -1,10 +1,12 @@
 // `npm run db:seed`: idempotent. Phase 2 and Phase 3 defaults first (no env needed; never overwrites
 // admin edits), then the single SUPER_ADMIN from SUPERADMIN_* only if none exists (mustChangePassword=true).
+import { env } from '../src/config/env';
 import { prisma } from '../src/core/db/prisma';
 import { logger } from '../src/core/logger';
+import { withBootAdvisoryLock } from '../src/core/seed/advisory-lock';
 import { runSeed } from '../src/core/seed/run-seed';
 
-runSeed(prisma, process.env)
+withBootAdvisoryLock(env.DATABASE_URL, () => runSeed(prisma, process.env))
   .then((result) => {
     logger.info({ inserted: result.phase2 }, 'Seed: Phase 2 defaults applied (missing rows only)');
     logger.info({ inserted: result.phase3 }, 'Seed: Phase 3 defaults applied (missing rows only)');

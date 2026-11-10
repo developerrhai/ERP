@@ -25,9 +25,13 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1165.0",
+    "@aws-sdk/client-sesv2": "^3.1165.0",
+    "@aws-sdk/s3-request-presigner": "^3.1165.0",
     "@node-rs/argon2": "2.0.2",
     "@prisma/client": "5.22.0",
     "@rhai/statutory": "file:../../packages/statutory",
+    "@sentry/node": "^10.78.0",
     "@types/nodemailer": "6.4.17",
     "@types/qrcode": "1.5.5",
     "busboy": "1.6.0",
@@ -42,10 +46,12 @@
     "nodemailer": "6.9.16",
     "otpauth": "9.3.6",
     "pdfkit": "^0.20.2",
+    "pg": "^8.23.1",
     "pg-boss": "10.4.2",
     "pino": "9.5.0",
     "pino-http": "10.3.0",
     "qrcode": "1.5.4",
+    "web-push": "^4.0.0",
     "zod": "3.23.8"
   },
   "devDependencies": {
@@ -57,7 +63,9 @@
     "@types/jsonwebtoken": "9.0.7",
     "@types/node": "20.17.9",
     "@types/pdfkit": "^0.17.7",
+    "@types/pg": "^8.23.1",
     "@types/supertest": "6.0.2",
+    "@types/web-push": "^3.6.4",
     "eslint": "9.15.0",
     "eslint-config-prettier": "9.1.0",
     "harfbuzzjs": "1.6.4",

@@ -55,6 +55,21 @@ export const DOC_PREFIX: Record<string, string> = {
   'sales-collections': 'RCT',
   'sales-returns': 'SRT',
   'sales-returns:cn': 'CN',
+  // Logistics, Fleet, Gate & DMS (Phase 18)
+  'gate-in': 'GIN',
+  'gate-out': 'RGP',
+  'gate-return': 'RGP',
+  'gate-nonreturn': 'NGP',
+  'log-shipments': 'SHP',
+  'log-freight': 'FRT',
+  'fleet-fuel': 'FUEL',
+  'fleet-service': 'VSRV',
+  'dms-docs': 'DOC',
+  // Hardening & Go-Live (Phase 20)
+  'dpdp-requests': 'DPDP',
+  'opening-cutover': 'CUT',
+  // Notifications & Broadcasts (Phase 21)
+  'admin-notif-broadcast': 'BRC',
 };
 
 export interface AllocateOptions {

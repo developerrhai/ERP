@@ -78,6 +78,8 @@ export interface PostLineInput {
   side?: 'DR' | 'CR';
   /** Draft journals only: the stored line id */
   lineId?: string;
+  projectId?: string;
+  amcContractId?: string;
 }
 
 export interface EventLine {
@@ -90,6 +92,8 @@ export interface EventLine {
   unitId?: string;
   costCenter?: string; // cost centre CODE
   narration?: string;
+  projectId?: string;
+  amcContractId?: string;
 }
 
 export interface EventPayload {
@@ -170,6 +174,8 @@ interface NormLine {
   currencyCode: string;
   fxRate: Dec;
   amountFc: Dec | null;
+  projectId: string | null;
+  amcContractId: string | null;
 }
 
 type AccountRow = Prisma.AccountGetPayload<object>;
@@ -536,6 +542,8 @@ async function normalise(
       currencyCode,
       fxRate,
       amountFc,
+      projectId: l.projectId ?? null,
+      amcContractId: l.amcContractId ?? null,
     });
   }
   return out;
@@ -878,6 +886,8 @@ export const PostingService = {
             currencyCode: l.currencyCode,
             fxRate: l.fxRate,
             amountFc: l.amountFc,
+            projectId: l.projectId,
+            amcContractId: l.amcContractId,
           },
           select: { id: true },
         });
@@ -913,6 +923,8 @@ export const PostingService = {
           currencyCode: l.currencyCode,
           fxRate: l.fxRate,
           amountFc: l.amountFc,
+          projectId: l.projectId,
+          amcContractId: l.amcContractId,
           createdById: actor.userId,
         },
         select: { id: true },
@@ -1147,6 +1159,8 @@ export const PostingService = {
           currencyCode: l.currencyCode,
           fxRate: l.fxRate,
           amountFc: l.amountFc,
+          projectId: (l as any).projectId,
+          amcContractId: (l as any).amcContractId,
         },
         select: { id: true },
       });
@@ -1173,6 +1187,8 @@ export const PostingService = {
           currencyCode: l.currencyCode,
           fxRate: l.fxRate,
           amountFc: l.amountFc,
+          projectId: l.projectId,
+          amcContractId: l.amcContractId,
           createdById: actor.userId,
         },
         select: { id: true },

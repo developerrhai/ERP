@@ -13,3 +13,9 @@ export const putContextSchema = z
   })
   .strict();
 export type PutContextInput = z.output<typeof putContextSchema>;
+
+export const putLocaleSchema = z
+  .object({
+    locale: z.enum(['en', 'hi']),
+  })
+  .strict();

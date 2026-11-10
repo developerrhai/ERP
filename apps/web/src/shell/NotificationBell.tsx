@@ -1,6 +1,6 @@
-// The bell in the top bar (docs/phases/PHASE-05.md §7.5): unread badge (99+ max) polled every 60 s and
-// on window focus, a drawer with the latest 20 items, "Mark all read" and "View all". Clicking an
-// item marks it read and opens its link. Any approval action refreshes the badge at once.
+// The bell in the top bar (Phase 5 + Phase 21 §7): unread badge (99+ max) updated in real time
+// via SSE (`realtime.ts`) with polling fallback, drawer with All / Approvals / Alerts / Announcements
+// tabs, "Mark all read", and "View all" -> /m/notif-center.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Drawer } from '../components/Drawer';
@@ -13,6 +13,8 @@ import {
   type NotificationItem,
 } from '../lib/approvalsApi';
 import { formatDateTime } from '../lib/format';
+import { phase21Api, type NotifyCategory } from '../lib/phase21Api';
+import { RT_EVENT_BADGE } from '../lib/realtime';
 
 export const BELL_POLL_MS = 60_000;
 
@@ -20,10 +22,13 @@ export function badgeText(count: number): string {
   return count > 99 ? '99+' : String(count);
 }
 
+type BellTab = 'ALL' | 'APPROVAL' | 'ALERT' | 'ANNOUNCEMENT';
+
 export function NotificationBell() {
   const navigate = useNavigate();
   const [count, setCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<BellTab>('ALL');
   const [items, setItems] = useState<NotificationItem[] | null>(null);
   const [error, setError] = useState('');
   const alive = useRef(true);
@@ -36,14 +41,25 @@ export function NotificationBell() {
 
   const loadItems = useCallback(() => {
     setError('');
-    listNotifications({ page: 1, size: 20 })
-      .then((r) => {
+    if (tab === 'ALL') {
+      listNotifications({ page: 1, size: 20 })
+        .then((r) => {
+          if (!alive.current) return;
+          setItems(r.rows);
+          setCount(r.unread);
+        })
+        .catch(() => alive.current && setError('Could not load notifications.'));
+      return;
+    }
+
+    phase21Api
+      .listNotificationsCursor({ category: tab as NotifyCategory, limit: 20 })
+      .then((rows) => {
         if (!alive.current) return;
-        setItems(r.rows);
-        setCount(r.unread);
+        setItems(rows as unknown as NotificationItem[]);
       })
       .catch(() => alive.current && setError('Could not load notifications.'));
-  }, []);
+  }, [tab]);
 
   useEffect(() => {
     alive.current = true;
@@ -52,16 +68,23 @@ export function NotificationBell() {
     const onFocus = (): void => refreshCount();
     const onAction = (): void => {
       refreshCount();
+      if (open) loadItems();
+    };
+    const onBadge = (ev: Event): void => {
+      const detail = (ev as CustomEvent<{ unread?: number }>).detail;
+      if (typeof detail?.unread === 'number') setCount(detail.unread);
     };
     window.addEventListener('focus', onFocus);
     window.addEventListener(BELL_REFRESH_EVENT, onAction);
+    window.addEventListener(RT_EVENT_BADGE, onBadge);
     return () => {
       alive.current = false;
       clearInterval(timer);
       window.removeEventListener('focus', onFocus);
       window.removeEventListener(BELL_REFRESH_EVENT, onAction);
+      window.removeEventListener(RT_EVENT_BADGE, onBadge);
     };
-  }, [refreshCount]);
+  }, [refreshCount, open, loadItems]);
 
   useEffect(() => {
     if (open) loadItems();
@@ -104,7 +127,7 @@ export function NotificationBell() {
       </button>
       {open ? (
         <Drawer title="Notifications" onClose={() => setOpen(false)}>
-          <div className="bell-actions">
+          <div className="bell-actions" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
             <button type="button" className="btn sm" onClick={markAll} disabled={count === 0}>
               Mark all read
             </button>
@@ -113,11 +136,42 @@ export function NotificationBell() {
               className="btn sm"
               onClick={() => {
                 setOpen(false);
-                navigate('/m/notifications');
+                navigate('/m/notif-center');
               }}
             >
               View all
             </button>
+            <button
+              type="button"
+              className="btn sm"
+              onClick={() => {
+                setOpen(false);
+                navigate('/m/notif-preferences');
+              }}
+            >
+              Settings
+            </button>
+          </div>
+          <div className="chips" role="tablist" aria-label="Notification categories" style={{ marginBottom: 10 }}>
+            {(
+              [
+                ['ALL', 'All'],
+                ['APPROVAL', 'Approvals'],
+                ['ALERT', 'Alerts'],
+                ['ANNOUNCEMENT', 'Announcements'],
+              ] as [BellTab, string][]
+            ).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                role="tab"
+                aria-selected={tab === k}
+                className={tab === k ? 'chip active' : 'chip'}
+                onClick={() => setTab(k)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
           {error ? (
             <p className="field-error" role="alert">

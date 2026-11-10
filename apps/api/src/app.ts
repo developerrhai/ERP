@@ -7,6 +7,7 @@ import type { Express } from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import { env } from './config/env';
+import { queryBudgetMiddleware } from './core/db/prisma';
 import { errorHandler, notFoundHandler } from './core/http/error-middleware';
 import { attachRequestId, genRequestId } from './core/http/request-id';
 import { logger } from './core/logger';
@@ -61,16 +62,26 @@ import {
   createNotificationPreferencesRouter,
   createNotificationsRouter,
 } from './modules/notifications/routes';
+import { createPhase21PublicRouter, createPhase21Router } from './modules/notifications/phase21-routes';
 import { createDesignationsRouter } from './modules/designations/routes';
 import { createCurrenciesRouter } from './modules/currencies/routes';
 import { createUomsRouter } from './modules/uoms/routes';
 import { createFilesRouter } from './modules/files/routes';
 import { createFormatsRouter, createPageSettingsRouter } from './modules/format-settings/routes';
+import { hrRouter } from './modules/hr/routes';
+import { payrollRouter } from './modules/payroll/routes';
+import { projectsRouter } from './modules/projects/routes';
+import { serviceRouter } from './modules/service/routes';
+import { createPhase18Router } from './modules/logistics/routes';
+import { createPhase19Router } from './modules/bi/routes';
+import { createPhase20Router } from './modules/hardening/routes';
 import { bootKit } from './kit/boot';
 
 export interface AppOptions {
   /** Defaults to !RATE_LIMIT_DISABLED. Tests pass true to exercise the limiter. */
   rateLimit?: boolean;
+  /** When true (or outside NODE_ENV=test), rate limit keys are shared across processes. */
+  sharedRateLimit?: boolean;
   dbPing?: DbPing;
   /** Overrides TRUST_PROXY (tests use it to simulate an untrusted peer). */
   trustProxy?: boolean | number | string;
@@ -92,6 +103,7 @@ export function createApp(options: AppOptions = {}): Express {
 
   app.use(pinoHttp({ logger, genReqId: genRequestId }));
   app.use(attachRequestId);
+  app.use(queryBudgetMiddleware);
   app.use(helmet());
   app.use(
     cors({
@@ -122,23 +134,25 @@ export function createApp(options: AppOptions = {}): Express {
     res.setHeader('Cache-Control', 'no-store');
     next();
   });
-  api.use(createGlobalLimiter(rateLimitEnabled));
+  const rlOpts = options.sharedRateLimit !== undefined ? { shared: options.sharedRateLimit } : undefined;
+  api.use(createGlobalLimiter(rateLimitEnabled, rlOpts));
   api.use('/health', createHealthRouter(options.dbPing));
   api.use(
     '/auth',
     createAuthRouter({
-      loginIpLimiter: createLoginIpLimiter(rateLimitEnabled),
-      loginLimiter: createLoginLimiter(rateLimitEnabled),
-      changePasswordLimiter: createChangePasswordLimiter(rateLimitEnabled),
-      mfaVerifyLimiter: createMfaVerifyLimiter(rateLimitEnabled),
-      passwordResetRequestIpLimiter: createPasswordResetRequestIpLimiter(rateLimitEnabled),
-      passwordResetRequestEmailLimiter: createPasswordResetRequestEmailLimiter(rateLimitEnabled),
-      passwordResetConfirmLimiter: createPasswordResetConfirmLimiter(rateLimitEnabled),
+      loginIpLimiter: createLoginIpLimiter(rateLimitEnabled, rlOpts),
+      loginLimiter: createLoginLimiter(rateLimitEnabled, rlOpts),
+      changePasswordLimiter: createChangePasswordLimiter(rateLimitEnabled, rlOpts),
+      mfaVerifyLimiter: createMfaVerifyLimiter(rateLimitEnabled, rlOpts),
+      passwordResetRequestIpLimiter: createPasswordResetRequestIpLimiter(rateLimitEnabled, rlOpts),
+      passwordResetRequestEmailLimiter: createPasswordResetRequestEmailLimiter(rateLimitEnabled, rlOpts),
+      passwordResetConfirmLimiter: createPasswordResetConfirmLimiter(rateLimitEnabled, rlOpts),
     }),
   );
   api.use('/meta', createMetaRouter());
   api.use('/users', createUsersRouter());
   api.use('/me', createMeRouter());
+  api.use(createPhase21PublicRouter()); // Public SNS-signed webhooks before any module router
   api.use('/departments', createDepartmentsRouter());
   api.use('/roles', createRolesRouter());
   api.use('/permissions', createPermissionsRouter());
@@ -160,6 +174,14 @@ export function createApp(options: AppOptions = {}): Express {
   api.use(createQmsRouter()); // Phase 12: /qms
   api.use(createMfgRouter()); // Phase 13: /mfg
   api.use(createAssetsRouter()); // Phase 14: /maint and /assets
+  api.use('/hr', hrRouter); // Phase 15: /hr
+  api.use('/payroll', payrollRouter); // Phase 16: /payroll
+  api.use('/projects', projectsRouter); // Phase 17: /projects
+  api.use('/service', serviceRouter); // Phase 17: /service
+  api.use(createPhase18Router()); // Phase 18: Logistics, Fleet, Gate & DMS
+  api.use(createPhase19Router()); // Phase 19: BI, AI Copilot, Search, Automation, Webhooks & Comm
+  api.use(createPhase20Router()); // Phase 20: DPDP, Audit Partitions & Opening Balance Cut-over
+  api.use(createPhase21Router()); // Phase 21: SSE Realtime, Web Push, Broadcasts & Email Automation
   api.use(createProcurementRouter()); // Phase 9: /scm, /wms/putaway, /fin/debitnote, /fin/ap
   api.use(createInventoryRouter()); // Phase 8: /inventory (vouchers with lines, batches, serials, bins, reservations, counts, reports)
   api.use('/approval-matrix', createApprovalMatrixRouter());

@@ -5,8 +5,14 @@ const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
 export const listQuerySchema = z
   .object({
     unread: bool.optional(),
-    type: z.string().trim().min(1).max(40).optional(),
+    type: z.string().trim().min(1).max(64).optional(),
     group: z.enum(['Approvals', 'System']).optional(),
+    category: z
+      .enum(['APPROVAL', 'ALERT', 'DOCUMENT', 'ANNOUNCEMENT', 'SECURITY', 'REMINDER', 'DIGEST', 'MARKETING'])
+      .optional(),
+    cursor: z.string().regex(/^\d+$/).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+    includeArchived: bool.optional(),
     page: z.coerce.number().int().min(1).max(100000).default(1),
     size: z.coerce.number().int().min(1).max(100).default(20),
   })
@@ -22,7 +28,7 @@ export const preferencesBodySchema = z
       .array(
         z
           .object({
-            type: z.string().trim().min(1).max(40),
+            type: z.string().trim().min(1).max(64),
             inApp: z.boolean(),
             email: z.enum(['OFF', 'INSTANT', 'DIGEST']),
           })

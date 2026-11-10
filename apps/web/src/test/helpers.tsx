@@ -148,6 +148,26 @@ export function mockFetch(routes: Record<string, Handler>): { fn: Mock; calls: C
       if (user && method === 'PUT' && path === '/api/v1/me/context') {
         return json(200, { data: body });
       }
+      if (user && method === 'GET' && path === '/api/v1/me/locale') {
+        return json(200, { data: { locale: 'en' } });
+      }
+      if (user && method === 'GET' && path === '/api/v1/hardening/privacy/notice') {
+        return json(200, {
+          data: {
+            id: 'pn-1',
+            version: 'v1.0',
+            locale: 'en',
+            localizedTitle: 'Privacy Notice',
+            localizedTextMd: 'Notice',
+            grievanceOfficerName: 'Officer',
+            grievanceOfficerEmail: 'privacy@example.com',
+            grievanceOfficerPhone: '000',
+            needsReview: false,
+            accepted: true,
+            acceptedAt: '2026-11-10T00:00:00.000Z',
+          },
+        });
+      }
       return apiError(404, 'NOT_FOUND', `No mock for ${method} ${path}`);
     }
     return handler(call);

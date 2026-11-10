@@ -25,6 +25,55 @@ const PHASE_ADDED_PAGES = [
     after: 'admin-approval',
     purpose: 'All document formats and calculation rule sets, their versions, and who changed what.',
   },
+  {
+    id: 'notif-center',
+    title: 'Notification Center',
+    family: 'Executive',
+    after: 'notifications',
+    purpose: 'Full real-time notification history, category filters and read/archive state.',
+  },
+  {
+    id: 'notif-preferences',
+    title: 'Notification Preferences',
+    family: 'Executive',
+    after: 'notif-center',
+    purpose: 'Per-type channel switches (in-app, push, email, SMS), quiet hours and registered devices.',
+  },
+  {
+    id: 'admin-notif-types',
+    title: 'Notification Types',
+    family: 'Administration',
+    after: 'admin-settings',
+    purpose: 'Catalogue of notification events, allowed/mandatory channels and test sends.',
+  },
+  {
+    id: 'admin-notif-broadcast',
+    title: 'Broadcast Announcements',
+    family: 'Administration',
+    after: 'admin-notif-types',
+    purpose: 'Scheduled announcements targeted to units, departments or roles with acknowledgement tracking.',
+  },
+  {
+    id: 'admin-notif-health',
+    title: 'Notification & Email Health',
+    family: 'Administration',
+    after: 'admin-notif-broadcast',
+    purpose: '24h delivery telemetry, push devices, SES quota, DKIM/SPF/DMARC status and channel kill switches.',
+  },
+  {
+    id: 'admin-email-rules',
+    title: 'Email Automation Rules',
+    family: 'Administration',
+    after: 'admin-notif-health',
+    purpose: 'Event-triggered transactional email rules, PDF attachments and send windows.',
+  },
+  {
+    id: 'admin-email-suppressions',
+    title: 'Email Suppressions',
+    family: 'Administration',
+    after: 'admin-email-rules',
+    purpose: 'Blocked hard-bounced/complained addresses with audited unblock workflow.',
+  },
 ] as const;
 
 export const registry: typeof rawRegistry = {

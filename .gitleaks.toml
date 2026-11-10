@@ -1,0 +1,15 @@
+# Phase 20-F: Gitleaks secret-scanning rules for full git history verification
+title = "Sawant Group ERP Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures and non-production example keys"
+paths = [
+  '''apps/api/tests/.*''',
+  '''packages/.*/tests/.*''',
+  '''\.env\.example$''',
+  '''deploy_to_ec2\.example\.ps1$''',
+]
+

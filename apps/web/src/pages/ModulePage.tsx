@@ -20,6 +20,7 @@ import { AuditTrailPage } from './admin/AuditTrailPage';
 import { CompanyMasterPage } from './admin/CompanyMasterPage';
 import { ControlCenterPage } from './admin/ControlCenterPage';
 import { CurrencyMasterPage } from './admin/CurrencyMasterPage';
+import { HardeningPage } from './admin/HardeningPage';
 import { DepartmentMasterPage } from './admin/DepartmentMasterPage';
 import { DesignationMasterPage } from './admin/DesignationMasterPage';
 import { FinancialYearsPage } from './admin/FinancialYearsPage';
@@ -107,6 +108,36 @@ import { CalibrationPage, PlansPage } from './qms/SetupPages';
 import { UserMasterPage } from './users/UserMasterPage';
 import { AdminFormatsPage } from './settings/AdminFormatsPage';
 import { SettingsLauncher } from './settings/SettingsLauncher';
+import { HrEmployeesPage } from './hr/HrEmployeesPage';
+import { HrAttendancePage } from './hr/HrAttendancePage';
+import { HrLeavePage } from './hr/HrLeavePage';
+import { HrExpensePage } from './hr/HrExpensePage';
+import { HrEssPage } from './hr/HrEssPage';
+import { PayProcessingPage } from './payroll/PayProcessingPage';
+import { PayStructurePage } from './payroll/PayStructurePage';
+import { StatutoryRatesPage } from './payroll/StatutoryRatesPage';
+import { PayPayslipPage } from './payroll/PayPayslipPage';
+import { PayBankPage } from './payroll/PayBankPage';
+import { ProjectsListPage } from './projects/ProjectsListPage';
+import { ProjectGanttPage } from './projects/ProjectGanttPage';
+import { ProjectKanbanPage } from './projects/ProjectKanbanPage';
+import { TimesheetsPage } from './projects/TimesheetsPage';
+import { ProjectProfitabilityPage } from './projects/ProjectProfitabilityPage';
+import { ServiceDeskPage } from './service/ServiceDeskPage';
+import { TechnicianBoardPage } from './service/TechnicianBoardPage';
+import { MobileVisitsPage } from './service/MobileVisitsPage';
+import { AmcPage } from './service/AmcPage';
+import { WarrantyClaimsPage } from './service/WarrantyClaimsPage';
+import { LogisticsPage } from './logistics/LogisticsPage';
+import { FleetPage } from './logistics/FleetPage';
+import { GateKioskPage } from './logistics/GateKioskPage';
+import { DmsPage } from './logistics/DmsPage';
+import { BiBuilderPage } from './bi/BiBuilderPage';
+import { AiCopilotPage } from './bi/AiCopilotPage';
+import { AutomationStudioPage } from './bi/AutomationStudioPage';
+import { CommCenterPage } from './bi/CommCenterPage';
+import { AdminNotifConsolePage } from './admin/AdminNotifConsolePage';
+import { NotificationPrefsPage } from './notifications/NotificationPrefsPage';
 
 const SUB_PAGES: Record<string, readonly string[]> = {
   'admin-settings': ['controls', 'letterhead', 'finance-limits'],
@@ -510,6 +541,174 @@ function PageBody({
       return <ValuationPage actions={actions} />;
     case 'wms-barcode':
       return <ScanPage />;
+
+    // Phase 15 HR screens
+    case 'hr-employees':
+    case 'hr-documents':
+      return <HrEmployeesPage />;
+    case 'hr-attendance':
+    case 'hr-shifts':
+      return <HrAttendancePage />;
+    case 'hr-leave':
+      return <HrLeavePage />;
+    case 'hr-expense':
+      return <HrExpensePage />;
+    case 'hr-ess':
+      return <HrEssPage />;
+
+    // Phase 16 Payroll screens
+    case 'pay-processing':
+    case 'pay-register':
+      return <PayProcessingPage />;
+    case 'pay-structure':
+      return <PayStructurePage />;
+    case 'pay-pf':
+    case 'pay-esic':
+    case 'pay-pt':
+    case 'pay-tds':
+      return <StatutoryRatesPage />;
+    case 'pay-payslip':
+      return <PayPayslipPage />;
+    case 'pay-bank':
+      return <PayBankPage />;
+
+    // Phase 17 Projects screens
+    case 'proj-projects':
+      return <ProjectsListPage />;
+    case 'proj-tasks':
+    case 'proj-gantt':
+      return <ProjectGanttPage />;
+    case 'proj-kanban':
+      return <ProjectKanbanPage />;
+    case 'proj-timesheets':
+      return <TimesheetsPage />;
+    case 'proj-profitability':
+      return <ProjectProfitabilityPage />;
+
+    // Phase 17 Service screens
+    case 'service-tickets':
+      return <ServiceDeskPage />;
+    case 'service-technicians':
+      return <TechnicianBoardPage />;
+    case 'service-visits':
+      return <MobileVisitsPage />;
+    case 'service-amc':
+      return <AmcPage />;
+    case 'service-warranty':
+    case 'service-claims':
+      return <WarrantyClaimsPage />;
+
+    // Phase 18 Logistics, Fleet, Gate & DMS screens
+    case 'log-shipments':
+    case 'log-tracking':
+      return <LogisticsPage initialTab="SHIPMENTS" />;
+    case 'log-freight':
+      return <LogisticsPage initialTab="FREIGHT" />;
+    case 'log-routes':
+      return <LogisticsPage initialTab="ROUTES" />;
+    case 'log-transporters':
+      return <LogisticsPage initialTab="TRANSPORTERS" />;
+    case 'log-pod':
+      return <LogisticsPage initialTab="POD" />;
+    case 'container-track':
+      return <LogisticsPage initialTab="CONTAINERS" />;
+
+    case 'fleet-vehicles':
+    case 'fleet-documents':
+      return <FleetPage initialTab="VEHICLES" />;
+    case 'fleet-drivers':
+      return <FleetPage initialTab="DRIVERS" />;
+    case 'fleet-fuel':
+      return <FleetPage initialTab="FUEL" />;
+    case 'fleet-service':
+      return <FleetPage initialTab="SERVICE" />;
+
+    case 'gate-in':
+      return <GateKioskPage initialMode="IN" />;
+    case 'gate-out':
+    case 'gate-nonreturn':
+      return <GateKioskPage initialMode="OUT" />;
+    case 'gate-return':
+      return <GateKioskPage initialMode="RETURN" />;
+
+    case 'dms-folders':
+    case 'dms-docs':
+    case 'dms-versions':
+    case 'dms-permissions':
+    case 'dms-tags':
+    case 'dms-search':
+      return <DmsPage />;
+
+    // Phase 19 Dashboards, BI, Search, AI, Automation & Comm screens
+    case 'command-center':
+      return <BiBuilderPage initialTab="COMMAND" />;
+    case 'global-search':
+      return <BiBuilderPage initialTab="SEARCH" />;
+    case 'bi-builder':
+    case 'bi-dashboards':
+      return <BiBuilderPage initialTab="BUILDER" />;
+    case 'bi-reports':
+    case 'bi-sales':
+    case 'bi-purchase':
+    case 'bi-inventory':
+    case 'bi-finance':
+    case 'bi-branch':
+    case 'bi-profit':
+      return <BiBuilderPage initialTab="REPORTS" />;
+    case 'bi-scheduler':
+      return <BiBuilderPage initialTab="SCHEDULER" />;
+
+    case 'ai-copilot':
+    case 'ai-executive':
+      return <AiCopilotPage pageId={pageId} initialTab="COPILOT" />;
+    case 'ai-demand':
+    case 'ai-inventory':
+    case 'ai-finance':
+      return <AiCopilotPage pageId={pageId} initialTab="FORECAST" />;
+    case 'ai-insights':
+      return <AiCopilotPage pageId={pageId} initialTab="INSIGHTS" />;
+    case 'ai-sales':
+    case 'ai-vendor':
+      return <AiCopilotPage pageId={pageId} />;
+
+    case 'auto-rules':
+    case 'auto-workflows':
+      return <AutomationStudioPage initialTab="RULES" />;
+    case 'auto-jobs':
+      return <AutomationStudioPage initialTab="JOBS" />;
+    case 'auto-webhooks':
+      return <AutomationStudioPage initialTab="WEBHOOKS" />;
+
+    case 'comm-templates':
+      return <CommCenterPage initialTab="TEMPLATES" />;
+    case 'comm-whatsapp':
+    case 'comm-email':
+    case 'comm-sms':
+    case 'comm-logs':
+      return <CommCenterPage initialTab="LOGS" />;
+    case 'comm-payment':
+      return <CommCenterPage initialTab="PAYMENT" />;
+
+    // Phase 20 Hardening, Cut-over, Partitions & DPDP console
+    case 'admin-backup':
+      return <HardeningPage initialTab="partitions" />;
+
+    // Phase 21 PWA, Realtime Notifications, Broadcasts & Email Automation
+    case 'notif-center':
+      return <NotificationCenterPage />;
+    case 'notif-preferences':
+      return <NotificationPrefsPage />;
+    case 'admin-notif-types':
+      return <AdminNotifConsolePage initialTab="TYPES" />;
+    case 'admin-notif-broadcast':
+      return <AdminNotifConsolePage initialTab="BROADCASTS" />;
+    case 'admin-notif-health':
+      return <AdminNotifConsolePage initialTab="HEALTH" />;
+    case 'admin-email-rules':
+      return <AdminNotifConsolePage initialTab="EMAIL_RULES" />;
+    case 'admin-email-suppressions':
+      return <AdminNotifConsolePage initialTab="SUPPRESSIONS" />;
+
     default:
       return (
         <GenericModulePage

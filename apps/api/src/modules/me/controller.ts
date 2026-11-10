@@ -4,8 +4,9 @@ import type { Request, Response } from 'express';
 import { requestMeta, requireAuth } from '../../core/auth/auth-context';
 import { validated } from '../../core/http/validate';
 import { contextService } from './context-service';
-import { mePermissionsQuerySchema, putContextSchema } from './schemas';
+import { mePermissionsQuerySchema, putContextSchema, putLocaleSchema } from './schemas';
 import { meService } from './service';
+import { prisma } from '../../core/db/prisma';
 
 export const meController = {
   menu: async (req: Request, res: Response): Promise<void> => {
@@ -25,5 +26,18 @@ export const meController = {
     const body = validated(res, 'body', putContextSchema);
     res.set('Cache-Control', 'no-store');
     res.json({ data: await contextService.put(requireAuth(req), body, requestMeta(req)) });
+  },
+  getLocale: async (req: Request, res: Response): Promise<void> => {
+    const { userId } = requireAuth(req);
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { preferredLocale: true } });
+    res.set('Cache-Control', 'no-store');
+    res.json({ data: { locale: user?.preferredLocale === 'hi' ? 'hi' : 'en' } });
+  },
+  putLocale: async (req: Request, res: Response): Promise<void> => {
+    const { userId } = requireAuth(req);
+    const { locale } = validated(res, 'body', putLocaleSchema);
+    await prisma.user.update({ where: { id: userId }, data: { preferredLocale: locale } });
+    res.set('Cache-Control', 'no-store');
+    res.json({ data: { locale } });
   },
 };

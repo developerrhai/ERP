@@ -1,0 +1,22 @@
+{
+  "logGroup": "/sawant-erp/api",
+  "retentionDays": 400,
+  "metricFilters": [
+    { "name": "api-5xx", "pattern": "{ $.res.statusCode >= 500 }", "metricName": "Http5xxCount" },
+    { "name": "api-latency-ms", "pattern": "{ $.responseTime = * }", "metricValue": "$.responseTime", "metricName": "ResponseTimeMs" },
+    { "name": "login-failures", "pattern": "{ $.msg = \"*LOGIN_FAILED*\" }", "metricName": "LoginFailureCount" },
+    { "name": "rate-limit-hits", "pattern": "{ $.res.statusCode = 429 }", "metricName": "RateLimit429Count" },
+    { "name": "job-failures", "pattern": "{ $.msg = \"*pg-boss error*\" || $.level >= 50 }", "metricName": "JobFailureCount" }
+  ],
+  "alarms": [
+    { "name": "sawant-erp-5xx-gt-1pct", "condition": "5xx > 1% for 5 min", "periodSeconds": 300, "snsTopic": "sawant-erp-ops-alerts" },
+    { "name": "sawant-erp-p95-gt-1s", "condition": "p95 > 1000 ms for 10 min", "periodSeconds": 600, "snsTopic": "sawant-erp-ops-alerts" },
+    { "name": "sawant-erp-ready-failing-2m", "condition": "/health/ready != 200 for 2 min", "periodSeconds": 60, "evaluationPeriods": 2, "snsTopic": "sawant-erp-ops-alerts" },
+    { "name": "sawant-erp-job-failures-gt-5h", "condition": "JobFailureCount > 5 over 1 h", "periodSeconds": 3600, "snsTopic": "sawant-erp-ops-alerts" },
+    { "name": "sawant-erp-backup-missing", "condition": "Weekly pg_dump / AWS Backup missing > 26h", "periodSeconds": 86400, "snsTopic": "sawant-erp-ops-alerts" },
+    { "name": "sawant-erp-disk-gt-80pct", "condition": "Disk used_percent > 80%", "periodSeconds": 300, "snsTopic": "sawant-erp-ops-alerts" },
+    { "name": "sawant-erp-rds-cpu-gt-70pct", "condition": "RDS CPUUtilization > 70% for 15 min", "periodSeconds": 300, "evaluationPeriods": 3, "snsTopic": "sawant-erp-ops-alerts" },
+    { "name": "sawant-erp-login-failure-spike", "condition": "LoginFailureCount > 50 in 5 min", "periodSeconds": 300, "snsTopic": "sawant-erp-ops-alerts" }
+  ]
+}
+
