@@ -5,6 +5,7 @@ import type { Db } from '../../core/db/prisma';
 export const departmentAccessRepository = {
   departments: (db: Db = prisma) =>
     db.department.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       orderBy: [{ createdAt: 'asc' }, { name: 'asc' }],
       select: { id: true, name: true, families: { select: { family: true } } },
     }),
@@ -13,6 +14,7 @@ export const departmentAccessRepository = {
   familiesOf: async (name: string, db: Db = prisma) =>
     (
       await db.departmentFamily.findMany({
+        take: 500, // unpaginated: small lookup, max 500
         where: { departmentName: name },
         select: { family: true },
       })

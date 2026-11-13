@@ -287,12 +287,9 @@ describe('T-KIT-05 — Kit Header Commands Route & Registry', () => {
     registerKitModule('mod-cmd-unit', (kit) => {
       kit.page({ schema, handler });
       kit.command('kit-cmd-page', 'unit-cmd', async () => ({ message: 'ok' }));
-      kit.command(
-        'kit-cmd-page',
-        'global-cmd',
-        async () => ({ message: 'global ok' }),
-        { allowAllUnits: true },
-      );
+      kit.command('kit-cmd-page', 'global-cmd', async () => ({ message: 'global ok' }), {
+        allowAllUnits: true,
+      });
     });
 
     bootKit(Router());
@@ -440,7 +437,9 @@ describe('T-KIT-05 — Kit Header Commands Route & Registry', () => {
       });
     });
 
-    expect(() => bootKit(Router())).toThrow('KIT: command kit-cmd-page.missing-runner has no runner');
+    expect(() => bootKit(Router())).toThrow(
+      'KIT: command kit-cmd-page.missing-runner has no runner',
+    );
   });
 
   it('8. boot validation: runner not referenced in schema commands throws', () => {

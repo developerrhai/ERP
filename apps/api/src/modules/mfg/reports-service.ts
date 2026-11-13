@@ -390,7 +390,7 @@ export const reportsService = {
       `SELECT o.id::text AS op_id, t.id::text AS order_id, t.number, o.seq, o.name AS op_name, o.work_centre_id::text AS wc_id, w.code AS wc_code, w.name AS wc_name,
               w.capacity_hours::text AS capacity_hours,
               GREATEST(o.setup_minutes + o.run_minutes * t.qty - (o.actual_minutes - COALESCE((SELECT sum(r.minutes) FROM mfg_rework r WHERE r.op_id=o.id AND r.status='Done'),0)), 0)::text AS minutes,
-              t.due_date::text AS due, COALESCE(t.start_date, ${sc.args.length + 1}::date)::text AS start
+              t.due_date::text AS due, COALESCE(t.start_date, $${sc.args.length + 1}::date)::text AS start
          FROM mfg_order_ops o JOIN mfg_orders t ON t.id=o.order_id JOIN mfg_work_centres w ON w.id=o.work_centre_id
         WHERE ${sc.sql} AND t.status IN ('Released','In Progress') AND o.status <> 'Done' AND w.kind <> 'OUTSIDE'`,
       ...sc.args,

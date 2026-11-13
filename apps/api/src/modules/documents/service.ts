@@ -108,6 +108,7 @@ export const documentService = {
   async list(caller: Caller, pageId: string, recordId: string): Promise<DocumentDto[]> {
     await requirePermission(caller, pageId, 'view');
     await recordService.documentTarget(caller, pageId, recordId, null);
+    // unpaginated: rows of one parent record (record / party / supplier / HSN)
     const rows = await prisma.recordDocument.findMany({
       where: { pageId, recordId, deletedAt: null },
       orderBy: { createdAt: 'desc' },

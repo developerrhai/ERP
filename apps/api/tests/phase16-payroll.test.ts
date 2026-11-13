@@ -47,7 +47,9 @@ describe('Phase 16 Payroll Unit Tests', () => {
   });
 
   it('Converts numbers to Indian currency words', () => {
-    expect(numberToIndianWords(144792)).toBe('One Lakh Forty Four Thousand Seven Hundred Ninety Two Rupees Only');
+    expect(numberToIndianWords(144792)).toBe(
+      'One Lakh Forty Four Thousand Seven Hundred Ninety Two Rupees Only',
+    );
     expect(numberToIndianWords(519)).toBe('Five Hundred Nineteen Rupees Only');
   });
 
@@ -61,7 +63,8 @@ describe('Phase 16 Payroll Unit Tests', () => {
     const rameshEarnedConv = prorateComponent(1000, 26, 28); // 929
     const rameshOt = calculateOtAmount(9000, 6); // 519
 
-    const rameshGross = rameshEarnedBasic + rameshEarnedHra + rameshEarnedSpecial + rameshEarnedConv + rameshOt;
+    const rameshGross =
+      rameshEarnedBasic + rameshEarnedHra + rameshEarnedSpecial + rameshEarnedConv + rameshOt;
     expect(rameshGross).toBe(16305);
 
     const rameshCodeWage = calculateCodeWage([
@@ -183,7 +186,8 @@ describe('Phase 16 Payroll Unit Tests', () => {
     const combinedNet = rameshNet + sunitaNet + vikramNet;
     expect(combinedNet).toBe(172635);
 
-    const combinedEmployerPf = rameshPf.employerTotal + sunitaPf.employerTotal + vikramPf.employerTotal;
+    const combinedEmployerPf =
+      rameshPf.employerTotal + sunitaPf.employerTotal + vikramPf.employerTotal;
     expect(combinedEmployerPf).toBe(4982);
 
     const combinedEdli = rameshPf.edli + sunitaPf.edli + vikramPf.edli;
@@ -198,7 +202,10 @@ describe('Phase 16 Payroll Unit Tests', () => {
     const bonusProvision = calculateBonusAccrual(rameshEarnedBasic) + calculateBonusAccrual(12000);
     expect(bonusProvision).toBe(1166);
 
-    const gratuityProvision = calculateGratuityMonthly(rameshEarnedBasic) + calculateGratuityMonthly(12000) + calculateGratuityMonthly(60000);
+    const gratuityProvision =
+      calculateGratuityMonthly(rameshEarnedBasic) +
+      calculateGratuityMonthly(12000) +
+      calculateGratuityMonthly(60000);
     expect(gratuityProvision).toBe(3864);
 
     const totalDebits =
@@ -212,7 +219,12 @@ describe('Phase 16 Payroll Unit Tests', () => {
 
     const totalCredits =
       combinedNet +
-      (rameshPf.employeePF + sunitaPf.employeePF + vikramPf.employeePF + combinedEmployerPf + combinedEdli + pfAdmin) +
+      (rameshPf.employeePF +
+        sunitaPf.employeePF +
+        vikramPf.employeePF +
+        combinedEmployerPf +
+        combinedEdli +
+        pfAdmin) +
       (rameshEsic.employeeESIC + employerEsic) +
       (rameshPt + sunitaPt + vikramPt) +
       vikramTds.currentMonthTDS +

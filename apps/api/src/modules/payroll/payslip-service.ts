@@ -7,6 +7,7 @@ import { numberToIndianWords } from './payroll-calc';
 
 export class PayslipService {
   static async getPayslip(db: Db, runEmployeeId: string) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const rows = await db.$queryRaw<any[]>`
       SELECT pre.*, r."run_no", r."status" as "run_status",
              p."month", p."days_basis",
@@ -16,9 +17,9 @@ export class PayslipService {
       FROM "payroll_run_employees" pre
       JOIN "payroll_runs" r ON r."id" = pre."run_id"
       JOIN "payroll_periods" p ON p."id" = r."period_id"
-      JOIN "employees" e ON e."id" = pre."employee_id"
-      LEFT JOIN "employee_identity_vault" eiv ON eiv."employee_id" = e."id"
-      LEFT JOIN "employee_bank_accounts" eba ON eba."employee_id" = e."id" AND eba."is_primary" = true
+      JOIN "payroll_employees_v" e ON e."id" = pre."employee_id"
+      LEFT JOIN "payroll_identity_v" eiv ON eiv."employee_id" = e."id"
+      LEFT JOIN "payroll_bank_v" eba ON eba."employee_id" = e."id" AND eba."is_primary" = true
       WHERE pre."id" = ${runEmployeeId}::uuid
     `;
 
@@ -28,6 +29,7 @@ export class PayslipService {
 
     const row = rows[0];
 
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const lines = await db.$queryRaw<any[]>`
       SELECT prl.*, c."code", c."name", c."kind", c."payslip_order", c."payslip_label_hi"
       FROM "payroll_run_lines" prl
@@ -108,16 +110,18 @@ export class PayslipService {
   }
 
   static async releasePayslips(db: Db, runId: string, caller: Caller) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const runEmployees = await db.$queryRaw<any[]>`
       SELECT pre."id", pre."employee_id", r."period_id", r."run_no", e."emp_code"
       FROM "payroll_run_employees" pre
       JOIN "payroll_runs" r ON r."id" = pre."run_id"
-      JOIN "employees" e ON e."id" = pre."employee_id"
+      JOIN "payroll_employees_v" e ON e."id" = pre."employee_id"
       WHERE pre."run_id" = ${runId}::uuid
     `;
 
     for (const re of runEmployees) {
       const payslipNo = `PS-${re.run_no}-${re.emp_code}`;
+      // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
       const existing = await db.$queryRaw<any[]>`
         SELECT "id" FROM "payslips" WHERE "run_employee_id" = ${re.id}::uuid
       `;

@@ -29,6 +29,19 @@ function getTransporter(): Transporter | null {
 }
 
 export const mailService = {
+  /** Phase 24: a plain HTML email (emailed dashboards). Silent when SMTP is not configured. */
+  async sendHtml(to: string, subject: string, html: string): Promise<boolean> {
+    const transporter = getTransporter();
+    if (!transporter) return false;
+    try {
+      await transporter.sendMail({ from: env.SMTP_FROM, to, subject, html });
+      return true;
+    } catch (err) {
+      logger.error({ err, to }, 'Failed to send dashboard email');
+      return false;
+    }
+  },
+
   isConfigured(): boolean {
     return Boolean(env.SMTP_HOST && env.SMTP_PORT && env.SMTP_FROM);
   },

@@ -7,7 +7,7 @@ import type { Db } from '../../core/db/prisma';
 
 export const financialYearRepository = {
   list(db: Db = prisma): Promise<FinancialYear[]> {
-    return db.financialYear.findMany({ orderBy: FY_ORDER });
+    return db.financialYear.findMany({ take: 500, orderBy: FY_ORDER });
   },
 
   findById(id: string, db: Db = prisma): Promise<FinancialYear | null> {

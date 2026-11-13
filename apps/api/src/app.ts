@@ -1,6 +1,10 @@
 // Builds the Express app (middleware order, routers, error handling) without listening, so tests can
 // create isolated instances (e.g. with rate limits on) and server.ts can run the real one.
 import cookieParser from 'cookie-parser';
+import { createScreensRouter } from './modules/screens/routes';
+import { createPageHealthRouter } from './modules/page-health/routes';
+import { listLimitGuard } from './core/http/list-limit';
+import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import type { Express } from 'express';
@@ -30,7 +34,9 @@ import { createUsersRouter } from './modules/users/routes';
 import { createAuditLogsRouter } from './modules/audit-logs/routes';
 import { createDepartmentAccessRouter } from './modules/department-access/routes';
 import { createDepartmentsRouter } from './modules/departments/routes';
-import { createMeRouter } from './modules/me/routes';
+import { createMeRouter, createRoleLandingRouter } from './modules/me/routes';
+import { createDashboardsRouter, createTvRouter } from './modules/dashboards/routes';
+import { createWorkRouter } from './modules/work/routes';
 import { createModuleControlsRouter } from './modules/module-controls/routes';
 import { createPermissionsRouter } from './modules/permissions/routes';
 import { createRolesRouter } from './modules/roles/routes';
@@ -103,6 +109,18 @@ export function createApp(options: AppOptions = {}): Express {
 
   app.use(pinoHttp({ logger, genReqId: genRequestId }));
   app.use(attachRequestId);
+  // Phase 22-D: registered BEFORE the query-budget middleware so that one still sets X-Query-Count
+  // before the compressed response flushes its headers.
+  // Phase 22-D: gzip text responses, but never the SSE stream (it must flush every event at once).
+  app.use(
+    compression({
+      filter: (req, res) => {
+        const type = String(res.getHeader('Content-Type') ?? '');
+        if (type.includes('text/event-stream')) return false;
+        return compression.filter(req, res);
+      },
+    }),
+  );
   app.use(queryBudgetMiddleware);
   app.use(helmet());
   app.use(
@@ -130,6 +148,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(cookieParser());
 
   const api = express.Router();
+  api.use(listLimitGuard);
   api.use((_req, res, next) => {
     res.setHeader('Cache-Control', 'no-store');
     next();
@@ -150,8 +169,14 @@ export function createApp(options: AppOptions = {}): Express {
     }),
   );
   api.use('/meta', createMetaRouter());
+  api.use(createScreensRouter()); // Phase 22: /screens/:pageId (the screens moved off the generic engine)
+  api.use(createPageHealthRouter()); // Phase 22: /admin/page-health
   api.use('/users', createUsersRouter());
   api.use('/me', createMeRouter());
+  api.use(createDashboardsRouter());
+  api.use('/tv', createTvRouter());
+  api.use('/work', createWorkRouter());
+  api.use('/admin/role-landing', createRoleLandingRouter());
   api.use(createPhase21PublicRouter()); // Public SNS-signed webhooks before any module router
   api.use('/departments', createDepartmentsRouter());
   api.use('/roles', createRolesRouter());

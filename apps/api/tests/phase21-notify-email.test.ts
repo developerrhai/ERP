@@ -33,7 +33,9 @@ beforeAll(async () => {
   TAL = units[0]!;
   SAW = units[1]!;
   owner = await signInOwner(app);
-  director = await makeUser({ role: 'DIRECTOR', unitCodes: ['TAL', 'SAW'] }).then((u) => signIn(app, u));
+  director = await makeUser({ role: 'DIRECTOR', unitCodes: ['TAL', 'SAW'] }).then((u) =>
+    signIn(app, u),
+  );
   empTal = await makeUser({ role: 'EMPLOYEE', unitCodes: ['TAL'] }).then((u) => signIn(app, u));
   empSaw = await makeUser({ role: 'EMPLOYEE', unitCodes: ['SAW'] }).then((u) => signIn(app, u));
 });
@@ -103,23 +105,22 @@ describe('Phase 21 Notifications, Push & Preferences', () => {
       SELECT title_tpl, body_tpl FROM notification_types
     `;
     for (const t of types) {
-      expect(`${t.title_tpl} ${t.body_tpl}`).not.toMatch(/aadhaar|panNumber|bankAccount|netPayAmount|dob/i);
+      expect(`${t.title_tpl} ${t.body_tpl}`).not.toMatch(
+        /aadhaar|panNumber|bankAccount|netPayAmount|dob/i,
+      );
     }
   });
 
   it('handles Web Push subscribe, 404/410 auto-revocation, 429 Retry-After backoff, and logout-all revocation', async () => {
     const epGone = `https://push.example.test/gone-${Date.now()}`;
-    const subRes = await request(app)
-      .post(`${API}/push/subscriptions`)
-      .set(hdr(empTal))
-      .send({
-        endpoint: epGone,
-        p256dh: 'BOr7fakePublicKeyForTest12345678901234567890',
-        auth: 'fakeAuthSecret1234',
-        platform: 'DESKTOP',
-        browser: 'Chrome',
-        deviceLabel: 'Test Laptop',
-      });
+    const subRes = await request(app).post(`${API}/push/subscriptions`).set(hdr(empTal)).send({
+      endpoint: epGone,
+      p256dh: 'BOr7fakePublicKeyForTest12345678901234567890',
+      auth: 'fakeAuthSecret1234',
+      platform: 'DESKTOP',
+      browser: 'Chrome',
+      deviceLabel: 'Test Laptop',
+    });
     expect(subRes.status).toBe(201);
 
     // Enqueue a push delivery
@@ -161,7 +162,10 @@ describe('Phase 21 Notifications, Push & Preferences', () => {
       });
     });
     setPushSenderForTests(async () => {
-      throw Object.assign(new Error('Too Many Requests'), { statusCode: 429, headers: { 'retry-after': '120' } });
+      throw Object.assign(new Error('Too Many Requests'), {
+        statusCode: 429,
+        headers: { 'retry-after': '120' },
+      });
     });
     await pushService.drainPushDeliveries(20);
     const retryRow = await prisma.$queryRaw<any[]>`
@@ -179,8 +183,15 @@ describe('Phase 21 Notifications, Push & Preferences', () => {
     const activeLeft = await pushService.listDevices(empTal.user.id);
     expect(activeLeft).toHaveLength(0);
     // Re-authenticate empTal after logout-all
-    const empUser = await prisma.user.findUniqueOrThrow({ where: { id: empTal.user.id }, include: { role: true } });
-    empTal = await signIn(app, { id: empUser.id, loginId: empUser.loginId, role: empUser.role.code });
+    const empUser = await prisma.user.findUniqueOrThrow({
+      where: { id: empTal.user.id },
+      include: { role: true },
+    });
+    empTal = await signIn(app, {
+      id: empUser.id,
+      loginId: empUser.loginId,
+      role: empUser.role.code,
+    });
   });
 });
 
@@ -201,7 +212,10 @@ describe('Phase 21 Broadcasts: unit isolation, >50 approval, emergency bypass & 
     expect(d1.status, JSON.stringify(d1.body)).toBe(201);
     const bId = d1.body.data.id;
 
-    const sub = await request(app).post(`${API}/admin/broadcasts/${bId}/submit`).set(hdr(owner)).send({});
+    const sub = await request(app)
+      .post(`${API}/admin/broadcasts/${bId}/submit`)
+      .set(hdr(owner))
+      .send({});
     expect(sub.status, JSON.stringify(sub.body)).toBe(200);
     expect(sub.body.data.status).toBe('SENT');
 
@@ -211,7 +225,10 @@ describe('Phase 21 Broadcasts: unit isolation, >50 approval, emergency bypass & 
     expect(sawBanners.body.data.some((b: any) => b.id === bId)).toBe(false);
 
     // User TAL acknowledges
-    const ackRes = await request(app).post(`${API}/broadcasts/${bId}/ack`).set(hdr(empTal)).send({});
+    const ackRes = await request(app)
+      .post(`${API}/broadcasts/${bId}/ack`)
+      .set(hdr(empTal))
+      .send({});
     expect(ackRes.status).toBe(200);
 
     // Withdraw removes active banner
@@ -235,15 +252,24 @@ describe('Phase 21 Broadcasts: unit isolation, >50 approval, emergency bypass & 
         audience: { unitIds: [TAL] },
       });
     const cId = crit.body.data.id;
-    const cSub = await request(app).post(`${API}/admin/broadcasts/${cId}/submit`).set(hdr(owner)).send({});
+    const cSub = await request(app)
+      .post(`${API}/admin/broadcasts/${cId}/submit`)
+      .set(hdr(owner))
+      .send({});
     expect(cSub.body.data.status).toBe('PENDING_APPROVAL');
 
     // Creator self-approval blocked (403)
-    const selfApp = await request(app).post(`${API}/admin/broadcasts/${cId}/approve`).set(hdr(owner)).send({});
+    const selfApp = await request(app)
+      .post(`${API}/admin/broadcasts/${cId}/approve`)
+      .set(hdr(owner))
+      .send({});
     expect(selfApp.status).toBe(403);
 
     // Director (different user, level 90+) approves & delivers
-    const dirApp = await request(app).post(`${API}/admin/broadcasts/${cId}/approve`).set(hdr(director)).send({});
+    const dirApp = await request(app)
+      .post(`${API}/admin/broadcasts/${cId}/approve`)
+      .set(hdr(director))
+      .send({});
     expect(dirApp.status).toBe(200);
     expect(dirApp.body.data.status).toBe('SENT');
 
@@ -251,7 +277,13 @@ describe('Phase 21 Broadcasts: unit isolation, >50 approval, emergency bypass & 
     const empEmerg = await request(app)
       .post(`${API}/admin/broadcasts`)
       .set(hdr(empTal))
-      .send({ title: 'X', bodyMd: 'Y', audience: { unitIds: [TAL] }, emergency: true, reason: 'Fire drill' });
+      .send({
+        title: 'X',
+        bodyMd: 'Y',
+        audience: { unitIds: [TAL] },
+        emergency: true,
+        reason: 'Fire drill',
+      });
     expect(empEmerg.status).toBe(403);
 
     const ownerEmerg = await request(app)
@@ -265,7 +297,10 @@ describe('Phase 21 Broadcasts: unit isolation, >50 approval, emergency bypass & 
         reason: 'Transformer trip at Sub-station',
       });
     expect(ownerEmerg.status).toBe(201);
-    const emSub = await request(app).post(`${API}/admin/broadcasts/${ownerEmerg.body.data.id}/submit`).set(hdr(owner)).send({});
+    const emSub = await request(app)
+      .post(`${API}/admin/broadcasts/${ownerEmerg.body.data.id}/submit`)
+      .set(hdr(owner))
+      .send({});
     expect(emSub.body.data.status).toBe('SENT');
   });
 });
@@ -357,7 +392,13 @@ describe('Phase 21 Email Automation: Idempotency, 7MB cutoff, Encrypted Payslip,
 
     const forged = await request(app)
       .post(`${API}/webhooks/inbound/ses`)
-      .send({ Type: 'Notification', MessageId: 'm1', TopicArn: 'arn:aws:sns:ap-south-1:123:erp', Signature: 'FORGED', Message: '{}' });
+      .send({
+        Type: 'Notification',
+        MessageId: 'm1',
+        TopicArn: 'arn:aws:sns:ap-south-1:123:erp',
+        Signature: 'FORGED',
+        Message: '{}',
+      });
     expect(forged.status).toBe(403);
 
     const bounceMsg = {

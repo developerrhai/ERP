@@ -63,6 +63,7 @@ const dto = (r: ClaimRow, employee?: string | null) => ({
 });
 
 async function loadClaim(db: Db, id: string): Promise<ClaimRow> {
+  // unpaginated: rows of one parent (id)
   const rows = await db.$queryRawUnsafe<ClaimRow[]>(
     `SELECT ${COLS} FROM expense_claims WHERE id = $1::uuid AND deleted_at IS NULL`,
     id,
@@ -85,6 +86,7 @@ export interface ClaimInput {
 
 export const expenseService = {
   async policies() {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await prisma.$queryRaw<
       {
         category: string;
@@ -182,6 +184,7 @@ export const expenseService = {
       throw Errors.validation({ description: 'Say what the expense was for.' });
     const employeeId = input.employeeId && canActForOthers ? input.employeeId : actor.userId;
     return prisma.$transaction(async (tx) => {
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       const policy = await tx.$queryRaw<
         {
           category: string;
@@ -234,6 +237,7 @@ export const expenseService = {
           message: `Above the ${money(pol.per_claim_limit)} limit for ${input.category}; the approver will see this.`,
         });
       const month = input.claimDate.slice(0, 7);
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       const used = await tx.$queryRaw<{ s: string }[]>`
         SELECT COALESCE(SUM(amount), 0)::text AS s FROM expense_claims
          WHERE employee_id = ${employeeId}::uuid AND category = ${input.category} AND deleted_at IS NULL
@@ -309,6 +313,7 @@ export const expenseService = {
       if (!amount.greaterThan(0))
         throw Errors.validation({ amount: 'Enter an amount greater than 0.' });
       const pol = (
+        // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
         await tx.$queryRaw<
           { approval_limit: string }[]
         >`SELECT approval_limit::text FROM expense_policies WHERE category = ${r.category}`
@@ -356,6 +361,7 @@ export const expenseService = {
         if (r.status !== 'Approved' || !r.journal_id)
           throw FinErrors.invalidTransition('Only an approved claim can be paid.');
         const item = (
+          // unpaginated: rows of one parent (journal_id)
           await tx.$queryRaw<{ id: string; outstanding: string }[]>`
           SELECT id, outstanding::text FROM open_items WHERE journal_id = ${r.journal_id}::uuid AND party_id = ${r.employee_id}::uuid AND status <> 'Cancelled'`
         )[0];

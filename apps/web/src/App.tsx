@@ -6,7 +6,6 @@ import './i18n';
 import { useSession } from './auth/AuthProvider';
 import { loginPathFor } from './lib/next-path';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
-import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { AccountSecurityPage } from './pages/account/AccountSecurityPage';
@@ -16,6 +15,9 @@ import { ApprovalCenterPage } from './pages/approvals/ApprovalCenterPage';
 import { HardeningPage } from './pages/admin/HardeningPage';
 import { InstallGuidePage } from './pages/notifications/InstallGuidePage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { HomePage } from './pages/HomePage';
+import { MenuPage } from './pages/MenuPage';
+import { TvPage } from './pages/dashboards/TvPage';
 import { AppShell } from './shell/AppShell';
 import { IdleWarningModal } from './components/IdleWarningModal';
 
@@ -47,7 +49,9 @@ function ProtectedApp() {
       <IdleWarningModal />
       <Routes>
         <Route element={<AppShell user={user} />}>
-          <Route index element={<DashboardPage user={user} />} />
+          <Route index element={<HomePage />} />
+          <Route path="home" element={<HomePage />} />
+          <Route path="menu" element={<MenuPage />} />
           <Route path="account/security" element={<AccountSecurityPage user={user} />} />
           <Route path="approvals" element={<ApprovalCenterPage user={user} />} />
           <Route path="hardening" element={<HardeningPage />} />
@@ -75,6 +79,7 @@ export function App() {
     <Routes>
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/tv/:key" element={<TvPage />} />
       <Route path="/*" element={<ProtectedApp />} />
     </Routes>
   );

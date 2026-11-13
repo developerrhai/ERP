@@ -111,11 +111,13 @@ describe('Phase 01: Unit Tests', () => {
 
       // Tamper with ciphertext
       const parts = enc.split(':');
-      const tamperedCt = parts[0] + ':' + parts[1] + ':' + parts[2] + ':ffff' + (parts[3] ?? '').slice(4);
+      const tamperedCt =
+        parts[0] + ':' + parts[1] + ':' + parts[2] + ':ffff' + (parts[3] ?? '').slice(4);
       expect(() => decryptSecret(tamperedCt)).toThrow();
 
       // Tamper with auth tag
-      const tamperedTag = parts[0] + ':' + parts[1] + ':ffffffffffffffffffffffffffffffff:' + (parts[3] ?? '');
+      const tamperedTag =
+        parts[0] + ':' + parts[1] + ':ffffffffffffffffffffffffffffffff:' + (parts[3] ?? '');
       expect(() => decryptSecret(tamperedTag)).toThrow();
     });
   });
@@ -318,17 +320,21 @@ describe('Phase 01: API & Security Controls', () => {
       expect(listRes.body.data.length).toBeGreaterThanOrEqual(2);
 
       // Cannot revoke current session via DELETE /auth/sessions/:familyId
-      const currentFamilyId = (await prisma.session.findFirstOrThrow({
-        where: { userId: user.id, revokedAt: null },
-        orderBy: { createdAt: 'desc' },
-      })).familyId;
+      const currentFamilyId = (
+        await prisma.session.findFirstOrThrow({
+          where: { userId: user.id, revokedAt: null },
+          orderBy: { createdAt: 'desc' },
+        })
+      ).familyId;
 
       // Revoking another user's session returns 404
       const otherUser = await makeUser();
       const otherS = await signIn(app, otherUser);
-      const otherFamily = (await prisma.session.findFirstOrThrow({
-        where: { userId: otherUser.id },
-      })).familyId;
+      const otherFamily = (
+        await prisma.session.findFirstOrThrow({
+          where: { userId: otherUser.id },
+        })
+      ).familyId;
       const notFoundRes = await request(app)
         .delete(`${API}/auth/sessions/${otherFamily}`)
         .set(s1.bearer);
@@ -353,18 +359,14 @@ describe('Phase 01: API & Security Controls', () => {
         .post(`${API}/users/${adminS.user.id}/unlock`)
         .set(adminS.bearer);
       expect(selfUnlock.status).toBe(403);
-      expect(errorOf(selfUnlock).message).toBe(
-        'Use My Account → Security for your own account.',
-      );
+      expect(errorOf(selfUnlock).message).toBe('Use My Account → Security for your own account.');
 
       // Self-revoke-all forbidden
       const selfRevoke = await request(app)
         .post(`${API}/users/${adminS.user.id}/sessions/revoke-all`)
         .set(adminS.bearer);
       expect(selfRevoke.status).toBe(403);
-      expect(errorOf(selfRevoke).message).toBe(
-        'Use My Account → Security for your own account.',
-      );
+      expect(errorOf(selfRevoke).message).toBe('Use My Account → Security for your own account.');
     });
 
     it('unlocks locked account and rejects unlock if not locked', async () => {

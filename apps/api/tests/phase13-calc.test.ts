@@ -47,9 +47,17 @@ describe('BOM explosion (spec: 100 motors, copper wire 82.000 kg)', () => {
     expect(by).toEqual({ WIRE: '82.000', STACK: '100.000' });
   });
   it('rounds half-up to 3 decimals and applies unit conversion and base quantity', () => {
-    expect(lineRequirement(1, 3, { qtyPerBase: '1', conversionFactor: '1', scrapPct: '0' }).toFixed(3)).toBe('0.333');
-    expect(lineRequirement(2, 3, { qtyPerBase: '1', conversionFactor: '1', scrapPct: '0' }).toFixed(3)).toBe('0.667');
-    expect(lineRequirement(10, 4, { qtyPerBase: '2', conversionFactor: '0.5', scrapPct: '10' }).toFixed(3)).toBe('2.750');
+    expect(
+      lineRequirement(1, 3, { qtyPerBase: '1', conversionFactor: '1', scrapPct: '0' }).toFixed(3),
+    ).toBe('0.333');
+    expect(
+      lineRequirement(2, 3, { qtyPerBase: '1', conversionFactor: '1', scrapPct: '0' }).toFixed(3),
+    ).toBe('0.667');
+    expect(
+      lineRequirement(10, 4, { qtyPerBase: '2', conversionFactor: '0.5', scrapPct: '10' }).toFixed(
+        3,
+      ),
+    ).toBe('2.750');
   });
   it('keeps only the lines valid on the date', () => {
     const boms = new Map<string, BomIn>([
@@ -71,7 +79,9 @@ describe('BOM explosion (spec: 100 motors, copper wire 82.000 kg)', () => {
   it('a real (non-phantom) sub-assembly stays a requirement of its own', () => {
     const boms = motorBoms();
     boms.set('MOTOR', { itemId: 'MOTOR', baseQty: '1', lines: [line('STATOR', '1')] });
-    expect(explode('MOTOR', 5, '2026-11-10', boms).map((x) => [x.itemId, x.qty])).toEqual([['STATOR', '5.000']]);
+    expect(explode('MOTOR', 5, '2026-11-10', boms).map((x) => [x.itemId, x.qty])).toEqual([
+      ['STATOR', '5.000'],
+    ]);
   });
   it('rejects a loop and names the path', () => {
     const boms = new Map<string, BomIn>([
@@ -131,7 +141,12 @@ describe('MRP netting (spec: stator, lead time 2 weeks, safety stock 50, on hand
     expect(r.some((x) => x.pastDueRelease)).toBe(false);
   });
   it('fixed lots of 500: week 3 receives 500 and week 4 needs no order', () => {
-    const r = mrpNet('300', weeks, planning({ lotSizing: 'FIXED', fixedLotQty: '500' }), '2026-12-01');
+    const r = mrpNet(
+      '300',
+      weeks,
+      planning({ lotSizing: 'FIXED', fixedLotQty: '500' }),
+      '2026-12-01',
+    );
     expect(r[2]!.plannedReceipt).toBe('500.000');
     expect(r[2]!.pohAfter).toBe('300.000');
     expect(r[3]!.pohBefore).toBe('100.000');
@@ -144,7 +159,9 @@ describe('MRP netting (spec: stator, lead time 2 weeks, safety stock 50, on hand
   it('lot sizing: lot-for-lot, fixed, EOQ, minimum order quantity, order multiple', () => {
     const p = (extra: Partial<Planning>) => planning(extra);
     expect(lotSize('250', p({})).toFixed(3)).toBe('250.000');
-    expect(lotSize('250', p({ lotSizing: 'FIXED', fixedLotQty: '100' })).toFixed(3)).toBe('300.000');
+    expect(lotSize('250', p({ lotSizing: 'FIXED', fixedLotQty: '100' })).toFixed(3)).toBe(
+      '300.000',
+    );
     expect(lotSize('250', p({ lotSizing: 'EOQ', eoq: '400' })).toFixed(3)).toBe('400.000');
     expect(lotSize('250', p({ lotSizing: 'EOQ', eoq: '100' })).toFixed(3)).toBe('250.000');
     expect(lotSize('30', p({ minOrderQty: '100' })).toFixed(3)).toBe('100.000');
@@ -163,7 +180,13 @@ describe('OEE (spec: 480 min shift, 30 break, 45 breakdown, ideal 0.5, 720 pcs, 
       totalPieces: 720,
       goodPieces: 700,
     });
-    expect(r).toMatchObject({ availability: '0.9000', performance: '0.8889', quality: '0.9722', oee: '0.7778', cycleTimeSuspect: false });
+    expect(r).toMatchObject({
+      availability: '0.9000',
+      performance: '0.8889',
+      quality: '0.9722',
+      oee: '0.7778',
+      cycleTimeSuspect: false,
+    });
   });
   it('performance is capped at 1 and the cycle time is flagged', () => {
     const r = oee({
@@ -190,7 +213,14 @@ describe('cost of the worked order of 100 motors', () => {
     expect(wipBeforeScrap).toBe(487000);
     const abnormal = (2 * wipBeforeScrap) / 100;
     expect(abnormal).toBe(9740);
-    const r = fgCost({ material, labour: '12000', overhead: '28000', abnormalScrap: abnormal, recovery: 500, goodQty: 98 });
+    const r = fgCost({
+      material,
+      labour: '12000',
+      overhead: '28000',
+      abnormalScrap: abnormal,
+      recovery: 500,
+      goodQty: 98,
+    });
     expect(r.total).toBe('476760.00');
     expect(r.unitCost).toBe('4864.90');
   });

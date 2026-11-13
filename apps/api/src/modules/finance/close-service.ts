@@ -27,6 +27,7 @@ async function blockers(fyStart: Date, fyEnd: Date, from: Date, to: Date) {
 
 export const closeService = {
   async periods(fyId: string) {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const periods = await prisma.financialYearPeriod.findMany({
       where: { fyId },
       orderBy: { periodNo: 'asc' },
@@ -146,6 +147,7 @@ export const closeService = {
   async preview(fyId: string) {
     const fy = await prisma.financialYear.findUnique({ where: { id: fyId } });
     if (!fy) throw Errors.notFound('Financial year not found.');
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await prisma.$queryRaw<{ unit_id: string; unit: string; profit: string }[]>`
       SELECT g.unit_id, u.code AS unit, COALESCE(SUM(g.credit - g.debit), 0)::text AS profit
         FROM gl_entries g JOIN accounts a ON a.id = g.account_id JOIN units u ON u.id = g.unit_id
@@ -199,6 +201,7 @@ export const closeService = {
         });
         if (!retained) throw FinErrors.unmappedKey('The Retained Earnings account is not set.');
 
+        // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
         const bal = await tx.$queryRaw<
           { unit_id: string; account_id: string; root_type: string; net: string }[]
         >`

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { asyncHandler } from '../http/async-handler';
 import { Errors } from '../http/errors';
 import type { RoleCode } from '../rbac/role-rules';
-import { contextRepository, hasAllUnits } from './context-repository';
+import { contextRepository, hasAllUnits, userAllUnitsFlag } from './context-repository';
 
 export interface RequestContext {
   companyId: string;
@@ -16,6 +16,12 @@ export interface RequestContext {
   fyId: string;
   /** True only when an ADMIN+ works in "All units". */
   allUnits: boolean;
+  /**
+   * Phase 23: the plants the caller chose to view (always inside what they are allowed). `unitId` stays
+   * the plant a new record belongs to (the "write plant"): the default plant if it is selected, else the
+   * first selected one.
+   */
+  unitIds: string[];
 }
 
 export interface ContextUser {
@@ -27,6 +33,8 @@ export interface ContextUser {
 
 export const UNIT_HEADER = 'x-unit-id';
 export const FY_HEADER = 'x-fy-id';
+/** Phase 23: comma-separated plant codes or ids, e.g. "TAL,SAW". */
+export const UNITS_HEADER = 'x-units';
 /** X-Unit-Id value meaning "All units" (case-insensitive). */
 export const ALL_UNITS = 'all';
 
@@ -54,7 +62,11 @@ export async function assertUnitChoice(user: ContextUser, unitId: string | null)
   const unit = isUuid(unitId) ? await contextRepository.unitById(unitId) : null;
   if (!unit) throw Errors.contextInvalid('Unknown unit.');
   if (unit.status !== 'ACTIVE') throw Errors.contextForbidden('This unit is inactive.');
-  if (!hasAllUnits(user) && !(await contextRepository.hasUnitRow(user.id, unit.id))) {
+  if (
+    !hasAllUnits(user) &&
+    !(await contextRepository.hasUnitRow(user.id, unit.id)) &&
+    !(await userAllUnitsFlag(user.id))
+  ) {
     throw Errors.contextForbidden('You do not have access to this unit.');
   }
 }
@@ -91,10 +103,37 @@ async function fallbackFyId(preference: UserPreference | null): Promise<string> 
 }
 
 /** The context for an authenticated user from the raw header values (undefined/empty = missing). */
+/** Phase 23: X-Units tokens (codes or ids) -> concrete plant ids, each checked against what the user may see. */
+export async function resolveUnitsHeader(user: ContextUser, header: string): Promise<string[]> {
+  const tokens = [...new Set(header.split(',').map((t) => t.trim()).filter((t) => t !== ''))];
+  if (tokens.length === 0) throw Errors.contextInvalid('X-Units must list at least one plant.');
+  const accessible = await contextRepository.accessibleUnits(user);
+  const ids: string[] = [];
+  for (const token of tokens) {
+    const unit = accessible.find((u) => u.id === token || u.code.toLowerCase() === token.toLowerCase());
+    if (!unit) {
+      const known = (await contextRepository.allActiveUnits()).find(
+        (u) => u.id === token || u.code.toLowerCase() === token.toLowerCase(),
+      );
+      if (!known) throw Errors.contextInvalid('Unknown plant in X-Units.');
+      throw Errors.unitNotAllowed(known.name);
+    }
+    ids.push(unit.id);
+  }
+  return ids;
+}
+
+/** The write plant of a selection: the default plant when selected, else the first selected one. */
+export function writeUnitOf(selected: readonly string[], defaultUnitId: string | null): string | null {
+  if (defaultUnitId && selected.includes(defaultUnitId)) return defaultUnitId;
+  return selected[0] ?? null;
+}
+
 export async function resolveContextFor(
   user: ContextUser,
   unitHeader: string | undefined,
   fyHeader: string | undefined,
+  unitsHeader?: string,
 ): Promise<RequestContext> {
   const unitValue = unitHeader?.trim() ?? '';
   const fyValue = fyHeader?.trim() ?? '';
@@ -111,12 +150,26 @@ export async function resolveContextFor(
   };
 
   let unit: { unitId: string | null; allUnits: boolean };
-  if (unitValue === '') {
+  let unitIds: string[] | undefined;
+  const unitsValue = unitsHeader?.trim() ?? '';
+  if (unitValue === '' && unitsValue !== '') {
+    unitIds = await resolveUnitsHeader(user, unitsValue);
+    unit = { unitId: writeUnitOf(unitIds, user.defaultUnitId), allUnits: false };
+  } else if (unitValue === '') {
     const [pref, accessible] = await Promise.all([
       loadPreference(),
       contextRepository.accessibleUnits(user),
     ]);
-    unit = fallbackUnit(user, pref, accessible);
+    // Phase 23: the saved plant choice wins over the single-plant fallback.
+    const saved = (await contextRepository.plantPreference(user.id)).unitIds.filter((id) =>
+      accessible.some((u) => u.id === id),
+    );
+    if (saved.length > 0 && !(pref?.allUnits && hasAllUnits(user))) {
+      unitIds = saved;
+      unit = { unitId: writeUnitOf(saved, user.defaultUnitId), allUnits: false };
+    } else {
+      unit = fallbackUnit(user, pref, accessible);
+    }
   } else if (unitValue.toLowerCase() === ALL_UNITS) {
     await assertUnitChoice(user, null);
     unit = { unitId: null, allUnits: true };
@@ -129,7 +182,12 @@ export async function resolveContextFor(
     fyValue === ''
       ? await fallbackFyId(await loadPreference())
       : (await assertFyChoice(fyValue)).id;
-  return { companyId: await companyId(), ...unit, fyId };
+  // A single plant (or "All units") still gives a list: every module can rely on unitIds being filled.
+  if (!unitIds) {
+    if (unit.unitId) unitIds = [unit.unitId];
+    else unitIds = (await contextRepository.accessibleUnits(user)).map((u) => u.id);
+  }
+  return { companyId: await companyId(), ...unit, unitIds, fyId };
 }
 
 /** Middleware (after authenticate): sets req.ctx or fails with CONTEXT_FORBIDDEN / CONTEXT_INVALID. */
@@ -140,6 +198,7 @@ export const resolveContext: RequestHandler = asyncHandler(async (req, _res, nex
     { id: user.id, role: user.role, defaultUnitId: user.defaultUnitId },
     req.get(UNIT_HEADER),
     req.get(FY_HEADER),
+    req.get(UNITS_HEADER),
   );
   next();
 });

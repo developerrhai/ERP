@@ -715,6 +715,7 @@ export function createSimpleMastersRouter(): Router {
     asyncHandler(async (_req: Request, res: Response) => {
       const { id } = validated(res, 'params', idParams);
       res.json({
+        // unpaginated: rows of one parent record (record / party / supplier / HSN)
         data: await prisma.hsnSacRate.findMany({
           where: { hsnId: id },
           orderBy: { effectiveFrom: 'desc' },
@@ -764,6 +765,7 @@ export function createSimpleMastersRouter(): Router {
     validate({ params: idParams }),
     asyncHandler(async (_req: Request, res: Response) => {
       const { id } = validated(res, 'params', idParams);
+      // unpaginated: rows of one parent (itemId)
       res.json({ data: await prisma.itemUomConversion.findMany({ where: { itemId: id } }) });
     }),
   );
@@ -805,6 +807,7 @@ export function createSimpleMastersRouter(): Router {
         meta: requestMeta(req),
         detail: { count: body.conversions.length },
       });
+      // unpaginated: rows of one parent (itemId)
       res.json({ data: await prisma.itemUomConversion.findMany({ where: { itemId: id } }) });
     }),
   );

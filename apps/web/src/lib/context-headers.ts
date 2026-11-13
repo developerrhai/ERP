@@ -3,6 +3,12 @@
 import type { CurrentContext } from '../types';
 
 let current: CurrentContext | null = null;
+/** Phase 23: 2+ chosen plants are sent as X-Units (instead of X-Unit-Id). */
+let selectedUnits: string[] = [];
+
+export function setSelectedUnits(ids: string[]): void {
+  selectedUnits = ids;
+}
 
 export function setContextHeaders(next: CurrentContext | null): void {
   current = next;
@@ -12,6 +18,7 @@ export function setContextHeaders(next: CurrentContext | null): void {
 export function contextHeaders(): Record<string, string> {
   if (!current) return {};
   const out: Record<string, string> = { 'X-FY-Id': current.fyId };
-  if (current.unitId) out['X-Unit-Id'] = current.unitId;
+  if (selectedUnits.length > 1) out['X-Units'] = selectedUnits.join(',');
+  else if (current.unitId) out['X-Unit-Id'] = current.unitId;
   return out;
 }

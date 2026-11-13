@@ -47,6 +47,7 @@ export const pricingService = {
       select: { id: true, baseUom: true, sellingPrice: true, standardCost: true },
     });
     if (!item) throw Errors.notFound('Item not found.');
+    // unpaginated: rows of one parent (itemId)
     const conversions = await prisma.itemUomConversion.findMany({ where: { itemId: item.id } });
     const factorOf = (uom: string): Prisma.Decimal | null =>
       uom === item.baseUom
@@ -114,6 +115,7 @@ export const pricingService = {
         },
       });
       if (!list) continue;
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       const rows = await prisma.priceListItem.findMany({
         where: { priceListId: list.id, itemId: item.id },
       });

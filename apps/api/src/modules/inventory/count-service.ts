@@ -103,6 +103,7 @@ async function systemQtyOf(
   batchId: string | null,
   binId: string | null,
 ): Promise<Dec> {
+  // unpaginated: rows of one parent (item_id)
   const r = await tx.$queryRaw<{ q: string }[]>`
     SELECT COALESCE(sum(qty),0)::text AS q FROM stock_slices
     WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid AND stock_status = 'UNRESTRICTED'
@@ -111,6 +112,7 @@ async function systemQtyOf(
 }
 
 async function unitCost(tx: Db, itemId: string, warehouseId: string): Promise<Dec> {
+  // unpaginated: rows of one parent (item_id)
   const r = await tx.$queryRaw<{ avg_rate: string }[]>`
     SELECT avg_rate::text FROM stock_balances WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid`;
   return D(r[0]?.avg_rate ?? '0');
@@ -163,6 +165,7 @@ export const countService = {
 
   async get(caller: Caller, id: string) {
     const c = await loadCount(caller, id);
+    // unpaginated: rows of one parent (countId)
     const lines = await prisma.stockCountLine.findMany({
       where: { countId: id },
       orderBy: { lineNo: 'asc' },
@@ -230,6 +233,7 @@ export const countService = {
           ? await tx.item.findMany({
               where: { id: { in: p.itemIds }, deletedAt: null, status: 'ACTIVE' },
             })
+          // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
           : await tx.item.findMany({
               where: {
                 deletedAt: null,
@@ -307,6 +311,7 @@ export const countService = {
         c.countType === 'PHYSICAL' &&
         (await tx.stockCountLine.count({ where: { countId: id } })) === 0
       ) {
+        // unpaginated: rows of one parent (warehouse_id)
         const slices = await tx.$queryRaw<
           { item_id: string; batch_id: string; bin_id: string; q: string }[]
         >`
@@ -326,6 +331,7 @@ export const countService = {
           })),
         });
       } else {
+        // unpaginated: rows of one parent (countId)
         const lines = await tx.stockCountLine.findMany({ where: { countId: id } });
         for (const l of lines) {
           await tx.stockCountLine.update({
@@ -457,6 +463,7 @@ export const countService = {
       if (c.version !== version) throw Errors.versionConflict();
       if (c.status !== 'Counting')
         throw Errors.conflict(`A ${c.status} count cannot be sent for review.`);
+      // unpaginated: rows of one parent (countId)
       const lines = await tx.stockCountLine.findMany({ where: { countId: id } });
       const powder = c.countType === 'POWDER_WEEKLY';
       const open = lines.filter(
@@ -537,6 +544,7 @@ export const countService = {
     const user = caller.auth.user;
     const fy = await prisma.financialYear.findUniqueOrThrow({ where: { id: c0.fyId } });
     const voucherId = await prisma.$transaction(async (tx) => {
+      // unpaginated: rows of one parent (countId)
       const lines = await tx.stockCountLine.findMany({
         where: {
           countId: id,

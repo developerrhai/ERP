@@ -68,6 +68,7 @@ export const userRepository = {
   },
 
   async unitIdsOf(userId: string, db: Db = prisma): Promise<string[]> {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await db.userUnit.findMany({ where: { userId }, select: { unitId: true } });
     return rows.map((r) => r.unitId);
   },
@@ -124,6 +125,7 @@ export const userRepository = {
     if (values.loginId) or.push({ loginId: values.loginId }, { email: values.loginId });
     if (values.email) or.push({ email: values.email }, { loginId: values.email });
     if (or.length === 0) return Promise.resolve([]);
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     return db.user.findMany({
       where: { OR: or, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
       select: { id: true, loginId: true, email: true },

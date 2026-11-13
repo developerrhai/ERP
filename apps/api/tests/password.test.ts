@@ -41,11 +41,12 @@ describe('password policy', () => {
   });
 
   it('rejects a password equal to or containing login ID or email or company context', () => {
-    expect(checkPasswordPolicy('john.doe.12345', { loginId: 'john.doe' })).toContain(
-      'login ID',
-    );
+    expect(checkPasswordPolicy('john.doe.12345', { loginId: 'john.doe' })).toContain('login ID');
     expect(
-      checkPasswordPolicy('john@example.com-extra', { loginId: 'someone', email: 'john@example.com' }),
+      checkPasswordPolicy('john@example.com-extra', {
+        loginId: 'someone',
+        email: 'john@example.com',
+      }),
     ).toContain('email');
     expect(checkPasswordPolicy('sawant-group-123', identity)).toContain('company');
     expect(checkPasswordPolicy('readyhand-security', identity)).toContain('company');
@@ -148,6 +149,4 @@ describe('POST /auth/change-password', () => {
     });
     expect(extra.status).toBe(422);
   });
-
-
 });

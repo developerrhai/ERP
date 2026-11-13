@@ -86,3 +86,68 @@ Generic metadata engine: `docs/phase3-4/CONTRACT.md` Stage B, plus the fix round
 - Checking that a referenced record exists is not possible while `ref` is free text.
 - The "FY/period lock" of §4.0.2 is the FY-open rule above (it checks the record's FY, not a date field).
 - Rate limiting of the export (a 10,000-row xlsx is built in memory).
+
+---
+
+# Phase 4 v2 (docs/phases/PHASE-04.md): lock matrix, documents, PDF, export / import, jobs
+
+Everything below was added in the Phase 4 "engine v2" build. The older sections above still describe
+the Stage B records API; where they disagree (for example "a Cancelled record can be deleted"), this
+section wins.
+
+## Lock matrix (C6)
+`src/engine/lock-matrix.ts` is the only place that decides what a status allows:
+`update, remove, restore, status, submit, documents`. `records/service.ts` calls it from update,
+remove, restore, changeStatus, submit and the document service. The page schema returns the table as
+`schema.lock` and the web shows or hides buttons from it. Transactional pages can be deleted only in
+Draft; Pending is locked except for a manual Cancel; Completed / Cancelled / Approved / Rejected are
+fully locked; masters (Active / Inactive) stay editable and deletable. A closed year always wins
+(`409 PERIOD_CLOSED`). Status changes out of a terminal status keep their old `422`.
+
+## Idempotency v2 (C2) and commands (C7)
+`core/http/idempotency.ts` stores key + request hash + response in `idempotency_keys`
+(`user_id, scope, key`). Same key and hash replays the stored body (`Idempotent-Replay: true`), another
+hash is `409`, a still-running request is `409 IN_PROGRESS`, a crashed one is taken over after 60 s.
+`kit/commands.ts` no longer keeps any `Map` for results (only the command registry), has no `any`,
+and answers `{data, result}` (`result` is a deprecated alias). The same helper protects submit,
+document upload, background export and import commit.
+
+## Documents (C8, C9)
+`modules/documents`: `GET/POST /pages/:pageId/records/:id/documents`, `GET .../:docId/download`,
+`DELETE .../:docId`. busboy streams the upload with a hard 10 MB limit; the type is decided from the
+magic bytes and must match the extension (PDF, PNG, JPG, XLSX, DOCX, CSV); 20 documents per record;
+`core/scan` rejects the EICAR test string, PDFs with `/JavaScript` `/Launch`, and Office files with
+macros (a ClamAV adapter can implement `Scanner` later). Infected files are refused and never stored.
+Files go through `core/storage` (local disk) and `stored_files.scan_status`.
+
+## PDF (C10)
+`core/pdf`: pdfkit + Noto Sans + Noto Sans Devanagari (`apps/api/assets/fonts`, SIL OFL). Text is split
+into script runs; fontkit shapes the Devanagari runs. `tests/pdf-gate.test.ts` (T-PDF-01) compares the
+glyph counts with HarfBuzz (`harfbuzzjs`, a dev dependency used only by the test), checks conjuncts
+`क्ष` / `ज्ञ`, no `.notdef`, embedded subsets and the ToUnicode text layer. Templates:
+`renderDocumentPdf` (record) and `renderTablePdf` (list). Endpoints: `GET .../records/:id/pdf`,
+`GET .../records/export.pdf`.
+
+## Export, CSV, jobs
+`export.csv` (UTF-8 BOM, formula-injection prefix on every text cell, headers included), sync limit
+5,000 rows. `POST /pages/:pageId/exports` starts a background export (up to 50,000 rows, file kept
+7 days). `core/jobs` runs pg-boss in `server.ts` (single process); `data_jobs` holds status, counts,
+errors and files; `GET /jobs`, `/jobs/:id`, `/jobs/:id/download`. The daily `maintenance` job runs the
+Phase 1 cleanup (expired sessions, MFA challenges, reset tokens), purges expired idempotency keys and
+job files, and fails jobs stuck in RUNNING. (The Phase 1 cleanup function existed but nothing
+scheduled it before.)
+
+## Import wizard
+`POST /pages/:pageId/imports` (upload, headers, suggested mapping), `POST /imports/:jobId/validate`
+(per-row checks with the same rules as the API, duplicates inside the file, warnings for names that
+exist), `POST /imports/:jobId/commit` (all-or-nothing in one transaction with gap-free numbers;
+needs `add` + `export` on the page), `GET /pages/:pageId/import-template.xlsx`.
+
+## Summary, quality, submit
+`GET .../records/summary`, `GET .../records/quality` (server counts, stale Drafts, empty required
+fields, repeated natural key), `POST .../records/:id/submit` (If-Match, Idempotency-Key; Draft ->
+Pending, uses the `submit` permission), `POST .../records/submit-bulk` (up to 100 ids, per-id report).
+
+## Tests
+`lock-matrix`, `idempotency-v2`, `documents`, `pdf-gate`, `pdf-template`, `phase4-engine` (API);
+`Phase4.test.tsx` (web); `tests/e2e/phase4b.spec.ts` (browser).

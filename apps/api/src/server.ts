@@ -13,11 +13,13 @@ import { seedApprovalDefaults } from './core/seed/approval-defaults';
 import { seedPhase2Defaults } from './core/seed/defaults';
 import { seedPhase3Defaults } from './core/seed/phase3-defaults';
 import { seedPhase5Defaults } from './core/seed/phase5-defaults';
+import { syncRegistrySnapshot } from './modules/page-health/registry-v2';
 import { registerApprovalJobHandlers } from './modules/approvals/register-jobs';
 import { registerDataJobHandlers } from './modules/data-jobs/worker';
 import { registerPhase20JobHandlers } from './modules/hardening/register-jobs';
 import { startRealtimeBus, stopRealtimeBus } from './modules/notifications/realtime';
 import { registerPhase21JobHandlers } from './modules/notifications/register-jobs';
+import { registerDashboardJobHandlers } from './modules/dashboards/register-jobs';
 
 initSentry();
 void warmUpDummyHash();
@@ -29,8 +31,9 @@ async function ensureDefaults(): Promise<void> {
       const phase3 = await seedPhase3Defaults(prisma);
       const phase5 = await seedPhase5Defaults(prisma);
       await seedApprovalDefaults(prisma);
+      const registryVersion = await syncRegistrySnapshot();
       logger.info(
-        { inserted, phase3, phase5 },
+        { inserted, phase3, phase5, registryVersion },
         'Boot: Phase 2/3 defaults checked under advisory lock (missing rows inserted only)',
       );
     });
@@ -50,6 +53,7 @@ async function startBackgroundJobs(): Promise<void> {
     registerApprovalJobHandlers();
     registerPhase20JobHandlers();
     registerPhase21JobHandlers();
+    registerDashboardJobHandlers();
     await startJobs();
   } catch (err) {
     logger.error({ err }, 'Boot: background jobs could not start');

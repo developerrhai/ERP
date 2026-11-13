@@ -334,6 +334,7 @@ export function createQmsRouter(): Router {
       await need(req, 'qms-incoming', 'add');
       const grnLineId = String(req.params.grnLineId);
       const own = (
+        // unpaginated: rows of one parent (id)
         await prisma.$queryRawUnsafe<{ ok: boolean }[]>(
           `SELECT (g.status='Posted' AND g.unit_id=$2::uuid) AS ok FROM goods_receipt_lines l JOIN goods_receipts g ON g.id=l.grn_id WHERE l.id=$1::uuid`,
           grnLineId,

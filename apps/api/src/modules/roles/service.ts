@@ -96,6 +96,7 @@ export const roleService = {
       });
 
       if (input.copyFromRoleId) {
+        // unpaginated: role permission matrix: roles x pages, bounded by the role and page lists
         const sourceRows = await tx.rolePermission.findMany({
           where: { roleId: input.copyFromRoleId },
         });

@@ -58,9 +58,7 @@ describe('T-KIT-03 — Kit Lookups Registry and Route', () => {
     bootKit(Router());
     invalidateAccessCache();
 
-    const res = await request(app)
-      .get(`${API}/lookups/test-vendors`)
-      .set(owner.bearer);
+    const res = await request(app).get(`${API}/lookups/test-vendors`).set(owner.bearer);
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(2);
@@ -92,9 +90,7 @@ describe('T-KIT-03 — Kit Lookups Registry and Route', () => {
     bootKit(Router());
     invalidateAccessCache();
 
-    const res = await request(app)
-      .get(`${API}/lookups/non-existent-lookup-slug`)
-      .set(owner.bearer);
+    const res = await request(app).get(`${API}/lookups/non-existent-lookup-slug`).set(owner.bearer);
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('NOT_FOUND');
@@ -133,9 +129,7 @@ describe('T-KIT-03 — Kit Lookups Registry and Route', () => {
     bootKit(Router());
     invalidateAccessCache();
 
-    const res = await request(app)
-      .get(`${API}/lookups/purchase-orders`)
-      .set(owner.bearer);
+    const res = await request(app).get(`${API}/lookups/purchase-orders`).set(owner.bearer);
 
     expect(res.status).toBe(200);
     expect(res.body.data[0].code).toBe('PO-001');
@@ -172,7 +166,7 @@ describe('T-KIT-03 — Kit Lookups Registry and Route', () => {
         handler: {
           pageId: 'kit-bad-lookup-page',
           list: async () => ({ rows: [], total: 0 }),
-          get: async () => ({} as any),
+          get: async () => ({}) as any,
         },
       });
     });

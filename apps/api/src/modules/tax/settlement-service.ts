@@ -43,6 +43,7 @@ export const settlementService = {
     const ug = await unitGst(unitId);
     const per = parseMonth(month);
     const r = (
+      // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
       await prisma.$queryRawUnsafe<Row[]>(
         `SELECT id::text, challan_no, cash_paid::text, interest::text, late_fee::text, journal_id::text FROM gst_settlements
           WHERE gstin=$1 AND period_month=$2::date AND status='Posted'`,
@@ -78,6 +79,7 @@ export const settlementService = {
     return prisma.$transaction(
       async (tx) => {
         const bank = (
+          // unpaginated: rows of one parent (id)
           await tx.$queryRawUnsafe<Row[]>(
             `SELECT account_id::text FROM bank_accounts WHERE id=$1::uuid AND deleted_at IS NULL`,
             b.bankAccountId,
@@ -216,6 +218,7 @@ export const settlementService = {
       )[0];
       if (!s) throw Errors.notFound('No settlement for this month.');
       const filed = (
+        // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
         await tx.$queryRawUnsafe<Row[]>(
           `SELECT 1 FROM gst_returns WHERE gstin=$1 AND return_type='GSTR3B' AND period_month=$2::date AND status='Filed'`,
           ug.gstin,

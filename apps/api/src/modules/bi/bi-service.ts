@@ -368,7 +368,7 @@ export class BiService {
       case 'admin_security_alerts': {
         const r = await query(
           prisma,
-          `SELECT COUNT(*) AS cnt FROM users WHERE status = 'LOCKED'`,
+          `SELECT COUNT(*) AS cnt FROM users WHERE locked_until IS NOT NULL AND locked_until > now()`,
         );
         rowCount = Number(r[0]?.cnt ?? 0);
         value = rowCount;

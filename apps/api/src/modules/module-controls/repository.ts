@@ -5,6 +5,7 @@ import type { Db } from '../../core/db/prisma';
 
 export const moduleControlRepository = {
   all(db: Db = prisma): Promise<ModuleControl[]> {
+    // unpaginated: one control row per page (registry size)
     return db.moduleControl.findMany();
   },
 

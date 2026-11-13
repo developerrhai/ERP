@@ -6,6 +6,7 @@ import { authenticate, requirePasswordChanged } from '../../core/auth/authentica
 import { resolveContext } from '../../core/context/resolve-context';
 import { asyncHandler } from '../../core/http/async-handler';
 import { callerOf } from '../inventory/routes-shared';
+import { dataEnvelope } from '../../core/http/envelope';
 import { projectService } from './project-service';
 import { timesheetService } from './timesheet-service';
 import { projectBudgetService } from './project-budget-service';
@@ -16,6 +17,7 @@ export const projectsRouter = Router();
 projectsRouter.use(authenticate);
 projectsRouter.use(requirePasswordChanged);
 projectsRouter.use(resolveContext);
+projectsRouter.use(dataEnvelope);
 
 // ---------------------------------------------------------------------------- Projects CRUD
 projectsRouter.get(

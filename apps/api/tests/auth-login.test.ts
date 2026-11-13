@@ -38,7 +38,7 @@ describe('POST /auth/login', () => {
     expect(res.status).toBe(200);
   });
 
-it('stores only the sha256 of the refresh token', async () => {
+  it('stores only the sha256 of the refresh token', async () => {
     const user = await makeUser();
     const cookie = refreshCookieOf(await login(app, user.loginId)) ?? '';
     const raw = cookie.split(';')[0]?.slice(3) ?? '';
@@ -47,7 +47,7 @@ it('stores only the sha256 of the refresh token', async () => {
     expect(session.refreshTokenHash).not.toBe(raw);
   });
 
-it('rejects unknown keys and missing fields with 422', async () => {
+  it('rejects unknown keys and missing fields with 422', async () => {
     const extra = await request(app)
       .post(`${API}/auth/login`)
       .send({ identifier: 'a', password: 'b', companyCode: 'X' });
@@ -98,7 +98,7 @@ describe('timing', () => {
 });
 
 describe('lockout', () => {
-it('a successful login resets the failure counter', async () => {
+  it('a successful login resets the failure counter', async () => {
     const user = await makeUser();
     for (let i = 0; i < 9; i++) await login(app, user.loginId, 'Wrong-Passw0rd!');
     expect((await prisma.user.findUniqueOrThrow({ where: { id: user.id } })).failedLoginCount).toBe(

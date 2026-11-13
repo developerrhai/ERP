@@ -1628,6 +1628,7 @@ export async function postDebitNote(tx: Db, id: string, actor: Actor): Promise<v
   const legs: EventLine[] = [];
   const cc = await costCenterCode(tx, unitId);
   const keyMap = new Map(
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     (await tx.itemTypeAccount.findMany()).map((r) => [r.itemType, r.inventoryKey]),
   );
   let invCredit = ZERO;

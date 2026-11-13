@@ -270,6 +270,7 @@ export const reservationService = {
 
   /** Daily job: reservations past their date end as Expired (BR-INV-16). */
   async expireDue(asOf = todayIso()): Promise<number> {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const due = await prisma.stockReservation.findMany({
       where: {
         status: { in: ['Waiting', 'Partial', 'Reserved'] },

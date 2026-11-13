@@ -43,9 +43,7 @@ describe('Typed Masters (Phase 03 Order 3)', () => {
     });
 
     it('lists designations including the created one', async () => {
-      const res = await request(app)
-        .get(`${API}/designations`)
-        .set(owner.bearer);
+      const res = await request(app).get(`${API}/designations`).set(owner.bearer);
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body.data)).toBe(true);
@@ -73,9 +71,7 @@ describe('Typed Masters (Phase 03 Order 3)', () => {
 
       expect(res.status).toBe(204);
 
-      const getRes = await request(app)
-        .get(`${API}/designations/${createdId}`)
-        .set(owner.bearer);
+      const getRes = await request(app).get(`${API}/designations/${createdId}`).set(owner.bearer);
       expect(getRes.status).toBe(404);
     });
   });
@@ -84,9 +80,7 @@ describe('Typed Masters (Phase 03 Order 3)', () => {
     let usdId: string;
 
     it('lists seeded INR as the base currency', async () => {
-      const res = await request(app)
-        .get(`${API}/currencies`)
-        .set(owner.bearer);
+      const res = await request(app).get(`${API}/currencies`).set(owner.bearer);
 
       expect(res.status).toBe(200);
       const inr = res.body.data.find((c: any) => c.code === 'INR');
@@ -96,17 +90,14 @@ describe('Typed Masters (Phase 03 Order 3)', () => {
     });
 
     it('creates USD as non-base currency with exchange rate', async () => {
-      const res = await request(app)
-        .post(`${API}/currencies`)
-        .set(owner.bearer)
-        .send({
-          code: 'USD',
-          name: 'US Dollar',
-          symbol: '$',
-          decimalPlaces: 2,
-          isBase: false,
-          exchangeRate: 83.5,
-        });
+      const res = await request(app).post(`${API}/currencies`).set(owner.bearer).send({
+        code: 'USD',
+        name: 'US Dollar',
+        symbol: '$',
+        decimalPlaces: 2,
+        isBase: false,
+        exchangeRate: 83.5,
+      });
 
       if (res.status === 409) {
         // USD already exists from previous run
@@ -128,9 +119,7 @@ describe('Typed Masters (Phase 03 Order 3)', () => {
       const inr = list.body.data.find((c: any) => c.code === 'INR');
       expect(inr).toBeDefined();
 
-      const res = await request(app)
-        .delete(`${API}/currencies/${inr.id}`)
-        .set(owner.bearer);
+      const res = await request(app).delete(`${API}/currencies/${inr.id}`).set(owner.bearer);
 
       expect(res.status).toBe(409);
     });
@@ -185,18 +174,14 @@ describe('Typed Masters (Phase 03 Order 3)', () => {
     });
 
     it('returns 404 NOT_GENERIC when hitting generic records endpoint for admin-currency', async () => {
-      const res = await request(app)
-        .get(`${API}/pages/admin-currency/records`)
-        .set(owner.bearer);
+      const res = await request(app).get(`${API}/pages/admin-currency/records`).set(owner.bearer);
 
       expect(res.status).toBe(404);
       expect(res.body.error?.code).toBe('NOT_GENERIC');
     });
 
     it('returns 404 NOT_GENERIC when hitting generic records endpoint for admin-uom', async () => {
-      const res = await request(app)
-        .get(`${API}/pages/admin-uom/records`)
-        .set(owner.bearer);
+      const res = await request(app).get(`${API}/pages/admin-uom/records`).set(owner.bearer);
 
       expect(res.status).toBe(404);
       expect(res.body.error?.code).toBe('NOT_GENERIC');

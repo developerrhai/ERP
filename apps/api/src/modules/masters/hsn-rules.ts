@@ -9,6 +9,7 @@ export const HSN_REQUIRED_MESSAGE = 'Choose the HSN/SAC code for this item.';
 
 /** The strictest minimum of the active GST registrations; 6 when no registration exists yet. */
 export async function minHsnDigits(db: Db = prisma): Promise<number> {
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const rows = await db.gstRegistration.findMany({
     where: { status: 'ACTIVE', deletedAt: null },
     select: { minHsnDigits: true },

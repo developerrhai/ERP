@@ -20,6 +20,7 @@ export const roleRepository = {
 
   findAll(db: Db = prisma): Promise<Role[]> {
     return db.role.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       orderBy: [{ level: 'desc' }, { code: 'asc' }],
     });
   },

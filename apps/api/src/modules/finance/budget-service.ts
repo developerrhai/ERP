@@ -46,6 +46,7 @@ export const budgetService = {
     if (q.unitId) where.unitId = q.unitId;
     if (q.status) where.status = q.status;
     const rows = await prisma.budget.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where,
       include: { months: { orderBy: { periodNo: 'asc' } } },
       orderBy: { createdAt: 'asc' },
@@ -250,6 +251,7 @@ export const budgetService = {
     const budgetToDate = budget.months
       .filter((m) => m.periodNo <= period.periodNo)
       .reduce((s, m) => s.plus(m.amount), ZERO);
+    // unpaginated: rows of one parent (account_id)
     const rows = await db.$queryRaw<{ net: string | null }[]>`
       SELECT COALESCE(SUM(debit - credit), 0)::text AS net
         FROM gl_entries

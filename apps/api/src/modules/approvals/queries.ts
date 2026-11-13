@@ -14,6 +14,7 @@ import type { RequestDto } from './view';
 
 async function unitIdsOf(auth: AuthContext): Promise<string[]> {
   if (auth.allUnits) return [];
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const rows = await prisma.userUnit.findMany({
     where: { userId: auth.userId },
     select: { unitId: true },
@@ -140,6 +141,7 @@ export const approvalQueries = {
   /** 404 when the request does not exist or is outside the caller's scope. */
   async get(auth: AuthContext, id: string): Promise<RequestDto> {
     const scope = await scopeSql(auth);
+    // unpaginated: rows of one parent (id)
     const visible = await prisma.$queryRaw<{ id: string }[]>`
       SELECT r.id FROM approval_requests r JOIN departments d ON d.id = r.department_id
        WHERE r.id = ${id}::uuid AND ${scope}`;
@@ -150,6 +152,7 @@ export const approvalQueries = {
   /** The requests of one document that the caller may see. */
   async forDocument(auth: AuthContext, docType: string, docId: string): Promise<RequestDto[]> {
     const scope = await scopeSql(auth);
+    // unpaginated: rows of one parent (doc_id)
     const ids = await prisma.$queryRaw<{ id: string }[]>`
       SELECT r.id FROM approval_requests r JOIN departments d ON d.id = r.department_id
        WHERE r.doc_type = ${docType} AND r.doc_id = ${docId}::uuid AND ${scope}
@@ -162,6 +165,7 @@ export const approvalQueries = {
 
   async counts(auth: AuthContext, now: Date = new Date()) {
     const today = istDate(now);
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await prisma.$queryRaw<{ waiting: number; overdue: number; submitted: number }[]>`
       SELECT
         (SELECT count(*)::int FROM approval_requests r

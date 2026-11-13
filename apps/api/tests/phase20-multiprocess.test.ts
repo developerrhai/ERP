@@ -53,7 +53,9 @@ async function waitReady(baseUrl: string): Promise<void> {
     try {
       const r = await fetch(`${baseUrl}/health/ready`);
       if (r.status === 200) {
-        const body = (await r.json()) as { data?: { status?: string; checks?: { cacheBus?: { connected?: boolean } } } };
+        const body = (await r.json()) as {
+          data?: { status?: string; checks?: { cacheBus?: { connected?: boolean } } };
+        };
         if (body.data?.status === 'ready' && body.data?.checks?.cacheBus?.connected) return;
       }
     } catch {
@@ -83,7 +85,8 @@ describe('Phase 20-A Two-Process API Cluster Readiness', () => {
       body: JSON.stringify({ identifier: TEST_OWNER.loginId, password: TEST_OWNER.password }),
     });
     expect(loginRes.status).toBe(200);
-    const accessToken = ((await loginRes.json()) as { data: { accessToken: string } }).data.accessToken;
+    const accessToken = ((await loginRes.json()) as { data: { accessToken: string } }).data
+      .accessToken;
 
     const unit = await prisma.unit.findFirstOrThrow({ where: { status: 'ACTIVE' } });
     const fy = await prisma.financialYear.findFirstOrThrow({ where: { isCurrent: true } });
@@ -159,7 +162,8 @@ describe('Phase 20-A Two-Process API Cluster Readiness', () => {
       body: JSON.stringify({ identifier: mgrUser.loginId, password: PASSWORD }),
     });
     expect(mgrLogin.status).toBe(200);
-    const mgrToken = ((await mgrLogin.json()) as { data: { accessToken: string } }).data.accessToken;
+    const mgrToken = ((await mgrLogin.json()) as { data: { accessToken: string } }).data
+      .accessToken;
 
     // Warm Process B access cache for mgrUser
     const warmB = await fetch(`${URL_B}/me/permissions?pageId=crm-leads`, {
@@ -204,4 +208,3 @@ describe('Phase 20-A Two-Process API Cluster Readiness', () => {
     });
   }, 30_000);
 });
-

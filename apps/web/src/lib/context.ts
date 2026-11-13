@@ -91,6 +91,11 @@ export async function changeContext(next: CurrentContext): Promise<void> {
   });
 }
 
+/** Phase 23: the chosen plants changed - the open page refetches. */
+export function bumpContextEpoch(): void {
+  emit({ ...state, epoch: state.epoch + 1 });
+}
+
 export function resetContext(): void {
   generation += 1;
   setContextHeaders(null);

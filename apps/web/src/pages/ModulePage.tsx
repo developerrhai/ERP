@@ -139,6 +139,19 @@ import { CommCenterPage } from './bi/CommCenterPage';
 import { AdminNotifConsolePage } from './admin/AdminNotifConsolePage';
 import { NotificationPrefsPage } from './notifications/NotificationPrefsPage';
 import { DashboardPage } from './DashboardPage';
+import { ActionBar } from '../components/ActionBar';
+import { AdminPageHealthPage } from './admin/AdminPageHealthPage';
+import { AdminRegistryPage } from './admin/AdminRegistryPage';
+import { ScreenPage } from './screens/ScreenPage';
+import {
+  ModuleAnalyticsPage,
+  MyDashboardPage,
+  OwnerConsolePage,
+  PlantDashboardPage,
+} from './dashboards/DashboardPages';
+import { KpiAlertsPage, KpiTargetsPage } from './dashboards/TargetsAlertsPages';
+import { DeptInboxPage, DeptWorkPage, WorkflowMatrixPage } from './work/WorkPages';
+import { SCREEN_PAGES } from './screens/screenPages';
 
 const SUB_PAGES: Record<string, readonly string[]> = {
   'admin-settings': ['controls', 'letterhead', 'finance-limits'],
@@ -183,6 +196,9 @@ function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: 
       {pageId === 'admin-formats' || pageId === 'dashboard' ? null : (
         <SettingsLauncher pageId={pageId} title={page.item.title} />
       )}
+      {SCREEN_PAGES.has(pageId) || pageId === 'dashboard' ? null : (
+        <ActionBar actions={perms.actions} mode="page" />
+      )}
       <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
     </>
   );
@@ -200,6 +216,16 @@ function PageBody({
   actions: ActionSet;
 }) {
   const pageId = page.item.id;
+  if (SCREEN_PAGES.has(pageId)) {
+    return (
+      <ScreenPage
+        pageId={pageId}
+        title={page.item.title}
+        sub={page.purpose ?? page.family.name}
+        actions={actions}
+      />
+    );
+  }
   switch (pageId) {
     case 'dashboard':
       return <DashboardPage user={user} />;
@@ -711,6 +737,36 @@ function PageBody({
       return <AdminNotifConsolePage initialTab="EMAIL_RULES" />;
     case 'admin-email-suppressions':
       return <AdminNotifConsolePage initialTab="SUPPRESSIONS" />;
+    case 'admin-page-health':
+      return <AdminPageHealthPage />;
+    case 'dept-inbox':
+      return <DeptInboxPage />;
+    case 'dept-work':
+      return <DeptWorkPage />;
+    case 'dept-movement-inbox':
+      return <DeptInboxPage all />;
+    case 'admin-workflow':
+      return <WorkflowMatrixPage actions={actions} />;
+    case 'my-dashboard':
+      return <MyDashboardPage />;
+    case 'plant-dashboard':
+      return <PlantDashboardPage />;
+    case 'owner-console':
+      return <OwnerConsolePage />;
+    case 'kpi-targets':
+      return <KpiTargetsPage actions={actions} />;
+    case 'kpi-alerts':
+      return <KpiAlertsPage actions={actions} />;
+    case 'bi-production':
+    case 'bi-quality':
+    case 'bi-hr':
+    case 'bi-maintenance':
+    case 'bi-projects':
+    case 'bi-service':
+    case 'bi-logistics':
+      return <ModuleAnalyticsPage code={pageId.slice(3)} title={page.item.title} />;
+    case 'admin-registry':
+      return <AdminRegistryPage />;
 
     default:
       return (

@@ -99,6 +99,7 @@ async function unitState(tx: Db, unitId: string): Promise<string> {
   return st;
 }
 const keyMap = async (tx: Db) =>
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   new Map((await tx.itemTypeAccount.findMany()).map((r) => [r.itemType, r.inventoryKey]));
 
 // ============================================================================================ dispatch

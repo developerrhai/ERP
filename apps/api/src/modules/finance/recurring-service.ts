@@ -106,6 +106,7 @@ function checkLines(lines: TemplateLine[]): void {
 
 export const recurringService = {
   async list(unitId: string | null) {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     const rows = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT ${COLS} FROM recurring_journals WHERE ($1::uuid IS NULL OR unit_id = $1::uuid) ORDER BY next_run, name`,
       unitId,
@@ -170,6 +171,7 @@ export const recurringService = {
       posted: boolean;
     }[] = [];
     const failures: { template: string; date?: string; error: string }[] = [];
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     const due = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT ${COLS} FROM recurring_journals WHERE status = 'Active' AND next_run <= $1::date AND (end_date IS NULL OR next_run <= end_date) ORDER BY next_run, name`,
       asOf,

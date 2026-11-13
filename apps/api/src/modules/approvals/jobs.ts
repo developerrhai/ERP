@@ -12,6 +12,7 @@ const HOUR = 3600 * 1000;
 
 /** Escalates every overdue level that has not been escalated yet. Returns how many it escalated. */
 export async function escalateOverdue(now: Date = new Date()): Promise<number> {
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const due = await prisma.$queryRaw<{ id: string; request_id: string }[]>`
     SELECT s.id, s.request_id FROM approval_steps s
       JOIN approval_requests r ON r.id = s.request_id AND r.status = 'PENDING'
@@ -119,6 +120,7 @@ export async function escalateOverdue(now: Date = new Date()): Promise<number> {
 /** One reminder per user per day for levels that have waited more than 24 hours. */
 export async function sendApprovalReminders(now: Date = new Date()): Promise<number> {
   const cutoff = new Date(now.getTime() - 24 * HOUR);
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const rows = await prisma.$queryRaw<
     { user_id: string; step_ids: string[]; request_ids: string[] }[]
   >`

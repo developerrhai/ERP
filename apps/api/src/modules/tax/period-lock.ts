@@ -27,6 +27,7 @@ export async function assertGstPeriodOpen(
 
 /** Reversal / cancel of a journal: refuse when any of its tax documents sits in a filed period. */
 export async function assertJournalNotFiled(tx: Db, journalId: string): Promise<void> {
+  // unpaginated: rows of one parent (journal_id)
   const docs = await tx.$queryRaw<{ gstin: string | null; doc_date: Date; direction: string }[]>`
     SELECT gstin, doc_date, direction FROM tax_documents WHERE journal_id = ${journalId}::uuid AND status = 'Active'`;
   for (const d of docs) {

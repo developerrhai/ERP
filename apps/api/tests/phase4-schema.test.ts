@@ -43,7 +43,15 @@ describe('GET /pages/:pageId/schema', () => {
       family: 'CRM',
       kind: 'generic',
       master: false,
-      statuses: ['Draft', 'Pending Approval', 'Approved', 'Rejected', 'Active', 'Inactive', 'Cancelled'],
+      statuses: [
+        'Draft',
+        'Pending Approval',
+        'Approved',
+        'Rejected',
+        'Active',
+        'Inactive',
+        'Cancelled',
+      ],
       actions: [],
     });
     expect(s.purpose.length).toBeGreaterThan(5);
@@ -78,7 +86,15 @@ describe('GET /pages/:pageId/schema', () => {
       type: 'status',
       readOnly: true,
       required: false,
-      options: ['Draft', 'Pending Approval', 'Approved', 'Rejected', 'Active', 'Inactive', 'Cancelled'],
+      options: [
+        'Draft',
+        'Pending Approval',
+        'Approved',
+        'Rejected',
+        'Active',
+        'Inactive',
+        'Cancelled',
+      ],
     });
     // Only "Status" is the workflow status; "Consent Status" is an ordinary, writable enum.
     expect(field(s, 'Consent Status')).toMatchObject({
@@ -128,7 +144,7 @@ describe('GET /pages/:pageId/schema', () => {
     expect(field(sales, 'Forecast').min).toBe(0);
   });
 
-it('404 for an unknown page, 401 without a token, 403 without `view`', async () => {
+  it('404 for an unknown page, 401 without a token, 403 without `view`', async () => {
     expect((await client.schema(owner, 'no-such-page')).status).toBe(404);
     const anon = await request(app).get('/api/v1/pages/crm-leads/schema');
     expect(anon.status).toBe(401);

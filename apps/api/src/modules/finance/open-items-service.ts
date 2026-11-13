@@ -161,6 +161,7 @@ export const openItemService = {
 
   /** Open bills of a party, in FIFO order (due date, document date, number). */
   async openBills(db: Db, side: 'RECEIVABLE' | 'PAYABLE', partyId: string, unitId?: string | null) {
+    // unpaginated: rows of one parent record (record / party / supplier / HSN)
     const rows = await db.openItem.findMany({
       where: {
         side,
@@ -262,10 +263,12 @@ export const openItemService = {
     side: 'RECEIVABLE' | 'PAYABLE',
     partyId: string,
   ): Promise<{ subLedger: string; ledger: string; agrees: boolean }> {
+    // unpaginated: single-row SUM() aggregate
     const sub = await db.$queryRaw<{ v: string }[]>`
       SELECT COALESCE(SUM(outstanding), 0)::text AS v
         FROM open_items WHERE side = ${side} AND party_id = ${partyId}::uuid AND status <> 'Cancelled'`;
     // `outstanding` keeps the sign of the item (bills +, credits -), so the sum is the signed party balance
+    // unpaginated: single-row SUM() aggregate
     const gl = await db.$queryRaw<{ v: string }[]>`
       SELECT COALESCE(SUM(CASE WHEN ${side} = 'RECEIVABLE' THEN g.debit - g.credit ELSE g.credit - g.debit END), 0)::text AS v
         FROM gl_entries g JOIN accounts a ON a.id = g.account_id

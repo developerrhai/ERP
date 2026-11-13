@@ -57,7 +57,12 @@ describe('T-KIT-02 — Kit Schema Extensions, Actions, and Permissions', () => {
       editableStatuses: ['Draft'],
       tabPanels: [
         { tab: 'Item Schedule', key: 'item-schedule', scope: 'record' },
-        { tab: 'Release Orders', key: 'release-orders', scope: 'record', component: 'ScmReleaseOrders' },
+        {
+          tab: 'Release Orders',
+          key: 'release-orders',
+          scope: 'record',
+          component: 'ScmReleaseOrders',
+        },
       ],
       commands: [
         {
@@ -77,12 +82,20 @@ describe('T-KIT-02 — Kit Schema Extensions, Actions, and Permissions', () => {
           confirm: 'Approve record?',
           allowedFrom: ['Draft'],
           requires: 'approve',
-          payloadFields: [{ key: 'notes', label: 'Approval Notes', type: 'longtext', required: true }],
+          payloadFields: [
+            { key: 'notes', label: 'Approval Notes', type: 'longtext', required: true },
+          ],
         },
       ],
       filters: [
         { key: 'month', label: 'Month', type: 'month', param: 'month' },
-        { key: 'supplier', label: 'Supplier', type: 'lookup', param: 'supplierId', lookup: 'suppliers' },
+        {
+          key: 'supplier',
+          label: 'Supplier',
+          type: 'lookup',
+          param: 'supplierId',
+          lookup: 'suppliers',
+        },
       ],
       printTemplates: [
         { key: 'po', label: 'Purchase Order', kind: 'pdf', scope: 'record', default: true },
@@ -91,7 +104,14 @@ describe('T-KIT-02 — Kit Schema Extensions, Actions, and Permissions', () => {
       fields: [
         { key: 'code', label: 'Code', type: 'code', required: true, readOnly: true },
         { key: 'status', label: 'Status', type: 'status', required: true, readOnly: true },
-        { key: 'score', label: 'Score', type: 'qty', required: false, readOnly: false, suffix: '/10' },
+        {
+          key: 'score',
+          label: 'Score',
+          type: 'qty',
+          required: false,
+          readOnly: false,
+          suffix: '/10',
+        },
       ],
       tabs: ['Register'],
     });
@@ -102,7 +122,7 @@ describe('T-KIT-02 — Kit Schema Extensions, Actions, and Permissions', () => {
         handler: {
           pageId: 'kit-schema-extras',
           list: async () => ({ rows: [], total: 0 }),
-          get: async () => ({} as any),
+          get: async () => ({}) as any,
         },
       });
       kit.lookup({
@@ -122,9 +142,7 @@ describe('T-KIT-02 — Kit Schema Extensions, Actions, and Permissions', () => {
     bootKit(Router());
     invalidateAccessCache();
 
-    const res = await request(app)
-      .get(`${API}/pages/kit-schema-extras/schema`)
-      .set(owner.bearer);
+    const res = await request(app).get(`${API}/pages/kit-schema-extras/schema`).set(owner.bearer);
 
     expect(res.status).toBe(200);
     const data = res.body.data;
@@ -163,7 +181,7 @@ describe('T-KIT-02 — Kit Schema Extensions, Actions, and Permissions', () => {
         handler: {
           pageId: 'kit-readonly-test',
           list: async () => ({ rows: [], total: 0 }),
-          get: async () => ({} as any),
+          get: async () => ({}) as any,
         },
       });
     });
@@ -180,7 +198,9 @@ describe('T-KIT-02 — Kit Schema Extensions, Actions, and Permissions', () => {
 
     expect(postRes.status).toBe(405);
     expect(postRes.body.error.code).toBe('READ_ONLY');
-    expect(postRes.body.error.message).toContain('Records of this page are created by other documents.');
+    expect(postRes.body.error.message).toContain(
+      'Records of this page are created by other documents.',
+    );
 
     // GET should work (200 OK)
     const getRes = await request(app)
@@ -603,7 +623,7 @@ describe('T-KIT-02 — Kit Schema Extensions, Actions, and Permissions', () => {
         handler: {
           pageId: 'kit-suffix-lookup-test',
           list: async () => ({ rows: [], total: 0 }),
-          get: async () => ({} as any),
+          get: async () => ({}) as any,
         },
       });
       kit.lookup({

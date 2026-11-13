@@ -22,6 +22,7 @@ import {
   type RecordRow,
 } from './engineApi';
 import { ActionButtons } from './RecordActions';
+import { usePlants } from '../../lib/plants';
 import { FilterControl } from './kit/FilterBar';
 import {
   canEditRecord,
@@ -108,6 +109,8 @@ export function RegisterTab({
   onOpenWorkspace,
 }: Props) {
   const fields = useMemo(() => listFields(schema), [schema]);
+  // Phase 23: with 2+ plants chosen the list mixes plants, so a Plant column appears automatically.
+  const showPlant = (usePlants().data?.selected.length ?? 1) > 1;
   const rq: RecordQuery = query;
   const { data, loading, error } = useLoad(
     () => listRecords(schema.pageId, rq),
@@ -370,6 +373,11 @@ export function RegisterTab({
                   onChange={(e) => togglePage(e.target.checked)}
                 />
               </th>
+              {showPlant ? (
+                <th scope="col" aria-label="Plant">
+                  Plant
+                </th>
+              ) : null}
               {fields.map((f) => (
                 <th
                   key={f.key}
@@ -401,6 +409,7 @@ export function RegisterTab({
             {rows.map((r) => (
               <RegisterRow
                 key={r.id}
+                showPlant={showPlant}
                 schema={schema}
                 perms={perms}
                 row={r}
@@ -416,12 +425,12 @@ export function RegisterTab({
             ))}
             {loading && !data ? (
               <tr className="empty-row">
-                <td colSpan={fields.length + 2}>Loading…</td>
+                <td colSpan={fields.length + 2 + (showPlant ? 1 : 0)}>Loading…</td>
               </tr>
             ) : null}
             {data && rows.length === 0 ? (
               <tr className="empty-row">
-                <td colSpan={fields.length + 2}>
+                <td colSpan={fields.length + 2 + (showPlant ? 1 : 0)}>
                   {query.q || query.status
                     ? 'No records match these filters.'
                     : `No ${schema.title} records yet.`}
@@ -481,6 +490,7 @@ export function RegisterTab({
 }
 
 function RegisterRow({
+  showPlant,
   schema,
   perms,
   row,
@@ -493,6 +503,7 @@ function RegisterRow({
   onAction,
   onOpenWorkspace,
 }: {
+  showPlant: boolean;
   schema: PageSchema;
   perms: ActionSet;
   row: RecordRow;
@@ -519,6 +530,7 @@ function RegisterRow({
           onChange={(e) => onToggle(row.id, e.target.checked)}
         />
       </td>
+      {showPlant ? <td>{row.unitCode ?? '—'}</td> : null}
       {fields.map((f) => (
         <td key={f.key}>
           {f.type === 'status' ? (

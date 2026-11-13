@@ -14,6 +14,8 @@ import { requirePageAction } from '../../core/rbac/access';
 import { requireMinRole } from '../../core/rbac/authorize';
 import { USER_ADMIN_MIN_ROLE } from '../../core/rbac/role-rules';
 import { usersController } from './controller';
+import { meController } from '../me/controller';
+import { adminPlantsSchema } from '../me/schemas';
 import {
   createUserSchema,
   effectiveAccessQuerySchema,
@@ -64,6 +66,13 @@ export function createUsersRouter(): Router {
     requirePageAction(PAGE, 'edit'),
     validate({ params: userIdParamsSchema, body: updateUserSchema }),
     asyncHandler(usersController.update),
+  );
+  // Phase 23: plant checkboxes + default plant (audited, notifies the user)
+  router.put(
+    '/:id/plants',
+    requirePageAction(PAGE, 'edit'),
+    validate({ params: userIdParamsSchema, body: adminPlantsSchema }),
+    asyncHandler(meController.adminPlants),
   );
   router.post(
     '/:id/reset-password',

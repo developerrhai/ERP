@@ -23,6 +23,9 @@ interface AcctRow {
   credit: string;
 }
 
+/** The General Ledger shows a running balance, so it cannot be paged; this caps one account's range. */
+const GL_MAX_ROWS = 20_000;
+
 const natural = (root: string, d: Dec, c: Dec): Dec =>
   root === 'Asset' || root === 'Expense' ? d.minus(c) : c.minus(d);
 
@@ -43,6 +46,7 @@ async function balances(
   const fy = await fyOf(asOf);
   const fyId = fy?.id ?? null;
   const fromDate = opts.from ?? null;
+  // unpaginated: report/register over the requested date range; exported whole, filters bound it
   return prisma.$queryRaw<AcctRow[]>`
     SELECT a.id, a.code, a.name, a.root_type, p.code AS parent_code, p.name AS parent_name,
            COALESCE(SUM(g.debit), 0)::text AS debit, COALESCE(SUM(g.credit), 0)::text AS credit
@@ -110,9 +114,11 @@ export const reportsService = {
     const acct = await prisma.account.findFirst({ where: { id: accountId, deletedAt: null } });
     if (!acct) throw Errors.notFound('Account not found.');
     const unit = f.unitId ?? null;
+    // unpaginated: rows of one parent (account_id)
     const opening = await prisma.$queryRaw<{ d: string; c: string }[]>`
       SELECT COALESCE(SUM(debit),0)::text AS d, COALESCE(SUM(credit),0)::text AS c FROM gl_entries
        WHERE account_id = ${accountId}::uuid AND posting_date < ${from}::date AND (${unit}::uuid IS NULL OR unit_id = ${unit}::uuid)`;
+    // A running balance needs every row in order, so the range is capped instead of paged (Phase 22 review).
     const rows = await prisma.$queryRaw<
       {
         id: string;
@@ -130,7 +136,11 @@ export const reportsService = {
     >`
       SELECT id, posting_date, voucher_type, voucher_no, narration, debit::text, credit::text, party_id, journal_id, unit_id, is_reversal FROM gl_entries
        WHERE account_id = ${accountId}::uuid AND posting_date BETWEEN ${from}::date AND ${to}::date AND (${unit}::uuid IS NULL OR unit_id = ${unit}::uuid)
-       ORDER BY posting_date, seq`;
+       ORDER BY posting_date, seq
+       LIMIT ${GL_MAX_ROWS + 1}`;
+    if (rows.length > GL_MAX_ROWS) {
+      throw Errors.validation({ to: `This account has more than ${GL_MAX_ROWS.toLocaleString('en-IN')} entries in the range. Choose a shorter date range.` });
+    }
     const openDr = D(opening[0]?.d ?? 0);
     const openCr = D(opening[0]?.c ?? 0);
     let run = natural(acct.rootType, openDr, openCr);
@@ -305,6 +315,7 @@ export const reportsService = {
   /** AR / AP ageing from the bill-wise sub-ledger: signed outstanding per party in days-past-due buckets. */
   async ageing(side: 'RECEIVABLE' | 'PAYABLE', asOf: string, f: ReportFilter) {
     const unit = f.unitId ?? null;
+    // unpaginated: report/register over the requested date range; exported whole, filters bound it
     const rows = await prisma.$queryRaw<
       {
         party_type: string;
@@ -392,6 +403,7 @@ export const reportsService = {
    */
   async cashFlow(from: string, to: string, f: ReportFilter) {
     const unit = f.unitId ?? null;
+    // unpaginated: report/register over the requested date range; exported whole, filters bound it
     const rows = await prisma.$queryRaw<
       { code: string; name: string; root_type: string; cf_class: string; flow: string }[]
     >`
@@ -401,6 +413,7 @@ export const reportsService = {
          AND (${unit}::uuid IS NULL OR g.unit_id = ${unit}::uuid)
        GROUP BY a.code, a.name, a.root_type, a.cf_class HAVING SUM(g.credit - g.debit) <> 0 ORDER BY a.code`;
     const cashBalance = async (before: string | null, upTo: string | null) => {
+      // unpaginated: report/register over the requested date range; exported whole, filters bound it
       const r = await prisma.$queryRaw<{ v: string }[]>`
         SELECT COALESCE(SUM(g.debit - g.credit), 0)::text AS v FROM gl_entries g JOIN accounts a ON a.id = g.account_id
          WHERE a.cf_class = 'CASH' AND (${before}::date IS NULL OR g.posting_date < ${before}::date) AND (${upTo}::date IS NULL OR g.posting_date <= ${upTo}::date)

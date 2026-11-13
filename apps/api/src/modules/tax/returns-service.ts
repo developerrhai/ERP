@@ -53,6 +53,7 @@ async function loadDocs(
   to: string,
   statuses: string[] = ['Active'],
 ): Promise<Doc[]> {
+  // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
   const heads = await prisma.$queryRawUnsafe<Row[]>(
     `SELECT id::text, doc_kind, doc_no, doc_date, party_name, party_gstin, place_of_supply, reverse_charge,
             orig_doc_no, orig_doc_date, source_type, source_id::text, taxable::text, cgst::text, sgst::text, igst::text
@@ -67,6 +68,7 @@ async function loadDocs(
     statuses,
   );
   if (!heads.length) return [];
+  // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
   const lines = await prisma.$queryRawUnsafe<Row[]>(
     `SELECT tax_document_id::text, hsn, uqc, qty::text, taxable::text, rate_pct::text, cgst::text, sgst::text, igst::text
        FROM tax_document_lines WHERE tax_document_id = ANY($1::uuid[]) ORDER BY tax_document_id, line_no`,
@@ -155,6 +157,7 @@ export const returnsService = {
     const issues: Issue[] = [];
     const einv = new Set(
       (
+        // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
         await prisma.$queryRawUnsafe<Row[]>(
           `SELECT doc_id::text FROM einvoice_records WHERE unit_id=$1::uuid AND status='Generated'`,
           ug.unitId,
@@ -540,6 +543,7 @@ export const returnsService = {
     };
 
     // ineligible lines (17(5)) of the purchase invoices: the tax stays in cost, not in ITC
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const inelig = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT COALESCE(SUM(l.cgst),0)::text AS c, COALESCE(SUM(l.sgst),0)::text AS s, COALESCE(SUM(l.igst),0)::text AS i
          FROM purchase_invoice_lines l JOIN purchase_invoices p ON p.id = l.invoice_id
@@ -558,6 +562,7 @@ export const returnsService = {
     const isInv = (d: Doc) => d.kind === 'INV' && !d.rcm;
     const normal = inn.filter(isInv);
     const sumH = (l: Doc[], k: 'cgst' | 'sgst' | 'igst') => l.reduce((s, d) => s.plus(d[k]), ZERO);
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const reclaim = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT kind, COALESCE(SUM(igst),0)::text AS i, COALESCE(SUM(cgst),0)::text AS c, COALESCE(SUM(sgst),0)::text AS s
          FROM itc_reversals WHERE unit_id=$1::uuid AND event_date BETWEEN $2::date AND $3::date GROUP BY kind`,
@@ -612,6 +617,7 @@ export const returnsService = {
     )[0];
     let atRisk = ZERO;
     if (twoB) {
+      // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
       const miss = await prisma.$queryRawUnsafe<Row[]>(
         `SELECT COALESCE(SUM(t.cgst+t.sgst+t.igst),0)::text AS v FROM tax_documents t
           WHERE t.unit_id=$1::uuid AND t.gstin=$2 AND t.direction='INWARD' AND t.doc_kind='INV' AND t.reverse_charge=false
@@ -638,6 +644,7 @@ export const returnsService = {
 
     // books vs return: the GST output accounts must agree with the return
     const gl = await prisma
+      // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
       .$queryRawUnsafe<Row[]>(
         `SELECT a.code, COALESCE(SUM(g.credit - g.debit),0)::text AS net FROM gl_entries g JOIN accounts a ON a.id=g.account_id
         WHERE g.unit_id=$1::uuid AND a.code IN ('2301','2302','2303') AND g.posting_date BETWEEN $2::date AND $3::date GROUP BY a.code`,
@@ -830,6 +837,7 @@ export const returnsService = {
   },
 
   async list(unitId: string | null) {
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const rows = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT id::text, gstin, return_type, to_char(period_month,'YYYY-MM') AS month, status, filed_on, arn
          FROM gst_returns WHERE ($1::uuid IS NULL OR unit_id=$1::uuid) ORDER BY period_month DESC, return_type`,
@@ -853,6 +861,7 @@ async function returnStatus(
   start: string,
 ): Promise<{ status: string; arn: string | null }> {
   const r = (
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     await prisma.$queryRawUnsafe<Row[]>(
       `SELECT status, arn FROM gst_returns WHERE gstin=$1 AND return_type=$2 AND period_month=$3::date`,
       gstin,
@@ -868,6 +877,7 @@ export async function creditBalance(
   unitId: string,
   asOf: string,
 ): Promise<{ igst: Dec; cgst: Dec; sgst: Dec }> {
+  // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
   const rows = await prisma.$queryRawUnsafe<Row[]>(
     `SELECT a.code, COALESCE(SUM(g.debit - g.credit),0)::text AS bal FROM gl_entries g JOIN accounts a ON a.id=g.account_id
       WHERE g.unit_id=$1::uuid AND a.code IN ('1401','1402','1403') AND g.posting_date <= $2::date GROUP BY a.code`,

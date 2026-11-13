@@ -73,6 +73,7 @@ export const fxService = {
 
   /** Unrealised gain / loss on open foreign bills at the closing rate of `asOf`. */
   async revaluationPreview(asOf: string, unitId: string | null) {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const items = await prisma.$queryRaw<
       {
         id: string;

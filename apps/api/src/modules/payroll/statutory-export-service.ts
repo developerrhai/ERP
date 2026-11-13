@@ -6,13 +6,14 @@ export class StatutoryExportService {
    * ECR 2.0 Electronic Challan cum Return format (#~# delimiter)
    */
   static async generateEcrText(db: Db, runId: string): Promise<string> {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const rows = await db.$queryRaw<any[]>`
       SELECT pre."gross", pre."ncp_days", pre."snapshot",
              e."emp_code", e."full_name",
              eiv."uan"
       FROM "payroll_run_employees" pre
-      JOIN "employees" e ON e."id" = pre."employee_id"
-      LEFT JOIN "employee_identity_vault" eiv ON eiv."employee_id" = e."id"
+      JOIN "payroll_employees_v" e ON e."id" = pre."employee_id"
+      LEFT JOIN "payroll_identity_v" eiv ON eiv."employee_id" = e."id"
       WHERE pre."run_id" = ${runId}::uuid
       ORDER BY e."emp_code" ASC
     `;
@@ -63,13 +64,14 @@ export class StatutoryExportService {
    * ESIC Monthly Return CSV format
    */
   static async generateEsicCsv(db: Db, runId: string): Promise<string> {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const rows = await db.$queryRaw<any[]>`
       SELECT pre."gross", pre."paid_days", pre."snapshot",
              e."emp_code", e."full_name",
              eiv."esic_number"
       FROM "payroll_run_employees" pre
-      JOIN "employees" e ON e."id" = pre."employee_id"
-      LEFT JOIN "employee_identity_vault" eiv ON eiv."employee_id" = e."id"
+      JOIN "payroll_employees_v" e ON e."id" = pre."employee_id"
+      LEFT JOIN "payroll_identity_v" eiv ON eiv."employee_id" = e."id"
       WHERE pre."run_id" = ${runId}::uuid
       ORDER BY e."emp_code" ASC
     `;
@@ -96,10 +98,11 @@ export class StatutoryExportService {
    * Maharashtra PT Monthly Statement
    */
   static async getPtStatement(db: Db, runId: string) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const rows = await db.$queryRaw<any[]>`
       SELECT pre."snapshot", e."gender", pre."gross"
       FROM "payroll_run_employees" pre
-      JOIN "employees" e ON e."id" = pre."employee_id"
+      JOIN "payroll_employees_v" e ON e."id" = pre."employee_id"
       WHERE pre."run_id" = ${runId}::uuid
     `;
 

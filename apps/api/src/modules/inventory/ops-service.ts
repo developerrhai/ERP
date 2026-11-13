@@ -154,11 +154,13 @@ const INVENTORY_KEYS = [
 export const cutoverService = {
   /** What the cut-over would post for a unit: stock value minus GL balance, per inventory key. */
   async plan(unitId: string, asOf = todayIso(), db: Db = prisma) {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const stock = await db.$queryRaw<{ k: string; v: string }[]>`
       SELECT CASE WHEN w.is_transit THEN 'STOCK_IN_TRANSIT' ELSE COALESCE(m.inventory_key, 'INVENTORY_RM') END AS k, COALESCE(sum(l.value),0)::text AS v
       FROM stock_ledger l JOIN warehouses w ON w.id = l.warehouse_id JOIN items i ON i.id = l.item_id
       LEFT JOIN item_type_accounts m ON m.item_type = i.item_type
       WHERE w.unit_id = ${unitId}::uuid AND l.posting_date <= ${asOf}::date GROUP BY k`;
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const defaults = await db.accountDefault.findMany({
       where: { key: { in: [...INVENTORY_KEYS] } },
     });
@@ -294,6 +296,7 @@ async function recipients(tx: Db, pageId: string): Promise<string[]> {
   const dept = control?.ownerDepartment;
   const ids = dept
     ? (
+        // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
         await tx.user.findMany({
           where: { status: 'ACTIVE', department: dept },
           select: { id: true },

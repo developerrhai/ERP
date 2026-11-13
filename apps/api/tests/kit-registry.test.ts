@@ -97,7 +97,7 @@ describe('T-KIT-01 — Kit Registry, Boot, Dispatch, and Audit', () => {
     const fakeHandler: TypedHandler = {
       pageId: 'kit-dispatch-test',
       list: async () => ({ rows: [], total: 0 }),
-      get: async () => ({} as any),
+      get: async () => ({}) as any,
     };
 
     registerKitModule('test-dispatch-mod', (kit) => {
@@ -136,18 +136,25 @@ describe('T-KIT-01 — Kit Registry, Boot, Dispatch, and Audit', () => {
     });
 
     const api = Router();
-    expect(() => bootKit(api)).toThrow('KIT: page dup-page registered twice (module-alpha, module-beta)');
+    expect(() => bootKit(api)).toThrow(
+      'KIT: page dup-page registered twice (module-alpha, module-beta)',
+    );
   });
 
   it('5. tabPanels key without builder throws or passes structure checks', () => {
     // If a non-existent page is registered without test flag, it throws
     process.env.KIT_ALLOW_TEST_PAGES = 'false';
     registerKitModule('bad-page-mod', (kit) => {
-      kit.page({ schema: { pageId: 'non-existent-page-xyz' } as any, handler: { pageId: 'non-existent-page-xyz' } as any });
+      kit.page({
+        schema: { pageId: 'non-existent-page-xyz' } as any,
+        handler: { pageId: 'non-existent-page-xyz' } as any,
+      });
     });
 
     const api = Router();
-    expect(() => bootKit(api)).toThrow('KIT: page non-existent-page-xyz does not exist in registry');
+    expect(() => bootKit(api)).toThrow(
+      'KIT: page non-existent-page-xyz does not exist in registry',
+    );
   });
 
   it('6. registerAuditVocabulary appends and dedupes', () => {
@@ -176,5 +183,4 @@ describe('T-KIT-01 — Kit Registry, Boot, Dispatch, and Audit', () => {
       expect(AUDIT_ACTIONS).toContain('CUSTOM_QMS_INSPECTION_DECIDED');
     }
   });
-
 });

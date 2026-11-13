@@ -25,15 +25,15 @@ export class TimesheetService {
     }
     if (params.weekStart) {
       args.push(params.weekStart);
-      conds.push(`t.week_start_date = $${args.length}::date`);
+      conds.push(`t.week_start = $${args.length}::date`);
     }
 
     const sql = `
-      SELECT t.*, e.emp_code, e.first_name || ' ' || e.last_name AS employee_name
+      SELECT t.*, t.week_start AS week_start_date, e.emp_code, e.first_name || ' ' || e.last_name AS employee_name
       FROM timesheets t
       JOIN employees e ON e.id = t.employee_id
       WHERE ${conds.join(' AND ')}
-      ORDER BY t.week_start_date DESC, t.created_at DESC
+      ORDER BY t.week_start DESC, t.created_at DESC
     `;
     const rows = await query(prisma, sql, ...args);
     return rows.map(norm);
@@ -42,7 +42,7 @@ export class TimesheetService {
   async getTimesheet(caller: Caller, id: string): Promise<Row> {
     const rows = await query(
       prisma,
-      `SELECT t.*, e.emp_code, e.first_name || ' ' || e.last_name AS employee_name
+      `SELECT t.*, t.week_start AS week_start_date, e.emp_code, e.first_name || ' ' || e.last_name AS employee_name
        FROM timesheets t
        JOIN employees e ON e.id = t.employee_id
        WHERE t.id = $1::uuid`,
@@ -125,7 +125,7 @@ export class TimesheetService {
 
     const timesheetId = await insertRow(prisma, 'timesheets', {
       employee_id: input.employeeId,
-      week_start_date: input.weekStartDate,
+      week_start: input.weekStartDate,
       total_hours: totalHours,
       total_billable_hours: totalBillable,
       status: 'DRAFT',
@@ -197,7 +197,7 @@ export class TimesheetService {
     // Post to GL through PostingService
     // Dr Project Labour Cost 5112 (with project_id) / Cr Labour Cost Absorbed 5113
     const unitId = (emp?.unit_id as string) || caller.ctx.unitId || '';
-    const docDate = String(ts.week_start_date);
+    const docDate = String(ts.week_start);
 
     const glLines: any[] = [];
     let grandTotalCost = 0;
@@ -271,11 +271,11 @@ export class TimesheetService {
   async getApprovalQueue(caller: Caller): Promise<Row[]> {
     const rows = await query(
       prisma,
-      `SELECT t.*, e.emp_code, e.first_name || ' ' || e.last_name AS employee_name
+      `SELECT t.*, t.week_start AS week_start_date, e.emp_code, e.first_name || ' ' || e.last_name AS employee_name
        FROM timesheets t
        JOIN employees e ON e.id = t.employee_id
        WHERE t.status = 'SUBMITTED'
-       ORDER BY t.week_start_date ASC`,
+       ORDER BY t.week_start ASC`,
     );
     return rows.map(norm);
   }

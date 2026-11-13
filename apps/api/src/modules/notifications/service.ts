@@ -192,6 +192,7 @@ async function loadTypeConfig(tx: Db, typeCode: string): Promise<{
   collapseKeyTpl: string | null;
   deepLinkTpl: string;
 } | null> {
+  // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
   const rows = await tx.$queryRaw<
     {
       code: string;
@@ -252,6 +253,7 @@ async function loadTypeConfig(tx: Db, typeCode: string): Promise<{
 }
 
 async function loadGlobalSettings(tx: Db): Promise<NotificationGlobalSettings> {
+  // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
   const rows = await tx.$queryRaw<
     {
       email_enabled: boolean;
@@ -320,30 +322,36 @@ export const notificationService = {
     const uidList = users.map((u) => u.id);
     const [legacyPrefs, v2Prefs, userSettingsRows, pushCounts, empMobiles, pushHourCounts, suppressedRows, settings] =
       await Promise.all([
+        // unpaginated: rows named by an id list
         tx.notificationPreference.findMany({
           where: { userId: { in: uidList }, type: input.type },
         }),
+        // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
         tx.$queryRaw<{ user_id: string; channel: NotifyChannel; enabled: boolean; mode: 'IMMEDIATE' | 'DIGEST' }[]>`
           SELECT user_id::text AS user_id, channel, enabled, mode
           FROM user_notification_prefs
           WHERE user_id = ANY(${uidList}::uuid[]) AND type_code = ${input.type}
         `,
+        // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
         tx.$queryRaw<{ user_id: string; quiet_start: string | null; quiet_end: string | null }[]>`
           SELECT user_id::text AS user_id, quiet_start, quiet_end
           FROM user_notification_settings
           WHERE user_id = ANY(${uidList}::uuid[])
         `,
+        // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
         tx.$queryRaw<{ user_id: string; cnt: number }[]>`
           SELECT user_id::text AS user_id, count(*)::int AS cnt
           FROM push_subscriptions
           WHERE user_id = ANY(${uidList}::uuid[]) AND revoked_at IS NULL
           GROUP BY user_id
         `,
+        // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
         tx.$queryRaw<{ user_id: string; mobile: string | null }[]>`
           SELECT user_id::text AS user_id, mobile
           FROM employees
           WHERE user_id = ANY(${uidList}::uuid[]) AND deleted_at IS NULL AND status = 'ACTIVE'
         `,
+        // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
         tx.$queryRaw<{ user_id: string; cnt: number }[]>`
           SELECT user_id::text AS user_id, count(*)::int AS cnt
           FROM notification_deliveries
@@ -353,6 +361,7 @@ export const notificationService = {
             AND created_at >= now() - interval '1 hour'
           GROUP BY user_id
         `,
+        // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
         tx.$queryRaw<{ email_norm: string }[]>`
           SELECT email_norm
           FROM email_suppressions
@@ -542,6 +551,7 @@ export const notificationService = {
 
   /** Active users whose role level is at least `minLevel` (Administrators = 95). */
   async usersAtLevel(tx: Db, minLevel: number): Promise<string[]> {
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const users = await tx.user.findMany({
       where: { status: 'ACTIVE', role: { level: { gte: minLevel } } },
       select: { id: true },
@@ -680,6 +690,7 @@ export const notificationService = {
   },
 
   async preferences(userId: string): Promise<PreferenceDto[]> {
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const rows = await prisma.notificationPreference.findMany({ where: { userId } });
     const byType = new Map(rows.map((r) => [r.type, r]));
     return NOTIFICATION_TYPES.map((t) => {
@@ -726,6 +737,7 @@ export const notificationService = {
   async getPrefsV2(userId: string) {
     const [types, userPrefs] = await Promise.all([
       this.listTypesAdmin(),
+      // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
       prisma.$queryRaw<{ type_code: string; channel: NotifyChannel; enabled: boolean; mode: 'IMMEDIATE' | 'DIGEST' }[]>`
         SELECT type_code, channel, enabled, mode
         FROM user_notification_prefs
@@ -806,6 +818,7 @@ export const notificationService = {
 
   async getUserSettingsV2(userId: string) {
     const [uRows, g] = await Promise.all([
+      // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
       prisma.$queryRaw<
         {
           quiet_start: string | null;
@@ -842,6 +855,7 @@ export const notificationService = {
       dismissSoftAsk?: boolean;
     },
   ) {
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const current = await prisma.$queryRaw<{ user_id: string }[]>`
       SELECT user_id FROM user_notification_settings WHERE user_id = ${userId}::uuid
     `;
@@ -881,6 +895,7 @@ export const notificationService = {
 
   /** Phase 21 §5.5: Admin notification catalogue & global channel/quiet settings. */
   async listTypesAdmin(): Promise<NotificationTypeRowDto[]> {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     const rows = await prisma.$queryRaw<
       {
         code: string;
@@ -976,6 +991,7 @@ export const notificationService = {
   },
 
   async getSettingsAdmin(): Promise<NotificationSettingsAdminDto> {
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const rows = await prisma.$queryRaw<
       {
         email_enabled: boolean;
@@ -1074,6 +1090,7 @@ export const notificationService = {
    * marked in the same transaction as the outbox row, so running the job twice sends one email.
    */
   async sendDigests(): Promise<{ users: number; items: number }> {
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const candidates = await prisma.$queryRaw<{ user_id: string; email: string | null }[]>`
       SELECT DISTINCT n.user_id, u.email FROM notifications n
       JOIN users u ON u.id = n.user_id AND u.status = 'ACTIVE'

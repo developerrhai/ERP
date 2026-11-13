@@ -35,6 +35,7 @@ export interface PoolQuery {
 
 export async function eligibleApprovers(tx: Db, q: PoolQuery): Promise<Approver[]> {
   if (!q.approverRoleId && !q.approverUserId) return [];
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const users = await tx.user.findMany({
     where: {
       status: 'ACTIVE',

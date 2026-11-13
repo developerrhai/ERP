@@ -245,6 +245,7 @@ export const customerMaterialService = {
   /** Customer-wise register: quantity per customer and item (no rupees: the material is not ours). */
   async balances(caller: Caller) {
     const unitId = caller.ctx.unitId;
+    // unpaginated: report/register over the requested date range; exported whole, filters bound it
     const rows = await prisma.$queryRaw<
       {
         customer_id: string;
@@ -346,6 +347,7 @@ export const customerMaterialService = {
     });
     if (!d) throw Errors.notFound('Document not found.');
     const [lines, cust, wh] = await Promise.all([
+      // unpaginated: rows of one parent (docId)
       prisma.customerMaterialLine.findMany({ where: { docId: id }, orderBy: { lineNo: 'asc' } }),
       prisma.customer.findUnique({
         where: { id: d.customerId },
@@ -387,6 +389,7 @@ export const customerMaterialService = {
       where: { id: lotId, ...(caller.ctx.unitId ? { unitId: caller.ctx.unitId } : {}) },
     });
     if (!lot) throw Errors.notFound('Lot not found.');
+    // unpaginated: report/register over the requested date range; exported whole, filters bound it
     const rows = await prisma.$queryRaw<
       {
         id: string;
@@ -722,6 +725,7 @@ export const customerMaterialService = {
         if (doc.status !== 'Posted') throw Errors.conflict('This document is already cancelled.');
         if (date < isoOf(doc.docDate)!)
           throw Errors.validation({ date: 'The cancel date cannot be before the document date.' });
+        // unpaginated: rows of one parent (docId)
         const lines = await tx.customerMaterialLine.findMany({
           where: { docId: id },
           orderBy: { lineNo: 'asc' },

@@ -11,6 +11,7 @@
   "types": "index.ts",
   "scripts": {
     "extract": "tsx extract.ts",
+    "extract:v2": "node extract-v2.mjs",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",

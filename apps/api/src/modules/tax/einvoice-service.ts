@@ -23,6 +23,7 @@ async function loadDoc(unitId: string, docType: DocType, docId: string) {
       )
     )[0];
     if (!r) throw Errors.notFound('Invoice not found for this unit.');
+    // unpaginated: rows of one parent (invoice_id)
     const lines = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT description, hsn_sac, qty::text, uom, rate::text, taxable::text, gst_pct::text, cgst::text, sgst::text, igst::text
          FROM sales_invoice_lines WHERE invoice_id=$1::uuid ORDER BY line_no`,
@@ -43,6 +44,7 @@ async function loadDoc(unitId: string, docType: DocType, docId: string) {
     )
   )[0];
   if (!r) throw Errors.notFound('Credit note not found for this unit.');
+  // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
   const lines = await prisma.$queryRawUnsafe<Row[]>(
     `SELECT il.description, il.hsn_sac, l.qty::text, il.uom, l.rate::text, l.taxable::text, l.gst_pct::text, l.cgst::text, l.sgst::text, l.igst::text
        FROM sales_return_lines l JOIN sales_invoice_lines il ON il.id=l.invoice_line_id WHERE l.return_id=$1::uuid ORDER BY l.line_no`,
@@ -222,6 +224,7 @@ export const einvoiceService = {
     const late = age > limit;
     return prisma.$transaction(async (tx) => {
       const dup = (
+        // unpaginated: rows of one parent (doc_id)
         await tx.$queryRawUnsafe<Row[]>(
           `SELECT 1 FROM einvoice_records WHERE doc_type=$1 AND doc_id=$2::uuid AND status='Generated'`,
           b.docType,
@@ -483,6 +486,7 @@ export const ewayService = {
         throw Errors.conflict('Only a posted invoice can get an e-way bill.');
       if (
         (
+          // unpaginated: rows of one parent (invoice_id)
           await tx.$queryRawUnsafe<Row[]>(
             `SELECT 1 FROM eway_bills WHERE invoice_id=$1::uuid AND status='Active'`,
             b.invoiceId,

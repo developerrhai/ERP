@@ -82,6 +82,7 @@ export async function processImportValidate(jobId: string): Promise<void> {
         .map((r) => r.input[keyField.key])
         .filter((v): v is string => typeof v === 'string')
         .map((v) => v.toLowerCase());
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       const existing = await prisma.$queryRaw<{ v: string }[]>`
         SELECT DISTINCT lower(data ->> ${keyField.key}) AS v FROM generic_records
         WHERE page_id = ${job.pageId} AND unit_id = ${job.unitId}::uuid AND fy_id = ${job.fyId}::uuid

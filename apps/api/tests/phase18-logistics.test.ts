@@ -270,7 +270,9 @@ describe('Phase 18 Logistics, Fleet, Gate & DMS Integration Tests', () => {
     });
 
     // Owner sees it in FTS search
-    const ownerSearch = await dmsService.searchDocuments(ownerCaller, { q: 'Executive Compensation' });
+    const ownerSearch = await dmsService.searchDocuments(ownerCaller, {
+      q: 'Executive Compensation',
+    });
     expect(ownerSearch.items.some((i) => i.id === secretDoc.id)).toBe(true);
 
     // Unauthorized user gets EMPTY search result (never leaks restricted title!)
@@ -288,7 +290,9 @@ describe('Phase 18 Logistics, Fleet, Gate & DMS Integration Tests', () => {
     // Checkout lock conflict
     await dmsService.checkoutDocument(ownerCaller, String(secretDoc.id));
     await expect(
-      dmsService.checkinDocument(restrictedUserCaller, String(secretDoc.id), { changeNote: 'Hijack' }),
+      dmsService.checkinDocument(restrictedUserCaller, String(secretDoc.id), {
+        changeNote: 'Hijack',
+      }),
     ).rejects.toThrow(/Document is checked out by/);
   });
 
@@ -304,7 +308,10 @@ describe('Phase 18 Logistics, Fleet, Gate & DMS Integration Tests', () => {
     expect(retRes.skippedLegalHold).toBeGreaterThanOrEqual(1);
 
     // Triplicate Challan PDF renders cleanly with audit record
-    const outPasses = await gateService.listPasses(ownerCaller, { direction: 'OUT', passType: 'RETURNABLE' });
+    const outPasses = await gateService.listPasses(ownerCaller, {
+      direction: 'OUT',
+      passType: 'RETURNABLE',
+    });
     expect(outPasses.length).toBeGreaterThan(0);
     const pdfBuf = await gateService.printChallanPdf(ownerCaller, String(outPasses[0]!.id));
     expect(pdfBuf.subarray(0, 5).toString('utf8')).toBe('%PDF-');

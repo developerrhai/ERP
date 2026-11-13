@@ -37,7 +37,7 @@ export class ExpenseService {
 
     const sql = `
       SELECT c.*, e.emp_code, e.first_name || ' ' || e.last_name AS employee_name
-      FROM expense_claims c
+      FROM hr_expense_claims c
       JOIN employees e ON e.id = c.employee_id
       WHERE ${conds.join(' AND ')}
       ORDER BY c.claim_date DESC, c.created_at DESC
@@ -83,7 +83,7 @@ export class ExpenseService {
         total += Number(ln.amount) + Number(ln.gstAmount ?? 0);
       }
 
-      const claimId = await insertRow(tx, 'expense_claims', {
+      const claimId = await insertRow(tx, 'hr_expense_claims', {
         claimNo,
         employeeId: input.employeeId,
         unitId: input.unitId,
@@ -130,7 +130,7 @@ export class ExpenseService {
         detail: { claimNo },
       }, tx);
 
-      const claimRow = (await query(tx, `SELECT * FROM expense_claims WHERE id = $1::uuid`, claimId))[0]!;
+      const claimRow = (await query(tx, `SELECT * FROM hr_expense_claims WHERE id = $1::uuid`, claimId))[0]!;
       return norm(claimRow);
     });
   }
@@ -138,14 +138,14 @@ export class ExpenseService {
   async submitClaim(caller: Caller, claimId: string): Promise<void> {
     await prisma.$transaction(async (tx) => {
       const claim = (
-        await query(tx, `SELECT status FROM expense_claims WHERE id = $1::uuid FOR UPDATE`, claimId)
+        await query(tx, `SELECT status FROM hr_expense_claims WHERE id = $1::uuid FOR UPDATE`, claimId)
       )[0];
       if (!claim) throw Errors.notFound('Claim not found.');
       if (claim.status !== 'DRAFT') throw Errors.conflict('Only draft claims can be submitted.');
 
       await exec(
         tx,
-        `UPDATE expense_claims SET status = 'PENDING_APPROVAL', updated_at = now() WHERE id = $1::uuid`,
+        `UPDATE hr_expense_claims SET status = 'PENDING_APPROVAL', updated_at = now() WHERE id = $1::uuid`,
         claimId,
       );
       await recordAudit({
@@ -161,7 +161,7 @@ export class ExpenseService {
   async approveClaim(caller: Caller, claimId: string): Promise<void> {
     await prisma.$transaction(async (tx) => {
       const claim = (
-        await query(tx, `SELECT * FROM expense_claims WHERE id = $1::uuid FOR UPDATE`, claimId)
+        await query(tx, `SELECT * FROM hr_expense_claims WHERE id = $1::uuid FOR UPDATE`, claimId)
       )[0];
       if (!claim) throw Errors.notFound('Claim not found.');
       if (claim.status !== 'PENDING_APPROVAL') {
@@ -217,7 +217,7 @@ export class ExpenseService {
 
       await exec(
         tx,
-        `UPDATE expense_claims SET status = 'APPROVED', journal_id = $1::uuid, updated_at = now() WHERE id = $2::uuid`,
+        `UPDATE hr_expense_claims SET status = 'APPROVED', journal_id = $1::uuid, updated_at = now() WHERE id = $2::uuid`,
         journal.id,
         claimId,
       );

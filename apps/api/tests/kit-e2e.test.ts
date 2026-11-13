@@ -48,9 +48,7 @@ describe('T-KIT-12 — Kit End-to-End Integration Suite', () => {
   });
 
   it('1. schema endpoint returns extended schema with commands, panels, templates, filters', async () => {
-    const res = await request(app)
-      .get(`${API}/pages/kit-test/schema`)
-      .set(owner.bearer);
+    const res = await request(app).get(`${API}/pages/kit-test/schema`).set(owner.bearer);
 
     expect(res.status).toBe(200);
     expect(res.body.data.pageId).toBe('kit-test');

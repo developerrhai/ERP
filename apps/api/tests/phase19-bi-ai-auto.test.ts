@@ -206,10 +206,12 @@ describe('Phase 19 BI, Dashboards, Search, AI, Automation, Webhooks & Comm Tests
       conditions: { field: 'amount', op: 'gt', value: 1000 },
       actions: [{ type: 'set_field', params: { field: 'priority', value: 1 } }],
     });
-    await expect(automationCommService.activateRule(ownerCaller, String(setFieldRule.id))).rejects.toThrow(
-      'Action set_field needs approval before activation.',
-    );
-    await automationCommService.activateRule(ownerCaller, String(setFieldRule.id), { approved: true });
+    await expect(
+      automationCommService.activateRule(ownerCaller, String(setFieldRule.id)),
+    ).rejects.toThrow('Action set_field needs approval before activation.');
+    await automationCommService.activateRule(ownerCaller, String(setFieldRule.id), {
+      approved: true,
+    });
 
     // Depth 4 loop blocked
     const loopRes = await automationCommService.executeEvent({
@@ -255,8 +257,21 @@ describe('Phase 19 BI, Dashboards, Search, AI, Automation, Webhooks & Comm Tests
     });
     const ts = Math.floor(Date.now() / 1000);
     const body = '{"ok":true}';
-    const sig = signStandardWebhook({ webhookId: 'w1', timestampSec: ts, body, secret: ep.plainSecret });
-    expect(verifyStandardWebhook({ webhookId: 'w1', timestampSec: ts, signatureHeader: sig, body, secret: ep.plainSecret }).ok).toBe(true);
+    const sig = signStandardWebhook({
+      webhookId: 'w1',
+      timestampSec: ts,
+      body,
+      secret: ep.plainSecret,
+    });
+    expect(
+      verifyStandardWebhook({
+        webhookId: 'w1',
+        timestampSec: ts,
+        signatureHeader: sig,
+        body,
+        secret: ep.plainSecret,
+      }).ok,
+    ).toBe(true);
 
     // 3. Payment Link + Razorpay signature capture webhook
     const plink = await automationCommService.createPaymentLink(ownerCaller, { amount: 25000 });
@@ -269,7 +284,11 @@ describe('Phase 19 BI, Dashboards, Search, AI, Automation, Webhooks & Comm Tests
       },
     });
     const rzpSig = createHmac('sha256', 'test-razorpay-secret').update(rzpBody).digest('hex');
-    const rzpRes = await automationCommService.handleInboundRazorpay(rzpBody, rzpSig, 'test-razorpay-secret');
+    const rzpRes = await automationCommService.handleInboundRazorpay(
+      rzpBody,
+      rzpSig,
+      'test-razorpay-secret',
+    );
     expect(rzpRes.accepted).toBe(true);
 
     // 4. WhatsApp blocked without opt-in consent & unapproved template
@@ -291,7 +310,11 @@ describe('Phase 19 BI, Dashboards, Search, AI, Automation, Webhooks & Comm Tests
     ).rejects.toThrow('Contact has not opted in to WhatsApp.');
 
     // Opt-in -> hits PAUSED template block
-    await automationCommService.upsertConsent({ channel: 'WHATSAPP', address: '+919822001100', optedIn: true });
+    await automationCommService.upsertConsent({
+      channel: 'WHATSAPP',
+      address: '+919822001100',
+      optedIn: true,
+    });
     await expect(
       automationCommService.sendMessage(ownerCaller, {
         channel: 'WHATSAPP',
@@ -303,4 +326,3 @@ describe('Phase 19 BI, Dashboards, Search, AI, Automation, Webhooks & Comm Tests
     ).rejects.toThrow('Template not approved by Meta (status PAUSED).');
   });
 });
-

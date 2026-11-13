@@ -10,6 +10,7 @@ import { DocumentsPanel } from './DocumentsPanel';
 import { lockAllows, openRecordPdf, submitRecord } from './phase4Api';
 import { toUiError } from '../../lib/errors';
 import { useState } from 'react';
+import { HistoryDrawer, MoveForwardDialog } from '../../components/MoveForward';
 import { listRecordAudit, type PageAction, type PageSchema, type RecordRow } from './engineApi';
 import { displayValue, isEmptyValue, valueOf } from './fieldModel';
 
@@ -45,6 +46,8 @@ export function RecordDrawer({
   onClose,
 }: Props) {
   const [actionError, setActionError] = useState('');
+  const [moving, setMoving] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const generic = schema.kind === 'generic';
   const canSubmit =
@@ -126,6 +129,16 @@ export function RecordDrawer({
         </p>
       ) : null}
       <div className="drawer-actions">
+        {generic && canEdit ? (
+          <button type="button" className="btn" onClick={() => setMoving(true)}>
+            Move Forward
+          </button>
+        ) : null}
+        {generic ? (
+          <button type="button" className="btn" onClick={() => setHistoryOpen(true)}>
+            History
+          </button>
+        ) : null}
         {generic && perms.export ? (
           <button
             type="button"
@@ -183,6 +196,21 @@ export function RecordDrawer({
           </button>
         ) : null}
       </div>
+      {moving ? (
+        <MoveForwardDialog
+          docType={schema.pageId}
+          docId={row.id}
+          docNo={row.code}
+          onClose={() => setMoving(false)}
+          onMoved={() => {
+            setMoving(false);
+            onApprovalChanged?.();
+          }}
+        />
+      ) : null}
+      {historyOpen ? (
+        <HistoryDrawer docType={schema.pageId} docId={row.id} title={row.code} onClose={() => setHistoryOpen(false)} />
+      ) : null}
     </Drawer>
   );
 }

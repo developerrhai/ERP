@@ -784,6 +784,7 @@ async function costOfGain(
   warehouseId: string,
   standard: Dec | null,
 ): Promise<Dec> {
+  // unpaginated: rows of one parent (item_id)
   const r = await tx.$queryRaw<{ avg_rate: string }[]>`
     SELECT avg_rate::text FROM stock_balances WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid`;
   const avg = D(r[0]?.avg_rate ?? '0');
@@ -1092,6 +1093,7 @@ async function systemQty(
   if (!bid && batchNo) {
     bid = (await tx.batch.findFirst({ where: { itemId, batchNo } }))?.id ?? null;
   }
+  // unpaginated: rows of one parent (item_id)
   const r = await tx.$queryRaw<{ q: string }[]>`
     SELECT COALESCE(sum(qty),0)::text AS q FROM stock_slices
     WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid AND stock_status = 'UNRESTRICTED'

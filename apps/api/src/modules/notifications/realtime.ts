@@ -15,8 +15,9 @@ export const HEARTBEAT_INTERVAL_MS = 25_000;
 export type RealtimePayload = {
   /** Recipient user IDs */
   u?: string[];
-  /** Kind: n=notification.new, r=notification.read, b=broadcast.banner, a=approval.changed, s=session.revoked */
-  k: 'n' | 'r' | 'b' | 'a' | 's';
+  /** Kind: n=notification.new, r=notification.read, b=broadcast.banner, a=approval.changed, s=session.revoked,
+   *  c=session.context_changed (plant access changed, Phase 23) */
+  k: 'n' | 'r' | 'b' | 'a' | 's' | 'c';
   /** Related entity IDs (notifications/broadcasts/approvals) */
   ids?: string[];
   docType?: string;
@@ -61,6 +62,7 @@ async function deliverToLocalStreams(payload: RealtimePayload): Promise<void> {
 
   if (payload.k === 'n') {
     const rows = payload.ids?.length
+      // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
       ? await prisma.$queryRaw<
           {
             id: string;
@@ -78,6 +80,7 @@ async function deliverToLocalStreams(payload: RealtimePayload): Promise<void> {
           FROM notifications
           WHERE id = ANY(${payload.ids}::uuid[]) AND archived_at IS NULL
         `
+      // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
       : await prisma.$queryRaw<
           {
             id: string;
@@ -97,6 +100,7 @@ async function deliverToLocalStreams(payload: RealtimePayload): Promise<void> {
           ORDER BY user_id, seq DESC
         `;
 
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const unreadCounts = await prisma.$queryRaw<{ user_id: string; cnt: number }[]>`
       SELECT user_id, count(*)::int AS cnt
       FROM notifications
@@ -156,6 +160,10 @@ async function deliverToLocalStreams(payload: RealtimePayload): Promise<void> {
     } else if (payload.k === 's') {
       for (const s of list) {
         writeSseEvent(s.res, 'session.revoked', {});
+      }
+    } else if (payload.k === 'c') {
+      for (const s of list) {
+        writeSseEvent(s.res, 'session.context_changed', {});
       }
     }
   }
@@ -228,6 +236,7 @@ export function activeSseStreamCount(userId?: string): number {
 
 export async function sseStreamHandler(req: Request, res: Response): Promise<void> {
   const { userId } = requireAuth(req);
+  // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
   const settingRow = await prisma.$queryRaw<{ sse_max_streams_per_user: number }[]>`
     SELECT sse_max_streams_per_user FROM notification_settings WHERE id = 1
   `.catch(() => []);

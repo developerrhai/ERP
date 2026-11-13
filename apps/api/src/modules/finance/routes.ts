@@ -206,6 +206,7 @@ export function createFinanceRouter(): Router {
     requirePageAction('fin-coa', 'view'),
     asyncHandler(async (_req, res) => {
       const rules = await prisma.postingRule.findMany({
+        take: 500, // unpaginated: small lookup, max 500
         orderBy: [{ lineKey: 'asc' }, { seq: 'asc' }],
       });
       res.json({ data: rules });

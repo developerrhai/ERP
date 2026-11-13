@@ -228,9 +228,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
       statuses: ['Active'],
       editableStatuses: [],
       tabs: ['Register'],
-      printTemplates: [
-        { key: 'huge', label: 'Huge PDF', kind: 'pdf', scope: 'record' },
-      ],
+      printTemplates: [{ key: 'huge', label: 'Huge PDF', kind: 'pdf', scope: 'record' }],
       fields: [],
     });
 
@@ -283,9 +281,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
       statuses: ['Active'],
       editableStatuses: [],
       tabs: ['Register'],
-      printTemplates: [
-        { key: 'known', label: 'Known', kind: 'web', scope: 'record' },
-      ],
+      printTemplates: [{ key: 'known', label: 'Known', kind: 'web', scope: 'record' }],
       fields: [],
     });
 
@@ -350,9 +346,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
       statuses: ['Active'],
       editableStatuses: [],
       tabs: ['Register'],
-      printTemplates: [
-        { key: 'pdf-perm', label: 'PDF Perm', kind: 'pdf', scope: 'record' },
-      ],
+      printTemplates: [{ key: 'pdf-perm', label: 'PDF Perm', kind: 'pdf', scope: 'record' }],
       fields: [],
     });
 
@@ -405,9 +399,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
       statuses: ['Active'],
       editableStatuses: [],
       tabs: ['Register'],
-      printTemplates: [
-        { key: 'failing', label: 'Failing', kind: 'web', scope: 'record' },
-      ],
+      printTemplates: [{ key: 'failing', label: 'Failing', kind: 'web', scope: 'record' }],
       fields: [],
     });
 
@@ -463,9 +455,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
       statuses: ['Active'],
       editableStatuses: [],
       tabs: ['Register'],
-      printTemplates: [
-        { key: 'summary', label: 'Summary Report', kind: 'web', scope: 'page' },
-      ],
+      printTemplates: [{ key: 'summary', label: 'Summary Report', kind: 'web', scope: 'page' }],
       fields: [],
     });
 
@@ -528,9 +518,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
       statuses: ['Active'],
       editableStatuses: [],
       tabs: ['Register'],
-      printTemplates: [
-        { key: 'missing-builder', label: 'Missing', kind: 'web', scope: 'record' },
-      ],
+      printTemplates: [{ key: 'missing-builder', label: 'Missing', kind: 'web', scope: 'record' }],
       fields: [],
     });
 

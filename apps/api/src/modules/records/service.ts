@@ -34,6 +34,7 @@ import {
 import type { LockOp } from '../../engine/lock-matrix';
 import { approvalService } from '../approvals/service';
 import { customerIdFor, documentSettings } from '../format-settings/resolve';
+import { workService } from '../work/service';
 import { naturalKeyField } from '../imports/rows';
 import { auditLogRepository } from '../audit-logs/repository';
 import { toAuditLogDto } from '../audit-logs/service';
@@ -54,6 +55,8 @@ export interface RecordDto {
   code: string;
   status: string;
   unitId: string;
+  /** Phase 23: plant code, shown as the Plant column when 2+ plants are selected. */
+  unitCode?: string;
   fyId: string;
   department: string;
   data: Record<string, unknown>;
@@ -74,6 +77,7 @@ function toDto(row: RecordRow): RecordDto {
     code: row.code,
     status: row.status,
     unitId: row.unitId,
+    unitCode: row.unitCode,
     fyId: row.fyId,
     department: row.department,
     data: publicData(row.data),
@@ -129,6 +133,7 @@ async function visibilityFor(
   return {
     pageId: schema.pageId,
     unitId: caller.ctx.unitId,
+    ...(caller.ctx.unitIds.length > 1 && !caller.ctx.allUnits ? { unitIds: caller.ctx.unitIds } : {}),
     noUnit: caller.ctx.unitId === null && !caller.ctx.allUnits,
     ...(options.fy ? { fyId: caller.ctx.fyId } : {}),
     scope,
@@ -138,6 +143,20 @@ async function visibilityFor(
     ownerIsMine: control !== null && access.departments.includes(control.ownerDepartment),
     deleted: options.deleted ?? 'no',
   };
+}
+
+/**
+ * Phase 23: the plant a new document belongs to. One plant chosen = that plant. 2+ chosen = the form's Plant
+ * field, which must be one of the chosen plants (else 403 UNIT_NOT_ALLOWED); without it, the write plant.
+ */
+async function plantForCreate(caller: Caller, requested: string | undefined): Promise<string> {
+  const fallback = requireConcreteUnit(caller);
+  if (!requested || requested === fallback) return fallback;
+  if (!caller.ctx.unitIds.includes(requested)) {
+    const unit = await prisma.unit.findUnique({ where: { id: requested }, select: { name: true } });
+    throw Errors.unitNotAllowed(unit?.name ?? 'that plant');
+  }
+  return requested;
 }
 
 function requireConcreteUnit(caller: Caller): string {
@@ -361,9 +380,10 @@ export const recordService = {
     pageId: string,
     input: Record<string, unknown>,
     idempotencyKey: string | undefined,
+    plantId?: string,
   ): Promise<{ record: RecordDto; replay: boolean }> {
     const schema = genericSchema(pageId);
-    const unitId = requireConcreteUnit(caller);
+    const unitId = await plantForCreate(caller, plantId);
     await assertFyOpen(caller.ctx.fyId);
     const validated = validateRecordInput(schema, input, 'create');
     const data = applyAadhaar({ ...validated.values }, validated.aadhaar);
@@ -490,6 +510,7 @@ export const recordService = {
     requireConcreteUnit(caller);
     const current = await load(caller, schema, id);
     assertAllowed('update', schema, current);
+    await workService.assertNotRoutedAway(caller, pageId, id); // Phase 25: only the department holding it edits
     if (expectedVersion !== current.version) throw Errors.versionConflict();
     const validated = validateRecordInput(schema, input, 'patch');
     assertMaskedUnchanged(schema, validated.values, current.data);

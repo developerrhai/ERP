@@ -11,7 +11,7 @@ const withCount = { _count: { select: { userUnits: true } } } as const;
 
 export const unitRepository = {
   list(where: Prisma.UnitWhereInput = {}, db: Db = prisma): Promise<UnitWithCount[]> {
-    return db.unit.findMany({ where, orderBy: UNIT_ORDER, include: withCount });
+    return db.unit.findMany({ take: 500, where, orderBy: UNIT_ORDER, include: withCount });
   },
 
   findById(id: string, db: Db = prisma): Promise<UnitWithCount | null> {
@@ -33,6 +33,7 @@ export const unitRepository = {
     if (values.name) or.push({ name: { equals: values.name, mode: 'insensitive' } });
     if (or.length === 0) return Promise.resolve([]);
     return db.unit.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where: { OR: or, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
       select: { id: true, code: true, name: true },
     });

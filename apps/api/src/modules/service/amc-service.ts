@@ -61,7 +61,7 @@ export class AmcService {
 
     const assets = await query(
       prisma,
-      `SELECT ca.*, sn.serial_number, i.name AS item_name
+      `SELECT ca.*, sn.serial_no AS serial_number, i.name AS item_name
        FROM amc_contract_assets ca
        JOIN serial_numbers sn ON sn.id = ca.serial_number_id
        LEFT JOIN items i ON i.id = sn.item_id
@@ -70,7 +70,7 @@ export class AmcService {
     );
     const visits = await query(
       prisma,
-      `SELECT vs.*, sn.serial_number
+      `SELECT vs.*, sn.serial_no AS serial_number
        FROM amc_visit_schedule vs
        LEFT JOIN serial_numbers sn ON sn.id = vs.serial_number_id
        WHERE vs.amc_contract_id = $1::uuid
@@ -119,7 +119,7 @@ export class AmcService {
       for (const sId of input.assetSerialIds) {
         const overlapRows = await query(
           prisma,
-          `SELECT a.contract_no, a.end_date, sn.serial_number
+          `SELECT a.contract_no, a.end_date, sn.serial_no AS serial_number
            FROM amc_contract_assets ca
            JOIN amc_contracts a ON a.id = ca.amc_contract_id
            JOIN serial_numbers sn ON sn.id = ca.serial_number_id

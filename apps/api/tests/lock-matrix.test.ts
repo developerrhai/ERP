@@ -78,6 +78,7 @@ describe('lock matrix (Phase 4 C6)', () => {
 
   it('lockTable exposes every status with every op', () => {
     const table = lockTable(false);
-    for (const row of Object.values(table)) expect(Object.keys(row).sort()).toEqual([...LOCK_OPS].sort());
+    for (const row of Object.values(table))
+      expect(Object.keys(row).sort()).toEqual([...LOCK_OPS].sort());
   });
 });

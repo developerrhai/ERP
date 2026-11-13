@@ -148,12 +148,14 @@ export const settingsRepository = {
 
   async series(key: SeriesKey, db: Db = prisma): Promise<VersionRow[]> {
     if (key.target === 'FORMAT') {
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       const rows = await db.formatDefinition.findMany({
         where: formatWhere(key),
         orderBy: { version: 'desc' },
       });
       return rows.map(fromFormat);
     }
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await db.ruleSet.findMany({
       where: { pageId: key.pageId, code: key.code },
       orderBy: { version: 'desc' },
@@ -169,6 +171,7 @@ export const settingsRepository = {
     db: Db = prisma,
   ): Promise<VersionRow[]> {
     if (target === 'FORMAT') {
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       const rows = await db.formatDefinition.findMany({
         where: {
           pageId,
@@ -179,6 +182,7 @@ export const settingsRepository = {
       });
       return rows.map(fromFormat);
     }
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await db.ruleSet.findMany({
       where: { pageId, status: { not: 'RETIRED' } },
       orderBy: [{ code: 'asc' }, { createdAt: 'asc' }],
@@ -497,6 +501,7 @@ export const settingsRepository = {
     unitId: string | null,
     db: Db = prisma,
   ) {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await db.formatDefinition.findMany({
       where: {
         pageId,
@@ -513,6 +518,7 @@ export const settingsRepository = {
 
   activeRuleSets: async (pageId: string, db: Db = prisma): Promise<VersionRow[]> =>
     (
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       await db.ruleSet.findMany({ where: { pageId, status: 'ACTIVE' }, orderBy: { code: 'asc' } })
     ).map(fromRule),
 

@@ -9,6 +9,7 @@ export type DepartmentWithCount = Department & { _count: { users: number } };
 export const departmentRepository = {
   list(db: Db = prisma): Promise<DepartmentWithCount[]> {
     return db.department.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       orderBy: [{ createdAt: 'asc' }, { name: 'asc' }],
       include: { _count: { select: { users: true } } },
     });
@@ -16,6 +17,7 @@ export const departmentRepository = {
 
   async activeNames(db: Db = prisma): Promise<string[]> {
     const rows = await db.department.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where: { status: 'ACTIVE' },
       orderBy: [{ createdAt: 'asc' }, { name: 'asc' }],
       select: { name: true },
@@ -44,6 +46,7 @@ export const departmentRepository = {
     if (values.name) or.push({ name: { equals: values.name, mode: 'insensitive' } });
     if (or.length === 0) return Promise.resolve([]);
     return db.department.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where: { OR: or, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
       select: { id: true, code: true, name: true },
     });

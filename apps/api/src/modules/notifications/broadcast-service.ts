@@ -40,9 +40,11 @@ async function resolveAudienceQuery(db: Db | typeof prisma, audience: BroadcastA
   byUnit: { unitId: string | null; unitCode: string; count: number }[];
 }> {
   if (audience.all) {
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const users = await db.$queryRaw<{ id: string }[]>`
       SELECT id::text AS id FROM users WHERE status = 'ACTIVE' ORDER BY id
     `;
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const byUnit = await db.$queryRaw<{ unit_id: string | null; unit_code: string; cnt: number }[]>`
       SELECT un.id::text AS unit_id, COALESCE(un.code, 'UNASSIGNED') AS unit_code, count(DISTINCT u.id)::int AS cnt
       FROM users u
@@ -68,6 +70,7 @@ async function resolveAudienceQuery(db: Db | typeof prisma, audience: BroadcastA
     return { userIds: [], count: 0, byUnit: [] };
   }
 
+  // unpaginated: rows of one parent (id)
   const userRows = await db.$queryRaw<{ id: string }[]>`
     SELECT DISTINCT u.id::text AS id
     FROM users u
@@ -98,6 +101,7 @@ async function resolveAudienceQuery(db: Db | typeof prisma, audience: BroadcastA
     return { userIds: [], count: 0, byUnit: [] };
   }
 
+  // unpaginated: rows of one parent (id)
   const byUnit = await db.$queryRaw<{ unit_id: string | null; unit_code: string; cnt: number }[]>`
     SELECT un.id::text AS unit_id, COALESCE(un.code, 'UNASSIGNED') AS unit_code, count(DISTINCT u.id)::int AS cnt
     FROM users u
@@ -173,7 +177,7 @@ export const broadcastService = {
 
   async listAdmin() {
     const rows = await prisma.$queryRaw<any[]>`
-      SELECT b.*, u.full_name AS created_by_name,
+      SELECT b.*, u.name AS created_by_name,
              (SELECT count(*)::int FROM broadcast_recipients br WHERE br.broadcast_id = b.id) AS delivered_count,
              (SELECT count(*)::int FROM broadcast_recipients br WHERE br.broadcast_id = b.id AND br.read_at IS NOT NULL) AS read_count,
              (SELECT count(*)::int FROM broadcast_recipients br WHERE br.broadcast_id = b.id AND br.acked_at IS NOT NULL) AS acked_count
@@ -186,8 +190,9 @@ export const broadcastService = {
   },
 
   async getById(id: string) {
+    // unpaginated: rows of one parent (id)
     const rows = await prisma.$queryRaw<any[]>`
-      SELECT b.*, u.full_name AS created_by_name
+      SELECT b.*, u.name AS created_by_name
       FROM broadcasts b
       JOIN users u ON u.id = b.created_by_id
       WHERE b.id = ${id}::uuid
@@ -293,6 +298,7 @@ export const broadcastService = {
     const resolved = await resolveAudienceQuery(prisma, audience);
     const channels = (row.channels ?? ['IN_APP']) as string[];
 
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const settingsRows = await prisma.$queryRaw<{ broadcast_approval_threshold_users: number }[]>`
       SELECT broadcast_approval_threshold_users FROM notification_settings WHERE id = 1
     `;
@@ -329,6 +335,7 @@ export const broadcastService = {
 
     if (needsApproval) {
       const approvalReqId = await prisma.$transaction(async (tx) => {
+        // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
         const approvers = await tx.$queryRaw<{ id: string }[]>`
           SELECT u.id::text AS id
           FROM users u
@@ -364,7 +371,7 @@ export const broadcastService = {
           data: {
             requestId: req.id,
             level: 1,
-            status: 'ACTIVE',
+            status: 'PENDING',
             activatedAt: new Date(),
             dueAt: new Date(Date.now() + 24 * 3600 * 1000),
           },
@@ -576,6 +583,7 @@ export const broadcastService = {
         SET archived_at = COALESCE(archived_at, now()), expires_at = now()
         WHERE broadcast_id = ${id}::uuid
       `;
+      // unpaginated: rows of one parent (broadcast_id)
       const recips = await tx.$queryRaw<{ user_id: string }[]>`
         SELECT user_id::text AS user_id FROM broadcast_recipients WHERE broadcast_id = ${id}::uuid
       `;
@@ -625,6 +633,7 @@ export const broadcastService = {
       FROM broadcast_recipients
       WHERE broadcast_id = ${id}::uuid
     `;
+    // unpaginated: rows of one parent (broadcast_id)
     const byUnit = await prisma.$queryRaw<
       { unit_code: string; delivered: number; read: number; acked: number }[]
     >`
@@ -647,6 +656,7 @@ export const broadcastService = {
   },
 
   async listActiveForUser(userId: string) {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     return prisma.$queryRaw<
       {
         id: string;

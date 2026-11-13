@@ -57,10 +57,15 @@ describe('env validation', () => {
   it('refuses RATE_LIMIT_DISABLED=true outside NODE_ENV=test', () => {
     // MFA_ENCRYPTION_KEY is required in production; supply it so only RATE_LIMIT_DISABLED errors.
     const MFA = { MFA_ENCRYPTION_KEY: 'a'.repeat(44) };
-    expect(() => loadEnv({ ...TEST_ENV, ...MFA, NODE_ENV: 'development' })).toThrow(/RATE_LIMIT_DISABLED/);
-    expect(() => loadEnv({ ...TEST_ENV, ...MFA, NODE_ENV: 'production' })).toThrow(/RATE_LIMIT_DISABLED/);
+    expect(() => loadEnv({ ...TEST_ENV, ...MFA, NODE_ENV: 'development' })).toThrow(
+      /RATE_LIMIT_DISABLED/,
+    );
+    expect(() => loadEnv({ ...TEST_ENV, ...MFA, NODE_ENV: 'production' })).toThrow(
+      /RATE_LIMIT_DISABLED/,
+    );
     expect(
-      loadEnv({ ...TEST_ENV, ...MFA, NODE_ENV: 'production', RATE_LIMIT_DISABLED: 'false' }).isProduction,
+      loadEnv({ ...TEST_ENV, ...MFA, NODE_ENV: 'production', RATE_LIMIT_DISABLED: 'false' })
+        .isProduction,
     ).toBe(true);
   });
 
@@ -86,8 +91,6 @@ describe('env validation', () => {
       /REFRESH_REUSE_GRACE_SECONDS/,
     );
   });
-
-
 
   it('parses TRUST_PROXY into an Express trust proxy value', () => {
     expect(loadEnv(TEST_ENV).trustProxy).toBe('loopback');

@@ -29,15 +29,49 @@ export function hasAllUnits(source: any): boolean {
   return false;
 }
 
+/** Phase 23: users.all_units_access ("all plants, including future plants"). Raw SQL: the column is new. */
+export async function userAllUnitsFlag(userId: string, db: Db = prisma): Promise<boolean> {
+  const rows = await db.$queryRaw<{ f: boolean }[]>`SELECT all_units_access AS f FROM users WHERE id = ${userId}::uuid`;
+  return rows[0]?.f === true;
+}
+
+export interface PlantPreference {
+  unitIds: string[];
+  remember: boolean;
+}
+
 export const contextRepository = {
+  /** Phase 23: the plants the user chose to view, and whether to skip the picker. */
+  async plantPreference(userId: string, db: Db = prisma): Promise<PlantPreference> {
+    const rows = await db.$queryRaw<{ unit_ids: string[]; remember_plants: boolean }[]>`
+      SELECT unit_ids::text[] AS unit_ids, remember_plants FROM user_preferences WHERE user_id = ${userId}::uuid`;
+    return { unitIds: rows[0]?.unit_ids ?? [], remember: rows[0]?.remember_plants === true };
+  },
+
+  async savePlantPreference(
+    userId: string,
+    value: { unitIds: string[]; remember: boolean },
+    db: Db = prisma,
+  ): Promise<void> {
+    await db.$executeRaw`
+      INSERT INTO user_preferences (user_id, unit_ids, remember_plants, updated_at)
+      VALUES (${userId}::uuid, ${value.unitIds}::uuid[], ${value.remember}, now())
+      ON CONFLICT (user_id) DO UPDATE SET unit_ids = EXCLUDED.unit_ids, remember_plants = EXCLUDED.remember_plants, updated_at = now()`;
+  },
+
+  allActiveUnits(db: Db = prisma): Promise<Unit[]> {
+    return db.unit.findMany({ where: { status: 'ACTIVE' }, orderBy: UNIT_ORDER });
+  },
+
   company(db: Db = prisma) {
     return db.company.findFirst({ orderBy: { createdAt: 'asc' } });
   },
 
   /** ACTIVE units the user may work in. */
-  accessibleUnits(user: { id: string; allUnits?: boolean; role?: any }, db: Db = prisma): Promise<Unit[]> {
+  async accessibleUnits(user: { id: string; allUnits?: boolean; role?: any }, db: Db = prisma): Promise<Unit[]> {
+    const everything = hasAllUnits(user) || (await userAllUnitsFlag(user.id, db));
     return db.unit.findMany({
-      where: hasAllUnits(user)
+      where: everything
         ? { status: 'ACTIVE' }
         : { status: 'ACTIVE', userUnits: { some: { userId: user.id } } },
       orderBy: UNIT_ORDER,

@@ -106,6 +106,7 @@ async function assertActiveExtraDepartments(
   }
   if (departments.length === 0) return;
 
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const found = await prisma.department.findMany({
     where: { name: { in: [...departments] }, status: 'ACTIVE' },
     select: { name: true },

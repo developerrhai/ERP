@@ -129,6 +129,7 @@ export async function expiry(
 ) {
   const asOf = q.asOf ?? todayIso();
   const wh = q.warehouseId ? Prisma.sql`AND s.warehouse_id = ${q.warehouseId}::uuid` : Prisma.empty;
+  // unpaginated: report/register over the requested date range; exported whole, filters bound it
   const rows = await prisma.$queryRaw<
     {
       batch_id: string;
@@ -257,6 +258,7 @@ export async function valuation(
 
 /** Stock value per inventory account key against the GL balance of that key (BR-INV-26). */
 export async function glCompare(caller: Caller, asOf = todayIso()) {
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const stock = await prisma.$queryRaw<
     { unit_id: string; unit_code: string; k: string; v: string }[]
   >`
@@ -267,6 +269,7 @@ export async function glCompare(caller: Caller, asOf = todayIso()) {
     JOIN items i ON i.id = l.item_id LEFT JOIN item_type_accounts m ON m.item_type = i.item_type
     WHERE l.posting_date <= ${asOf}::date AND ${unitScope(caller)}
     GROUP BY w.unit_id, u.code, k`;
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const defaults = await prisma.accountDefault.findMany({
     where: { key: { in: ['INVENTORY_RM', 'INVENTORY_WIP', 'INVENTORY_FG', 'STOCK_IN_TRANSIT'] } },
   });
@@ -340,12 +343,16 @@ export async function calcPolicy(
   const z = zFor(Number(p.serviceLevelPct));
   const ss = safetyStock(z, sigma, p.leadTimeDays, adu);
   const rop = reorderLevel(adu, p.leadTimeDays, ss);
+  // unpaginated: rows of one parent (item_id)
   const bal = await db.$queryRaw<{ on_hand: string; reserved_qty: string; avg_rate: string }[]>`
     SELECT on_hand::text, reserved_qty::text, avg_rate::text FROM stock_balances WHERE item_id = ${p.itemId}::uuid AND warehouse_id = ${p.warehouseId}::uuid`;
+  // unpaginated: rows of one parent (item_id)
   const unrestricted = await db.$queryRaw<{ q: string }[]>`
     SELECT COALESCE(sum(qty),0)::text AS q FROM stock_slices WHERE item_id = ${p.itemId}::uuid AND warehouse_id = ${p.warehouseId}::uuid AND stock_status = 'UNRESTRICTED'`;
+  // unpaginated: rows of one parent (item_id)
   const held = await db.$queryRaw<{ q: string }[]>`
     SELECT COALESCE(sum(qty),0)::text AS q FROM stock_holds WHERE item_id = ${p.itemId}::uuid AND warehouse_id = ${p.warehouseId}::uuid AND status = 'Active'`;
+  // unpaginated: rows of one parent (item_id)
   const transit = await db.$queryRaw<{ q: string }[]>`
     SELECT COALESCE(sum(l.dispatched_qty),0)::text AS q FROM stock_voucher_lines l JOIN stock_vouchers v ON v.id = l.voucher_id
     WHERE v.kind = 'TRANSFER' AND v.status = 'Dispatched' AND v.to_warehouse_id = ${p.warehouseId}::uuid AND l.item_id = ${p.itemId}::uuid`;
@@ -388,6 +395,7 @@ export const reorderService = {
           : { id: { in: [] } },
     } as never;
     // reorder_policies has no relation to warehouses in Prisma (scalar models): scope by warehouse ids of the unit.
+    // unpaginated: rows of one parent (warehouseId)
     const whs = await prisma.warehouse.findMany({
       where: {
         deletedAt: null,
@@ -526,6 +534,7 @@ export const reorderService = {
 
   /** Recalculate every active policy and keep ONE open suggestion for each that is triggered (the job and the button). */
   async recalculate(db: Db = prisma, caller?: Caller): Promise<{ checked: number; open: number }> {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const policies = await db.reorderPolicy.findMany({ where: { status: 'Active' } });
     let open = 0;
     for (const p of policies) {
@@ -554,6 +563,7 @@ export const reorderService = {
   },
 
   async suggestions(caller: Caller, q: { status?: string; page: number; size: number }) {
+    // unpaginated: rows of one parent (warehouseId)
     const whs = await prisma.warehouse.findMany({
       where: {
         deletedAt: null,
@@ -565,6 +575,7 @@ export const reorderService = {
       },
       select: { id: true, code: true },
     });
+    // unpaginated: rows of one parent (warehouseId)
     const policies = await prisma.reorderPolicy.findMany({
       where: { warehouseId: { in: whs.map((w) => w.id) } },
     });

@@ -43,6 +43,7 @@ interface LedgerLeg {
 
 async function ledgerLegs(tx: Db, ledgerIds: string[]): Promise<LedgerLeg[]> {
   if (ledgerIds.length === 0) return [];
+  // unpaginated: rows of one parent (id)
   return tx.$queryRaw<LedgerLeg[]>`
     SELECT l.unit_id::text, l.qty_in::text, l.value::text, i.item_type, w.is_transit
     FROM stock_ledger l
@@ -66,6 +67,7 @@ async function storesCostCenter(tx: Db, unitId: string): Promise<string> {
 }
 
 async function keyMap(tx: Db): Promise<Map<string, string>> {
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const rows = await tx.itemTypeAccount.findMany();
   return new Map(rows.map((r) => [r.itemType, r.inventoryKey]));
 }

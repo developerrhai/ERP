@@ -98,7 +98,11 @@ describe('T-KIT-04 — Kit Panels DTO, Registry, Routes, and Helpers', () => {
       get: async (caller, id) => {
         if (id !== testRecordTal.id) throw Errors.notFound('Record not found.');
         // Check unit scope: caller without access to TAL gets 404
-        if (caller.ctx.unitId && caller.ctx.unitId !== testRecordTal.unitId && !caller.ctx.allUnits) {
+        if (
+          caller.ctx.unitId &&
+          caller.ctx.unitId !== testRecordTal.unitId &&
+          !caller.ctx.allUnits
+        ) {
           throw Errors.notFound('Record outside unit scope.');
         }
         return testRecordTal;

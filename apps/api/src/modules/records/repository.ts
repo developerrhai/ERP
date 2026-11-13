@@ -39,6 +39,8 @@ export interface Visibility {
   pageId: string;
   /** null = no unit filter (All units, ADMIN+) unless `noUnit`. */
   unitId: string | null;
+  /** Phase 23: 2+ chosen plants - the list shows all of them together (each already checked against user access). */
+  unitIds?: string[];
   /** A non-admin with no active unit sees nothing. */
   noUnit: boolean;
   /** Only the lists filter by FY; reading one record by id does not. */
@@ -77,6 +79,7 @@ function visibilitySql(v: Visibility): Prisma.Sql[] {
   if (v.deleted === 'only') where.push(Prisma.sql`g.deleted_at IS NOT NULL`);
   else if (v.deleted === 'no') where.push(Prisma.sql`g.deleted_at IS NULL`);
   if (v.noUnit) where.push(Prisma.sql`false`);
+  else if (v.unitIds && v.unitIds.length > 1) where.push(Prisma.sql`g.unit_id = ANY(${v.unitIds}::uuid[])`);
   else if (v.unitId) where.push(Prisma.sql`g.unit_id = ${v.unitId}::uuid`);
   if (v.fyId) where.push(Prisma.sql`g.fy_id = ${v.fyId}::uuid`);
   if (v.scope === 'OWN') where.push(Prisma.sql`g.created_by_id = ${v.userId}::uuid`);
@@ -159,9 +162,11 @@ export const recordRepository = {
   ): Promise<{ byStatus: StatusCount[]; createdThisMonth: number; staleDrafts: number }> {
     const where = whereClause(visibilitySql(v));
     const [byStatus, extra] = await Promise.all([
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       prisma.$queryRaw<StatusCount[]>`
         SELECT g.status, count(*)::int AS count, COALESCE(sum(g.amount), 0)::float8 AS amount
         ${FROM} ${where} GROUP BY g.status ORDER BY g.status`,
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       prisma.$queryRaw<{ month: number; stale: number }[]>`
         SELECT count(*) FILTER (WHERE g.created_at >= date_trunc('month', now()))::int AS month,
                count(*) FILTER (WHERE g.status = 'Draft' AND g.created_at < now() - interval '30 days')::int AS stale
@@ -238,6 +243,7 @@ export const recordRepository = {
 
   async find(id: string, v: Visibility, db: Db = prisma): Promise<RecordRow | null> {
     const where = whereClause([...visibilitySql(v), Prisma.sql`g.id = ${id}::uuid`]);
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await db.$queryRaw<RecordRow[]>`SELECT ${COLUMNS} ${FROM} ${where}`;
     return rows[0] ?? null;
   },

@@ -281,6 +281,7 @@ export const accountsService = {
   },
 
   async defaults() {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await prisma.accountDefault.findMany({ orderBy: { key: 'asc' } });
     const accounts = await prisma.account.findMany({
       where: { id: { in: rows.map((r) => r.accountId) } },

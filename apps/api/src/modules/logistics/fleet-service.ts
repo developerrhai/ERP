@@ -151,7 +151,7 @@ export class FleetService {
   async listDrivers(caller: Caller): Promise<Row[]> {
     const rows = await query(
       prisma,
-      `SELECT d.*, e.code AS employee_code FROM drivers d LEFT JOIN employees e ON e.id = d.employee_id WHERE d.deleted_at IS NULL ORDER BY d.name ASC`,
+      `SELECT d.*, e.emp_code AS employee_code FROM drivers d LEFT JOIN employees e ON e.id = d.employee_id WHERE d.deleted_at IS NULL ORDER BY d.name ASC`,
     );
     return rows.map(norm);
   }

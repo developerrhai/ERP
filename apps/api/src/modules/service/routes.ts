@@ -6,6 +6,7 @@ import { authenticate, requirePasswordChanged } from '../../core/auth/authentica
 import { resolveContext } from '../../core/context/resolve-context';
 import { asyncHandler } from '../../core/http/async-handler';
 import { callerOf } from '../inventory/routes-shared';
+import { dataEnvelope } from '../../core/http/envelope';
 import { prisma } from '../../core/db/prisma';
 import { norm, query } from '../procurement/core';
 import { ticketService } from './ticket-service';
@@ -19,6 +20,7 @@ export const serviceRouter = Router();
 serviceRouter.use(authenticate);
 serviceRouter.use(requirePasswordChanged);
 serviceRouter.use(resolveContext);
+serviceRouter.use(dataEnvelope);
 
 // ---------------------------------------------------------------------------- Tickets
 serviceRouter.get(
@@ -145,7 +147,7 @@ serviceRouter.get(
     const rows = await query(
       prisma,
       `SELECT tech.*, e.emp_code, e.first_name || ' ' || e.last_name AS name,
-              e.mobile_phone,
+              e.mobile AS mobile_phone,
               COALESCE((
                 SELECT COUNT(*)::int
                 FROM service_tickets st

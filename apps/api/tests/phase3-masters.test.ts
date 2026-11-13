@@ -363,8 +363,6 @@ describe('Financial Years /financial-years', () => {
   const currentCodes = async () =>
     (await prisma.financialYear.findMany({ where: { isCurrent: true } })).map((f) => f.code);
 
-
-
   it('POST {} adds the year after the latest (Indian FY dates), OPEN, not current, audited', async () => {
     const res = await create(admin, {});
     expect(res.status).toBe(201);

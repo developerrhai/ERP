@@ -1,3 +1,4 @@
+import { Errors } from '../../core/http/errors';
 // apps/api/src/modules/logistics/routes.ts
 // Phase 18 Router: Logistics, Fleet, Gate & DMS mounted on /api/v1
 import { Router } from 'express';
@@ -404,6 +405,7 @@ export function createPhase18Router(): Router {
     '/gate/open-pos',
     asyncHandler(async (req: Request, res: Response) => {
       const supplierId = String(req.query.supplier || '');
+      if (!/^[0-9a-f-]{36}$/i.test(supplierId)) throw Errors.validation({ supplier: 'Choose a supplier.' });
       const data = await gateService.getOpenPosForSupplier(callerOf(req), supplierId);
       res.json({ data });
     }),

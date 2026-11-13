@@ -297,7 +297,7 @@ describe('goods receipt -> inspection lot -> readings -> usage decision', () => 
       ifm(f1.version),
     );
     expect(noAccept.status).toBe(422);
-    expect((noAccept.body).error.code).toBe('QMS_READINGS_OUT_OF_LIMIT');
+    expect(noAccept.body.error.code).toBe('QMS_READINGS_OUT_OF_LIMIT');
 
     // re-measure: all inside the limits
     const fixed = body(
@@ -335,7 +335,7 @@ describe('goods receipt -> inspection lot -> readings -> usage decision', () => 
       note: 'cracks',
     });
     expect(wrong.status).toBe(422);
-    expect((wrong.body).error.code).toBe('QC_QTY_MISMATCH');
+    expect(wrong.body.error.code).toBe('QC_QTY_MISMATCH');
     // a rejection needs a reason
     expect(
       (
@@ -444,7 +444,7 @@ describe('goods receipt -> inspection lot -> readings -> usage decision', () => 
       note: 'soft',
     });
     expect(rel.status).toBe(422);
-    expect((rel.body).error.code).toBe('QMS_REJECTED_SHEET');
+    expect(rel.body.error.code).toBe('QMS_REJECTED_SHEET');
     const ok = await v.call('post', `/qms/inspections/${lot.id}/decide`, {
       acceptedQty: 0,
       rejectedQty: 10,
@@ -565,7 +565,7 @@ describe('other inspection forms on the same engine', () => {
     // never calibrated -> refused
     const r = await v.call('post', `/qms/inspections/${sheet.id}/submit`, {}, ifm(sheet.version));
     expect(r.status).toBe(422);
-    expect((r.body).error.code).toBe('QMS_INSTRUMENT_EXPIRED');
+    expect(r.body.error.code).toBe('QMS_INSTRUMENT_EXPIRED');
     expect(
       (
         await v.call('post', `/qms/instruments/${inst.id}/calibrate`, {
@@ -594,7 +594,7 @@ describe('8D, alert, MOM and continuous improvement', () => {
     expect(f.number).toMatch(/^8D/);
     const no = await v.call('post', `/qms/forms/${f.id}/close`, {}, ifm(f.version));
     expect(no.status).toBe(422);
-    expect(Object.keys((no.body).error.fields).sort()).toEqual([
+    expect(Object.keys(no.body.error.fields).sort()).toEqual([
       'capaRef',
       'd4_root_cause',
       'd5_corrective',

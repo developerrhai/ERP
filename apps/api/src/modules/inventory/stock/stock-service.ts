@@ -168,6 +168,7 @@ export async function applySlice(
 }
 
 async function sliceTotal(tx: Db, itemId: string, warehouseId: string): Promise<Dec> {
+  // unpaginated: rows of one parent (item_id)
   const r = await tx.$queryRaw<{ q: string | null }[]>`
     SELECT COALESCE(sum(qty), 0)::text AS q FROM stock_slices
     WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid`;
@@ -184,6 +185,7 @@ async function issuableSlices(
 ): Promise<SliceRow[]> {
   const batchF = filter.batchId ?? null;
   const binF = filter.binId ?? null;
+  // unpaginated: rows of one parent (item_id)
   return tx.$queryRaw<SliceRow[]>`
     SELECT s.batch_id::text, s.bin_id::text, s.qty::text, b.expiry_date, b.created_at, b.batch_no,
            b.qc_status, b.recalled, w.code AS bin_code
@@ -199,6 +201,7 @@ async function issuableSlices(
 }
 
 async function activeHolds(tx: Db, itemId: string, warehouseId: string): Promise<Dec> {
+  // unpaginated: rows of one parent (item_id)
   const r = await tx.$queryRaw<{ q: string }[]>`
     SELECT COALESCE(sum(qty), 0)::text AS q FROM stock_holds
     WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid AND status = 'Active'`;
@@ -221,10 +224,12 @@ export async function availability(
   itemId: string,
   warehouseId: string,
 ): Promise<Availability> {
+  // unpaginated: rows of one parent (item_id)
   const rows = await tx.$queryRaw<{ stock_status: StockStatus; q: string }[]>`
     SELECT stock_status, COALESCE(sum(qty),0)::text AS q FROM stock_slices
     WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid GROUP BY stock_status`;
   const by = (s: StockStatus): Dec => D(rows.find((r) => r.stock_status === s)?.q ?? '0');
+  // unpaginated: rows of one parent (item_id)
   const bal = await tx.$queryRaw<{ on_hand: string; reserved_qty: string }[]>`
     SELECT on_hand::text, reserved_qty::text FROM stock_balances
     WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid`;
@@ -494,6 +499,7 @@ export async function runAllocator(tx: Db, itemId: string, warehouseId: string):
 
 /** BR-INV-19: lower reservations (lowest priority, newest first) until reserved <= the new on-hand. */
 async function shortenReservations(tx: Db, itemId: string, warehouseId: string, newOnHand: Dec) {
+  // unpaginated: rows of one parent (item_id)
   const bal = await tx.$queryRaw<{ reserved_qty: string }[]>`
     SELECT reserved_qty::text FROM stock_balances
     WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid`;
@@ -561,6 +567,7 @@ async function consumeReservation(tx: Db, reservationId: string, qty: Dec): Prom
 // The movement
 // ---------------------------------------------------------------------------------------------
 async function loadItem(tx: Db, itemId: string): Promise<ItemRow> {
+  // unpaginated: rows of one parent (id)
   const r = await tx.$queryRaw<ItemRow[]>`
     SELECT id::text, code, batch_tracked, serial_tracked, qc_required, shelf_life_days, status::text AS status
     FROM items WHERE id = ${itemId}::uuid AND deleted_at IS NULL`;
@@ -569,6 +576,7 @@ async function loadItem(tx: Db, itemId: string): Promise<ItemRow> {
 }
 
 async function loadWarehouse(tx: Db, id: string): Promise<WarehouseRow> {
+  // unpaginated: rows of one parent (id)
   const r = await tx.$queryRaw<WarehouseRow[]>`
     SELECT id::text, code, unit_id::text, status::text AS status, frozen_by_count_id::text, is_transit
     FROM warehouses WHERE id = ${id}::uuid AND deleted_at IS NULL`;
@@ -835,6 +843,7 @@ export const StockService = {
         // Taking an inflow back: the stock must still be there, in the slice it entered (and not reserved away).
         const bal = await lockBalance(tx, e.item_id, e.warehouse_id);
         await shortenReservations(tx, e.item_id, e.warehouse_id, bal.onHand.minus(qty));
+        // unpaginated: rows of one parent (item_id)
         const sl = await tx.$queryRaw<{ q: string }[]>`
           SELECT qty::text AS q FROM stock_slices
           WHERE item_id = ${e.item_id}::uuid AND warehouse_id = ${e.warehouse_id}::uuid AND batch_id = ${orNil(e.batch_id)}::uuid
@@ -897,6 +906,7 @@ export const StockService = {
     if (p.from === p.to) throw Errors.validation({ status: 'Choose a different status.' });
     const wh = await loadWarehouse(tx, p.warehouseId);
     await lockInOrder(tx, [p]);
+    // unpaginated: rows of one parent (item_id)
     const sl = await tx.$queryRaw<{ q: string }[]>`
       SELECT qty::text AS q FROM stock_slices
       WHERE item_id = ${p.itemId}::uuid AND warehouse_id = ${p.warehouseId}::uuid AND batch_id = ${orNil(p.batchId)}::uuid
@@ -962,6 +972,7 @@ export const StockService = {
       if (seen.has(k)) continue;
       seen.add(k);
       const [bal, slices, last] = await Promise.all([
+        // unpaginated: rows of one parent (item_id)
         tx.$queryRaw<{ on_hand: string; value: string }[]>`
           SELECT on_hand::text, value::text FROM stock_balances WHERE item_id = ${p.itemId}::uuid AND warehouse_id = ${p.warehouseId}::uuid`,
         sliceTotal(tx, p.itemId, p.warehouseId),

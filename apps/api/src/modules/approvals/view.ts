@@ -132,6 +132,7 @@ async function validDelegations(
   now: Date,
 ): Promise<{ fromUserId: string; departmentId: string | null }[]> {
   const today = new Date(`${istDate(now)}T00:00:00Z`);
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   return db.approvalDelegation.findMany({
     where: { toUserId: userId, status: 'ACTIVE', fromDate: { lte: today }, toDate: { gte: today } },
     select: { fromUserId: true, departmentId: true },

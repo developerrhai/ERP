@@ -51,6 +51,7 @@ export async function unitGst(unitId: string | null, db: Db = prisma): Promise<U
   if (!unitId)
     throw Errors.validation({ unit: 'Choose one unit in the top bar. Returns are per GSTIN.' });
   const u = (
+    // unpaginated: rows of one parent (id)
     await db.$queryRawUnsafe<Row[]>(
       `SELECT id::text, name, gstin, state_code, city, pincode, state FROM units WHERE id=$1::uuid`,
       unitId,

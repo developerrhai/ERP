@@ -55,6 +55,7 @@ const zeroBalance = (): Balance => ({ onHand: ZERO, value: ZERO, avgRate: ZERO }
 
 /** Current balance without locking (previews, lists). */
 export async function readBalance(db: Db, itemId: string, warehouseId: string): Promise<Balance> {
+  // unpaginated: rows of one parent (item_id)
   const rows = await db.$queryRaw<BalanceRow[]>`
     SELECT on_hand::text, value::text, avg_rate::text FROM stock_balances
     WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid`;
@@ -186,6 +187,7 @@ export interface LedgerRow {
 
 /** The live (not yet reversed) entries a voucher wrote, oldest first. */
 export function entriesOfVoucher(db: Db, voucherId: string): Promise<LedgerRow[]> {
+  // unpaginated: rows of one parent (voucher_id)
   return db.$queryRaw<LedgerRow[]>`
     SELECT l.id, l.unit_id, l.warehouse_id, l.item_id, l.qty_in::text, l.qty_out::text, l.rate::text,
            l.value::text, l.voucher_type, l.voucher_no, l.batch_id, l.bin_id, l.stock_status, l.line_id

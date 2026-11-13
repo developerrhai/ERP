@@ -5,7 +5,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { Field, PasswordField, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
 import { PasswordHints } from '../../components/PasswordHints';
-import { ApiError } from '../../lib/api';
+import { ApiError, api } from '../../lib/api';
 import { checkPassword } from '../../lib/password-policy';
 import type { RoleCode, RoleMeta, UnitRef, User } from '../../types';
 import {
@@ -80,6 +80,8 @@ export function UserFormModal({
   const initialUnits = user ? userUnitIds(user) : [];
   const [unitIds, setUnitIds] = useState<string[]>(initialUnits);
   const [defaultUnitId, setDefaultUnitId] = useState(user?.defaultUnitId ?? '');
+  // Phase 23: "All plants (including future plants)" - ticks every box and keeps future plants included.
+  const [allPlants, setAllPlants] = useState(false);
 
   const selectedRole = options.find((r) => r.id === roleId || r.code === roleId);
   const isSuperUser = selectedRole?.code === 'SUPER_USER';
@@ -100,12 +102,20 @@ export function UserFormModal({
     : unitIds.length === 1
       ? (unitIds[0] ?? '')
       : '';
-  const toggleUnit = (id: string, on: boolean): void =>
+  const toggleUnit = (id: string, on: boolean): void => {
+    if (!on) setAllPlants(false);
     setUnitIds((prev) =>
       on
         ? unitOptions.map((u) => u.id).filter((x) => x === id || prev.includes(x))
         : prev.filter((x) => x !== id),
     );
+  };
+  const toggleAllPlants = (on: boolean): void => {
+    setAllPlants(on);
+    if (on) setUnitIds(unitOptions.map((u) => u.id));
+  };
+  const chosenNames = unitOptions.filter((u) => unitIds.includes(u.id)).map((u) => u.name);
+  const defaultName = unitOptions.find((u) => u.id === effectiveDefault)?.name;
   const [errors, setErrors] = useState<
     Errors & { approvalLimit?: string; extraDepartments?: string }
   >({});
@@ -226,6 +236,12 @@ export function UserFormModal({
         saved = await updateUser(user.id, user.version, patch);
       } else {
         return;
+      }
+      if (unitScoped && allPlants) {
+        await api(`/users/${saved.id}/plants`, {
+          method: 'PUT',
+          body: { unitIds, allUnits: true, defaultUnitId: effectiveDefault || null },
+        });
       }
       onSaved(saved);
     } catch (err) {
@@ -404,6 +420,24 @@ export function UserFormModal({
                 ))}
                 {unitOptions.length === 0 ? <span className="v8-sub">No active units.</span> : null}
               </div>
+              <label className="unit-check">
+                <input
+                  type="checkbox"
+                  className="v8-checkbox"
+                  checked={allPlants}
+                  onChange={(e) => toggleAllPlants(e.target.checked)}
+                />
+                All plants (including future plants)
+              </label>
+              <span className="hint">
+                Access type: {unitIds.length > 1 || allPlants ? 'Multi-plant' : 'Single plant'}
+              </span>
+              {chosenNames.length > 0 ? (
+                <span className="hint" aria-live="polite">
+                  {name.trim() || 'This user'} can work in {chosenNames.join(' and ')}.
+                  {defaultName ? ` Default: ${defaultName}.` : ''}
+                </span>
+              ) : null}
               {errors.unitIds ? (
                 <span className="field-error" id="user-units-err">
                   {errors.unitIds}

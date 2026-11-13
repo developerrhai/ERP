@@ -105,6 +105,7 @@ const CAST: Record<string, string> = {
 async function castsOf(db: Db, table: string): Promise<Map<string, string>> {
   const hit = typeCache.get(table);
   if (hit) return hit;
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const rows = await db.$queryRawUnsafe<{ column_name: string; data_type: string }[]>(
     `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1`,
     table,
@@ -435,6 +436,7 @@ export async function pageRecipients(tx: Db, pageId: string): Promise<string[]> 
   const dept = control?.ownerDepartment;
   const ids = dept
     ? (
+        // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
         await tx.user.findMany({
           where: { status: 'ACTIVE', department: dept },
           select: { id: true },

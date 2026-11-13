@@ -10,7 +10,16 @@ import {
   runMaintenance,
   registerDataJobHandlers,
 } from '../src/modules/data-jobs/worker';
-import { API, auditRows, errorOf, makeUser, newApp, prisma, signInAs, signInOwner } from './helpers';
+import {
+  API,
+  auditRows,
+  errorOf,
+  makeUser,
+  newApp,
+  prisma,
+  signInAs,
+  signInOwner,
+} from './helpers';
 import type { Signed } from './helpers';
 import { api, dataOf, sampleData, schemaOf } from './phase4-helpers';
 import type { RecordBody } from './phase4-helpers';
@@ -66,7 +75,11 @@ beforeAll(async () => {
   owner = await signInOwner(app);
   // Phase 5: submit goes through the approval engine. The owner's records belong to Administration,
   // which has no seeded rules, so give it one level decided by a named Director.
-  const director = await makeUser({ role: 'DIRECTOR', department: 'Administration', approvalLimit: 1_000_000_000 });
+  const director = await makeUser({
+    role: 'DIRECTOR',
+    department: 'Administration',
+    approvalLimit: 1_000_000_000,
+  });
   const dept = await prisma.department.findUniqueOrThrow({ where: { name: 'Administration' } });
   const set = await prisma.approvalRuleSet.create({
     data: {

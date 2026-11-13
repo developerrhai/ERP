@@ -22,6 +22,7 @@ const read = (v: unknown): string | null =>
 
 export const limitsService = {
   async get(): Promise<ApprovalLimits> {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await prisma.setting.findMany({
       where: { key: { in: [LIMIT_KEYS.journal, LIMIT_KEYS.note] } },
     });

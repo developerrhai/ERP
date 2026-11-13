@@ -323,7 +323,12 @@ describe('Item Master', () => {
   });
 
   it('validates fields: name, type, UOM, HSN, alternate UOM with a factor > 0, costs', async () => {
-    const base = { itemName: 'Valid Name', itemType: 'Consumable', baseUom: 'Nos', hsnSac: '847130' };
+    const base = {
+      itemName: 'Valid Name',
+      itemType: 'Consumable',
+      baseUom: 'Nos',
+      hsnSac: '847130',
+    };
     const bad: [Record<string, unknown>, string][] = [
       [{ itemName: 'A' }, 'itemName'],
       [{ itemName: 'x'.repeat(151) }, 'itemName'],

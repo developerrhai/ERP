@@ -159,6 +159,7 @@ export const recordsController = {
       pageId,
       body.data,
       idempotencyKeyOf(req),
+      body.unitId,
     );
     if (replay) res.set('Idempotent-Replay', 'true');
     res.status(201).set('ETag', `"${record.version}"`).json({ data: record });

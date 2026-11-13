@@ -228,6 +228,7 @@ async function addDelegates(
 ): Promise<string[]> {
   if (pool.length === 0) return [];
   const today = new Date(`${istDate(now)}T00:00:00Z`);
+  // unpaginated: rows named by an id list
   const delegations = await tx.approvalDelegation.findMany({
     where: {
       fromUserId: { in: pool.map((p) => p.id) },
@@ -767,6 +768,7 @@ export const approvalService = {
 
   /** All requests of a document, newest cycle first. */
   async historyOf(docType: string, docId: string, callerId: string): Promise<RequestDto[]> {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await prisma.approvalRequest.findMany({
       where: { docType, docId },
       orderBy: [{ cycle: 'desc' }],

@@ -187,4 +187,3 @@ describe('Phase 17 Service Engine & Calculation Tests', () => {
     expect(customerMismatch.result).toBe('OUT_OF_WARRANTY');
   });
 });
-

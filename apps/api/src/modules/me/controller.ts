@@ -6,9 +6,60 @@ import { validated } from '../../core/http/validate';
 import { contextService } from './context-service';
 import { mePermissionsQuerySchema, putContextSchema, putLocaleSchema } from './schemas';
 import { meService } from './service';
+import { plantsService } from './plants-service';
+import { homeService } from './home-service';
+import { adminPlantsSchema, homePrefsSchema, putPlantsSchema, roleLandingSchema, searchQuerySchema } from './schemas';
 import { prisma } from '../../core/db/prisma';
 
 export const meController = {
+  getPlants: async (req: Request, res: Response): Promise<void> => {
+    res.set('Cache-Control', 'no-store');
+    res.json({ data: await plantsService.get(requireAuth(req).user) });
+  },
+  putPlants: async (req: Request, res: Response): Promise<void> => {
+    const body = validated(res, 'body', putPlantsSchema);
+    res.set('Cache-Control', 'no-store');
+    res.json({ data: await plantsService.put(requireAuth(req), body, requestMeta(req)) });
+  },
+  adminPlants: async (req: Request, res: Response): Promise<void> => {
+    const body = validated(res, 'body', adminPlantsSchema);
+    res.json({ data: await plantsService.adminSet(requireAuth(req), String(req.params.id), body, requestMeta(req)) });
+  },
+  menuV2: async (req: Request, res: Response): Promise<void> => {
+    res.set('Cache-Control', 'private, max-age=60');
+    res.json({ data: await homeService.menu(requireAuth(req)) });
+  },
+  search: async (req: Request, res: Response): Promise<void> => {
+    const { q } = validated(res, 'query', searchQuerySchema);
+    res.set('Cache-Control', 'no-store');
+    res.json({ data: await homeService.search(requireAuth(req), q) });
+  },
+  home: async (req: Request, res: Response): Promise<void> => {
+    res.set('Cache-Control', 'no-store');
+    const auth = requireAuth(req);
+    res.json({
+      data: { ...(await homeService.home(auth, req.ctx?.unitIds ?? [])), landingPage: await homeService.landingFor(auth) },
+    });
+  },
+  putHomePrefs: async (req: Request, res: Response): Promise<void> => {
+    const body = validated(res, 'body', homePrefsSchema);
+    res.json({ data: await homeService.putPrefs(requireAuth(req).userId, body) });
+  },
+  addFavourite: async (req: Request, res: Response): Promise<void> => {
+    res.status(201).json({ data: await homeService.addFavourite(requireAuth(req).userId, String(req.params.pageId)) });
+  },
+  removeFavourite: async (req: Request, res: Response): Promise<void> => {
+    res.json({ data: await homeService.removeFavourite(requireAuth(req).userId, String(req.params.pageId)) });
+  },
+  touchRecent: async (req: Request, res: Response): Promise<void> => {
+    await homeService.touchRecent(requireAuth(req).userId, String(req.params.pageId));
+    res.status(204).end();
+  },
+  setRoleLanding: async (req: Request, res: Response): Promise<void> => {
+    const body = validated(res, 'body', roleLandingSchema);
+    await homeService.setRoleLanding(body.roleId, body.landing, requireAuth(req).userId);
+    res.json({ data: { roleId: body.roleId, landing: body.landing } });
+  },
   menu: async (req: Request, res: Response): Promise<void> => {
     res.set('Cache-Control', 'no-store');
     res.json({ data: await meService.menu(requireAuth(req)) });

@@ -128,3 +128,17 @@ describe('payloads and display', () => {
     expect(confirmText({ label: 'Cancel' }, 'A/1')).toBeNull();
   });
 });
+
+describe('systemManaged (Phase 22 fix: a warehouse or item code is typed, a lead number is not)', () => {
+  it('treats the generic engine code, status and computed fields as server-filled', async () => {
+    const { systemManaged } = await import('./fieldModel');
+    expect(systemManaged({ type: 'code', readOnly: true, required: false })).toBe(true);
+    expect(systemManaged({ type: 'status', readOnly: true, required: false })).toBe(true);
+    expect(systemManaged({ type: 'qty', readOnly: true, required: false })).toBe(true);
+  });
+
+  it('lets the user type a required code on a typed page', async () => {
+    const { systemManaged } = await import('./fieldModel');
+    expect(systemManaged({ type: 'code', readOnly: false, required: true })).toBe(false);
+  });
+});

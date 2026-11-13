@@ -163,6 +163,8 @@ export interface RecordRow {
   code: string;
   status: string;
   unitId: string | null;
+  /** Phase 23: plant code. */
+  unitCode?: string | null;
   fyId: string | null;
   department: string | null;
   data: Record<string, unknown>;
@@ -235,8 +237,16 @@ export function getRecord(pageId: string, id: string): Promise<RecordRow> {
   return api<RecordRow>(`${base(pageId)}/records/${encodeURIComponent(id)}`);
 }
 
-export function createRecord(pageId: string, data: Record<string, unknown>): Promise<RecordRow> {
-  return api<RecordRow>(`${base(pageId)}/records`, { method: 'POST', body: { data } });
+export function createRecord(
+  pageId: string,
+  data: Record<string, unknown>,
+  /** Phase 23: the plant of the new document when 2+ plants are chosen. */
+  unitId?: string,
+): Promise<RecordRow> {
+  return api<RecordRow>(`${base(pageId)}/records`, {
+    method: 'POST',
+    body: unitId ? { data, unitId } : { data },
+  });
 }
 
 export function updateRecord(

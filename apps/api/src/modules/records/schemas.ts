@@ -126,7 +126,10 @@ export const exportRecordsQuerySchema = z
   .strict();
 export type ExportRecordsQuery = z.output<typeof exportRecordsQuerySchema>;
 
-export const recordBodySchema = z.object({ data: z.record(z.unknown()) }).strict();
+/** `unitId` (Phase 23): the plant a new document belongs to when 2+ plants are chosen. */
+export const recordBodySchema = z
+  .object({ data: z.record(z.unknown()), unitId: z.string().uuid().optional() })
+  .strict();
 export type RecordBody = z.output<typeof recordBodySchema>;
 
 export const statusBodySchema = z

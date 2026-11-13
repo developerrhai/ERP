@@ -26,6 +26,7 @@ export type ErrorCode =
   | 'INSUFFICIENT_STOCK'
   | 'READ_ONLY'
   | 'CONTEXT_FORBIDDEN'
+  | 'UNIT_NOT_ALLOWED'
   | 'CONTEXT_INVALID'
   | 'REFRESH_RACE'
   | 'PAYLOAD_TOO_LARGE'
@@ -230,6 +231,9 @@ export type ErrorCode =
   | 'RUN_LOCKED'
   | 'CIRCULAR_FORMULA'
   | 'UNKNOWN_FORMULA_ITEM'
+  | 'PAGE_LIMIT_TOO_LARGE'
+  | 'CURSOR_INVALID'
+  | 'ACTION_NOT_ALLOWED'
   | 'INTERNAL';
 
 export type FieldErrors = Record<string, string>;
@@ -250,6 +254,12 @@ export class AppError extends Error {
 export const INVALID_CREDENTIALS_MESSAGE = 'Email / User ID or password is incorrect.';
 
 export const Errors = {
+  pageLimitTooLarge: () =>
+    new AppError(400, 'PAGE_LIMIT_TOO_LARGE', 'Maximum 100 rows per page.'),
+  cursorInvalid: () =>
+    new AppError(400, 'CURSOR_INVALID', 'The list changed, showing the latest.'),
+  actionNotAllowed: (action: string, reason: string) =>
+    new AppError(409, 'ACTION_NOT_ALLOWED', `You can't ${action} this record: ${reason}.`),
   badRequest: (message = 'The request is malformed.') => new AppError(400, 'BAD_REQUEST', message),
   unauthenticated: (message = 'Authentication required.') =>
     new AppError(401, 'UNAUTHENTICATED', message),
@@ -303,6 +313,9 @@ export const Errors = {
   contextForbidden: (message = 'You cannot work in this unit.') =>
     new AppError(403, 'CONTEXT_FORBIDDEN', message),
   contextInvalid: (message: string) => new AppError(422, 'CONTEXT_INVALID', message),
+  /** Phase 23: a plant the caller may not use (X-Units, PUT /me/plants, a form's Plant field). */
+  unitNotAllowed: (plant: string) =>
+    new AppError(403, 'UNIT_NOT_ALLOWED', `You don't have access to ${plant}.`),
   payloadTooLarge: () => new AppError(413, 'PAYLOAD_TOO_LARGE', 'The request body is too large.'),
   validation: (fields: FieldErrors, message = 'Please fix the highlighted fields.') =>
     new AppError(422, 'VALIDATION_ERROR', message, fields),

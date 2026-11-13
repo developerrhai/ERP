@@ -133,8 +133,6 @@ describe('POST /users with units', () => {
 });
 
 describe('PATCH /users/:id units', () => {
-
-
   it('a non-admin cannot end up with no unit (also when demoted from ADMIN)', async () => {
     const member = await makeUser();
     const empty = await patch(admin, member.id, { unitIds: [] }, member.version);
@@ -186,8 +184,6 @@ describe('PATCH /users/:id units', () => {
 });
 
 describe('GET /users?unitId=', () => {
-
-
   it('list rows and /auth/me carry units and defaultUnitId', async () => {
     const user = await makeUser({ unitCodes: ['VAR'], defaultUnitCode: 'VAR' });
     const s = await signIn(app, user);

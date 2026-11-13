@@ -25,6 +25,7 @@ export class PayrollService {
   // Pay Components
   // -------------------------------------------------------------
   static async listComponents(db: Db) {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     return db.$queryRaw<any[]>`
       SELECT * FROM "pay_components" ORDER BY "payslip_order" ASC, "code" ASC
     `;
@@ -52,6 +53,7 @@ export class PayrollService {
     },
     caller: Caller,
   ) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const existing = await db.$queryRaw<any[]>`
       SELECT "id" FROM "pay_components" WHERE "code" = ${data.code}
     `;
@@ -87,9 +89,11 @@ export class PayrollService {
   // Pay Structures
   // -------------------------------------------------------------
   static async listStructures(db: Db) {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     const structures = await db.$queryRaw<any[]>`
       SELECT * FROM "pay_structures" ORDER BY "code" ASC
     `;
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     const lines = await db.$queryRaw<any[]>`
       SELECT l.*, c."code" as "component_code", c."name" as "component_name", c."kind", c."calc_type"
       FROM "pay_structure_lines" l
@@ -118,6 +122,7 @@ export class PayrollService {
     },
     caller: Caller,
   ) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const existing = await db.$queryRaw<any[]>`
       SELECT "id" FROM "pay_structures" WHERE "code" = ${data.code}
     `;
@@ -202,12 +207,14 @@ export class PayrollService {
   // Statutory Rates
   // -------------------------------------------------------------
   static async listStatutoryRates(db: Db) {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     return db.$queryRaw<any[]>`
       SELECT * FROM "statutory_rates" ORDER BY "rate_type" ASC, "effective_from" DESC
     `;
   }
 
   static async reviewStatutoryRate(db: Db, id: string, caller: Caller) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const rows = await db.$queryRaw<any[]>`
       SELECT "id" FROM "statutory_rates" WHERE "id" = ${id}::uuid
     `;
@@ -228,6 +235,7 @@ export class PayrollService {
   // Payroll Periods
   // -------------------------------------------------------------
   static async listPeriods(db: Db) {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     return db.$queryRaw<any[]>`
       SELECT * FROM "payroll_periods" ORDER BY "month" DESC
     `;
@@ -242,6 +250,7 @@ export class PayrollService {
       days_basis: number;
     },
   ) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const existing = await db.$queryRaw<any[]>`
       SELECT "id" FROM "payroll_periods" WHERE "month" = ${data.month}
     `;
@@ -266,6 +275,7 @@ export class PayrollService {
     if (filter?.period_id) whereClause += ` AND r."period_id" = '${filter.period_id}'::uuid`;
     if (filter?.unit_id) whereClause += ` AND r."unit_id" = '${filter.unit_id}'::uuid`;
 
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     return db.$queryRawUnsafe<any[]>(`
       SELECT r.*, p."month" as "period_month", u."name" as "unit_name"
       FROM "payroll_runs" r
@@ -277,6 +287,7 @@ export class PayrollService {
   }
 
   static async getRun(db: Db, id: string) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const runs = await db.$queryRaw<any[]>`
       SELECT r.*, p."month" as "period_month", p."start_date", p."end_date", p."days_basis", u."name" as "unit_name"
       FROM "payroll_runs" r
@@ -288,14 +299,16 @@ export class PayrollService {
       throw Errors.notFound('Payroll run not found');
     }
 
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const employees = await db.$queryRaw<any[]>`
       SELECT pre.*, e."emp_code", e."full_name", e."gender", e."date_of_joining"
       FROM "payroll_run_employees" pre
-      JOIN "employees" e ON e."id" = pre."employee_id"
+      JOIN "payroll_employees_v" e ON e."id" = pre."employee_id"
       WHERE pre."run_id" = ${id}::uuid
       ORDER BY e."emp_code" ASC
     `;
 
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const lines = await db.$queryRaw<any[]>`
       SELECT prl.*, c."code" as "component_code", c."name" as "component_name", c."kind"
       FROM "payroll_run_lines" prl
@@ -327,6 +340,7 @@ export class PayrollService {
     const runType = data.run_type ?? 'REGULAR';
 
     if (runType === 'REGULAR') {
+      // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
       const existing = await db.$queryRaw<any[]>`
         SELECT "id" FROM "payroll_runs"
         WHERE "period_id" = ${data.period_id}::uuid
@@ -359,6 +373,7 @@ export class PayrollService {
   // Calculate Payroll Run (13 Steps algorithm per §5)
   // -------------------------------------------------------------
   static async calculateRun(db: Db, runId: string, caller: Caller) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const runs = await db.$queryRaw<any[]>`
       SELECT r.*, p."month", p."start_date", p."end_date", p."days_basis"
       FROM "payroll_runs" r
@@ -379,10 +394,10 @@ export class PayrollService {
     let empQuery = `
       SELECT e."id", e."emp_code", e."full_name", e."gender", e."date_of_joining", e."has_disability",
              esa."id" as "assignment_id", esa."structure_id", esa."monthly_ctc",
-             ea."cost_center_id"
-      FROM "employees" e
+             (SELECT cc."id" FROM "cost_centers" cc WHERE cc."code" = ea."cost_centre" OR cc."name" = ea."cost_centre" LIMIT 1) AS "cost_center_id"
+      FROM "payroll_employees_v" e
       JOIN "employee_salary_assignments" esa ON esa."employee_id" = e."id" AND esa."status" = 'ACTIVE'
-      LEFT JOIN "employee_assignments" ea ON ea."employee_id" = e."id" AND ea."is_current" = true
+      LEFT JOIN "employee_assignments" ea ON ea."employee_id" = e."id" AND ea."effective_to" IS NULL
       WHERE e."status" = 'ACTIVE'
     `;
     if (run.unit_id) {
@@ -390,6 +405,7 @@ export class PayrollService {
     }
 
     const employees = await db.$queryRawUnsafe<any[]>(empQuery);
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const components = await db.$queryRaw<any[]>`
       SELECT * FROM "pay_components" WHERE "active" = true ORDER BY "payslip_order" ASC
     `;
@@ -409,6 +425,7 @@ export class PayrollService {
 
     for (const emp of employees) {
       // Step 1: Assignment Lines (Structure + Employee Overrides)
+      // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
       const assignmentLines = await db.$queryRaw<any[]>`
         SELECT sal.*, c."code", c."kind", c."calc_type", c."prorate", c."code_wage_class", c."formula"
         FROM "salary_assignment_lines" sal
@@ -417,6 +434,7 @@ export class PayrollService {
       `;
 
       // Step 2: Attendance (Paid days, LOP, NCP, OT)
+      // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
       const attSummaries = await db.$queryRaw<any[]>`
         SELECT * FROM "attendance_period_summary"
         WHERE "employee_id" = ${emp.id}::uuid AND "period_month" = ${run.month}
@@ -663,6 +681,7 @@ export class PayrollService {
   // Lock Payroll Run
   // -------------------------------------------------------------
   static async lockRun(db: Db, runId: string, caller: Caller) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const runs = await db.$queryRaw<any[]>`
       SELECT * FROM "payroll_runs" WHERE "id" = ${runId}::uuid
     `;
@@ -689,6 +708,7 @@ export class PayrollService {
   // Post Payroll Run to GL
   // -------------------------------------------------------------
   static async postRun(db: Db, runId: string, caller: Caller) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const runs = await db.$queryRaw<any[]>`
       SELECT r.*, p."start_date", p."end_date"
       FROM "payroll_runs" r
@@ -702,6 +722,7 @@ export class PayrollService {
       throw Errors.conflict(`Run must be LOCKED or APPROVED before posting. Current: ${run.status}`);
     }
 
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const runEmployees = await db.$queryRaw<any[]>`
       SELECT * FROM "payroll_run_employees" WHERE "run_id" = ${runId}::uuid
     `;

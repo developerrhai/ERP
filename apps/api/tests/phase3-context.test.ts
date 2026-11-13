@@ -79,7 +79,7 @@ describe('resolveContext: missing headers', () => {
     const s = await signInAs(app, role);
     const { res, ctx } = await ctxOf(s);
     expect(res.status).toBe(200);
-    expect(ctx).toEqual({ companyId, unitId: TAL, fyId: FY2627, allUnits: false });
+    expect(ctx).toEqual({ companyId, unitId: TAL, unitIds: [TAL], fyId: FY2627, allUnits: false });
   });
 
   it('MEMBER with only SAW and VAR: SAW (first accessible in Unit Master order)', async () => {
@@ -144,10 +144,7 @@ describe('resolveContext: missing headers', () => {
   it('a stored "All units" preference does not apply after a demotion', async () => {
     const user = await makeUser({ role: 'ADMIN', unitCodes: ['VAR'] });
     const s = await signIn(app, user);
-    await request(app)
-      .put(`${API}/me/context`)
-      .set(s.bearer)
-      .send({ unitId: null, fyId: FY2627 })
+    await request(app).put(`${API}/me/context`).set(s.bearer).send({ unitId: null, fyId: FY2627 });
     const empRole = await prisma.role.findUniqueOrThrow({ where: { code: 'EMPLOYEE' } });
     await prisma.user.update({ where: { id: user.id }, data: { roleId: empRole.id } });
     expect((await ctxOf(s)).ctx).toMatchObject({ unitId: VAR, allUnits: false });
@@ -166,7 +163,7 @@ describe('resolveContext: explicit headers', () => {
     const s = await signInAs(app, role);
     const { res, ctx } = await ctxOf(s, ctxHeaders(VAR, FY2526));
     expect(res.status).toBe(200);
-    expect(ctx).toEqual({ companyId, unitId: VAR, fyId: FY2526, allUnits: false });
+    expect(ctx).toEqual({ companyId, unitId: VAR, unitIds: [VAR], fyId: FY2526, allUnits: false });
   });
 
   it.each(NON_ADMINS)('%s: a unit without access -> 403 CONTEXT_FORBIDDEN', async (role) => {
@@ -314,8 +311,6 @@ const meContext = async (s: Signed) =>
   (await request(app).get(`${API}/me/context`).set(s.bearer)).body as { data: MeContext };
 
 describe('GET /me/context', () => {
-
-
   it('ADMIN: every active unit and "All units"', async () => {
     const s = await signInAs(app, 'ADMIN');
     const data = (await meContext(s)).data;

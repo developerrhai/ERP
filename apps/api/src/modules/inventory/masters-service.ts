@@ -126,7 +126,9 @@ export const batchService = {
     const b = await prisma.batch.findFirst({ where: { id, deletedAt: null } });
     if (!b) throw Errors.notFound('Batch not found.');
     const [events, slices, moves] = await Promise.all([
+      // unpaginated: rows of one parent (batchId)
       prisma.batchEvent.findMany({ where: { batchId: id }, orderBy: { createdAt: 'desc' } }),
+      // unpaginated: rows of one parent (batch_id)
       prisma.$queryRaw<{ warehouse_code: string; stock_status: string; qty: string }[]>`
         SELECT w.code AS warehouse_code, s.stock_status, s.qty::text FROM stock_slices s
         JOIN warehouses w ON w.id = s.warehouse_id WHERE s.batch_id = ${id}::uuid AND s.qty > 0 ORDER BY w.code`,
@@ -377,6 +379,7 @@ export const batchService = {
         { action, reason: why },
       );
       // The affected documents: every ledger outflow of the batch.
+      // unpaginated: rows of one parent (batch_id)
       const affected = await tx.$queryRaw<
         { voucher_no: string; voucher_type: string; posting_date: Date; qty_out: string }[]
       >`
@@ -396,6 +399,7 @@ export const batchService = {
 };
 
 async function rerunAllocator(tx: Db, batchId: string) {
+  // unpaginated: rows of one parent (batch_id)
   const pairs = await tx.$queryRaw<{ item_id: string; warehouse_id: string }[]>`
     SELECT DISTINCT item_id::text, warehouse_id::text FROM stock_slices WHERE batch_id = ${batchId}::uuid AND qty > 0`;
   for (const p of pairs) await StockService.runAllocator(tx, p.item_id, p.warehouse_id);
@@ -458,6 +462,7 @@ export const serialService = {
   async history(id: string) {
     const s = await prisma.serialNumber.findUnique({ where: { id } });
     if (!s) throw Errors.notFound('Serial number not found.');
+    // unpaginated: rows of one parent (serialId)
     const ev = await prisma.serialEvent.findMany({
       where: { serialId: id },
       orderBy: { createdAt: 'asc' },
@@ -511,6 +516,7 @@ export const binService = {
       }),
       prisma.wmsBin.count({ where }),
     ]);
+    // unpaginated: rows of one parent (bin_id)
     const stock = await prisma.$queryRaw<{ bin_id: string; q: string }[]>`
       SELECT bin_id::text, sum(qty)::text AS q FROM stock_slices WHERE bin_id = ANY(${rows.map((r) => r.id)}::uuid[]) GROUP BY bin_id`;
     const by = new Map(stock.map((s) => [s.bin_id, Number(s.q)]));

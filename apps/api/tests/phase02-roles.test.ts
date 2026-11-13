@@ -1,7 +1,16 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
 import { prisma } from '../src/core/db/prisma';
-import { newApp, signIn, signInAs, signInOwner, makeUser, API, uniqueLoginId, unitIds } from './helpers';
+import {
+  newApp,
+  signIn,
+  signInAs,
+  signInOwner,
+  makeUser,
+  API,
+  uniqueLoginId,
+  unitIds,
+} from './helpers';
 import type { Signed } from './helpers';
 import {
   decide,
@@ -25,7 +34,13 @@ import {
   CFO_ALLOWED_FAMILIES,
 } from '../src/core/rbac/permission-model';
 import type { Action, ActionFlags, Scope } from '../src/core/rbac/permission-model';
-import { ADMIN_LEVEL, SUPER_USER_LEVEL, canManageLevel, isReservedLevel, isSystemRole } from '../src/core/rbac/role-rules';
+import {
+  ADMIN_LEVEL,
+  SUPER_USER_LEVEL,
+  canManageLevel,
+  isReservedLevel,
+  isSystemRole,
+} from '../src/core/rbac/role-rules';
 import { ADMIN_FAMILY, registry } from '../src/core/registry';
 import { meService } from '../src/modules/me/service';
 import { recordRepository } from '../src/modules/records/repository';
@@ -86,11 +101,14 @@ describe('Phase 02 §10 — 1. Pure decide() & explain()', () => {
     };
 
     // Family row explicitly denies view: false, but page row explicitly allows view: true
-    const data = createMockAccessData({
-      '*': { ...allActions(), scope: 'DEPARTMENT' },
-      'family:Sales': { ...nullRow(), view: false },
-      'page:sales-orders': { ...nullRow(), view: true },
-    }, ['Sales']);
+    const data = createMockAccessData(
+      {
+        '*': { ...allActions(), scope: 'DEPARTMENT' },
+        'family:Sales': { ...nullRow(), view: false },
+        'page:sales-orders': { ...nullRow(), view: true },
+      },
+      ['Sales'],
+    );
 
     expect(decide(user, 'sales-orders', 'view', data)).toBe(false);
 
@@ -110,11 +128,14 @@ describe('Phase 02 §10 — 1. Pure decide() & explain()', () => {
     };
 
     // Page inherits edit from family, family inherits delete from *
-    const data = createMockAccessData({
-      '*': { ...noActions(), view: true, delete: true, scope: 'OWN' },
-      'family:Sales': { ...nullRow(), edit: true },
-      'page:sales-orders': { ...nullRow(), add: true },
-    }, ['Sales']);
+    const data = createMockAccessData(
+      {
+        '*': { ...noActions(), view: true, delete: true, scope: 'OWN' },
+        'family:Sales': { ...nullRow(), edit: true },
+        'page:sales-orders': { ...nullRow(), add: true },
+      },
+      ['Sales'],
+    );
 
     expect(decide(user, 'sales-orders', 'view', data)).toBe(true);
     expect(decide(user, 'sales-orders', 'edit', data)).toBe(true);
@@ -134,21 +155,30 @@ describe('Phase 02 §10 — 1. Pure decide() & explain()', () => {
     };
 
     // 1. With DEPARTMENT scope -> gated
-    const deptData = createMockAccessData({
-      '*': { ...allActions(), scope: 'DEPARTMENT' },
-    }, ['Purchase']); // Sales is not in user's department families
+    const deptData = createMockAccessData(
+      {
+        '*': { ...allActions(), scope: 'DEPARTMENT' },
+      },
+      ['Purchase'],
+    ); // Sales is not in user's department families
     expect(decide(user, 'sales-orders', 'view', deptData)).toBe(false);
 
     // 2. With UNIT scope -> department gate skipped!
-    const unitData = createMockAccessData({
-      '*': { ...allActions(), scope: 'UNIT' },
-    }, ['Purchase']);
+    const unitData = createMockAccessData(
+      {
+        '*': { ...allActions(), scope: 'UNIT' },
+      },
+      ['Purchase'],
+    );
     expect(decide(user, 'sales-orders', 'view', unitData)).toBe(true);
 
     // 3. With ALL scope -> department gate skipped!
-    const allData = createMockAccessData({
-      '*': { ...allActions(), scope: 'ALL' },
-    }, ['Purchase']);
+    const allData = createMockAccessData(
+      {
+        '*': { ...allActions(), scope: 'ALL' },
+      },
+      ['Purchase'],
+    );
     expect(decide(user, 'sales-orders', 'view', allData)).toBe(true);
   });
 
@@ -163,9 +193,12 @@ describe('Phase 02 §10 — 1. Pure decide() & explain()', () => {
     };
 
     // departmentFamilies contains both Sales and Finance
-    const data = createMockAccessData({
-      '*': { ...allActions(), scope: 'DEPARTMENT' },
-    }, ['Sales', 'Finance & Accounts']);
+    const data = createMockAccessData(
+      {
+        '*': { ...allActions(), scope: 'DEPARTMENT' },
+      },
+      ['Sales', 'Finance & Accounts'],
+    );
 
     // Can access both Sales and Finance pages
     expect(decide(user, 'sales-orders', 'view', data)).toBe(true);
@@ -194,15 +227,22 @@ describe('Phase 02 §10 — 1. Pure decide() & explain()', () => {
     };
 
     // Even if permission table grants true
-    const data = createMockAccessData({
-      '*': { ...allActions(), scope: 'ALL' },
-    }, ['Administration']);
+    const data = createMockAccessData(
+      {
+        '*': { ...allActions(), scope: 'ALL' },
+      },
+      ['Administration'],
+    );
 
     expect(decide(user90, 'admin-users', 'view', data)).toBe(false);
     expect(decide(adminUser, 'admin-users', 'view', data)).toBe(true);
 
     const exp = explain(user90, 'admin-users', data);
-    expect(exp.reasons.some((r) => r.includes('Administration pages are only for Administrator and Super User'))).toBe(true);
+    expect(
+      exp.reasons.some((r) =>
+        r.includes('Administration pages are only for Administrator and Super User'),
+      ),
+    ).toBe(true);
   });
 
   it('allow_* switches veto everyone, including Super User', () => {
@@ -245,10 +285,13 @@ describe('Phase 02 §10 — 1. Pure decide() & explain()', () => {
       departments: ['Sales'],
     };
 
-    const data = createMockAccessData({
-      '*': { ...(DEFAULT_ROLE_ROWS.EMPLOYEE as ActionFlags & { scope: Scope }) },
-      'family:Administration': { ...noActions(), scope: 'OWN' },
-    }, ['Sales']);
+    const data = createMockAccessData(
+      {
+        '*': { ...(DEFAULT_ROLE_ROWS.EMPLOYEE as ActionFlags & { scope: Scope }) },
+        'family:Administration': { ...noActions(), scope: 'OWN' },
+      },
+      ['Sales'],
+    );
 
     const salesExp = explain(employee, 'sales-orders', data);
     expect(salesExp.actions.view).toBe(true);
@@ -329,7 +372,9 @@ describe('Phase 02 §10 — 2. Hierarchy and API Guards (§5.5, §6)', () => {
       .set('If-Match', String(user.version))
       .send({ role: 'DIRECTOR' });
     expect(resRole.status).toBe(403);
-    expect(resRole.body.error.message).toContain('You cannot change your own role, departments, approval limit or status.');
+    expect(resRole.body.error.message).toContain(
+      'You cannot change your own role, departments, approval limit or status.',
+    );
 
     // Audit row ACCESS_DENIED_SELF_ESCALATION
     const audits = await prisma.auditLog.findMany({
@@ -356,7 +401,6 @@ describe('Phase 02 §10 — 2. Hierarchy and API Guards (§5.5, §6)', () => {
     expect(res.status).toBe(409);
     expect(res.body.error.message).toContain('At least one active Super User is required.');
   });
-
 });
 
 describe('Phase 02 §10 — 3. Role Master CRUD & System Guards', () => {
@@ -429,7 +473,9 @@ describe('Phase 02 §10 — 3. Role Master CRUD & System Guards', () => {
       .set(admin.bearer)
       .set('If-Match', String(cfo.version));
     expect(del.status).toBe(409);
-    expect(del.body.error.message).toContain('System roles cannot be deleted. Their code and level are fixed.');
+    expect(del.body.error.message).toContain(
+      'System roles cannot be deleted. Their code and level are fixed.',
+    );
 
     // Try editing level
     const edit = await request(app)
@@ -438,7 +484,9 @@ describe('Phase 02 §10 — 3. Role Master CRUD & System Guards', () => {
       .set('If-Match', String(cfo.version))
       .send({ level: 82 });
     expect(edit.status).toBe(409);
-    expect(edit.body.error.message).toContain('System roles cannot be deleted. Their code and level are fixed.');
+    expect(edit.body.error.message).toContain(
+      'System roles cannot be deleted. Their code and level are fixed.',
+    );
   });
 
   it('role in use cannot be deleted (409 IN_USE)', async () => {
@@ -456,7 +504,9 @@ describe('Phase 02 §10 — 3. Role Master CRUD & System Guards', () => {
       .set(admin.bearer)
       .set('If-Match', '1');
     expect(del.status).toBe(409);
-    expect(del.body.error.message).toContain('assigned to 1 users. Move them to another role first.');
+    expect(del.body.error.message).toContain(
+      'assigned to 1 users. Move them to another role first.',
+    );
   });
 });
 
@@ -468,7 +518,11 @@ describe('Phase 02 §10 — 4. Effective Access & Check Access Viewer', () => {
   });
 
   it('GET /users/:id/effective-access returns 12 actions, scope, reasons', async () => {
-    const user = await makeUser({ role: 'SUPERVISOR', department: 'Sales', extraDepartments: ['Quality'] });
+    const user = await makeUser({
+      role: 'SUPERVISOR',
+      department: 'Sales',
+      extraDepartments: ['Quality'],
+    });
 
     const res = await request(app)
       .get(`${API}/users/${user.id}/effective-access`)

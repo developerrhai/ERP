@@ -1223,6 +1223,7 @@ export function createProcurementRouter(): Router {
     h(async (req, res) => {
       const sid = S(req.params.id);
       const s = (
+        // unpaginated: rows of one parent (id)
         await prisma.$queryRawUnsafe<Row[]>(
           `SELECT purchase_hold, hold_reason, approval_status, status, msme_category FROM suppliers WHERE id=$1::uuid AND deleted_at IS NULL`,
           sid,
@@ -1256,6 +1257,7 @@ export function createProcurementRouter(): Router {
     h(async (req, res) =>
       res.json({
         data: (
+          // unpaginated: rows of one parent record (record / party / supplier / HSN)
           await prisma.$queryRawUnsafe<Row[]>(
             `SELECT id::text, doc_kind, doc_no, valid_from, valid_to, (valid_to < CURRENT_DATE) AS expired FROM supplier_documents WHERE supplier_id=$1::uuid ORDER BY doc_kind`,
             S(req.params.id),

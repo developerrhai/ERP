@@ -21,6 +21,7 @@ export const uomRepository = {
         : {}),
     };
     return db.uom.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where,
       orderBy: [{ code: 'asc' }],
     });
@@ -49,6 +50,7 @@ export const uomRepository = {
     if (or.length === 0) return [];
 
     return db.uom.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where: {
         deletedAt: null,
         ...(excludeId ? { id: { not: excludeId } } : {}),

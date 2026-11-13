@@ -77,11 +77,23 @@ describe('T-KIT-06 — Kit Typed Filters', () => {
       actions: [],
       filters: [
         { key: 'active', label: 'Active', type: 'bool', param: 'isActive' },
-        { key: 'priority', label: 'Priority', type: 'select', param: 'priority', options: ['low', 'med', 'high'] },
+        {
+          key: 'priority',
+          label: 'Priority',
+          type: 'select',
+          param: 'priority',
+          options: ['low', 'med', 'high'],
+        },
         { key: 'tag', label: 'Tag', type: 'text', param: 'tag' },
         { key: 'dueDate', label: 'Due Date', type: 'date', param: 'dueDate' },
         { key: 'targetMonth', label: 'Target Month', type: 'month', param: 'targetMonth' },
-        { key: 'supplier', label: 'Supplier', type: 'lookup', param: 'supplierId', lookup: 'suppliers' },
+        {
+          key: 'supplier',
+          label: 'Supplier',
+          type: 'lookup',
+          param: 'supplierId',
+          lookup: 'suppliers',
+        },
       ],
       fields: [
         { key: 'code', label: 'Code', type: 'code', required: true, readOnly: true },

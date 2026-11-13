@@ -44,6 +44,7 @@ export const tdsReports = {
         : q.by === 'section'
           ? 'e.section_code'
           : `to_char(e.deducted_on,'YYYY') || '-Q' || CASE WHEN EXTRACT(MONTH FROM e.deducted_on) BETWEEN 4 AND 6 THEN '1' WHEN EXTRACT(MONTH FROM e.deducted_on) BETWEEN 7 AND 9 THEN '2' WHEN EXTRACT(MONTH FROM e.deducted_on) BETWEEN 10 AND 12 THEN '3' ELSE '4' END`;
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const rows = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT ${key} AS k, COUNT(*)::int AS n, SUM(e.base_amount)::text AS base, SUM(e.tds_amount)::text AS tds,
               SUM(CASE WHEN e.challan_id IS NULL THEN e.tds_amount ELSE 0 END)::text AS pending
@@ -73,6 +74,7 @@ export const tdsReports = {
     asOf: string;
   }) {
     const r = quarterRange(q.fyStart, q.quarter);
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const rows = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT e.id::text, e.section_code, e.base_amount::text, e.rate_pct::text, e.tds_amount::text, e.deducted_on, e.source_doc_no,
               s.name AS supplier, s.pan, c.challan_no, c.bsr_code, c.paid_on
@@ -155,6 +157,7 @@ export const tdsReports = {
 
   /** challan -> the entries it pays */
   async challanMap(unitId: string | null, kind: 'TDS' | 'TCS') {
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const rows = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT c.challan_no, c.bsr_code, c.paid_on, c.amount::text, e.id::text, e.section_code, e.tds_amount::text, e.source_doc_no, s.name AS supplier
          FROM tax_challans c LEFT JOIN tds_entries e ON e.challan_id=c.id LEFT JOIN suppliers s ON s.id=e.supplier_id
@@ -200,6 +203,7 @@ export const tdsReports = {
 
   // ---- lower-deduction certificates --------------------------------------------------------------------------
   async certs() {
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const rows = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT l.id::text, l.supplier_id::text, s.name AS supplier, l.section_code, l.cert_no, l.rate_pct::text, l.valid_from, l.valid_to, l.max_amount::text
          FROM lower_deduction_certs l JOIN suppliers s ON s.id=l.supplier_id ORDER BY l.valid_to DESC`,
@@ -274,6 +278,7 @@ export const tdsReports = {
 
   // ---- statutory rules as data ---------------------------------------------------------------------------------
   async rules() {
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const rows = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT id::text, rule_key, description, value_num::text, value_text, effective_from, effective_to, needs_review FROM tax_rules ORDER BY rule_key, effective_from DESC`,
     );

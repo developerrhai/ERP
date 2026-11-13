@@ -29,6 +29,7 @@ export const designationRepository = {
         : {}),
     };
     return db.designation.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where,
       include: WITH_DEPT,
       orderBy: [{ level: 'desc' }, { name: 'asc' }],
@@ -59,6 +60,7 @@ export const designationRepository = {
     if (or.length === 0) return [];
 
     return db.designation.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where: {
         deletedAt: null,
         ...(excludeId ? { id: { not: excludeId } } : {}),

@@ -366,6 +366,7 @@ export async function getGrn(db: Db, caller: Caller, id: string) {
 
 // ----------------------------------------------------------------------------------------------- post
 async function inventoryKeys(tx: Db): Promise<Map<string, string>> {
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const rows = await tx.itemTypeAccount.findMany();
   return new Map(rows.map((r) => [r.itemType, r.inventoryKey]));
 }

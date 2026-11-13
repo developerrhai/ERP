@@ -3,6 +3,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../core/auth/authenticate';
 import { asyncHandler } from '../../core/http/async-handler';
+import { registryHandler } from '../page-health/routes';
 import { metaController } from './controller';
 
 export function createMetaRouter(): Router {
@@ -10,5 +11,6 @@ export function createMetaRouter(): Router {
   router.use(authenticate);
   router.get('/roles', asyncHandler(metaController.roles));
   router.get('/departments', asyncHandler(metaController.departments));
+  router.get('/registry', registryHandler());
   return router;
 }

@@ -47,14 +47,17 @@ async function proof(db: Db, statementId: string) {
     select: { periodFrom: true },
   });
   const bf = first?.periodFrom ?? st.periodFrom;
+  // unpaginated: rows of one parent (account_id)
   const bookRows = await db.$queryRaw<{ v: string }[]>`
     SELECT COALESCE(SUM(debit - credit), 0)::text AS v FROM gl_entries
      WHERE account_id = ${bank.accountId}::uuid AND unit_id = ${bank.unitId}::uuid AND posting_date <= ${st.periodTo}::date`;
+  // unpaginated: rows of one parent (account_id)
   const uncleared = await db.$queryRaw<{ v: string; n: bigint }[]>`
     SELECT COALESCE(SUM(g.debit - g.credit), 0)::text AS v, COUNT(*)::bigint AS n FROM gl_entries g
      WHERE g.account_id = ${bank.accountId}::uuid AND g.unit_id = ${bank.unitId}::uuid
        AND g.posting_date >= ${bf}::date AND g.posting_date <= ${st.periodTo}::date
        AND NOT EXISTS (SELECT 1 FROM bank_matches m WHERE m.gl_entry_id = g.id AND m.unmatched_at IS NULL)`;
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const unrec = await db.$queryRaw<{ v: string; n: bigint }[]>`
     SELECT COALESCE(SUM(deposit - withdrawal), 0)::text AS v, COUNT(*)::bigint AS n FROM bank_statement_lines
      WHERE statement_id = ${statementId}::uuid AND match_status <> 'Matched'`;
@@ -227,10 +230,12 @@ export const recoService = {
   async get(id: string) {
     const st = await prisma.bankStatement.findUnique({ where: { id } });
     if (!st) throw Errors.notFound('Bank statement not found.');
+    // unpaginated: rows named by an id list
     const lines = await prisma.bankStatementLine.findMany({
       where: { statementId: id },
       orderBy: { lineNo: 'asc' },
     });
+    // unpaginated: rows named by an id list
     const matches = await prisma.bankMatch.findMany({
       where: { lineId: { in: lines.map((l) => l.id) }, unmatchedAt: null },
     });
@@ -264,6 +269,7 @@ export const recoService = {
     const st = await prisma.bankStatement.findUnique({ where: { id: statementId } });
     if (!st) throw Errors.notFound('Bank statement not found.');
     const bank = await prisma.bankAccount.findUniqueOrThrow({ where: { id: st.bankAccountId } });
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const lines = await prisma.bankStatementLine.findMany({
       where: { statementId, matchStatus: 'Unmatched' },
       orderBy: { lineNo: 'asc' },

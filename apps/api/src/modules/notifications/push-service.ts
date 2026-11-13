@@ -139,6 +139,7 @@ export const pushService = {
   },
 
   async listDevices(userId: string) {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     return prisma.$queryRaw<any[]>`
       SELECT id, platform, browser, device_label, standalone, created_at, last_success_at, failure_count
       FROM push_subscriptions
@@ -199,6 +200,7 @@ export const pushService = {
   },
 
   async drainPushDeliveries(limit = 50): Promise<{ sent: number; failed: number; revoked: number }> {
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const settingRows = await prisma.$queryRaw<{ push_enabled: boolean; push_declarative: boolean }[]>`
       SELECT push_enabled, push_declarative FROM notification_settings WHERE id = 1
     `;
@@ -234,6 +236,7 @@ export const pushService = {
     let revoked = 0;
 
     for (const job of jobs) {
+      // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
       const subs = await prisma.$queryRaw<{ id: string; endpoint: string; p256dh: string; auth: string }[]>`
         SELECT id, endpoint, p256dh, auth FROM push_subscriptions
         WHERE user_id = ${job.user_id}::uuid AND revoked_at IS NULL

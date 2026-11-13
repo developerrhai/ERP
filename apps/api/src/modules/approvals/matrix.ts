@@ -22,6 +22,7 @@ export async function resolveRuleSet(
   docType: string,
   unitId: string,
 ): Promise<RuleSetWithRules | null> {
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const sets = await tx.approvalRuleSet.findMany({
     where: {
       departmentId,
@@ -225,6 +226,7 @@ export const matrixService = {
     if (filter.docType) where.docType = filter.docType === 'ALL' ? null : filter.docType;
     if (filter.unitId) where.unitId = filter.unitId === 'ALL' ? null : filter.unitId;
     const sets = await prisma.approvalRuleSet.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where,
       include: { rules: { orderBy: { level: 'asc' } } },
     });

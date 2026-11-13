@@ -145,6 +145,7 @@ export const delegationService = {
           },
         });
         // The delegate sees the delegator's waiting levels at once (acting is checked day by day).
+        // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
         const steps = await tx.$queryRaw<
           {
             step_id: string;

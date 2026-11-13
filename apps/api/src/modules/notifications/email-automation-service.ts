@@ -159,6 +159,7 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
   const comp = await companyName();
 
   if (docType === 'SALES_INVOICE' || docType === 'SALES-INVOICES') {
+    // unpaginated: rows of one parent (id)
     const rows = await prisma.$queryRaw<any[]>`
       SELECT si.id, si.number, si.invoice_date, si.grand_total, si.version, si.unit_id,
              si.created_by_id, si.customer_id,
@@ -171,6 +172,7 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
     `;
     const r = rows[0];
     if (!r) throw Errors.notFound('Sales invoice not found.');
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const contacts = await prisma.$queryRaw<{ email: string; receives_invoices: boolean; email_status: string }[]>`
       SELECT email, receives_invoices, email_status
       FROM customer_contacts
@@ -197,6 +199,7 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
   }
 
   if (docType === 'PURCHASE_ORDER' || docType === 'SCM-PO') {
+    // unpaginated: rows of one parent (id)
     const rows = await prisma.$queryRaw<any[]>`
       SELECT po.id, po.number, po.po_date, po.grand_total, po.version, po.unit_id,
              po.created_by_id, po.supplier_id,
@@ -209,6 +212,7 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
     `;
     const r = rows[0];
     if (!r) throw Errors.notFound('Purchase order not found.');
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const contacts = await prisma.$queryRaw<{ email: string; receives_po: boolean; email_status: string }[]>`
       SELECT email, receives_po, email_status
       FROM supplier_contacts
@@ -235,6 +239,7 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
   }
 
   if (docType === 'PAYSLIP' || docType === 'PAYROLL_PAYSLIP') {
+    // unpaginated: rows of one parent (id)
     const rows = await prisma.$queryRaw<any[]>`
       SELECT pre.id, pre.gross_pay, pre.deductions_total, pre.net_pay,
              r.run_no, p.month, e.id AS emp_id, e.emp_code, e.first_name, e.last_name,
@@ -579,6 +584,7 @@ function fromAddressForDoc(docType: string): string {
 export const emailAutomationService = {
   // ── Rules CRUD ──────────────────────────────────────────────────────────
   async listRules() {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     return prisma.$queryRaw<any[]>`SELECT * FROM email_rules ORDER BY code ASC`;
   },
 
@@ -625,6 +631,7 @@ export const emailAutomationService = {
 
   async testRuleToSelf(ruleId: string, docId: string, callerUserId: string) {
     const [ruleRows, user] = await Promise.all([
+      // unpaginated: rows of one parent (id)
       prisma.$queryRaw<any[]>`SELECT * FROM email_rules WHERE id = ${ruleId}::uuid`,
       prisma.user.findUnique({ where: { id: callerUserId }, select: { email: true } }),
     ]);
@@ -726,6 +733,7 @@ export const emailAutomationService = {
       if (existing[0]) return existing[0];
     }
 
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const globalRows = await prisma.$queryRaw<{ email_enabled: boolean; marketing_paused: boolean }[]>`
       SELECT email_enabled, marketing_paused FROM notification_settings WHERE id = 1
     `;
@@ -744,6 +752,7 @@ export const emailAutomationService = {
     const allAddresses = [...rawTo, ...rawCc, ...rawBcc];
     const supRows =
       allAddresses.length > 0
+        // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
         ? await prisma.$queryRaw<{ email_norm: string }[]>`
             SELECT email_norm FROM email_suppressions
             WHERE removed_at IS NULL AND email_norm = ANY(${allAddresses}::text[])
@@ -925,6 +934,7 @@ export const emailAutomationService = {
 
   /** Emits a business event into matching enabled email rules idempotently. */
   async emitEvent(eventCode: string, docType: string, docId: string, version = 1) {
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const rules = await prisma.$queryRaw<any[]>`
       SELECT * FROM email_rules WHERE event_code = ${eventCode} AND enabled = true
     `;
@@ -958,6 +968,7 @@ export const emailAutomationService = {
     if (!input.reason || input.reason.trim().length < 5) {
       throw Errors.validation({ reason: 'Resend reason is required (min 5 characters).' });
     }
+    // unpaginated: rows of one parent (id)
     const origRows = await prisma.$queryRaw<any[]>`
       SELECT * FROM outbound_messages WHERE id = ${messageId}::uuid
     `;
@@ -1007,6 +1018,7 @@ export const emailAutomationService = {
 
   // ── Suppressions ────────────────────────────────────────────────────────
   async listSuppressions(includeRemoved = false) {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     return prisma.$queryRaw<any[]>`
       SELECT * FROM email_suppressions
       WHERE (${includeRemoved} OR removed_at IS NULL)
@@ -1243,6 +1255,7 @@ export const emailAutomationService = {
   },
 
   async evaluateComplaintRate(): Promise<{ ratePct: number; pausedMarketing: boolean }> {
+    // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
     const counts = await prisma.$queryRaw<{ deliveries: number; complaints: number }[]>`
       SELECT
         (SELECT count(*)::int FROM email_events WHERE type = 'DELIVERY' AND at >= now() - interval '24 hours') AS deliveries,
@@ -1278,6 +1291,7 @@ export const emailAutomationService = {
   // ── Notification & Email Health Dashboard ───────────────────────────────
   async getHealthSummary() {
     const [email24, push24, activeSubs, activeSuppressions, settings] = await Promise.all([
+      // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
       prisma.$queryRaw<{ sent: number; delivered: number; bounces: number; complaints: number }[]>`
         SELECT
           (SELECT count(*)::int FROM outbound_messages WHERE channel = 'EMAIL' AND created_at >= now() - interval '24 hours') AS sent,
@@ -1285,6 +1299,7 @@ export const emailAutomationService = {
           (SELECT count(*)::int FROM email_events WHERE type = 'BOUNCE' AND at >= now() - interval '24 hours') AS bounces,
           (SELECT count(*)::int FROM email_events WHERE type = 'COMPLAINT' AND at >= now() - interval '24 hours') AS complaints
       `,
+      // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
       prisma.$queryRaw<{ sent: number; failed: number; revoked: number }[]>`
         SELECT
           count(*) FILTER (WHERE status IN ('SENT', 'DELIVERED'))::int AS sent,

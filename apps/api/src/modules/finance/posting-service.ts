@@ -225,6 +225,7 @@ export async function resolveRules(
   const on = new Date(`${docDate}T00:00:00Z`);
   const out: PostLineInput[] = [];
   for (const line of payload.lines) {
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rules = await db.postingRule.findMany({
       where: {
         lineKey: line.account,
@@ -308,6 +309,7 @@ export async function resolveRules(
 async function loadAccounts(db: Db, lines: PostLineInput[]): Promise<Map<string, AccountRow>> {
   const ids = lines.map((l) => l.accountId).filter((x): x is string => !!x);
   const codes = lines.map((l) => l.accountCode).filter((x): x is string => !!x);
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const rows = await db.account.findMany({
     where: { deletedAt: null, OR: [{ id: { in: ids } }, { code: { in: codes } }] },
   });
@@ -796,6 +798,7 @@ export const PostingService = {
           const unitNet = lines
             .filter((l) => l.accountId === ca.id && l.unitId === unitId)
             .reduce((s, l) => s.plus(l.debit).minus(l.credit), ZERO);
+          // unpaginated: rows of one parent (account_id)
           const rows = await tx.$queryRaw<{ bal: string }[]>`
             SELECT COALESCE(SUM(debit - credit), 0)::text AS bal FROM gl_entries
              WHERE account_id = ${ca.id}::uuid AND unit_id = ${unitId}::uuid AND posting_date <= ${input.docDate}::date`;
@@ -1082,6 +1085,7 @@ export const PostingService = {
     if (orig.status !== 'Posted')
       throw FinErrors.invalidTransition('Only a posted journal can be reversed.');
 
+    // unpaginated: rows of one parent (journalId)
     const items = await tx.openItem.findMany({
       where: { journalId, status: { not: 'Cancelled' } },
     });
@@ -1118,6 +1122,7 @@ export const PostingService = {
       fyId: fy.id,
       date,
     });
+    // unpaginated: rows of one parent (journalId)
     const origGl = await tx.glEntry.findMany({ where: { journalId } });
     const glByLine = new Map(origGl.map((g) => [g.journalLineId, g.id]));
     const rev = await tx.journal.create({

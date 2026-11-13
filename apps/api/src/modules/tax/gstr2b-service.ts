@@ -124,6 +124,7 @@ export const gstr2bService = {
     const tol = D(
       S(
         (
+          // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
           await prisma.$queryRawUnsafe<Row[]>(
             `SELECT tolerance_tax_amount::text AS t FROM scm_settings WHERE id=1`,
           )
@@ -215,6 +216,7 @@ export const gstr2bService = {
         }
       }
       // books invoices of the month that 2B does not show
+      // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
       const missing = await tx.$queryRawUnsafe<Row[]>(
         `UPDATE purchase_invoices p SET gstr2b_status='MISSING'
           WHERE p.unit_id=$1::uuid AND p.status='Posted' AND p.is_rcm=false AND p.supplier_gstin IS NOT NULL
@@ -258,12 +260,14 @@ export const gstr2bService = {
         missing: [],
         summary: { matched: 0, mismatch: 0, extra: 0, missing: 0, notEligible: '0.00' },
       };
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const rows = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT g.id::text, g.supplier_gstin, g.supplier_name, g.doc_kind, g.doc_no, g.doc_date, g.taxable::text, g.cgst::text, g.sgst::text,
               g.igst::text, g.itc_available, g.itc_reason, g.match_status, g.diff_note, g.invoice_id::text
          FROM gstr2b_lines g WHERE g.import_id=$1::uuid ORDER BY g.match_status DESC, g.supplier_gstin, g.doc_no`,
       S(imp.id),
     );
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const missing = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT p.id::text, p.number, p.vendor_invoice_no, p.invoice_date, p.supplier_gstin, s.name AS supplier,
               (p.cgst+p.sgst+p.igst)::text AS tax
@@ -324,6 +328,7 @@ export const gstr2bService = {
   /** reversal register of the month (Phase 9 rows + manual ones) */
   async reversals(unitId: string | null, month: string) {
     const per = parseMonth(month);
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const rows = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT r.id::text, r.kind, r.event_date, r.cgst::text, r.sgst::text, r.igst::text, r.note, p.number AS inv_no
          FROM itc_reversals r LEFT JOIN purchase_invoices p ON p.id=r.invoice_id
@@ -430,6 +435,7 @@ export const gstr2bService = {
   /** invoices that cross the 180-day line soon (rule data: ITC_REVERSAL_DAYS) */
   async due180(unitId: string | null, asOf: string) {
     const days = (await ruleNum('ITC_REVERSAL_DAYS', asOf)).toNumber();
+    // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
     const rows = await prisma.$queryRawUnsafe<Row[]>(
       `SELECT p.id::text, p.number, p.vendor_invoice_no, p.invoice_date, s.name AS supplier, (p.grand_total - p.paid_amount)::text AS unpaid,
               (p.cgst+p.sgst+p.igst)::text AS tax, ($2::date - p.invoice_date) AS age

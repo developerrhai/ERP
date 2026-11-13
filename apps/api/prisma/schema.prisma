@@ -94,6 +94,8 @@ model User {
   mfaEnrolledAt          DateTime?             @map("mfa_enrolled_at") @db.Timestamptz(3)
   mfaLastStep            BigInt?               @map("mfa_last_step")
   preferredLocale        String                @default("en") @map("preferred_locale") @db.VarChar(8)
+  /// Phase 23: "all plants, including future plants".
+  allUnitsAccess         Boolean               @default(false) @map("all_units_access")
   createdById            String?               @map("created_by_id") @db.Uuid
   createdBy              User?                 @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdUsers           User[]                @relation("UserCreatedBy")
@@ -448,6 +450,9 @@ model UserPreference {
   fy        FinancialYear? @relation(fields: [fyId], references: [id], onDelete: SetNull)
   /// True when an ADMIN+ chose "All units" (kept apart from unit_id so a SET NULL is never read as it).
   allUnits  Boolean        @default(false) @map("all_units")
+  /// Phase 23: the plants the user chose to view (unit_id / all_units stay readable for one release).
+  unitIds        String[]       @default([]) @map("unit_ids") @db.Uuid
+  rememberPlants Boolean        @default(false) @map("remember_plants")
   updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("user_preferences")

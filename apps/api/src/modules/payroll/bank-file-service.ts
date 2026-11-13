@@ -6,6 +6,7 @@ import { HrCrypto } from '../hr/hr-crypto';
 
 export class BankFileService {
   static async listTemplates(db: Db) {
+    // unpaginated: admin-defined config table, a few hundred rows at most; page UIs read it whole
     return db.$queryRaw<any[]>`
       SELECT * FROM "bank_file_templates" WHERE "active" = true ORDER BY "name" ASC
     `;
@@ -34,6 +35,7 @@ export class BankFileService {
     },
     caller: Caller,
   ) {
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const runs = await db.$queryRaw<any[]>`
       SELECT * FROM "payroll_runs" WHERE "id" = ${data.payroll_run_id}::uuid
     `;
@@ -44,6 +46,7 @@ export class BankFileService {
       throw Errors.conflict('Payroll run must be LOCKED or POSTED before generating bank transfer batch');
     }
 
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const templateRows = await db.$queryRaw<any[]>`
       SELECT * FROM "bank_file_templates" WHERE "id" = ${data.bank_template_id}::uuid
     `;
@@ -51,13 +54,14 @@ export class BankFileService {
     const template = templateRows[0];
 
     // Fetch all run employees with primary bank accounts
+    // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const employees = await db.$queryRaw<any[]>`
       SELECT pre."id" as "run_emp_id", pre."employee_id", pre."net",
              e."emp_code", e."full_name",
              eba."account_number_encrypted", eba."ifsc_code", eba."account_name"
       FROM "payroll_run_employees" pre
-      JOIN "employees" e ON e."id" = pre."employee_id"
-      LEFT JOIN "employee_bank_accounts" eba ON eba."employee_id" = e."id" AND eba."is_primary" = true
+      JOIN "payroll_employees_v" e ON e."id" = pre."employee_id"
+      LEFT JOIN "payroll_bank_v" eba ON eba."employee_id" = e."id" AND eba."is_primary" = true
       WHERE pre."run_id" = ${data.payroll_run_id}::uuid AND pre."net" > 0 AND pre."status" != 'HELD'
     `;
 

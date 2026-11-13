@@ -75,6 +75,7 @@ const dto = (r: NoteRow, partyName?: string | null) => ({
 });
 
 async function load(tx: typeof prisma, id: string): Promise<NoteRow> {
+  // unpaginated: rows of one parent (id)
   const rows = await tx.$queryRawUnsafe<NoteRow[]>(
     `SELECT ${SELECT} FROM credit_debit_notes WHERE id = $1::uuid AND deleted_at IS NULL`,
     id,
@@ -365,6 +366,7 @@ function noteHandler(): ApprovalDocHandler {
         where: { id: n.fy_id },
         select: { status: true },
       });
+      // unpaginated: rows of one parent (id)
       const created = await tx.$queryRaw<
         { c: string }[]
       >`SELECT created_by_id::text AS c FROM credit_debit_notes WHERE id = ${docId}::uuid`;

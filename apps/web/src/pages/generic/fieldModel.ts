@@ -168,9 +168,17 @@ const DIGITS12_RE = /^\d{12}$/;
 /** Types whose text is upper-cased as you type. */
 export const UPPERCASE_TYPES: ReadonlySet<string> = new Set(['gstin', 'pan', 'ifsc']);
 
+/**
+ * Fields the SERVER fills in (the generic engine's auto-numbered code, the status, computed values) are
+ * never typed by the user. A typed page's code that is `required` (a warehouse or item code) is typed.
+ */
+export function systemManaged(f: Pick<FieldMeta, 'readOnly' | 'type' | 'required'>): boolean {
+  return f.readOnly || f.type === 'status' || (f.type === 'code' && !f.required);
+}
+
 /** Error text for one field's raw form value, or undefined when it is fine. */
 export function validateField(field: FieldMeta, raw: unknown): string | undefined {
-  if (field.readOnly || field.type === 'code' || field.type === 'status') return undefined;
+  if (systemManaged(field)) return undefined;
   if (field.type === 'bool') return undefined;
   if (isEmptyValue(raw)) return field.required ? `${field.label} is required.` : undefined;
   const text = String(raw).trim();
@@ -231,7 +239,7 @@ export function toPayload(
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const f of fields) {
-    if (f.readOnly || f.type === 'code' || f.type === 'status') continue;
+    if (systemManaged(f)) continue;
     const raw = values[f.key];
     if (f.type === 'bool') {
       if (raw !== undefined) out[f.key] = raw === true;
@@ -248,7 +256,7 @@ export function toPayload(
 export function toFormValues(fields: FieldMeta[], row?: RecordRow): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const f of fields) {
-    if (f.readOnly || f.type === 'code' || f.type === 'status') continue;
+    if (systemManaged(f)) continue;
     const v = row ? row.data[f.key] : undefined;
     if (f.type === 'bool') out[f.key] = v === true || v === 'true';
     else if (isEmptyValue(v)) out[f.key] = '';
@@ -268,7 +276,7 @@ export function changedPayload(
   const next = toPayload(fields, values);
   const out: Record<string, unknown> = {};
   for (const f of fields) {
-    if (f.readOnly || f.type === 'code' || f.type === 'status') continue;
+    if (systemManaged(f)) continue;
     const before = row.data[f.key];
     if (f.type === 'bool') {
       const was = before === true || before === 'true';
@@ -365,7 +373,7 @@ export function computeReadOnly(
   const num = (label: string): number | null => {
     const f = byLabel.get(label);
     if (!f) return null;
-    const editable = !f.readOnly && f.type !== 'code' && f.type !== 'status';
+    const editable = !systemManaged(f);
     const v = editable ? values[f.key] : (serverValue(f, preview) ?? row?.data[f.key]);
     if (isEmptyValue(v)) return null;
     const n = Number(v);

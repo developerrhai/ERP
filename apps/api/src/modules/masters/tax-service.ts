@@ -15,6 +15,7 @@ export async function knownStates(
   db: Db = prisma,
 ): Promise<{ codes: Set<string>; names: Map<string, string> }> {
   if (stateCache && Date.now() - stateCache.at < STATE_TTL_MS && db === prisma) return stateCache;
+  // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   const rows = await db.gstState.findMany({ select: { code: true, name: true } });
   const fresh = {
     at: Date.now(),
@@ -64,6 +65,7 @@ export const taxService = {
     if (!item.hsnId) throw hsnMissing();
     const hsn = await db.hsnSacCode.findUniqueOrThrow({ where: { id: item.hsnId } });
     const when = day(date);
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const rows = await db.hsnSacRate.findMany({
       where: {
         hsnId: item.hsnId,
@@ -104,6 +106,7 @@ export const taxService = {
       throw Errors.validation({ effectiveTo: 'The end date cannot be before the start date.' });
     }
     const note = input.conditionNote ?? null;
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const existing = await db.hsnSacRate.findMany({
       where: { hsnId, conditionNote: note },
       orderBy: { effectiveFrom: 'asc' },

@@ -38,9 +38,7 @@ describe('T-INV-02 — Inventory Core Services', () => {
 
     const generated = await Promise.all(
       Array.from({ length: total }, () =>
-        prisma.$transaction((tx) =>
-          NumberingService.next(tx, { docType, unitId, fyId }),
-        ),
+        prisma.$transaction((tx) => NumberingService.next(tx, { docType, unitId, fyId })),
       ),
     );
 
@@ -166,9 +164,10 @@ describe('T-INV-02 — Inventory Core Services', () => {
     expect(refreshed.reservationDays).toBe(nextReservationDays);
 
     // Stale version update must fail with 409
-    await expect(
-      updatePolicy(prisma, { reservationDays: 30 }, v0),
-    ).rejects.toMatchObject({ status: 409, code: 'VERSION_CONFLICT' });
+    await expect(updatePolicy(prisma, { reservationDays: 30 }, v0)).rejects.toMatchObject({
+      status: 409,
+      code: 'VERSION_CONFLICT',
+    });
   });
 
   it('policy rejects unknown key', async () => {

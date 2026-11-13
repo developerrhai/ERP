@@ -53,6 +53,7 @@ export const duplicateService = {
 
     const byGstin = async (kind: PartyKind): Promise<PartyRow[]> => {
       if (!input.gstin) return [];
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       return prisma.$queryRawUnsafe<PartyRow[]>(
         `SELECT id, code, name FROM ${table(kind)} WHERE gstin = $1 AND deleted_at IS NULL AND id <> $2::uuid`,
         normaliseGstin(input.gstin),
@@ -82,6 +83,7 @@ export const duplicateService = {
     }
 
     if (input.pan) {
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       const rows = await prisma.$queryRawUnsafe<PartyRow[]>(
         `SELECT id, code, name FROM ${table(same)} WHERE pan = $1 AND deleted_at IS NULL AND id <> $2::uuid
            AND ($3::text IS NULL OR gstin IS DISTINCT FROM $3)`,
@@ -104,6 +106,7 @@ export const duplicateService = {
     if (input.name && input.city) {
       const key = normaliseName(input.name);
       if (key.length >= 3) {
+        // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
         const rows = await prisma.$queryRawUnsafe<PartyRow[]>(
           `SELECT DISTINCT p.id, p.code, p.name
              FROM ${table(same)} p
@@ -133,6 +136,7 @@ export const duplicateService = {
       ['email', input.email?.toLowerCase()],
     ] as const) {
       if (!value) continue;
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       const rows = await prisma.$queryRawUnsafe<PartyRow[]>(
         `SELECT DISTINCT p.id, p.code, p.name
            FROM ${table(same)} p JOIN ${contactTable(same)} c ON c.${fk(same)} = p.id
@@ -153,6 +157,7 @@ export const duplicateService = {
     }
 
     if (same === 'SUPPLIER' && input.accountNo) {
+      // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
       const rows = await prisma.$queryRawUnsafe<PartyRow[]>(
         `SELECT DISTINCT s.id, s.code, s.name
            FROM suppliers s JOIN supplier_bank_accounts b ON b.supplier_id = s.id

@@ -58,6 +58,7 @@ async function journalNet(
   code: string,
   nature: 'debit' | 'credit',
 ): Promise<Dec> {
+  // unpaginated: rows of one parent (journal_id)
   const rows = await db.$queryRaw<{ n: string }[]>`
     SELECT COALESCE(SUM(CASE WHEN ${nature} = 'debit' THEN g.debit - g.credit ELSE g.credit - g.debit END), 0)::text AS n
       FROM gl_entries g JOIN accounts a ON a.id = g.account_id
@@ -105,6 +106,7 @@ export const taxService = {
     to: string;
     unitId: string | null;
   }) {
+    // unpaginated: report/register over the requested date range; exported whole, filters bound it
     const rows = await prisma.$queryRaw<
       {
         id: string;
@@ -163,6 +165,7 @@ export const taxService = {
   },
 
   async tdsRegister(q: { kind: 'TDS' | 'TCS'; from: string; to: string; unitId: string | null }) {
+    // unpaginated: report/register over the requested date range; exported whole, filters bound it
     const rows = await prisma.$queryRaw<
       {
         id: string;
@@ -223,6 +226,7 @@ export const taxService = {
     return prisma.$transaction(
       async (tx) => {
         if (
+          // unpaginated: report/register over the requested date range; exported whole, filters bound it
           await tx.$queryRaw<
             { id: string }[]
           >`SELECT id FROM tax_challans WHERE tax_kind = ${input.taxKind} AND challan_no = ${input.challanNo}`.then(
@@ -295,6 +299,7 @@ export const taxService = {
   },
 
   async challans(unitId: string | null) {
+    // unpaginated: report/register over the requested date range; exported whole, filters bound it
     const rows = await prisma.$queryRaw<
       {
         id: string;

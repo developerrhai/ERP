@@ -18,15 +18,13 @@ describe('Letterhead v2 & Storage (Phase 03 Order 4)', () => {
 
   it('uploads a file via POST /files storing to disk and database', async () => {
     // 1x1 transparent PNG base64
-    const pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
-    const res = await request(app)
-      .post(`${API}/files`)
-      .set(owner.bearer)
-      .send({
-        filename: 'company-logo.png',
-        mimeType: 'image/png',
-        dataBase64: pngBase64,
-      });
+    const pngBase64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    const res = await request(app).post(`${API}/files`).set(owner.bearer).send({
+      filename: 'company-logo.png',
+      mimeType: 'image/png',
+      dataBase64: pngBase64,
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.data).toMatchObject({
@@ -39,9 +37,7 @@ describe('Letterhead v2 & Storage (Phase 03 Order 4)', () => {
   });
 
   it('downloads the uploaded file via GET /files/:id', async () => {
-    const res = await request(app)
-      .get(`${API}/files/${uploadedFileId}`)
-      .set(owner.bearer);
+    const res = await request(app).get(`${API}/files/${uploadedFileId}`).set(owner.bearer);
 
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toBe('image/png');
@@ -50,9 +46,7 @@ describe('Letterhead v2 & Storage (Phase 03 Order 4)', () => {
   });
 
   it('reads letterhead v2 with default v2 metadata fields', async () => {
-    const res = await request(app)
-      .get(`${API}/settings/letterhead`)
-      .set(owner.bearer);
+    const res = await request(app).get(`${API}/settings/letterhead`).set(owner.bearer);
 
     expect(res.status).toBe(200);
     expect(res.body.data.value).toMatchObject({
@@ -65,9 +59,7 @@ describe('Letterhead v2 & Storage (Phase 03 Order 4)', () => {
   });
 
   it('links uploaded logo to letterhead v2 via PATCH /settings/letterhead', async () => {
-    const getRes = await request(app)
-      .get(`${API}/settings/letterhead`)
-      .set(owner.bearer);
+    const getRes = await request(app).get(`${API}/settings/letterhead`).set(owner.bearer);
 
     const version = getRes.body.data.version;
 

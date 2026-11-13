@@ -10,6 +10,8 @@ export const RT_EVENT_BADGE = 'rhai:rt:badge';
 export const RT_EVENT_BROADCAST = 'rhai:rt:broadcast';
 export const RT_EVENT_APPROVAL = 'rhai:rt:approval';
 export const RT_EVENT_RESYNC = 'rhai:rt:resync';
+/** Phase 23: Admin changed this user's plants. */
+export const RT_EVENT_CONTEXT = 'rhai:rt:context';
 
 export interface RealtimeMessage {
   event: string;
@@ -56,6 +58,9 @@ export function dispatchRealtimeMessage(msg: RealtimeMessage): void {
     window.dispatchEvent(new Event(BELL_REFRESH_EVENT));
   } else if (msg.event === 'session.revoked') {
     window.location.assign('/login');
+  } else if (msg.event === 'session.context_changed') {
+    // Phase 23: Admin changed this user's plants; the shell re-reads them and shows a toast
+    window.dispatchEvent(new Event(RT_EVENT_CONTEXT));
   }
 }
 

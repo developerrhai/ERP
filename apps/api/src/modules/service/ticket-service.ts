@@ -56,7 +56,7 @@ export class TicketService {
     const sql = `
       SELECT t.*, c.name AS customer_name,
              e.first_name || ' ' || e.last_name AS technician_name,
-             sn.serial_number, i.name AS item_name
+             sn.serial_no AS serial_number, i.name AS item_name
       FROM service_tickets t
       JOIN customers c ON c.id = t.customer_id
       LEFT JOIN technicians tech ON tech.id = t.assigned_technician_id
@@ -91,7 +91,7 @@ export class TicketService {
       prisma,
       `SELECT t.*, c.name AS customer_name,
               e.first_name || ' ' || e.last_name AS technician_name,
-              sn.serial_number, i.name AS item_name,
+              sn.serial_no AS serial_number, i.name AS item_name,
               p.name AS sla_policy_name
        FROM service_tickets t
        JOIN customers c ON c.id = t.customer_id

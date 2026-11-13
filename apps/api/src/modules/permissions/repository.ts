@@ -6,10 +6,12 @@ import type { Db } from '../../core/db/prisma';
 
 export const permissionRepository = {
   all(db: Db = prisma): Promise<RolePermission[]> {
+    // unpaginated: role permission matrix: roles x pages, bounded by the role and page lists
     return db.rolePermission.findMany();
   },
 
   forRoleId(roleId: string, db: Db = prisma): Promise<RolePermission[]> {
+    // unpaginated: role permission matrix: roles x pages, bounded by the role and page lists
     return db.rolePermission.findMany({ where: { roleId } });
   },
 

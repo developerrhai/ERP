@@ -59,6 +59,7 @@ export const cashBankService = {
   // ---- cash / bank accounts -------------------------------------------------------------------------------
   async listBankAccounts(q: { unitId?: string | null }) {
     const rows = await prisma.bankAccount.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where: { deletedAt: null, ...(q.unitId ? { unitId: q.unitId } : {}) },
       orderBy: { name: 'asc' },
     });
@@ -296,6 +297,7 @@ export const cashBankService = {
             const limit = D(
               await getSetting<string>(tx, 'fin.cash_payment_limit_per_day', '10000.00'),
             );
+            // unpaginated: single-row SUM() aggregate
             const rows = await tx.$queryRaw<{ s: string }[]>`
             SELECT COALESCE(SUM(amount), 0)::text AS s FROM payments
              WHERE kind = 'PAYMENT' AND mode = 'Cash' AND status = 'Posted' AND party_id = ${party.id}::uuid AND doc_date = ${input.docDate}::date`;
@@ -331,6 +333,7 @@ export const cashBankService = {
               const limit = D(
                 await getSetting<string>(tx, 'fin.cash_receipt_limit_per_day', '200000.00'),
               );
+              // unpaginated: single-row SUM() aggregate
               const rows = await tx.$queryRaw<{ s: string }[]>`
               SELECT COALESCE(SUM(amount), 0)::text AS s FROM payments
                WHERE kind = 'RECEIPT' AND mode = 'Cash' AND status = 'Posted' AND bank_account_id = ${bank.id}::uuid AND doc_date = ${input.docDate}::date`;
@@ -488,6 +491,7 @@ export const cashBankService = {
         if (p.status !== 'Posted')
           throw FinErrors.invalidTransition('This payment is already cancelled.');
         // undo its allocations first (append-only negative rows), then post the mirror journal
+        // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
         const allocs = await tx.allocation.findMany({ where: { paymentId: id, reversesId: null } });
         for (const a of allocs) {
           if (await tx.allocation.count({ where: { reversesId: a.id } })) continue;
@@ -565,6 +569,7 @@ export const cashBankService = {
   async getPayment(id: string) {
     const p = await prisma.payment.findUnique({ where: { id } });
     if (!p) throw Errors.notFound('Payment not found.');
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
     const allocations = await prisma.allocation.findMany({
       where: { paymentId: id },
       orderBy: { createdAt: 'asc' },
@@ -586,9 +591,11 @@ export const cashBankService = {
   async book(bankAccountId: string, from: string, to: string) {
     const b = await prisma.bankAccount.findFirst({ where: { id: bankAccountId, deletedAt: null } });
     if (!b) throw Errors.notFound('Cash / bank account not found.');
+    // unpaginated: rows of one parent (account_id)
     const opening = await prisma.$queryRaw<{ v: string }[]>`
       SELECT COALESCE(SUM(debit - credit), 0)::text AS v FROM gl_entries
        WHERE account_id = ${b.accountId}::uuid AND unit_id = ${b.unitId}::uuid AND posting_date < ${from}::date`;
+    // unpaginated: rows of one parent (account_id)
     const rows = await prisma.$queryRaw<
       {
         id: string;

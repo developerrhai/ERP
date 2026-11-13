@@ -18,7 +18,7 @@ export class WarrantyService {
       `SELECT sn.*, i.name AS item_name, i.item_code
        FROM serial_numbers sn
        JOIN items i ON i.id = sn.item_id
-       WHERE sn.serial_number = $1`,
+       WHERE sn.serial_no = $1`,
       serial,
     );
     if (!sRows[0]) {
@@ -132,7 +132,7 @@ export class WarrantyService {
     const offset = (page - 1) * size;
 
     const sql = `
-      SELECT wr.*, c.name AS customer_name, sn.serial_number, i.name AS item_name
+      SELECT wr.*, c.name AS customer_name, sn.serial_no AS serial_number, i.name AS item_name
       FROM warranty_registrations wr
       JOIN customers c ON c.id = wr.customer_id
       JOIN serial_numbers sn ON sn.id = wr.serial_number_id
@@ -189,7 +189,7 @@ export class WarrantyService {
     }
 
     const sql = `
-      SELECT wc.*, c.name AS customer_name, sn.serial_number, i.name AS item_name,
+      SELECT wc.*, c.name AS customer_name, sn.serial_no AS serial_number, i.name AS item_name,
              s.name AS supplier_name
       FROM warranty_claims wc
       JOIN customers c ON c.id = wc.customer_id
@@ -206,7 +206,7 @@ export class WarrantyService {
   async getClaim(caller: Caller, id: string): Promise<Row> {
     const rows = await query(
       prisma,
-      `SELECT wc.*, c.name AS customer_name, sn.serial_number, i.name AS item_name,
+      `SELECT wc.*, c.name AS customer_name, sn.serial_no AS serial_number, i.name AS item_name,
               s.name AS supplier_name, t.ticket_no
        FROM warranty_claims wc
        JOIN customers c ON c.id = wc.customer_id
@@ -240,7 +240,7 @@ export class WarrantyService {
     });
 
     // Check warranty status
-    const sRows = await query(prisma, `SELECT serial_number FROM serial_numbers WHERE id = $1::uuid`, input.serialNumberId);
+    const sRows = await query(prisma, `SELECT serial_no AS serial_number FROM serial_numbers WHERE id = $1::uuid`, input.serialNumberId);
     const sn = sRows[0]?.serial_number as string;
     const check = await this.checkWarranty(caller, sn, input.failureDate);
 

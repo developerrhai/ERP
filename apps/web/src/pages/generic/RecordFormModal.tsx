@@ -6,6 +6,7 @@ import { ErrorMessage } from '../../components/ErrorMessage';
 import { Modal } from '../../components/Modal';
 import { toUiError, type UiError } from '../../lib/errors';
 import { useUnsavedGuard } from '../../lib/unsaved';
+import { usePlants } from '../../lib/plants';
 import {
   createRecord,
   getPreview,
@@ -21,6 +22,7 @@ import {
   computeReadOnly,
   displayValue,
   serverValue,
+  systemManaged,
   str,
   toFormValues,
   toPayload,
@@ -90,7 +92,7 @@ const AFFIX: Record<string, string> = { money: '₹', pct: '%' };
 export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSaved }: Props) {
   const [row, setRow] = useState<RecordRow | undefined>(initialRow);
   const editable = useMemo(
-    () => schema.fields.filter((f) => !f.readOnly && f.type !== 'code' && f.type !== 'status'),
+    () => schema.fields.filter((f) => !systemManaged(f)),
     [schema.fields],
   );
   const initial = useMemo(() => toFormValues(schema.fields, row), [schema.fields, row]);
@@ -101,13 +103,20 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
   const [err, setErr] = useState<UiError | null>(null);
   const [pending, setPending] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  // Phase 23: with 2+ plants chosen, a new document asks which plant it belongs to (default plant if chosen, else the first).
+  const plantsData = usePlants().data;
+  const chosenPlants = plantsData?.allowed.filter((p) => plantsData.selected.includes(p.id)) ?? [];
+  const [plantId, setPlantId] = useState<string>(
+    chosenPlants.find((p) => p.id === plantsData?.default)?.id ?? chosenPlants[0]?.id ?? '',
+  );
+  const askPlant = !row && chosenPlants.length > 1;
   const [preview, setPreview] = useState<Record<string, unknown>>({});
   const inFlight = useRef(false);
   // Phase 6B: the published form format for the chosen customer (labels / required / hidden).
   const { format, overrides } = useFormFormat(schema.pageId, schema.fields, values);
   const view = (f: FieldMeta): FieldMeta => {
     const o = overrides[f.key];
-    if (!o || f.readOnly || f.type === 'code' || f.type === 'status') return f;
+    if (!o || systemManaged(f)) return f;
     return { ...f, label: o.label ?? f.label, required: f.required || o.required === true };
   };
   const hiddenByFormat = (f: FieldMeta): boolean => overrides[f.key]?.hidden === true && !f.required;
@@ -196,7 +205,9 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
     setErr(null);
     try {
       if (!row) {
-        onSaved(await createRecord(schema.pageId, toPayload(schema.fields, values)));
+        onSaved(
+          await createRecord(schema.pageId, toPayload(schema.fields, values), askPlant ? plantId : undefined),
+        );
         return;
       }
       const patch = changedPayload(schema.fields, values, row);
@@ -421,6 +432,24 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
         }
       >
         <form id={formId} onSubmit={(e) => void onSubmit(e)} noValidate>
+          {askPlant ? (
+            <div className="field">
+              <label htmlFor={`${formId}-plant`}>Plant *</label>
+              <select
+                id={`${formId}-plant`}
+                value={plantId}
+                onChange={(e) => setPlantId(e.target.value)}
+                required
+              >
+                {chosenPlants.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <span className="hint">Choose the plant this document belongs to.</span>
+            </div>
+          ) : null}
           {err?.message ? (
             <ErrorMessage
               onReload={
@@ -438,7 +467,7 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
           ) : null}
           <div className="form-grid">
             {shown.filter((f) => !hiddenByFormat(f)).map(view).map((f) =>
-              f.readOnly || f.type === 'code' || f.type === 'status' ? (
+              systemManaged(f) || (f.type === 'code' && !!row) ? (
                 <Control key={f.key} label={f.label}>
                   {(ids) =>
                     f.type === 'ref' ? (

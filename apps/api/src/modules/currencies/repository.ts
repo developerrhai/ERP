@@ -20,6 +20,7 @@ export const currencyRepository = {
         : {}),
     };
     return db.currency.findMany({
+      take: 500, // unpaginated: small lookup, max 500
       where,
       orderBy: [{ isBase: 'desc' }, { code: 'asc' }],
     });

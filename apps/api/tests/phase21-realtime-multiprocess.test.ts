@@ -144,7 +144,10 @@ describe('Phase 21 Multi-process SSE real-time fan-out via LISTEN erp_rt', () =>
     ctrl.abort();
     await readLoop;
 
-    expect(arrived, `Expected notification.new over SSE from Process A->B within 2s, got: ${events.join(' | ')}`).toBeTruthy();
+    expect(
+      arrived,
+      `Expected notification.new over SSE from Process A->B within 2s, got: ${events.join(' | ')}`,
+    ).toBeTruthy();
 
     // Verify Last-Event-ID replay works by reconnecting with Last-Event-ID: 0
     const ctrl2 = new AbortController();
@@ -160,4 +163,3 @@ describe('Phase 21 Multi-process SSE real-time fan-out via LISTEN erp_rt', () =>
     expect(replayText).toContain('event: notification.new');
   }, 30_000);
 });
-

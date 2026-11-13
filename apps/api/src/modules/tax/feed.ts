@@ -94,6 +94,7 @@ interface DocIn {
 
 async function unitInfo(tx: Db, unitId: string): Promise<{ gstin: string | null; state: string }> {
   const u = (
+    // unpaginated: rows of one parent (id)
     await tx.$queryRawUnsafe<Row[]>(`SELECT gstin, state_code FROM units WHERE id=$1::uuid`, unitId)
   )[0];
   const gstin = u?.gstin ? S(u.gstin) : null;
@@ -157,6 +158,7 @@ async function insertDoc(tx: Db, d: DocIn, gstin: string | null): Promise<void> 
 /** sales invoice posted -> outward INV */
 export async function feedSalesInvoice(tx: Db, invoiceId: string, actorId: string): Promise<void> {
   const inv = (
+    // unpaginated: rows of one parent (id)
     await tx.$queryRawUnsafe<Row[]>(
       `SELECT i.*, c.name AS cust_name, c.gstin AS cust_gstin, c.state_code AS cust_state
          FROM sales_invoices i JOIN customers c ON c.id = i.customer_id WHERE i.id=$1::uuid`,
@@ -165,6 +167,7 @@ export async function feedSalesInvoice(tx: Db, invoiceId: string, actorId: strin
   )[0];
   if (!inv) return;
   const u = await unitInfo(tx, S(inv.unit_id));
+  // unpaginated: rows of one parent (invoice_id)
   const lines = await tx.$queryRawUnsafe<Row[]>(
     `SELECT hsn_sac, uom, qty::text, taxable::text, gst_pct::text, cgst::text, sgst::text, igst::text
        FROM sales_invoice_lines WHERE invoice_id=$1::uuid ORDER BY line_no`,
@@ -203,6 +206,7 @@ export async function feedSalesCreditNote(
   actorId: string,
 ): Promise<void> {
   const r = (
+    // unpaginated: rows of one parent (id)
     await tx.$queryRawUnsafe<Row[]>(
       `SELECT r.*, i.number AS inv_no, i.invoice_date AS inv_date, i.customer_state,
               c.name AS cust_name, c.gstin AS cust_gstin, c.state_code AS cust_state
@@ -213,6 +217,7 @@ export async function feedSalesCreditNote(
   )[0];
   if (!r) return;
   const u = await unitInfo(tx, S(r.unit_id));
+  // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
   const lines = await tx.$queryRawUnsafe<Row[]>(
     `SELECT l.qty::text, l.taxable::text, l.gst_pct::text, l.cgst::text, l.sgst::text, l.igst::text,
             il.hsn_sac, il.uom
@@ -255,6 +260,7 @@ export async function feedPurchaseInvoice(
   actorId: string,
 ): Promise<void> {
   const inv = (
+    // unpaginated: rows of one parent (id)
     await tx.$queryRawUnsafe<Row[]>(
       `SELECT i.*, s.name AS sup_name, s.state_code AS sup_state
          FROM purchase_invoices i JOIN suppliers s ON s.id = i.supplier_id WHERE i.id=$1::uuid`,
@@ -263,6 +269,7 @@ export async function feedPurchaseInvoice(
   )[0];
   if (!inv) return;
   const u = await unitInfo(tx, S(inv.unit_id));
+  // unpaginated: rows of one parent (invoice_id)
   const lines = await tx.$queryRawUnsafe<Row[]>(
     `SELECT hsn_sac, uom, qty::text, taxable::text, gst_pct::text, cgst::text, sgst::text, igst::text
        FROM purchase_invoice_lines WHERE invoice_id=$1::uuid ORDER BY line_no`,
@@ -302,6 +309,7 @@ export async function feedPurchaseInvoice(
 /** supplier debit note posted -> inward DBN (reduces ITC) */
 export async function feedDebitNote(tx: Db, noteId: string, actorId: string): Promise<void> {
   const n = (
+    // unpaginated: rows of one parent (id)
     await tx.$queryRawUnsafe<Row[]>(
       `SELECT n.*, s.name AS sup_name, s.gstin AS sup_gstin, s.state_code AS sup_state,
               i.number AS inv_no, i.vendor_invoice_no, i.invoice_date AS inv_date
@@ -314,6 +322,7 @@ export async function feedDebitNote(tx: Db, noteId: string, actorId: string): Pr
   const tax = D3(n);
   if (tax === 0 && D2(n.taxable) === 0) return; // a note with no value and no tax has nothing to report
   const u = await unitInfo(tx, S(n.unit_id));
+  // unpaginated: whole-period return build: GST/TDS returns must include every document of the period
   const lines = await tx.$queryRawUnsafe<Row[]>(
     `SELECT COALESCE(il.hsn_sac,'') AS hsn_sac, il.uom, l.qty::text, l.taxable::text, l.gst_pct::text,
             l.cgst::text, l.sgst::text, l.igst::text

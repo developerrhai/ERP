@@ -7,6 +7,8 @@ import { ApiError } from '../lib/api';
 import { ALL_UNITS_LABEL, changeContext, useAppContext } from '../lib/context';
 import { hasUnsavedChanges } from '../lib/unsaved';
 import type { CurrentContext } from '../types';
+import { usePlants } from '../lib/plants';
+import { PlantSelector } from './PlantSelector';
 
 /** Option value for "All Units" (a real unit id is never empty). */
 export const ALL_UNITS = '';
@@ -14,6 +16,8 @@ export const ALL_UNITS = '';
 export function ContextSelectors() {
   const ctx = useAppContext();
   const toast = useToast();
+  const plants = usePlants().data;
+  const multiPlant = !!plants && plants.allowed.length > 1;
   const [pending, setPending] = useState(false);
   const [confirm, setConfirm] = useState<CurrentContext | null>(null);
   const data = ctx.data;
@@ -68,10 +72,12 @@ export function ContextSelectors() {
       >
         <option value={company.id}>{company.tradeName}</option>
       </select>
+      {multiPlant ? <PlantSelector /> : null}
       <select
         className="hide-mobile"
         aria-label="Unit"
         title="Select Unit"
+        hidden={multiPlant}
         value={current.unitId ?? ALL_UNITS}
         disabled={pending}
         onChange={(e) =>

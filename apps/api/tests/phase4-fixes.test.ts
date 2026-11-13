@@ -225,10 +225,6 @@ describe('GET /pages/:pageId/audit and /records/:id/audit', () => {
 describe('Administration masters served by the generic engine', () => {
   const PAGES = ['admin-designations', 'admin-currency', 'admin-uom', 'admin-taxes'];
 
-
-
-
-
   it('every other Administration page is still NOT_GENERIC', async () => {
     for (const pageId of [
       'admin-company',
@@ -432,7 +428,14 @@ describe('locked records, schema extras and status enums', () => {
     const s = dataOf<PageSchema & { ownerDepartment: string; approvalRequired: boolean }>(res);
     expect(s.ownerDepartment).toBe('Sales');
     expect(s.approvalRequired).toBe(true);
-    expect(s.editableStatuses).toEqual(['Draft', 'Active', 'Inactive', 'Open', 'Pending', 'Rejected']);
+    expect(s.editableStatuses).toEqual([
+      'Draft',
+      'Active',
+      'Inactive',
+      'Open',
+      'Pending',
+      'Rejected',
+    ]);
     expect(s.actions).toEqual([]);
     expect(s.fields.every((f) => typeof f.readOnly === 'boolean')).toBe(true);
     await prisma.moduleControl.update({

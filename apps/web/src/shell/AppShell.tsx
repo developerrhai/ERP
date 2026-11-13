@@ -9,7 +9,10 @@ import { PrivacyNoticeModal } from '../components/PrivacyNoticeModal';
 import { setAppLocale } from '../i18n';
 import { loadContext, resetContext, useAppContext } from '../lib/context';
 import { hardeningApi } from '../lib/hardeningApi';
-import { startRealtimeClient, stopRealtimeClient } from '../lib/realtime';
+import { RT_EVENT_CONTEXT, startRealtimeClient, stopRealtimeClient } from '../lib/realtime';
+import { loadPlants, pickerNeeded, refreshPlantsAfterAdminChange, resetPlants, usePlants } from '../lib/plants';
+import { PlantPickerPage } from '../pages/PlantPickerPage';
+import { useToast } from '../components/Toast';
 import type { User } from '../types';
 import { AccountDrawer } from './AccountDrawer';
 import { Sidebar } from './Sidebar';
@@ -22,9 +25,17 @@ export function AppShell({ user }: { user: User }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const { epoch } = useAppContext();
+  const plants = usePlants();
+  const toast = useToast();
 
   useEffect(() => {
-    void loadContext();
+    void loadPlants().then(() => loadContext());
+    const onPlantsChanged = () => {
+      void refreshPlantsAfterAdminChange().then(() =>
+        toast('Your plant access was changed by Admin. View updated.'),
+      );
+    };
+    window.addEventListener(RT_EVENT_CONTEXT, onPlantsChanged);
     const stopRt = startRealtimeClient();
     hardeningApi
       .getLocale()
@@ -33,11 +44,17 @@ export function AppShell({ user }: { user: User }) {
         // Fallback to localStorage preference
       });
     return () => {
+      window.removeEventListener(RT_EVENT_CONTEXT, onPlantsChanged);
       stopRt();
       stopRealtimeClient();
       resetContext();
+      resetPlants();
     };
   }, [user.id]);
+
+  if (pickerNeeded(plants) && plants.data) {
+    return <PlantPickerPage plants={plants.data} userName={user.name} />;
+  }
 
   return (
     <div className="app">

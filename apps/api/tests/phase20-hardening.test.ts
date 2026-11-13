@@ -9,7 +9,11 @@ import { describe, expect, it } from 'vitest';
 import { createLogger } from '../src/core/logger';
 import { scrubSentryEvent } from '../src/core/observability/sentry';
 import { PgRateLimitStore } from '../src/core/rate-limit';
-import { decodeKeysetCursor, encodeKeysetCursor, formatCappedCount } from '../src/core/http/pagination';
+import {
+  decodeKeysetCursor,
+  encodeKeysetCursor,
+  formatCappedCount,
+} from '../src/core/http/pagination';
 import { runWithQueryBudget } from '../src/core/db/prisma';
 import { S3StorageService } from '../src/core/storage/s3-storage';
 import { API, newApp, prisma, signInAs } from './helpers';
@@ -82,12 +86,20 @@ describe('20-A Postgres Rate-Limit Failure Modes', () => {
     const failingRunner = async () => {
       throw new Error('ECONNREFUSED');
     };
-    const globalStore = new PgRateLimitStore({ prefix: 't:global', failMode: 'open', queryHits: failingRunner });
+    const globalStore = new PgRateLimitStore({
+      prefix: 't:global',
+      failMode: 'open',
+      queryHits: failingRunner,
+    });
     globalStore.init({ windowMs: 60_000 } as any);
     const openRes = await globalStore.increment('127.0.0.1');
     expect(openRes.totalHits).toBe(1);
 
-    const loginStore = new PgRateLimitStore({ prefix: 't:login', failMode: 'closed', queryHits: failingRunner });
+    const loginStore = new PgRateLimitStore({
+      prefix: 't:login',
+      failMode: 'closed',
+      queryHits: failingRunner,
+    });
     loginStore.init({ windowMs: 60_000 } as any);
     await expect(loginStore.increment('127.0.0.1|user')).rejects.toMatchObject({ status: 503 });
   });
@@ -107,11 +119,16 @@ describe('20-C S3 Storage Service', () => {
       region: 'ap-south-1',
       kmsKeyId: 'alias/sawant-erp-docs',
       client: fakeClient,
-      presignFn: async (_c, cmd, opts) => `https://s3.example/${(cmd as any).input.Key}?expires=${opts?.expiresIn}`,
+      presignFn: async (_c, cmd, opts) =>
+        `https://s3.example/${(cmd as any).input.Key}?expires=${opts?.expiresIn}`,
     });
 
     const payload = Buffer.from('Sample S3 Verification PDF Content', 'utf8');
-    const saved = await s3.save({ buffer: payload, originalFilename: 'test-doc.pdf', mimeType: 'application/pdf' });
+    const saved = await s3.save({
+      buffer: payload,
+      originalFilename: 'test-doc.pdf',
+      mimeType: 'application/pdf',
+    });
     expect(saved.storageDriver).toBe('s3');
     expect(saved.s3Bucket).toBe('sawant-erp-prod-docs-aps1');
     expect(saved.sha256Hash).toBe(createHash('sha256').update(payload).digest('hex'));
@@ -185,7 +202,10 @@ describe('20-D DB Hardening: Audit Partitions, erp_app Denial & FK Index Coverag
 
 describe('20-E Performance Helpers, Keyset Pagination & N+1 Guard', () => {
   it('encodes/decodes opaque cursors, caps display counts at 10,000+, and enforces N+1 budget', async () => {
-    const cursor = encodeKeysetCursor('2027-04-01T00:00:00.000Z', '11111111-1111-1111-1111-111111111111');
+    const cursor = encodeKeysetCursor(
+      '2027-04-01T00:00:00.000Z',
+      '11111111-1111-1111-1111-111111111111',
+    );
     expect(decodeKeysetCursor(cursor)).toEqual({
       s: '2027-04-01T00:00:00.000Z',
       id: '11111111-1111-1111-1111-111111111111',
@@ -213,18 +233,33 @@ describe('20-G Opening-Balance Cut-over, 20-H Locale & 20-J DPDP Register', () =
   it('requires authentication & permission and runs full dry-run -> commit (idempotent) -> PDF -> dual sign-off', async () => {
     expect((await request(app).get(`${API}/hardening/cutover/batches`)).status).toBe(401);
     const low = await signInAs(app, 'MEMBER');
-    expect((await request(app).get(`${API}/hardening/cutover/batches`).set(low.bearer).set(await contextHeaders())).status).toBe(403);
+    expect(
+      (
+        await request(app)
+          .get(`${API}/hardening/cutover/batches`)
+          .set(low.bearer)
+          .set(await contextHeaders())
+      ).status,
+    ).toBe(403);
 
     const admin = await signInAs(app, 'ADMIN');
     const ctx = await contextHeaders();
 
     // Locale preference save & read
-    const putLoc = await request(app).put(`${API}/me/locale`).set(admin.bearer).send({ locale: 'hi' });
+    const putLoc = await request(app)
+      .put(`${API}/me/locale`)
+      .set(admin.bearer)
+      .send({ locale: 'hi' });
     expect(putLoc.status).toBe(200);
-    expect((await request(app).get(`${API}/me/locale`).set(admin.bearer)).body.data.locale).toBe('hi');
+    expect((await request(app).get(`${API}/me/locale`).set(admin.bearer)).body.data.locale).toBe(
+      'hi',
+    );
 
     // Template fetch
-    const tpl = await request(app).get(`${API}/hardening/cutover/templates/GL_TRIAL`).set(admin.bearer).set(ctx);
+    const tpl = await request(app)
+      .get(`${API}/hardening/cutover/templates/GL_TRIAL`)
+      .set(admin.bearer)
+      .set(ctx);
     expect(tpl.status).toBe(200);
     expect(tpl.body.data.dataset).toBe('GL_TRIAL');
 
@@ -301,7 +336,9 @@ describe('20-G Opening-Balance Cut-over, 20-H Locale & 20-J DPDP Register', () =
     const admin = await signInAs(app, 'ADMIN');
     const ctx = await contextHeaders();
 
-    const hiNotice = await request(app).get(`${API}/hardening/privacy/notice?locale=hi`).set(admin.bearer);
+    const hiNotice = await request(app)
+      .get(`${API}/hardening/privacy/notice?locale=hi`)
+      .set(admin.bearer);
     expect(hiNotice.status).toBe(200);
     expect(hiNotice.body.data.localizedTitle).toContain('सावंत ग्रुप');
 
@@ -333,4 +370,3 @@ describe('20-G Opening-Balance Cut-over, 20-H Locale & 20-J DPDP Register', () =
     expect(typeof sweep.body.data.anonymizedCandidates).toBe('number');
   });
 });
-
