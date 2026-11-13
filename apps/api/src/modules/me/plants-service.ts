@@ -40,6 +40,7 @@ export const plantsService = {
     ]);
     const saved = pref.unitIds.filter((id) => allowed.some((u) => u.id === id));
     const selected = saved.length > 0 ? saved : allowed.length > 0 && user.defaultUnitId && allowed.some((u) => u.id === user.defaultUnitId) ? [user.defaultUnitId] : allowed[0] ? [allowed[0].id] : [];
+    // unpaginated: one row per plant the user can access (small, bounded by plants)
     const counters = await prisma.$queryRaw<{ unit_id: string; n: number | null }[]>`
       SELECT unit_id::text AS unit_id, my_approvals AS n FROM user_work_counters WHERE user_id = ${user.id}::uuid`;
     const pending: Record<string, number | null> = {};
@@ -122,6 +123,7 @@ export const plantsService = {
     }
     defaultUnitId ??= wanted[0] ?? null;
 
+    // unpaginated: the user's own plant assignments (small)
     const beforeRows = await prisma.userUnit.findMany({ where: { userId }, select: { unitId: true } });
     const beforeIds = beforeRows.map((r) => r.unitId);
     const beforeAll = await userAllUnitsFlag(userId);

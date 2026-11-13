@@ -445,6 +445,12 @@ export async function scopeFor(user: AccessUser, pageId: string): Promise<Scope>
   return decideScope(u, pageId, await loadAccessData(u));
 }
 
+/** Phase 31: a module switched off for the caller's plant answers 403 MODULE_OFF (registered by the control module at start-up). */
+let moduleGate: ((pageId: string, req: Parameters<RequestHandler>[0]) => Promise<void>) | null = null;
+export function setModuleGate(fn: (pageId: string, req: Parameters<RequestHandler>[0]) => Promise<void>): void {
+  moduleGate = fn;
+}
+
 /** Route guard for page-level permissions. */
 export function requirePageAction(pageId: string, action: Action): RequestHandler {
   if (!pageInfo(pageId)) throw new Error(`requirePageAction: unknown page id ${pageId}`);
@@ -454,6 +460,7 @@ export function requirePageAction(pageId: string, action: Action): RequestHandle
     if (!(await can(user, pageId, action))) {
       throw Errors.forbidden();
     }
+    if (moduleGate) await moduleGate(pageId, req);
     next();
   });
 }
@@ -468,6 +475,7 @@ export function requireParamPageAction(action: Action): RequestHandler {
     if (!(await can(user, pageId, action))) {
       throw Errors.forbidden();
     }
+    if (moduleGate) await moduleGate(pageId, req);
     next();
   });
 }

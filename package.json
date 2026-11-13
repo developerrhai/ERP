@@ -11,11 +11,12 @@
     "build": "npm --prefix apps/api run build && npm --prefix apps/web run build",
     "build:web": "npm --prefix packages/registry install && npm --prefix apps/web install && npm --prefix apps/web run build",
     "secrets:scan": "node scripts/secrets-scan.cjs",
+    "check:unbounded": "node apps/api/node_modules/tsx/dist/cli.mjs tools/check-unbounded.ts",
     "status:pages": "node scripts/status-pages.cjs",
     "lint": "npm --prefix packages/registry run lint && npm --prefix apps/api run lint && npm --prefix apps/web run lint",
     "typecheck": "npm --prefix packages/registry run typecheck && npm --prefix packages/calc run typecheck && npm --prefix packages/statutory run typecheck && npm --prefix apps/api run typecheck && npm --prefix apps/web run typecheck",
     "test": "npm --prefix packages/registry run test && npm --prefix packages/calc run test && npm --prefix packages/statutory run test && npm --prefix apps/api run test && npm --prefix apps/web run test",
-    "verify": "npm run secrets:scan && npm run lint && npm run typecheck && npm run test",
+    "verify": "npm run secrets:scan && npm run check:unbounded && npm run lint && npm run typecheck && npm run test",
     "db:reset:test": "npm --prefix apps/api run db:reset:test",
     "e2e": "playwright test -c tests/e2e/playwright.config.ts",
     "deploy:backend": "powershell -ExecutionPolicy Bypass -File ./deploy_to_ec2.ps1"

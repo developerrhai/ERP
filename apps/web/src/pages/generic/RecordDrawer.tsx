@@ -11,6 +11,7 @@ import { lockAllows, openRecordPdf, submitRecord } from './phase4Api';
 import { toUiError } from '../../lib/errors';
 import { useState } from 'react';
 import { HistoryDrawer, MoveForwardDialog } from '../../components/MoveForward';
+import { PrintButtons } from '../docsmail/DocsMailPages';
 import { listRecordAudit, type PageAction, type PageSchema, type RecordRow } from './engineApi';
 import { displayValue, isEmptyValue, valueOf } from './fieldModel';
 
@@ -134,6 +135,7 @@ export function RecordDrawer({
             Move Forward
           </button>
         ) : null}
+        {generic ? <PrintButtons pageId={schema.pageId} id={row.id} /> : null}
         {generic ? (
           <button type="button" className="btn" onClick={() => setHistoryOpen(true)}>
             History

@@ -1,0 +1,42 @@
+# /inventory/integrity + pre-flight, test database rhai_erp_test after the third clean run (2026-11-07). The test database holds hundreds of throw-away units, so P-07/P-08/P-10 list test leftovers; the dev database rhai_erp is empty and READY.
+Database: rhai_erp_test
+
+Pre-flight
+  OK      P-01  Vouchers with no lines (the lines backfill must cover every voucher)
+  OK      P-02  Ledger voucher types missing from the voucher-type lookup
+  OK      P-03  Items that are both batch- and serial-tracked (items_one_tracking cannot be validated)
+  OK      P-04  Items with no HSN / SAC (items_hsn_required cannot be validated)
+  OK      P-05  Batch-tracked items that hold stock without a batch (receive it into a batch with an adjustment)
+  OK      P-06  Serial-tracked items that hold stock without serial numbers
+  BLOCKER P-07  Units with no cost centre (issues and adjustments cannot post to the GL)  [3] UDQG3E8, U6X7RL2, U1K11FN
+  WARNING P-08  Old event-queue rows still PENDING (replaced by inline GL posting)  [2] RECEIPT_POSTED d74fa810-b659-4620-95e0-d3573024e925, ISSUE_POSTED_REVERSED 6459c12a-c46e-4861-95ff-a226092eeb16
+  OK      P-09  Units whose stock value differs from the GL (run the GL cut-over)
+  INFO    P-10  Units without a GSTIN (transfers between units compare GSTINs)  [55] UJ0S0WL, U7R3VIJ, U9MXYDV, UBO5ZZI, SAW, VAR, U7EX9QX, UNLWN02, UGWSZW2, U6FSWOW
+  OK      P-INV-1  Balance = sum of the ledger (quantity and value)
+  OK      P-INV-2  Every ledger row carries the running balance
+  OK      P-INV-3  Slices (batch / bin / status) add up to the balance
+  OK      P-INV-4  Reserved never exceeds on hand
+
+Integrity
+  OK      INV-1  Balance = sum of the ledger (quantity and value)
+  OK      INV-2  Every ledger row carries the running balance
+  OK      INV-3  Slices (batch / bin / status) add up to the balance
+  OK      INV-4  Reserved never exceeds on hand
+  OK      INV-5  Serial numbers in stock = on hand (serial items)
+  OK      INV-6  Batch-tracked items hold no un-batched stock
+
+Stock value vs books: in balance
+  TAL INVENTORY_RM: stock 71 / books 71 / diff 0
+  UBO5ZZI INVENTORY_FG: stock 1884.65 / books 1884.65 / diff 0
+  UBO5ZZI INVENTORY_RM: stock 2875.28 / books 2875.28 / diff 0
+  U92B3XD INVENTORY_RM: stock 130 / books 130 / diff 0
+  U9MXYDV INVENTORY_FG: stock 1000 / books 1000 / diff 0
+  UET7TQ4 INVENTORY_RM: stock 200 / books 200 / diff 0
+  UBO5ZZI STOCK_IN_TRANSIT: stock 43.44 / books 43.44 / diff 0
+  U9MXYDV INVENTORY_RM: stock 1122 / books 1122 / diff 0
+  U6E5XL8 STOCK_IN_TRANSIT: stock 0 / books 0 / diff 0
+  UG7998A INVENTORY_RM: stock 200 / books 200 / diff 0
+  U6E5XL8 INVENTORY_RM: stock 10363 / books 10363 / diff 0
+  UG49K4Y INVENTORY_RM: stock 70 / books 70 / diff 0
+
+NOT READY for migration D

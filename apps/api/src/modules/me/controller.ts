@@ -1,5 +1,6 @@
 // HTTP layer for /me: calls the me / context services and shapes {data:...}. Never cached by the
 // browser, because the answer changes as soon as an admin edits permissions or unit access.
+import { controlService } from '../control/service';
 import type { Request, Response } from 'express';
 import { requestMeta, requireAuth } from '../../core/auth/auth-context';
 import { validated } from '../../core/http/validate';
@@ -27,7 +28,10 @@ export const meController = {
   },
   menuV2: async (req: Request, res: Response): Promise<void> => {
     res.set('Cache-Control', 'private, max-age=60');
-    res.json({ data: await homeService.menu(requireAuth(req)) });
+    const auth = requireAuth(req);
+    const menu = await homeService.menu(auth);
+    const hidden = await controlService.hiddenPages(req.ctx?.unitIds ?? [], auth.roleId); // Phase 31: modules switched off for the chosen plants
+    res.json({ data: hidden.size === 0 ? menu : { ...menu, families: menu.families.map((f) => ({ ...f, pages: f.pages.filter((p) => !hidden.has(p.id)) })).filter((f) => f.pages.length > 0) } });
   },
   search: async (req: Request, res: Response): Promise<void> => {
     const { q } = validated(res, 'query', searchQuerySchema);

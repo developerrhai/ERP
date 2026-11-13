@@ -1,4 +1,6 @@
 // apps/api/src/modules/bi/automation-comm-service.ts
+import { encryptSecret } from '../../core/auth/mfa-crypto';
+import { readSecret } from '../integrations/service';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { prisma } from '../../core/db/prisma';
 import { Errors } from '../../core/http/errors';
@@ -228,7 +230,7 @@ export class AutomationCommService {
       input.name,
       input.url,
       JSON.stringify(input.events),
-      rawSecret,
+      encryptSecret(rawSecret),
       last4,
       caller.auth.userId,
     );
@@ -276,7 +278,7 @@ export class AutomationCommService {
       webhookId,
       timestampSec: ts,
       body: bodyStr,
-      secret: String(ep.secret_enc),
+      secret: readSecret(String(ep.secret_enc)),
     });
 
     const headers = {

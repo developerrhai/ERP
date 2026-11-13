@@ -20,6 +20,12 @@ import {
 } from './hr-calc';
 import { smartOfficeAdapter } from './smart-office-adapter';
 
+/** A TIME column comes back from Prisma as a Date (1970-01-01THH:MM:SSZ) or as text: both become HH:MM. */
+function hhmm(v: unknown): string {
+  if (v instanceof Date) return `${String(v.getUTCHours()).padStart(2, '0')}:${String(v.getUTCMinutes()).padStart(2, '0')}`;
+  return String(v).slice(0, 5);
+}
+
 export class AttendanceService {
   async listShifts(): Promise<Row[]> {
     const rows = await query(prisma, `SELECT * FROM shifts WHERE active = true ORDER BY code`);
@@ -318,8 +324,8 @@ export class AttendanceService {
 
     const shiftConfig: ShiftConfig = {
       code: shiftData.code as string,
-      startTime: String(shiftData.start_time).slice(0, 5),
-      endTime: String(shiftData.end_time).slice(0, 5),
+      startTime: hhmm(shiftData.start_time),
+      endTime: hhmm(shiftData.end_time),
       breakMinutes: (shiftData.break_minutes as number) ?? 30,
       graceInMinutes: (shiftData.grace_in_minutes as number) ?? 10,
       graceOutMinutes: (shiftData.grace_out_minutes as number) ?? 0,

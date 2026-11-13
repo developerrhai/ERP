@@ -552,6 +552,15 @@ export class PayrollService {
         loanEmi = Number(dueSchedules[0].total_amount);
       }
 
+      // Step 9b (Phase 29): the employee share of a CLOSED canteen month for this payroll month
+      const canteenRows = await db.$queryRaw<any[]>`
+        SELECT coalesce(sum(c.employee_share), 0)::float AS amt FROM "canteen_coupons" c
+        JOIN "canteen_months" m ON m.unit_id = c.unit_id AND m.month = ${run.month} AND m.status = 'CLOSED'
+        WHERE c.person_kind = 'EMPLOYEE' AND c.person_id = ${emp.id}::uuid AND c.payment_mode = 'PAYROLL' AND c.status = 'SERVED'
+          AND to_char(c.date, 'YYYY-MM') = ${run.month}
+      `;
+      const canteenDed = Number(canteenRows[0]?.amt ?? 0);
+
       // Step 10: TDS
       const tdsResult = calculateTdsProjection({
         ytdTaxableGross: grossEarnings * 10, // Simulated projection for 12 months
@@ -567,6 +576,7 @@ export class PayrollService {
         ptAmount +
         mlwfResult.employeeMLWF +
         loanEmi +
+        canteenDed +
         tdsResult.currentMonthTDS;
 
       let netSalary = grossEarnings - totalEmpDeductions;
@@ -628,6 +638,7 @@ export class PayrollService {
         PT: ptAmount,
         MLWF: mlwfResult.employeeMLWF,
         LOAN: loanEmi,
+        CANTEEN_DED: canteenDed,
         TDS: tdsResult.currentMonthTDS,
       };
 
@@ -639,7 +650,7 @@ export class PayrollService {
               run_employee_id: runEmpId,
               component_id: c.id,
               amount: amt,
-              source: code === 'LOAN' ? 'LOAN' : 'STATUTORY',
+              source: code === 'LOAN' ? 'LOAN' : code === 'CANTEEN_DED' ? 'MANUAL' : 'STATUTORY',
             });
           }
         }

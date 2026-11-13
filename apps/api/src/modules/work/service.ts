@@ -12,6 +12,7 @@ import { query } from '../procurement/core';
 import type { Row } from '../procurement/core';
 import type { Caller } from '../records/service';
 import { notificationService } from '../notifications/service';
+import { mailAutomation } from '../docsmail/automation';
 import {
   ACTOR_SIDE,
   V18_NEXT,
@@ -123,7 +124,7 @@ async function event(
 }
 
 /** Active users of a department who can work in the plant (their plants include it, or they have every plant). */
-async function usersOf(db: Tx | typeof prisma, departmentId: string, unitId: string): Promise<{ id: string; name: string }[]> {
+export async function usersOf(db: Tx | typeof prisma, departmentId: string, unitId: string): Promise<{ id: string; name: string }[]> {
   const rows = await query(
     db,
     `SELECT u.id::text AS id, u.name FROM users u
@@ -158,6 +159,8 @@ async function notifyDept(
     entityId: movementId,
     dedupeKey: dedupe,
   });
+  // Phase 27 mail automation (#23 sent, #24 late, #25 returned): an email to the same people, after this transaction has had time to commit
+  setTimeout(() => void mailAutomation.onWork({ type, userIds, title, body, dedupe }), 1500);
 }
 
 async function loadLocked(tx: Tx, id: string): Promise<Row> {

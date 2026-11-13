@@ -1,0 +1,168 @@
+{
+  "note": "The plan of the FULL feed (PHASE-33 section 5). Only the order and owners are written; no step has a feeder yet. Run only against a database named *_staging or *_e2e.",
+  "guard": "assertSafeTarget() in apps/api/src/core/integrity/checks.ts",
+  "afterFeed": "npm run integrity (apps/api)",
+  "steps": [
+    {
+      "id": "01-company-setup",
+      "role": "Super User",
+      "content": "company, 3 plants, FY, departments, designations, letterheads, numbering",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "02-users",
+      "role": "Administrator",
+      "content": "60 users with plant checkboxes across 9 roles",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "03-admin-settings",
+      "role": "Admin, HR",
+      "content": "approval matrix, workflow matrix, mail automations, attendance policies, devices, punch sites",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "04-masters",
+      "role": "Purchase / Sales / Stores / HR",
+      "content": "customers, suppliers, items, BOMs, routings, work centres, warehouses, price lists",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "05-employees",
+      "role": "HR",
+      "content": "300 employees with bank and statutory data, shifts, rosters, leave policies",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "06-contract-labour-setup",
+      "role": "HR / EHS",
+      "content": "3 contractors, 3 work orders, 60 workers with onboarding",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "07-opening-balances",
+      "role": "Finance",
+      "content": "opening trial balance, stock, AR / AP through the cut-over console",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "08-crm-sales",
+      "role": "Sales",
+      "content": "enquiries, quotations, sales orders, product development projects with gates",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "09-movements",
+      "role": "each department",
+      "content": "every sales order through the movement chain; returns; short receipts",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "10-purchase",
+      "role": "Purchase",
+      "content": "PRs, RFQs, comparisons, POs, GRNs, purchase invoices, payments",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "11-production",
+      "role": "Production",
+      "content": "MRP, production orders, job cards on the tablet screen, scrap, FG receipts",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "12-quality",
+      "role": "Quality",
+      "content": "inspections, NCRs, 8D, calibration, final QC, certificates",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "13-dispatch-billing",
+      "role": "Warehouse / Finance",
+      "content": "DCs, e-way bills, invoices, receipts, credit notes",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "14-attendance",
+      "role": "device simulator + ESS + managers",
+      "content": "3 months of punches; regularisations, OT approvals, leave",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "15-workplace",
+      "role": "all",
+      "content": "tasks, handovers, visitors, canteen scans",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "16-payroll",
+      "role": "HR / Payroll",
+      "content": "3 monthly runs, payslips, bank files",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "17-contract-labour-month",
+      "role": "HR / Finance",
+      "content": "wage sheets, bills, compliance docs, one blocked payment, two approved",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "18-maintenance-assets",
+      "role": "Maintenance / Accounts",
+      "content": "breakdowns, PM, spares, capitalisation, depreciation",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "19-projects-service",
+      "role": "Projects / Service",
+      "content": "projects with timesheets, tickets, AMCs",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "20-logistics-gate",
+      "role": "Security / Logistics",
+      "content": "gate in / out, returnable passes, fuel logs",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "21-tax",
+      "role": "Finance",
+      "content": "GSTR-1 build, 2B reconciliation, TDS challans",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "22-month-close",
+      "role": "Finance",
+      "content": "bank reconciliation, period close, P&L, balance sheet",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    },
+    {
+      "id": "23-admin-config",
+      "role": "Admin",
+      "content": "custom fields, form rules, a module off for VAR, import, a duplicate merge",
+      "feeder": null,
+      "status": "NOT WRITTEN"
+    }
+  ]
+}

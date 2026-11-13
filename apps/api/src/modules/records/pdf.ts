@@ -33,7 +33,7 @@ export function displayValue(field: FieldMeta, raw: unknown): string {
   return typeof raw === 'string' ? raw : JSON.stringify(raw);
 }
 
-async function letterheadFor(): Promise<{ lh: PdfLetterhead; logo: Buffer | null }> {
+export async function letterheadFor(): Promise<{ lh: PdfLetterhead; logo: Buffer | null }> {
   const { value } = await settingsService.getLetterhead();
   let logo: Buffer | null = null;
   if (value.logoFileId) logo = (await defaultStorage.get(value.logoFileId))?.buffer ?? null;
@@ -64,7 +64,8 @@ async function requireViewAndExport(caller: Caller, pageId: string): Promise<voi
 const DEFAULT_EXPORT_QUERY: ExportRecordsQuery = { sort: '-createdAt' };
 
 export const recordPdfService = {
-  async recordPdf(caller: Caller, pageId: string, id: string): Promise<Buffer> {
+  /** The print model of one generic record (shared by the PDF, Word and Excel outputs). */
+  async recordPrintDto(caller: Caller, pageId: string, id: string): Promise<PrintDto> {
     await requireViewAndExport(caller, pageId);
     const record = await recordService.get(caller, pageId, id);
     const { schema } = await recordService.exportSpec(caller, pageId, DEFAULT_EXPORT_QUERY);
@@ -103,6 +104,11 @@ export const recordPdfService = {
         { label: 'Authorised by' },
       ],
     };
+    return dto;
+  },
+
+  async recordPdf(caller: Caller, pageId: string, id: string): Promise<Buffer> {
+    const dto = await recordPdfService.recordPrintDto(caller, pageId, id);
     const { lh, logo } = await letterheadFor();
     const buffer = await renderDocumentPdf(dto, lh, { logo });
     await recordAudit({

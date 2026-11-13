@@ -1,5 +1,6 @@
 // apps/api/src/modules/bi/routes.ts
 // Phase 19 Router: Dashboards, BI, Global Search, AI Copilot & Forecasts, Automation, Webhooks, Comm & Payment Links
+import { integrationService } from '../integrations/service';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { authenticate, requirePasswordChanged } from '../../core/auth/authenticate';
@@ -19,7 +20,9 @@ registerJobHandler(QUEUES.biKpiRefresh, async () => {
 registerJobHandler(QUEUES.biScheduleRun, async () => {});
 registerJobHandler(QUEUES.searchUpsert, async () => {});
 registerJobHandler(QUEUES.aiInsightsScan, async () => {});
-registerJobHandler(QUEUES.webhooksRetry, async () => {});
+registerJobHandler(QUEUES.webhooksRetry, async () => {
+  await integrationService.deliverDue();
+});
 
 export function createPhase19Router(): Router {
   const router = Router();

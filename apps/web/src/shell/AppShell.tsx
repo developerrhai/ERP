@@ -1,5 +1,6 @@
 // Authenticated frame (prototype .app grid: 304px sidebar + 66px top bar + main) that every
 // signed-in route renders inside; owns working context, locale sync, Help drawer, and DPDP privacy notice.
+import { getViewAs, setViewAs } from '../lib/viewAs';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router-dom';
@@ -56,8 +57,15 @@ export function AppShell({ user }: { user: User }) {
     return <PlantPickerPage plants={plants.data} userName={user.name} />;
   }
 
+  const va = getViewAs();
   return (
     <div className="app">
+      {va ? (
+        <div role="alert" className="viewas-banner">
+          Viewing as {va.name} — read-only.{' '}
+          <button type="button" className="btn" onClick={() => { setViewAs(null); window.location.reload(); }}>Stop</button>
+        </div>
+      ) : null}
       <a href="#main" className="skip-link">
         {t('app.skipToMain')}
       </a>

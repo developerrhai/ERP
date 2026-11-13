@@ -151,6 +151,13 @@ import {
 } from './dashboards/DashboardPages';
 import { KpiAlertsPage, KpiTargetsPage } from './dashboards/TargetsAlertsPages';
 import { DeptInboxPage, DeptWorkPage, WorkflowMatrixPage } from './work/WorkPages';
+import { Order360Page, ProcessExceptionsPage, ProjectHistoryPage, SalesEnquiriesPage, StageGatesPage } from './spine/SpinePages';
+import { IntegrationsPage, WebhooksPage } from './integrations/IntegrationPages';
+import { ApiKeysPage, CustomFieldsPage, FormRulesPage, HealthPage, LoginPoliciesPage, ModulePlantsPage, NumberingPage, SessionsPage, ViewAsPage } from './control/ControlPages';
+import { BillsPage, ClAttendancePage, ClCommandPage, ClWagesPage, CompliancePage, ContractorsPage, IncidentsPage, ClWorkOrdersPage, WorkersPage } from './contractlabour/ClPages';
+import { CanteenPage, HandoverPage, TasksPage, VisitorsPage } from './ops/OpsPages';
+import { DevicesPage, LiveBoardPage, PoliciesPage, PunchSitesPage } from './attendance/AttendancePages';
+import { CertificatesPage, DeptMailPage, DocumentCenterPage, LettersPage, MailAutomationPage } from './docsmail/DocsMailPages';
 import { SCREEN_PAGES } from './screens/screenPages';
 
 const SUB_PAGES: Record<string, readonly string[]> = {
@@ -739,6 +746,90 @@ function PageBody({
       return <AdminNotifConsolePage initialTab="SUPPRESSIONS" />;
     case 'admin-page-health':
       return <AdminPageHealthPage />;
+    case 'admin-integrations':
+      return <IntegrationsPage />;
+    case 'admin-webhooks':
+      return <WebhooksPage />;
+    case 'admin-customfields':
+      return <CustomFieldsPage />;
+    case 'admin-formbuilder':
+      return <FormRulesPage />;
+    case 'admin-module-plants':
+      return <ModulePlantsPage />;
+    case 'admin-numbering':
+      return <NumberingPage />;
+    case 'admin-sessions':
+      return <SessionsPage />;
+    case 'admin-login-policies':
+      return <LoginPoliciesPage />;
+    case 'admin-view-as':
+      return <ViewAsPage />;
+    case 'admin-api':
+      return <ApiKeysPage />;
+    case 'admin-health':
+      return <HealthPage />;
+    case 'cl-command-center':
+      return <ClCommandPage />;
+    case 'cl-contractors':
+      return <ContractorsPage />;
+    case 'cl-workorders':
+      return <ClWorkOrdersPage />;
+    case 'cl-workers':
+    case 'cl-onboarding':
+    case 'cl-deployment':
+      return <WorkersPage />;
+    case 'cl-attendance':
+      return <ClAttendancePage />;
+    case 'cl-wages':
+      return <ClWagesPage />;
+    case 'cl-invoices':
+      return <BillsPage />;
+    case 'cl-compliance':
+      return <CompliancePage />;
+    case 'cl-incidents':
+      return <IncidentsPage />;
+    case 'ops-tasks':
+      return <TasksPage />;
+    case 'ops-shift-roster':
+      return <HandoverPage />;
+    case 'ops-visitors':
+      return <VisitorsPage />;
+    case 'ops-canteen':
+      return <CanteenPage />;
+    case 'hr-attendance-devices':
+      return <DevicesPage />;
+    case 'hr-attendance-policies':
+      return <PoliciesPage />;
+    case 'hr-geo-sites':
+      return <PunchSitesPage />;
+    case 'att-live-board':
+      return <LiveBoardPage />;
+    case 'business-documents':
+      return <DocumentCenterPage />;
+    case 'dept-mail':
+      return <DeptMailPage />;
+    case 'admin-mail-automation':
+      return <MailAutomationPage />;
+    case 'quality-certificate':
+      return <CertificatesPage />;
+    case 'hr-offer-letter':
+      return <LettersPage />;
+    case 'sales-enquiries':
+      return <SalesEnquiriesPage />;
+    case 'ops-order-360':
+      return <Order360Page />;
+    case 'project-global-history':
+      return <ProjectHistoryPage />;
+    case 'process-exceptions':
+      return <ProcessExceptionsPage />;
+    case 'proj-stage-gates':
+      return <StageGatesPage />;
+    case 'proj-specifications':
+      return <StageGatesPage section="specs" />;
+    case 'proj-test-records':
+      return <StageGatesPage section="tests" />;
+    case 'proj-documents':
+      return <StageGatesPage section="docs" />;
     case 'dept-inbox':
       return <DeptInboxPage />;
     case 'dept-work':

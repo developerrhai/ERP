@@ -1,0 +1,22 @@
+-- Phase 35: leading indexes for every foreign key flagged by tools/verify-fk-indexes.ts (additive, idempotent).
+CREATE INDEX IF NOT EXISTS idx_canteen_coupons_meal_type ON canteen_coupons (meal_type);
+CREATE INDEX IF NOT EXISTS idx_canteen_entitlements_meal_type ON canteen_entitlements (meal_type);
+CREATE INDEX IF NOT EXISTS idx_canteen_rates_meal_type ON canteen_rates (meal_type);
+CREATE INDEX IF NOT EXISTS idx_canteen_waste_meal_type ON canteen_waste (meal_type);
+CREATE INDEX IF NOT EXISTS idx_cl_compliance_months_contractor_id ON cl_compliance_months (contractor_id);
+CREATE INDEX IF NOT EXISTS idx_cl_invoices_work_order_id ON cl_invoices (work_order_id);
+CREATE INDEX IF NOT EXISTS idx_cl_wage_lines_worker_id ON cl_wage_lines (worker_id);
+CREATE INDEX IF NOT EXISTS idx_cl_wage_sheets_contractor_id ON cl_wage_sheets (contractor_id);
+CREATE INDEX IF NOT EXISTS idx_cl_work_orders_contractor_id ON cl_work_orders (contractor_id);
+CREATE INDEX IF NOT EXISTS idx_cl_workers_contractor_id ON cl_workers (contractor_id);
+CREATE INDEX IF NOT EXISTS idx_internal_message_attachments_message_id ON internal_message_attachments (message_id);
+CREATE INDEX IF NOT EXISTS idx_ops_task_dependencies_succ_id ON ops_task_dependencies (succ_id);
+CREATE INDEX IF NOT EXISTS idx_project_documents_gate_id ON project_documents (gate_id);
+CREATE INDEX IF NOT EXISTS idx_project_gates_step_id ON project_gates (step_id);
+CREATE INDEX IF NOT EXISTS idx_project_tests_gate_id ON project_tests (gate_id);
+CREATE INDEX IF NOT EXISTS idx_project_tests_spec_id ON project_tests (spec_id);
+CREATE INDEX IF NOT EXISTS idx_projects_gate_template_id ON projects (gate_template_id);
+CREATE INDEX IF NOT EXISTS idx_sales_enquiries_customer_id ON sales_enquiries (customer_id);
+CREATE INDEX IF NOT EXISTS idx_sales_enquiries_project_id ON sales_enquiries (project_id);
+CREATE INDEX IF NOT EXISTS idx_task_checklist_task_id ON task_checklist (task_id);
+CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments (task_id);

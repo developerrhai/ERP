@@ -37,6 +37,13 @@ import { createDepartmentsRouter } from './modules/departments/routes';
 import { createMeRouter, createRoleLandingRouter } from './modules/me/routes';
 import { createDashboardsRouter, createTvRouter } from './modules/dashboards/routes';
 import { createWorkRouter } from './modules/work/routes';
+import { createSpineRouter } from './modules/spine/routes';
+import { createDocsMailRouter } from './modules/docsmail/routes';
+import { createAttAutoRouter, createDevicePushRouter } from './modules/attauto/routes';
+import { createWorkplaceRouter } from './modules/workplace/routes';
+import { createContractLabourRouter } from './modules/contractlabour/routes';
+import { createControlRouter } from './modules/control/routes';
+import { createInboundHooksRouter, createIntegrationsRouter } from './modules/integrations/routes';
 import { createModuleControlsRouter } from './modules/module-controls/routes';
 import { createPermissionsRouter } from './modules/permissions/routes';
 import { createRolesRouter } from './modules/roles/routes';
@@ -144,6 +151,7 @@ export function createApp(options: AppOptions = {}): Express {
       exposedHeaders: ['X-Request-Id', 'Retry-After', 'ETag'],
     }),
   );
+  app.use('/api/v1/webhooks/inbound', createInboundHooksRouter()); // Phase 34: signed hooks need the raw body, so they come before the JSON parser
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
 
@@ -176,6 +184,15 @@ export function createApp(options: AppOptions = {}): Express {
   api.use(createDashboardsRouter());
   api.use('/tv', createTvRouter());
   api.use('/work', createWorkRouter());
+  api.use(createSpineRouter());
+  api.use(createDocsMailRouter());
+  api.use('/iclock', createDevicePushRouter()); // Phase 28: biometric devices push here (serial authenticated)
+  api.use('/att', createDevicePushRouter()); // Phase 28: signed agent batches
+  api.use(createAttAutoRouter());
+  api.use(createWorkplaceRouter());
+  api.use(createContractLabourRouter());
+  api.use(createControlRouter());
+  api.use(createIntegrationsRouter());
   api.use('/admin/role-landing', createRoleLandingRouter());
   api.use(createPhase21PublicRouter()); // Public SNS-signed webhooks before any module router
   api.use('/departments', createDepartmentsRouter());
@@ -228,6 +245,7 @@ export function createApp(options: AppOptions = {}): Express {
   api.use('/imports', createImportsRouter());
   api.use('/jobs', createJobsRouter());
   api.use('/pages', createPagesRouter());
+  app.use('/iclock', createDevicePushRouter()); // the machines call the server root, not /api/v1
   app.use('/api/v1', api);
 
   options.extraRoutes?.(app);

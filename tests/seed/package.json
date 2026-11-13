@@ -1,0 +1,14 @@
+{
+  "name": "sawant-erp-ui-seed",
+  "private": true,
+  "scripts": {
+    "seed": "playwright test -c playwright.config.ts e2e/seed-data.spec.ts"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^9.6.0",
+    "@types/node": "^22.0.0"
+  },
+  "dependencies": {
+    "sawant-group-erp": "file:../.."
+  }
+}

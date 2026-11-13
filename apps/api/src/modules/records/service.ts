@@ -2,6 +2,7 @@
 // OWN / DEPARTMENT / ALL), create with a gap-free code and an Idempotency-Key, If-Match edits,
 // soft delete + undo, the allowed status changes, bulk delete with a per-id report, and the audited
 // .xlsx export. A financial year that is CLOSED blocks every write (409 PERIOD_CLOSED).
+import { controlService } from '../control/service';
 import { createHash, createHmac } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import type { AuthContext, RequestMeta } from '../../core/auth/auth-context';
@@ -388,6 +389,7 @@ export const recordService = {
     const validated = validateRecordInput(schema, input, 'create');
     const data = applyAadhaar({ ...validated.values }, validated.aadhaar);
     assertDateOrder(schema, data, new Set(Object.keys(validated.values)));
+    await controlService.assertFormRules(caller, pageId, 'Draft', Object.keys(validated.values), data); // Phase 31: hidden / read-only / required by role and status
     const unit = await prisma.unit.findUnique({ where: { id: unitId } });
     if (!unit) throw Errors.contextInvalid('Unknown unit.');
     const user = caller.auth.user;
@@ -528,6 +530,7 @@ export const recordService = {
     const diff = changedKeys(publicData(current.data), publicData(next));
     // Nothing changes: return the current row without a version bump or an audit row.
     if (!diff.changed) return toDto(current);
+    await controlService.assertFormRules(caller, pageId, current.status, [...Object.keys(validated.values), ...validated.cleared], next); // Phase 31
     const updated = await prisma.$transaction(async (tx) => {
       // Phase 6B: the document is recalculated with the rule-set versions it was CREATED with.
       const pinned = await documentSettings.pinned(tx, current.ruleSetVersionIds);

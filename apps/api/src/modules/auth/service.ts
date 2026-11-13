@@ -1,6 +1,7 @@
 // Authentication rules (CONTRACT §6, Phase 01): generic login failures, lockout, session creation,
 // MFA challenge-response, refresh-token rotation with family-wide reuse detection, session cap,
 // my sessions, password reset, logout and change-password.
+import { controlService } from '../control/service';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { User } from '@prisma/client';
 import * as OTPAuth from 'otpauth';
@@ -241,6 +242,9 @@ export const authService = {
       await auditLoginFailed(input.identifier, 'locked', user, meta);
       throw Errors.accountLocked(minutesUntil(user.lockedUntil));
     }
+
+    // Phase 31: sign-in hours and the IP allow-list of the user's role
+    await controlService.assertLoginPolicy(user.roleId, meta.ip, new Date(), user.id);
 
     // Step 2: If MFA is enabled on user account, issue challenge and require verification
     if (user.mfaEnabled) {

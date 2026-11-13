@@ -21,6 +21,7 @@ import type { ApprovalDocHandler } from './handlers';
 import { applicableRules, resolveRuleSet } from './matrix';
 import { approverLabel, eligibleApprovers } from './pool';
 import type { Approver } from './pool';
+import { mailAutomation } from '../docsmail/automation';
 import { REQUEST_INCLUDE, buildRequestDtos, requestView } from './view';
 import type { RequestDto, RequestFull } from './view';
 
@@ -474,6 +475,7 @@ export const approvalService = {
     }
     const callerId = caller.auth.userId;
     try {
+      let mailNote: Parameters<typeof mailAutomation.onApprovalResult>[0] | null = null;
       await prisma.$transaction(async (tx) => {
         const req = await lockRequest(tx, requestId);
         if (req.status !== 'PENDING') throw await decidedError(tx, req);
@@ -616,7 +618,11 @@ export const approvalService = {
           docCode: req.docCode,
           amount: req.amount?.toString() ?? null,
         });
+        if (kind !== 'RETURN') {
+          mailNote = { docType: req.docType, docId: req.docId, docNo: req.docCode, unitId: req.unitId, requesterId: req.requestedBy, approved: kind === 'APPROVE', ...(comment ? { detail: comment } : {}) };
+        }
       }, TX);
+      if (mailNote) void mailAutomation.onApprovalResult(mailNote);
     } catch (err) {
       const target = uniqueViolation(err);
       if (target !== null) {

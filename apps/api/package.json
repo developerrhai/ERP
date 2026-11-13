@@ -20,6 +20,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset:test": "tsx scripts/reset-test-db.ts",
+    "integrity": "tsx scripts/integrity-check.ts",
     "inventory:preflight": "tsx scripts/inventory-preflight.ts",
     "job:inventory": "tsx scripts/inventory-daily.ts",
     "postinstall": "prisma generate"
@@ -39,6 +40,7 @@
     "compression": "1.8.1",
     "cookie-parser": "1.4.7",
     "cors": "2.8.5",
+    "docx": "8.5.0",
     "dotenv": "16.4.5",
     "exceljs": "4.4.0",
     "express": "4.21.2",

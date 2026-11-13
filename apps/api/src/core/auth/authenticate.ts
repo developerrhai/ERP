@@ -1,6 +1,7 @@
 // Bearer authentication that re-checks the database on every request (CONTRACT §6 Tokens): the
 // session must be live, the user ACTIVE, and the role is taken from the DB, so a role change,
 // deactivation or revocation takes effect immediately. Also the must-change-password and CSRF guards.
+import { prisma } from '../db/prisma';
 import type { RequestHandler } from 'express';
 import { asyncHandler } from '../http/async-handler';
 import { Errors } from '../http/errors';
@@ -14,7 +15,7 @@ export function readBearer(header: string | undefined): string | null {
   return match?.[1] ?? null;
 }
 
-export const authenticate: RequestHandler = asyncHandler(async (req, _res, next) => {
+export const authenticate: RequestHandler = asyncHandler(async (req, res, next) => {
   const token = readBearer(req.headers.authorization);
   if (!token) throw Errors.unauthenticated();
   const claims = verifyAccessToken(token);
@@ -41,6 +42,25 @@ export const authenticate: RequestHandler = asyncHandler(async (req, _res, next)
     role: session.user.role.code,
     user: session.user,
   };
+
+  // Phase 31 View as: the owner's request is answered as the chosen person, read-only, for at most 30 minutes.
+  const viewAsId = req.get('x-view-as');
+  if (viewAsId && session.user.role.level >= 95) {
+    const va = await prisma.$queryRaw<{ target_user_id: string }[]>`
+      SELECT target_user_id::text AS target_user_id FROM view_as_sessions
+       WHERE id::text = ${viewAsId} AND owner_user_id = ${session.user.id}::uuid AND ended_at IS NULL AND expires_at > now()`;
+    if (va[0]) {
+      const target = await prisma.user.findUnique({ where: { id: va[0].target_user_id }, include: { role: true, extraDepartments: true } });
+      if (target && target.status === 'ACTIVE') {
+        const unsafe = !['GET', 'HEAD', 'OPTIONS'].includes(req.method) && !req.originalUrl.includes('/owner/view-as');
+        if (unsafe) throw Errors.forbidden(`Viewing as ${target.name} — read-only.`);
+        const tDepts = [target.department, ...(target.extraDepartments ?? []).map((d) => d.departmentName)].filter((d): d is string => Boolean(d));
+        req.auth = { ...req.auth, userId: target.id, roleId: target.role.id, roleCode: target.role.code, level: target.role.level, allUnits: target.role.allUnits, departments: tDepts, role: target.role.code, user: target as never };
+        res.locals.viewAs = { id: viewAsId, name: target.name };
+        res.setHeader('X-Viewing-As', encodeURIComponent(target.name));
+      }
+    }
+  }
 
   // Touch last_used_at at most once per 60 seconds; requests with X-Activity: background never touch it.
   const isBackground = req.get('x-activity') === 'background';

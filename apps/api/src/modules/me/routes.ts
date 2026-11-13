@@ -45,7 +45,7 @@ export function createMeRouter(): Router {
   // Phase 23: plants, the Menu page, search, Home, favourites and recent pages
   router.get('/plants', asyncHandler(meController.getPlants));
   router.put('/plants', validate({ body: putPlantsSchema }), asyncHandler(meController.putPlants));
-  router.get('/menu-v2', asyncHandler(meController.menuV2));
+  router.get('/menu-v2', resolveContext, asyncHandler(meController.menuV2));
   router.get('/search', validate({ query: searchQuerySchema }), asyncHandler(meController.search));
   // Home needs the chosen plants for the movement counts, so it (only) resolves the context
   router.get('/home', resolveContext, asyncHandler(meController.home));

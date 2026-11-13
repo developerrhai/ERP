@@ -56,6 +56,7 @@ const QUICK_CREATE: { pageId: string; label: string }[] = [
 ];
 
 async function loadPrefs(userId: string): Promise<HomePrefs> {
+  // unpaginated: single-row preference lookup by user
   const rows = await prisma.$queryRaw<
     {
       pinned_pages: string[];
@@ -248,6 +249,7 @@ export const homeService = {
   async landingFor(auth: AuthContext): Promise<string> {
     const prefs = await loadPrefs(auth.userId);
     if (prefs.landing !== 'home') return prefs.landing;
+    // unpaginated: single-row preference lookup by user
     const rows = await prisma.$queryRaw<{ landing: string }[]>`
       SELECT landing FROM role_landing WHERE role_id = ${auth.user.roleId}::uuid`;
     return rows[0]?.landing ?? 'home';

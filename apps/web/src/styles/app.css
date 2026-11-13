@@ -2622,3 +2622,111 @@ a.kpi-value:hover { color: var(--primary); }
 .tabs-row { display: flex; gap: 6px; flex-wrap: wrap; }
 .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .history-list { margin: 0; padding-left: 18px; display: grid; gap: 10px; }
+
+/* Phase 26: gate rail and progress bars */
+.gate-rail { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
+.gate-card h3 { margin: 0 0 4px; }
+.progress { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin: 8px 0; }
+.progress-bar { height: 100%; background: var(--success, #16a34a); }
+
+/* Phase 27: Print menu, Document Center, mail automation cards */
+.print-menu { position: relative; display: inline-block; }
+.print-menu-list { position: absolute; z-index: 20; right: 0; margin: 4px 0 0; padding: 4px; list-style: none; background: var(--surface, #fff); border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.15); min-width: 170px; }
+.print-menu-list .btn { display: block; width: 100%; text-align: left; }
+.doc-center { display: grid; grid-template-columns: 240px 1fr 280px; gap: 16px; align-items: start; }
+.doc-center nav .btn { display: block; width: 100%; text-align: left; margin-bottom: 4px; }
+.automation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+tr.unread td { font-weight: 600; }
+@media (max-width: 900px) { .doc-center { grid-template-columns: 1fr; } }
+
+/* Phase 31: View as banner */
+.viewas-banner { position: sticky; top: 0; z-index: 60; background: #b91c1c; color: #fff; padding: 8px 16px; font-weight: 600; text-align: center; }
+.viewas-banner .btn { margin-left: 12px; }
+
+/* ================================================================================================
+   Phase 32: V40 parity polish. The overlay used by the Phase 26-31 dialogs, print rules for the new
+   pages, a phone (<= 600 px) pass, visible focus and 44 px tap targets. Colours come from the tokens.
+   ================================================================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: rgba(15, 23, 42, 0.55);
+  overflow: auto;
+}
+.modal-backdrop > .modal {
+  padding: 18px;
+  width: min(560px, 96vw);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.modal-backdrop > .modal label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 13px; }
+.modal-backdrop > .modal input,
+.modal-backdrop > .modal select,
+.modal-backdrop > .modal textarea { font-weight: 400; }
+.modal-backdrop > .modal h2 { margin: 0 0 4px; font-size: 18px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.automation-card { min-width: 0; }
+.inline-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin: 10px 0; }
+.inline-form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
+.tabs-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.table-scroll, .register-table { max-width: 100%; }
+
+/* keyboard users always see where they are */
+.btn:focus-visible,
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="tab"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* phone layout */
+@media (max-width: 600px) {
+  .dash-page { padding: 10px; }
+  .dash-page .page-head { flex-direction: column; align-items: stretch; gap: 8px; }
+  .dash-page table.register-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .gate-rail, .automation-grid { grid-template-columns: 1fr; }
+  .doc-center { grid-template-columns: 1fr; }
+  .inline-form { flex-direction: column; align-items: stretch; }
+  .inline-form > * { width: 100%; }
+  .tabs-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .tabs-row .btn { white-space: nowrap; }
+  .modal-backdrop { align-items: flex-end; padding: 0; }
+  .modal-backdrop > .modal { width: 100vw; max-height: 92vh; border-radius: 17px 17px 0 0; }
+  .modal-actions { position: sticky; bottom: 0; background: #fff; padding: 10px 0; }
+  .btn, button.btn, .row-actions .btn { min-height: 44px; min-width: 44px; }
+  input, select, textarea { min-height: 44px; font-size: 16px; }
+  .viewas-banner { font-size: 14px; padding: 8px 10px; }
+}
+
+/* printing from the browser: only the page content, readable tables */
+@media print {
+  .modal-backdrop,
+  .tabs-row,
+  .inline-form,
+  .row-actions,
+  .viewas-banner,
+  .print-menu,
+  .page-head > .btn,
+  .page-head button { display: none !important; }
+  .dash-page { padding: 0; }
+  .dash-page table.register-table { display: table; white-space: normal; font-size: 11px; width: 100%; border-collapse: collapse; }
+  .dash-page table.register-table th,
+  .dash-page table.register-table td { border: 1px solid #94a3b8; padding: 3px 5px; }
+  .gate-rail { display: block; }
+  .gate-rail > * { break-inside: avoid; margin-bottom: 8px; }
+  .panel { box-shadow: none; border: 1px solid #cbd5e1; break-inside: avoid; }
+  a[href]::after { content: ""; }
+  @page { margin: 12mm; }
+}

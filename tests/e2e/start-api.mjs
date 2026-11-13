@@ -17,7 +17,25 @@ function run(cmd, args) {
   if (r.status !== 0) throw new Error(`${cmd} ${args.join(' ')} failed with ${r.status}`);
 }
 
-run('npx', ['prisma', 'migrate', 'reset', '--force', '--skip-seed']);
+// "prisma migrate reset" drops table by table and now runs out of shared memory (max_locks_per_transaction)
+// with 100+ tables. Drop and re-create the whole e2e database instead (same approach as db:reset:test).
+const recreate = `
+  const { PrismaClient } = require('@prisma/client');
+  const url = ${JSON.stringify(E2E.apiEnv.DATABASE_URL.replace('/rhai_erp_e2e', '/postgres'))};
+  const p = new PrismaClient({ datasources: { db: { url } } });
+  (async () => {
+    try {
+      await p.$executeRawUnsafe("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'rhai_erp_e2e' AND pid <> pg_backend_pid()");
+      await p.$executeRawUnsafe('DROP DATABASE IF EXISTS rhai_erp_e2e');
+      await p.$executeRawUnsafe('CREATE DATABASE rhai_erp_e2e');
+    } finally { await p.$disconnect(); }
+  })().catch((e) => { console.error(e); process.exit(1); });
+`;
+{
+  const r = spawnSync(process.execPath, ['-e', recreate], { cwd: apiDir, env, stdio: 'inherit' });
+  if (r.status !== 0) throw new Error('could not re-create rhai_erp_e2e');
+}
+run('npx', ['prisma', 'migrate', 'deploy']);
 run('npx', ['tsx', 'prisma/seed.ts']);
 
 const server = spawn('npx', ['tsx', 'src/server.ts'], { cwd: apiDir, env, stdio: 'inherit', shell: true });
