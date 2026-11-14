@@ -48,6 +48,33 @@ export function BroadcastBannerHost() {
     return () => window.removeEventListener(RT_EVENT_BROADCAST, onBroadcast);
   }, [loadBanners]);
 
+  // A new version is applied silently when no form holds unsaved edits. If a form is dirty the
+  // banner stays, and the update is applied as soon as the form is clean (checked every 5 s) or
+  // when the user clicks Reload (§5.5: never discard unsaved edits).
+  useEffect(() => {
+    if (!swWaiting) return undefined;
+    let reloaded = false;
+    const apply = (): void => {
+      if (reloaded) return;
+      reloaded = true;
+      navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), {
+        once: true,
+      });
+      swWaiting.postMessage({ type: 'SKIP_WAITING' });
+    };
+    if (!hasDirtyForm()) {
+      apply();
+      return undefined;
+    }
+    const timer = window.setInterval(() => {
+      if (!hasDirtyForm()) {
+        window.clearInterval(timer);
+        apply();
+      }
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [swWaiting]);
+
   const acknowledge = async (id: string) => {
     setBusyId(id);
     try {

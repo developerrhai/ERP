@@ -43,6 +43,9 @@ export function Topbar({ user, sidebarOpen, onToggleSidebar, onOpenAccount, onOp
       >
         ☰ {t('app.menu')}
       </button>
+      <button type="button" className="btn" title="All modules, search and favourites" onClick={() => navigate('/menu')}>
+        ▦ All modules
+      </button>
       <div className="global">
         <input
           placeholder={t('app.searchPlaceholder')}
