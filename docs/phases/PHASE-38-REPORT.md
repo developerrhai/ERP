@@ -38,3 +38,9 @@ Inbox: my-approvals (Approval Inbox) is 'planned', 5 tabs; 12 dept-inbox-* pages
 | 28 | Work Management | 2 | 14 | 0 |
 | 29 | Workplace Management | 2 | 16 | 0 |
 | 30 | Integrated Plant Flow | 10 | 69 | 0 |
+
+## V40 comparison (2026-11-14, `node scripts/gen-parity.cjs`, UI audit "after" run)
+* Pages: 272 of 327 have their own screen; 2 use the generic register; 53 are not in the menu yet (my-approvals, 12 dept-inbox-*, 12 dept-work-*, document-movement-center, dispatch-dc, accounts-gst-invoice, cl-*, plant-*, master-customers/products/materials, customer-receipts, ...).
+* Average UI score 20.2 / 30 (target >= 25). 63 pages below 18.
+* V40 buttons: 4,623 present, 2,076 greyed with a reason, 3,208 missing. 321 pages miss at least one V40 button.
+* Tabs: most pages show only the first view (Phase 38 task T-38-1 / T-38-5).
