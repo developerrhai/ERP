@@ -43,15 +43,14 @@ export function Topbar({ user, sidebarOpen, onToggleSidebar, onOpenAccount, onOp
       >
         ☰ {t('app.menu')}
       </button>
-      <button type="button" className="btn" onClick={() => navigate('/menu')}>
-        ⊞ Menu
-      </button>
       <div className="global">
         <input
           placeholder={t('app.searchPlaceholder')}
           aria-label={t('app.searchPlaceholder')}
-          onFocus={() => navigate('/m/global-search')}
-          readOnly
+          onKeyDown={(e) => {
+            const q = e.currentTarget.value.trim();
+            if (e.key === 'Enter' && q) navigate(`/m/global-search?q=${encodeURIComponent(q)}`);
+          }}
         />
       </div>
       <ContextSelectors />

@@ -15,6 +15,8 @@ import { ApprovalCenterPage } from './pages/approvals/ApprovalCenterPage';
 import { HardeningPage } from './pages/admin/HardeningPage';
 import { InstallGuidePage } from './pages/notifications/InstallGuidePage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { UiKitPage } from './pages/admin/UiKitPage';
+import { isAdminRole } from './lib/registry';
 import { HomePage } from './pages/HomePage';
 import { MenuPage } from './pages/MenuPage';
 import { TvPage } from './pages/dashboards/TvPage';
@@ -55,6 +57,7 @@ function ProtectedApp() {
           <Route path="account/security" element={<AccountSecurityPage user={user} />} />
           <Route path="approvals" element={<ApprovalCenterPage user={user} />} />
           <Route path="hardening" element={<HardeningPage />} />
+          <Route path="admin/ui-kit" element={isAdminRole(user.role) ? <UiKitPage /> : <NotFoundPage />} />
           <Route path="install" element={<InstallGuidePage />} />
           <Route path="notifications" element={<Navigate to="/m/notif-center" replace />} />
           <Route path="gate/kiosk" element={<GateKioskPage />} />

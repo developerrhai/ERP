@@ -19,6 +19,7 @@
     "verify": "npm run secrets:scan && npm run check:unbounded && npm run lint && npm run typecheck && npm run test",
     "db:reset:test": "npm --prefix apps/api run db:reset:test",
     "e2e": "playwright test -c tests/e2e/playwright.config.ts",
+    "ui:audit": "node tests/ui-audit/run.mjs",
     "deploy:backend": "powershell -ExecutionPolicy Bypass -File ./deploy_to_ec2.ps1"
   },
   "devDependencies": {

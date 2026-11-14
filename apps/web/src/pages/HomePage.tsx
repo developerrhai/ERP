@@ -28,12 +28,19 @@ export function HomePage() {
   if (!d) return <p className="muted">Loading your home…</p>;
 
   const chosen = plants?.allowed.filter((p) => plants.selected.includes(p.id)) ?? [];
+  // V39 department workspace: the 8 queue cards, in V39 order. Counts come from GET /me/home; where the API has
+  // no count yet (shift & handover, visitors, canteen) the card shows "—" - never an invented 0.
   const work: { key: string; label: string; value: number | null; to: string; red?: boolean }[] = [
-    { key: 'receive', label: 'To Receive', value: d.work.toReceive, to: '/m/document-movement-center' },
-    { key: 'accept', label: 'To Accept', value: d.work.toAccept, to: '/m/document-movement-center' },
-    { key: 'work', label: 'In Work', value: d.work.inWork, to: '/m/document-movement-center' },
-    { key: 'appr', label: 'My Approvals', value: d.work.myApprovals, to: '/approvals' },
-    { key: 'tasks', label: 'My Tasks', value: d.work.myTasks, to: '/m/crm-followups' },
+    { key: 'receive', label: 'Receive Documents', value: d.work.toReceive, to: '/m/document-movement-center' },
+    { key: 'accept', label: 'Accept Responsibility', value: d.work.toAccept, to: '/m/document-movement-center' },
+    { key: 'work', label: 'Complete Department Work', value: d.work.inWork, to: '/m/document-movement-center' },
+    { key: 'appr', label: 'Approval Required', value: d.work.myApprovals, to: '/approvals' },
+    { key: 'tasks', label: 'Employee Tasks', value: d.work.myTasks, to: '/m/ops-tasks' },
+    { key: 'shift', label: 'Shift & Handover', value: null, to: '/m/ops-shift-roster' },
+    { key: 'visitor', label: 'Visitor / Gate', value: null, to: '/m/ops-visitors' },
+    { key: 'canteen', label: 'Canteen / Meal', value: null, to: '/m/ops-canteen' },
+  ];
+  const more: { key: string; label: string; value: number | null; to: string; red?: boolean }[] = [
     { key: 'ret', label: 'Returned to me', value: d.work.returnedToMe, to: '/approvals' },
     { key: 'draft', label: 'My Drafts', value: d.work.myDrafts, to: '/menu' },
     { key: 'over', label: 'Overdue', value: d.work.overdue, to: '/approvals', red: true },
@@ -72,9 +79,17 @@ export function HomePage() {
       </section>
 
       <section aria-label="My work">
-        <h2>My Work</h2>
+        <h2>Department workspace</h2>
         <div className="work-strip">
           {work.map((w) => (
+            <Link key={w.key} to={w.to} className={`work-tile${w.red && (w.value ?? 0) > 0 ? ' red' : ''}`}>
+              <span className="work-num">{dash(w.value)}</span>
+              <span className="work-label">{w.label}</span>
+            </Link>
+          ))}
+        </div>
+        <div className="work-strip work-strip-more" aria-label="Also waiting">
+          {more.map((w) => (
             <Link key={w.key} to={w.to} className={`work-tile${w.red && (w.value ?? 0) > 0 ? ' red' : ''}`}>
               <span className="work-num">{dash(w.value)}</span>
               <span className="work-label">{w.label}</span>

@@ -3,7 +3,7 @@
 import { getViewAs, setViewAs } from '../lib/viewAs';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { BroadcastBannerHost } from '../components/BroadcastBannerHost';
 import { HelpDrawer } from '../components/HelpDrawer';
 import { PrivacyNoticeModal } from '../components/PrivacyNoticeModal';
@@ -21,7 +21,14 @@ import { Topbar } from './Topbar';
 
 export function AppShell({ user }: { user: User }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Desktop menu collapse (V40 menu-collapsed). Kept in memory only: the project bans localStorage in the web app.
+  const [collapsed, setCollapsed] = useState(false);
+  const toggleMenu = () => {
+    if (window.innerWidth > 1000) setCollapsed((v) => !v);
+    else setSidebarOpen((v) => !v);
+  };
   const [accountOpen, setAccountOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -59,7 +66,7 @@ export function AppShell({ user }: { user: User }) {
 
   const va = getViewAs();
   return (
-    <div className="app">
+    <div className={collapsed ? 'app menu-collapsed' : 'app'}>
       {va ? (
         <div role="alert" className="viewas-banner">
           Viewing as {va.name} — read-only.{' '}
@@ -72,8 +79,8 @@ export function AppShell({ user }: { user: User }) {
       <Sidebar user={user} open={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
       <Topbar
         user={user}
-        sidebarOpen={sidebarOpen}
-        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        sidebarOpen={sidebarOpen || !collapsed}
+        onToggleSidebar={toggleMenu}
         onOpenAccount={() => setAccountOpen(true)}
         onOpenHelp={() => setHelpOpen(true)}
       />
@@ -101,6 +108,12 @@ export function AppShell({ user }: { user: User }) {
           </button>
         </footer>
       </main>
+      <nav className="bottom-bar" aria-label="Quick navigation">
+        <button type="button" onClick={() => navigate('/')}>Home</button>
+        <button type="button" onClick={() => navigate('/notifications')}>Inbox</button>
+        <button type="button" onClick={() => navigate('/approvals')}>Approvals</button>
+        <button type="button" onClick={() => setSidebarOpen((v) => !v)}>Menu</button>
+      </nav>
       {accountOpen ? <AccountDrawer user={user} onClose={() => setAccountOpen(false)} /> : null}
       <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
       <PrivacyNoticeModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} forceOnUnaccepted />

@@ -40,3 +40,8 @@ doc from clint/
 # Uploaded files / generated exports (local disk StorageProvider)
 storage/
 apps/api/storage/
+
+# Phase 36 feed state (generated passwords)
+tests/feed/ui/state.json
+docs/ui-audit/shots/
+docs/ui-audit/gallery.html

@@ -1,6 +1,6 @@
 // Financial reports: Trial Balance (fin-trial), Profit & Loss (fin-pnl), Balance Sheet (fin-bs), General Ledger
 // (fin-gl) and AR / AP ageing (fin-ar, fin-ap, fin-ageing). They only read; every figure comes from the ledger.
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { SelectField } from '../../components/Field';
 import {
   ageing,
@@ -93,8 +93,8 @@ function Groups({ title, groups }: { title: string; groups: Group[] }) {
         <caption style={{ textAlign: 'left', padding: 8, fontWeight: 600 }}>{title}</caption>
         <tbody>
           {groups.map((g) => (
-            <>
-              <tr key={g.code}>
+            <Fragment key={g.code}>
+              <tr>
                 <td>
                   <strong>{g.name}</strong>
                 </td>
@@ -110,7 +110,7 @@ function Groups({ title, groups }: { title: string; groups: Group[] }) {
                   <td style={{ textAlign: 'right' }}>{inr(a.amount)}</td>
                 </tr>
               ))}
-            </>
+            </Fragment>
           ))}
           {groups.length === 0 ? <Empty cols={2}>Nothing to show.</Empty> : null}
         </tbody>

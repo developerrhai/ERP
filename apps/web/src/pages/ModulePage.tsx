@@ -8,7 +8,7 @@ import {
   RegisterExport,
   TdsReturnsSection,
 } from './tax/GstPages';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { isAdminRole, lookupPage, type PageLookup } from '../lib/registry';
 import { usePagePermissions } from '../lib/usePagePermissions';
 import type { ActionSet, User } from '../types';
@@ -174,9 +174,45 @@ export function AccessDenied({ message }: { message?: string }) {
   );
 }
 
+/**
+ * V40 page ids the ERP serves from a different screen. Phase 36: they redirect there instead of showing
+ * "Page not found" (the client approved these ids in V40). Order matters: first match wins.
+ */
+export const V40_ALIASES: readonly (readonly [RegExp, string])[] = [
+  [/^dept-inbox-.+$/, '/m/dept-inbox'],
+  [/^dept-work-.+$/, '/m/dept-work'],
+  [/^master-customers$/, '/m/crm-customer360'],
+  [/^master-suppliers$/, '/m/scm-suppliers'],
+  [/^master-(products|materials)$/, '/m/inv-items'],
+  [/^my-approvals$/, '/approvals'],
+  [/^ops-mfg-dashboard$/, '/m/plant-dashboard'],
+  [/^mfg-material-issue$/, '/m/inv-transactions'],
+  [/^proj-demo-control$/, '/m/proj-projects'],
+  [/^proj-dependencies$/, '/m/proj-gantt'],
+  [/^customer-receipts$/, '/m/sales-collections'],
+  [/^(document-movement-center|maint-part-movement|plant-(flow-command|project-forward|process-movement|unit-routing|department-movement|interplant-movement))$/, '/m/dept-movement-inbox'],
+  [/^mfg-unit-route$/, '/m/log-routes'],
+  [/^mfg-transfer-note$/, '/m/inv-transfer'],
+  [/^flow-bom-approval$/, '/m/mfg-bom'],
+  [/^dispatch-dc$/, '/m/sales-dispatch'],
+  [/^accounts-gst-invoice$/, '/m/sales-invoices'],
+  [/^hr-appointment-letter$/, '/m/hr-offer-letter'],
+  [/^cl-safety$/, '/m/cl-incidents'],
+  [/^cl-(ppe|medical)$/, '/m/cl-compliance'],
+  [/^cl-gatepass$/, '/m/gate-in'],
+  [/^cl-canteen$/, '/m/ops-canteen'],
+  [/^cl-exit$/, '/m/cl-workers'],
+];
+
+export function v40AliasFor(pageId: string): string | null {
+  return V40_ALIASES.find(([re]) => re.test(pageId))?.[1] ?? null;
+}
+
 export function ModulePage({ user }: { user: User }) {
   const { pageId = '', sub } = useParams();
   const page = lookupPage(pageId);
+  const alias = page ? null : v40AliasFor(pageId);
+  if (alias) return <Navigate to={alias} replace />;
   if (!page) return <NotFoundPage />;
   if (sub !== undefined && !SUB_PAGES[pageId]?.includes(sub)) return <NotFoundPage />;
   return <GuardedPage key={`${pageId}/${sub ?? ''}`} user={user} page={page} sub={sub} />;
@@ -204,7 +240,7 @@ function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: 
         <SettingsLauncher pageId={pageId} title={page.item.title} />
       )}
       {SCREEN_PAGES.has(pageId) || pageId === 'dashboard' ? null : (
-        <ActionBar actions={perms.actions} mode="page" />
+        <ActionBar actions={perms.actions} mode="page" pageId={pageId} />
       )}
       <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
     </>

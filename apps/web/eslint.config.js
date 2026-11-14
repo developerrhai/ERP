@@ -45,6 +45,23 @@ export default tseslint.config(
     },
   },
   {
+    // Phase 36: the new UI kit and the files redone for it use classes from styles/ui.css, never inline styles.
+    files: ['src/ui/**/*.{ts,tsx}', 'src/components/ActionBar.tsx', 'src/pages/admin/UiKitPage.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message: 'dangerouslySetInnerHTML is forbidden (CONTRACT §8).',
+        },
+        {
+          selector: "JSXAttribute[name.name='style']",
+          message: 'No inline styles in the UI kit: add a class to src/styles/ui.css (Phase 36 C1).',
+        },
+      ],
+    },
+  },
+  {
     files: ['eslint.config.js'],
     ...tseslint.configs.disableTypeChecked,
   },

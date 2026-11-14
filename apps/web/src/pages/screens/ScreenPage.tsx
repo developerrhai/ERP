@@ -134,12 +134,15 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
       }
     : NO_FORM;
 
-  function onAction(label: string) {
-    if (!formDef) return;
+  function onAction(label: string): boolean {
+    if (!formDef) return false;
     if (label === '＋ Add') setFormMode({});
     else if (label === 'Edit' && open) setFormMode({ editId: open.row.id });
     else if (label === 'Delete' && open) setConfirmDelete(true);
+    else return false;
+    return true;
   }
+  const docNoOf = (r?: ScreenRow | null): string => String(r?.code ?? r?.number ?? r?.id ?? '');
 
   async function doDelete() {
     if (!open) return;
@@ -169,7 +172,7 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
   return (
     <>
       <PageHead title={title} sub={sub} />
-      <ActionBar actions={actions} record={open?.rec ?? null} blocked={blocked} onAction={onAction} />
+      <ActionBar actions={actions} record={open?.rec ?? null} blocked={blocked} onAction={onAction} pageId={pageId} recordId={open?.row.id ?? null} docNo={docNoOf(open?.row)} />
       {notice ? (
         <div className="toast show" role="status">
           {notice}
@@ -293,7 +296,7 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
           )}
           <DetailSections pageId={pageId} id={open.row.id} />
           {pageId === 'wms-shelves' ? <ShelfBinsPanel shelfId={open.row.id} canEdit={actions.edit} /> : null}
-          <ActionBar actions={actions} record={open.rec ?? null} blocked={blocked} onAction={onAction} />
+          <ActionBar actions={actions} record={open.rec ?? null} blocked={blocked} onAction={onAction} pageId={pageId} recordId={open.row.id} docNo={docNoOf(open.row)} />
         </Drawer>
       ) : null}
       {formMode && formDef ? (

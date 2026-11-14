@@ -1,0 +1,680 @@
+/* Phase 36 design layer: V35 clean-advanced + V36 table-first + V37 data exchange + V39 horizontal actions,
+   with the V40 tokens (tokens.css). Loaded after app.css so it wins where both define a rule. */
+:root {
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --radius-card: 15px;
+  --radius-btn: 9px;
+  --ctl-h: 34px;
+  --ease: 150ms ease;
+  --ring: 0 0 0 3px rgba(29, 78, 216, 0.35);
+}
+body {
+  font-size: 13px;
+}
+:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Buttons: 34px, radius 9, 150 ms feedback */
+.ui-btn {
+  min-height: var(--ctl-h);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-btn);
+  background: var(--card);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition:
+    box-shadow var(--ease),
+    transform var(--ease),
+    background var(--ease);
+}
+.ui-btn:hover:not(:disabled) {
+  box-shadow: 0 4px 13px rgba(15, 23, 42, 0.1);
+}
+.ui-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.ui-btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.ui-btn-success {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.ui-btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+.ui-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--primary);
+}
+.ui-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Status badges: soft tints */
+.ui-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.ui-badge-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+.ui-badge-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+.ui-badge-bad {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.ui-badge-info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.ui-badge-mute {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Page head + V39 action row: one line, never wraps */
+.ui-pagehead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.ui-pagehead-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.ui-pagehead h1 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+.ui-pagehead p {
+  margin: 2px 0 0;
+  color: var(--muted);
+}
+.ui-actionrow {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--sp-2);
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ui-more {
+  position: relative;
+}
+.ui-more-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  min-width: 180px;
+  padding: var(--sp-1);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  display: grid;
+}
+.ui-more-menu button {
+  text-align: left;
+  min-height: var(--ctl-h);
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  transition: background var(--ease);
+}
+.ui-more-menu button:hover:not(:disabled) {
+  background: var(--card2);
+}
+.ui-more-menu button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* V36 table */
+.ui-table-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.ui-table-scroll {
+  overflow: auto;
+  max-height: 70vh;
+}
+.ui-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.ui-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.ui-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.ui-table tbody tr {
+  transition: background var(--ease);
+}
+.ui-table tbody tr:hover {
+  background: #f1f6ff;
+}
+.ui-table .r {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ui-table th:first-child,
+.ui-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: inherit;
+}
+.ui-table td:first-child {
+  background: var(--card);
+}
+.ui-rowact {
+  display: flex;
+  gap: var(--sp-1);
+  white-space: nowrap;
+}
+.ui-pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sp-2) var(--sp-3);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Tabs with arrows (V36) */
+.ui-tabs-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-3);
+}
+.ui-tabs {
+  display: flex;
+  gap: var(--sp-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.ui-tabs button {
+  min-height: var(--ctl-h);
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  white-space: nowrap;
+  transition:
+    background var(--ease),
+    color var(--ease);
+}
+.ui-tabs button.on {
+  background: #dbeafe;
+  color: var(--primary);
+}
+.ui-tabs-arrow {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: var(--radius-btn);
+  min-height: var(--ctl-h);
+  width: var(--ctl-h);
+}
+
+/* Forms */
+.ui-field {
+  display: grid;
+  gap: 4px;
+}
+.ui-field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.ui-field input,
+.ui-field select,
+.ui-field textarea,
+.ui-combo input,
+.ui-money input {
+  min-height: var(--ctl-h);
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-btn);
+  padding: 0 10px;
+  background: var(--card);
+  transition:
+    box-shadow var(--ease),
+    border-color var(--ease);
+}
+.ui-field input:focus,
+.ui-combo input:focus,
+.ui-money input:focus {
+  border-color: var(--primary);
+  box-shadow: var(--ring);
+  outline: none;
+}
+.ui-field-err {
+  color: var(--danger);
+  font-weight: 700;
+}
+.ui-money {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.ui-money i {
+  position: absolute;
+  left: 10px;
+  color: var(--muted);
+  font-style: normal;
+}
+.ui-money input {
+  padding-left: 24px;
+  text-align: right;
+}
+.ui-combo {
+  position: relative;
+}
+.ui-combo ul {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: var(--sp-1);
+  list-style: none;
+  max-height: 240px;
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.ui-combo li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ui-combo li.on {
+  background: #dbeafe;
+}
+.ui-combo-none {
+  color: var(--muted);
+}
+
+/* KPI, empty, skeleton */
+.ui-kpi {
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.ui-kpi small {
+  color: var(--muted);
+  font-weight: 700;
+}
+.ui-kpi b {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.ui-kpi span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.ui-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  color: var(--muted);
+  text-align: center;
+}
+.ui-skel {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+}
+.ui-skel-row {
+  display: block;
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #eef2f7 25%, #f8fafc 50%, #eef2f7 75%);
+  background-size: 200% 100%;
+  animation: ui-shimmer 1.2s linear infinite;
+}
+.ui-skel-row:nth-child(2) {
+  width: 88%;
+}
+.ui-skel-row:nth-child(3) {
+  width: 76%;
+}
+.ui-skel-row:nth-child(4) {
+  width: 92%;
+}
+.ui-skel-row:nth-child(5) {
+  width: 70%;
+}
+@keyframes ui-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.ui-confirm {
+  background: var(--card);
+  border-radius: var(--radius-card);
+  padding: var(--sp-5);
+  width: min(420px, 92vw);
+  display: grid;
+  gap: var(--sp-3);
+}
+.ui-confirm h2,
+.ui-confirm p {
+  margin: 0;
+}
+.ui-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+/* Ui-kit page */
+.ui-kit {
+  display: grid;
+  gap: var(--sp-5);
+}
+.ui-kit section {
+  display: grid;
+  gap: var(--sp-3);
+}
+.ui-kit h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.ui-kit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+.ui-kit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-3);
+}
+
+/* Desktop sidebar collapse (V40 menu-collapsed) + top-bar shadow */
+@media (min-width: 1001px) {
+  .app.menu-collapsed {
+    grid-template-columns: 0 1fr;
+  }
+  .app.menu-collapsed .sidebar {
+    display: none;
+  }
+}
+.top {
+  position: relative;
+  z-index: 20;
+  box-shadow:
+    0 1px 0 var(--line),
+    0 6px 14px -12px rgba(15, 23, 42, 0.35);
+}
+
+/* Phone: one-line scrolling action row, 44px targets, 16px inputs, bottom bar */
+.bottom-bar {
+  display: none;
+}
+@media (max-width: 600px) {
+  .ui-btn,
+  .ui-tabs button,
+  .ui-field input,
+  .ui-combo input,
+  .ui-money input {
+    min-height: 44px;
+  }
+  .ui-field input,
+  .ui-combo input,
+  .ui-money input {
+    font-size: 16px;
+  }
+  .ui-pagehead {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bottom-bar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 25;
+    background: var(--card);
+    border-top: 1px solid var(--line);
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .bottom-bar button {
+    flex: 1;
+    min-height: 52px;
+    border: 0;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .main {
+    padding-bottom: 64px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-skel-row {
+    animation: none;
+  }
+  .ui-btn,
+  .ui-table tbody tr {
+    transition: none;
+  }
+}
+@media print {
+  .ui-actionrow,
+  .ui-tabs-wrap,
+  .ui-pager,
+  .bottom-bar,
+  .top {
+    display: none !important;
+  }
+}
+
+/* Top-bar search: wide enough to read "Search PO, SO, MO, DC, invoice or customer…" (V40 wording) */
+.global {
+  flex: 1 1 360px;
+  min-width: 260px;
+  max-width: 520px;
+}
+.global input {
+  min-height: var(--ctl-h);
+  text-overflow: ellipsis;
+}
+@media (max-width: 1280px) {
+  .top .health-pill,
+  .top .hide-mobile {
+    display: none;
+  }
+}
+
+/* Phase 36 C4/C7: no page-wide sideways scroll. Tables scroll inside their own box; rows of buttons stay on one line. */
+.app {
+  grid-template-columns: var(--sw) minmax(0, 1fr);
+}
+.main {
+  min-width: 0;
+}
+.actionbar,
+.tabs,
+.v8-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.actionbar .btn,
+.actionbar-item {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .main table {
+    display: block;
+    min-width: 0 !important; /* a table's own min-width beats max-width and widened the whole page */
+    width: auto;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .main img,
+  .main canvas,
+  .main svg {
+    max-width: 100%;
+    height: auto;
+  }
+  .main pre,
+  .main code {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .modal,
+  .drawer {
+    max-width: 100vw;
+  }
+}
+@media (max-width: 600px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .main input,
+  .main select,
+  .main textarea {
+    max-width: 100%;
+    font-size: 16px;
+  }
+  .main [class*='grid'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.actionbar,
+.actionbar-item {
+  position: relative; /* contains the .sr-only reason text so the bar's own scroll box clips it */
+}
+
+/* Document form: totals panel (Taxable, CGST, SGST/IGST, Grand total, amount in words) */
+.ui-totals {
+  margin-top: var(--sp-4);
+  margin-left: auto;
+  max-width: 380px;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card2);
+  display: grid;
+  gap: var(--sp-2);
+}
+.ui-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.ui-totals .grand {
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-2);
+  font-size: 15px;
+}
+.ui-totals p {
+  margin: 0;
+  font-weight: 700;
+}
+.ui-totals small {
+  color: var(--muted);
+}
+
+/* Line grids: the type-ahead picker needs room (it was squeezed to a sliver in a narrow cell) */
+.table-wrap td .ui-combo,
+.main td .ui-combo {
+  min-width: 240px;
+}
+.main td .ui-money,
+.main td input[type='number'] {
+  min-width: 96px;
+}
+
+/* Top bar: one line at 1440 - items keep their size, the search takes what is left */
+.top {
+  gap: 8px;
+}
+.top > * {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.top > .global {
+  flex: 1 1 180px;
+  min-width: 140px;
+  max-width: 420px;
+  flex-shrink: 1;
+}
+@media (max-width: 1500px) {
+  .top .user-role {
+    display: none;
+  }
+}
+@media (max-width: 1360px) {
+  .top .user > span:last-child {
+    display: none;
+  }
+}

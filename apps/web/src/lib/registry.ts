@@ -30,6 +30,7 @@ const PHASE_ADDED_PAGES = [
     title: 'Notification Center',
     family: 'Executive',
     after: 'notifications',
+    hidden: true, // same screen as V40 'notifications'; kept routable, not listed twice in the menu
     purpose: 'Full real-time notification history, category filters and read/archive state.',
   },
   {
@@ -466,7 +467,7 @@ export const registry: typeof rawRegistry = {
   families: rawRegistry.families.map((f) => {
     const items = f.items.map((i) => ({ ...i, title: TITLE_OVERRIDES[i.id] ?? i.title }));
     for (const extra of PHASE_ADDED_PAGES) {
-      if (extra.family !== f.name || items.some((i) => i.id === extra.id)) continue;
+      if (extra.family !== f.name || ('hidden' in extra && extra.hidden) || items.some((i) => i.id === extra.id)) continue;
       const at = items.findIndex((i) => i.id === extra.after);
       items.splice(at >= 0 ? at + 1 : items.length, 0, { id: extra.id, title: extra.title });
     }

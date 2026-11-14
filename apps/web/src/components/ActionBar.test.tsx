@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ACTIONS, type ActionSet } from '../types';
 import { formatCell, totalLabel } from '../pages/screens/ScreenPage';
-import { ActionBar } from './ActionBar';
+import { ActionBar, tableToCsv } from './ActionBar';
 
 const none = Object.fromEntries(ACTIONS.map((a) => [a, false])) as ActionSet;
 const can = (...on: (keyof ActionSet)[]): ActionSet => {
@@ -43,16 +43,69 @@ describe('ActionBar', () => {
     expect(edit.parentElement?.getAttribute('title')).toBe(
       "Posted documents can't be edited — use Cancel/Reverse.",
     );
-    expect((screen.getByRole('button', { name: 'Delete' }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole('button', { name: 'Delete' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
-  it('greys Word and Move Forward with the phase that brings them', () => {
-    render(<ActionBar actions={can('view', 'print')} />);
+  it('greys Word and Move Forward until a record is selected, with a reason and no "Arrives in Phase"', () => {
+    render(<ActionBar actions={can('view', 'print')} pageId="sales-orders" />);
     const word = screen.getByRole('button', { name: 'Word' }) as HTMLButtonElement;
     expect(word.disabled).toBe(true);
-    expect(word.parentElement?.getAttribute('title')).toBe('Arrives in Phase 27.');
-    const move = screen.getByRole('button', { name: 'Move Forward' }) as HTMLButtonElement;
-    expect(move.parentElement?.getAttribute('title')).toBe('Arrives in Phase 25.');
+    expect(word.parentElement?.getAttribute('title')).toBe('Select a record first.');
+    expect(document.body.textContent).not.toMatch(/Arrives in Phase/);
+  });
+
+  it('with a record selected Word, Industry PDF, Move Forward and Approval Queue are live', () => {
+    render(
+      <ActionBar actions={can('view', 'print')} pageId="sales-orders" recordId="r1" docNo="SO-1" />,
+    );
+    for (const n of ['Word', 'Industry PDF', 'Move Forward', 'Approval Queue']) {
+      expect((screen.getByRole('button', { name: n }) as HTMLButtonElement).disabled, n).toBe(
+        false,
+      );
+    }
+  });
+
+  it('Excel exports the visible table as CSV', () => {
+    const t = document.createElement('table');
+    t.innerHTML = '<tr><th>No</th><th>Name</th></tr><tr><td>1</td><td>A "x"</td></tr>';
+    expect(tableToCsv(t)).toBe('"No","Name"\r\n"1","A ""x"""');
+  });
+
+  it('page mode carries the V40 head row; none is hidden, record ones are greyed with a reason', () => {
+    render(
+      <ActionBar
+        actions={can('view', 'add', 'export', 'print', 'submit')}
+        mode="page"
+        pageId="sales-orders"
+      />,
+    );
+    for (const n of [
+      '← Return',
+      'Email',
+      'Industry PDF',
+      'Word',
+      '⇧ Import',
+      '⇩ Export',
+      'Duplicates',
+      'Documents',
+      'Submit Approval',
+      'Approval Queue',
+      'Move Forward',
+      'Project History',
+    ]) {
+      expect(screen.getByRole('button', { name: n }), n).toBeTruthy();
+    }
+    expect((screen.getByRole('button', { name: 'Email' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect((screen.getByRole('button', { name: '⇧ Import' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    expect((screen.getByRole('button', { name: '← Return' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('page mode shows only the cross-cutting buttons', () => {

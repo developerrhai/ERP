@@ -1,7 +1,14 @@
 // One screen for the header + lines purchasing documents: Purchase Requisition, RFQ, Vendor Quotation, Purchase Order,
 // Rate Contract and Debit Note. A document goes Draft -> Submit -> Approved (-> Post / Cancel where it posts).
 // The list, the "New" form (header fields + line grid) and the detail dialog are driven by a small config per page.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { EmailDocDialog } from '../../components/EmailDocDialog';
+import { HistoryDrawer, MoveForwardDialog } from '../../components/MoveForward';
+import { docsMailApi, saveFile } from '../../lib/docsMailApi';
+import { Combobox } from '../../ui/components';
+import { amountInWords } from '../../ui/words';
+import { formatINR } from '../../ui/format';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
 import { useToast } from '../../components/Toast';
@@ -218,25 +225,76 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
 }
 
 // ------------------------------------------------------------------------------------------------ form
+/** Type-ahead picker over a server search (Phase 36): replaces the full-list dropdown that was capped at 30 rows. */
+function LookupCombo<T extends { id: string }>({
+  id,
+  value,
+  search,
+  label,
+  onPick,
+}: {
+  id: string;
+  value: string;
+  search: (q: string) => Promise<T[]>;
+  label: (r: T) => string;
+  onPick: (r: T | null) => void;
+}) {
+  const [picked, setPicked] = useState<{ value: string; label: string } | null>(null);
+  useEffect(() => {
+    if (!value) {
+      setPicked(null);
+      return;
+    }
+    if (picked?.value === value) return;
+    let live = true;
+    void search('')
+      .then((rows) => {
+        const hit = rows.find((r) => r.id === value);
+        if (live) setPicked({ value, label: hit ? label(hit) : 'Selected record' });
+      })
+      .catch(() => {
+        if (live) setPicked({ value, label: 'Selected record' });
+      });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return (
+    <Combobox
+      id={id}
+      value={picked}
+      placeholder="Type to search…"
+      search={async (q) => (await search(q)).map((r) => ({ value: r.id, label: label(r) }))}
+      onPick={(o) => {
+        if (!o) {
+          onPick(null);
+          return;
+        }
+        void search(o.label.split(' · ')[0] ?? '').then((rows) => {
+          const hit = rows.find((r) => r.id === o.value);
+          setPicked(o);
+          onPick(hit ?? ({ id: o.value } as T));
+        });
+      }}
+    />
+  );
+}
+
 function Input({
   f,
   value,
   onChange,
   error,
+  idSuffix = '',
 }: {
   f: FieldCfg;
   value: string;
   onChange: (v: string, extra?: Record<string, string>) => void;
   error?: string | undefined;
+  /** Makes the element id unique per line (every line used the same id before - labels and screen readers broke). */
+  idSuffix?: string;
 }) {
-  const suppliers = useLoad<Option[]>(
-    () => (f.type === 'supplier' ? lookupSuppliers() : Promise.resolve([])),
-    [f.type],
-  );
-  const customers = useLoad<Option[]>(
-    () => (f.type === 'customer' ? lookupCustomers() : Promise.resolve([])),
-    [f.type],
-  );
   const warehouses = useLoad<Ref[]>(
     () => (f.type === 'warehouse' ? lookupWarehouses() : Promise.resolve([])),
     [f.type],
@@ -250,33 +308,28 @@ function Input({
         : Promise.resolve([]),
     [f.type, f.refPath],
   );
-  const items = useLoad<Ref[]>(
-    () => (f.type === 'item' ? lookupItems('') : Promise.resolve([])),
-    [f.type],
-  );
-  const common = { 'aria-invalid': error ? true : undefined, id: `f-${f.key}` };
+  const fid = `f-${f.key}${idSuffix}`;
+  const common = { 'aria-invalid': error ? true : undefined, id: fid };
   let control;
   if (f.type === 'supplier')
     control = (
-      <select {...common} value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">Choose a supplier…</option>
-        {(suppliers.data ?? []).map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <LookupCombo<Option>
+        id={fid}
+        value={value}
+        search={lookupSuppliers}
+        label={(o) => o.label}
+        onPick={(o) => onChange(o?.id ?? '')}
+      />
     );
   else if (f.type === 'customer')
     control = (
-      <select {...common} value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">Choose a customer…</option>
-        {(customers.data ?? []).map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <LookupCombo<Option>
+        id={fid}
+        value={value}
+        search={lookupCustomers}
+        label={(o) => o.label}
+        onPick={(o) => onChange(o?.id ?? '')}
+      />
     );
   else if (f.type === 'warehouse')
     control = (
@@ -291,21 +344,13 @@ function Input({
     );
   else if (f.type === 'item')
     control = (
-      <select
-        {...common}
+      <LookupCombo<Ref>
+        id={fid}
         value={value}
-        onChange={(e) => {
-          const it = (items.data ?? []).find((x) => x.id === e.target.value);
-          onChange(e.target.value, it ? { uom: it.uom ?? '' } : {});
-        }}
-      >
-        <option value="">Choose an item…</option>
-        {(items.data ?? []).map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.code} · {o.name}
-          </option>
-        ))}
-      </select>
+        search={lookupItems}
+        label={(o) => `${o.code} · ${o.name}`}
+        onPick={(o) => onChange(o?.id ?? '', o ? { uom: o.uom ?? '' } : {})}
+      />
     );
   else if (f.type === 'ref')
     control = (
@@ -349,12 +394,65 @@ function Input({
     );
   return (
     <div className="field">
-      <label htmlFor={`f-${f.key}`}>
+      <label htmlFor={fid}>
         {f.label}
         {f.required ? ' *' : ''}
       </label>
       {control}
       {error ? <span className="field-error">{error}</span> : null}
+    </div>
+  );
+}
+
+/** Display-only sums for the form (the API stays the owner of tax rules and the final split). */
+export function docTotals(
+  lines: Record<string, string>[],
+): { taxable: number; gst: number; total: number; priced: number } | null {
+  let taxable = 0;
+  let gst = 0;
+  let priced = 0;
+  for (const l of lines) {
+    const qty = Number(l.qty);
+    const rate = Number(l.rate);
+    if (!Number.isFinite(qty) || !Number.isFinite(rate) || l.rate === '' || l.qty === '') continue;
+    const disc = Number(l.discountPct) || 0;
+    const base = qty * rate * (1 - disc / 100);
+    taxable += base;
+    gst += (base * (Number(l.gstPct) || 0)) / 100;
+    priced += 1;
+  }
+  return priced ? { taxable, gst, total: taxable + gst, priced } : null;
+}
+
+function TotalsPanel({ lines }: { lines: Record<string, string>[] }) {
+  const t = docTotals(lines);
+  if (!t) return null;
+  const half = t.gst / 2;
+  return (
+    <div className="ui-totals" role="group" aria-label="Totals">
+      <div>
+        <span>Taxable value</span>
+        <b>₹ {formatINR(t.taxable)}</b>
+      </div>
+      <div>
+        <span>CGST</span>
+        <b>₹ {formatINR(half)}</b>
+      </div>
+      <div>
+        <span>SGST / IGST</span>
+        <b>₹ {formatINR(half)}</b>
+      </div>
+      <div className="grand">
+        <span>Grand total</span>
+        <b>₹ {formatINR(t.total)}</b>
+      </div>
+      <p>{amountInWords(Math.round(t.total * 100) / 100)}</p>
+      <small>
+        {t.priced < lines.length
+          ? 'Lines with no rate use the price list and are added on save. '
+          : ''}
+        The CGST / SGST or IGST split is final on save, by place of supply.
+      </small>
     </div>
   );
 }
@@ -488,6 +586,7 @@ function DocForm({
                       <td key={f.key}>
                         <Input
                           f={{ ...f, label: f.label }}
+                          idSuffix={`-l${i}`}
                           value={l[f.key] ?? ''}
                           error={fields[`lines.${i}.${f.key}`]}
                           onChange={(v, extra) =>
@@ -522,6 +621,7 @@ function DocForm({
           >
             ＋ Add line
           </button>
+          <TotalsPanel lines={lines} />
         </>
       ) : null}
     </Modal>
@@ -529,6 +629,55 @@ function DocForm({
 }
 
 // ------------------------------------------------------------------------------------------------ detail
+/** V40 record bar on a document: Move Forward, Industry PDF, Word, Email, History (Phase 36 C3). */
+function RecordBar({ doc }: { doc: Doc }) {
+  const { pageId = '' } = useParams();
+  const toast = useToast();
+  const [dlg, setDlg] = useState<'move' | 'email' | 'history' | null>(null);
+  const docNo = s(doc.number);
+  async function download(kind: 'standard' | 'word', ext: string) {
+    try {
+      saveFile(await docsMailApi.print(pageId, doc.id, kind), `${docNo || 'document'}.${ext}`);
+    } catch (e) {
+      toast(toUiError(e).message);
+    }
+  }
+  return (
+    <>
+      <button type="button" className="btn" onClick={() => setDlg('move')}>
+        Move Forward
+      </button>
+      <button type="button" className="btn" onClick={() => void download('standard', 'pdf')}>
+        Industry PDF
+      </button>
+      <button type="button" className="btn" onClick={() => void download('word', 'docx')}>
+        Word
+      </button>
+      <button type="button" className="btn" onClick={() => setDlg('email')}>
+        Email
+      </button>
+      <button type="button" className="btn" onClick={() => setDlg('history')}>
+        History
+      </button>
+      {dlg === 'move' ? (
+        <MoveForwardDialog
+          docType={pageId}
+          docId={doc.id}
+          docNo={docNo}
+          onClose={() => setDlg(null)}
+          onMoved={() => setDlg(null)}
+        />
+      ) : null}
+      {dlg === 'email' ? (
+        <EmailDocDialog docType={pageId} docId={doc.id} onClose={() => setDlg(null)} />
+      ) : null}
+      {dlg === 'history' ? (
+        <HistoryDrawer docType={pageId} docId={doc.id} title={docNo} onClose={() => setDlg(null)} />
+      ) : null}
+    </>
+  );
+}
+
 function DocDetail({
   cfg,
   doc,
@@ -574,6 +723,7 @@ function DocDetail({
       onClose={onClose}
       footer={
         <>
+          <RecordBar doc={doc} />
           {editable && actions.edit ? (
             <button type="button" className="btn" onClick={onEdit}>
               Edit

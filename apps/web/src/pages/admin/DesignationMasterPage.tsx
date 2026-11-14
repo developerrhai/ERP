@@ -238,7 +238,7 @@ function DesignationFormModal({ item, departments, onReload, onClose, onSaved }:
     const n = name.trim();
     if (n.length < 2 || n.length > 100) f.name = 'Title must be 2–100 characters.';
     const lvl = Number(level);
-    if (isNaN(lvl) || lvl < 1 || lvl > 100) f.level = 'Level must be between 1 and 100.';
+    if (isNaN(lvl) || lvl < 1 || lvl > 99) f.level = 'Level must be between 1 and 99.';
     return f;
   };
 
@@ -262,7 +262,9 @@ function DesignationFormModal({ item, departments, onReload, onClose, onSaved }:
     setErr(null);
     try {
       if (!item) {
-        onSaved(await createDesignation(input));
+        const { status: _omit, ...createInput } = input; // the API create schema has no status field (strict)
+        void _omit;
+        onSaved(await createDesignation(createInput));
         return;
       }
       const patch: Partial<DesignationInput> = {};
@@ -343,7 +345,7 @@ function DesignationFormModal({ item, departments, onReload, onClose, onSaved }:
             ))}
           </SelectField>
           <Field
-            label="Authority Level (1–100)"
+            label="Authority Level (1–99)"
             type="number"
             value={level}
             error={err?.fields.level}
