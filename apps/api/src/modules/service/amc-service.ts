@@ -187,9 +187,9 @@ export class AmcService {
 
     // 1. Generate Daily Straight-line Revenue Schedule per Ind AS 115 / AS 9
     const revSchedule = computeAmcRevenueSchedule(
-      String(amc.start_date),
-      String(amc.end_date),
-      Number(amc.contract_value),
+      String(amc.startDate),
+      String(amc.endDate),
+      Number(amc.contractValue),
     );
 
     for (const r of revSchedule) {
@@ -205,9 +205,9 @@ export class AmcService {
     }
 
     // 2. Generate Billing Schedule (e.g. quarterly: 4 bills)
-    const billCount = amc.billing_frequency === 'MONTHLY' ? 12 : amc.billing_frequency === 'ANNUAL' ? 1 : 4;
-    const billAmt = Math.round((Number(amc.contract_value) / billCount) * 100) / 100;
-    const start = new Date(String(amc.start_date));
+    const billCount = amc.billingFrequency === 'MONTHLY' ? 12 : amc.billingFrequency === 'ANNUAL' ? 1 : 4;
+    const billAmt = Math.round((Number(amc.contractValue) / billCount) * 100) / 100;
+    const start = new Date(String(amc.startDate));
 
     for (let i = 0; i < billCount; i++) {
       const billDue = new Date(start);
@@ -226,9 +226,9 @@ export class AmcService {
     }
 
     // 3. Generate Visit Schedule (every 1 / 3 / 6 months)
-    const visitMonths = amc.visit_frequency === 'MONTHLY' ? 1 : amc.visit_frequency === 'ANNUAL' ? 12 : amc.visit_frequency === 'HALF_YEARLY' ? 6 : 3;
+    const visitMonths = amc.visitFrequency === 'MONTHLY' ? 1 : amc.visitFrequency === 'ANNUAL' ? 12 : amc.visitFrequency === 'HALF_YEARLY' ? 6 : 3;
     let visitDate = new Date(start);
-    const end = new Date(String(amc.end_date));
+    const end = new Date(String(amc.endDate));
     const assets = (amc.assets as Row[]) || [];
 
     while (visitDate <= end) {
@@ -294,22 +294,22 @@ export class AmcService {
           source: 'EVENT',
           sourceDocType: 'AMC_REVENUE',
           sourceDocId: String(rev.id),
-          sourceDocNo: `REV-${String(amc.contract_no)}-${period}`,
-          narration: `Monthly AMC revenue recognition for ${period} (${String(amc.contract_no)})`,
+          sourceDocNo: `REV-${String(amc.contractNo)}-${period}`,
+          narration: `Monthly AMC revenue recognition for ${period} (${String(amc.contractNo)})`,
           lines: [
             {
               accountCode: '2402', // AMC Deferred Revenue
               debit: amount.toFixed(2),
               credit: '0.00',
               amcContractId: amcId,
-              narration: `Deferred revenue release: ${String(amc.contract_no)} (${period})`,
+              narration: `Deferred revenue release: ${String(amc.contractNo)} (${period})`,
             },
             {
               accountCode: '4110', // AMC Service Revenue
               debit: '0.00',
               credit: amount.toFixed(2),
               amcContractId: amcId,
-              narration: `Service revenue earned: ${String(amc.contract_no)} (${period})`,
+              narration: `Service revenue earned: ${String(amc.contractNo)} (${period})`,
             },
           ],
         },

@@ -16,6 +16,11 @@ import {
   computeLeaveDays,
 } from './hr-calc';
 
+/** A date column comes back from raw SQL as a Date (or a string): always yyyy-mm-dd. */
+function isoDay(v: unknown): string {
+  return v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10);
+}
+
 export class LeaveService {
   async listTypes(): Promise<Row[]> {
     const rows = await query(prisma, `SELECT * FROM leave_types WHERE active = true ORDER BY code`);
@@ -97,7 +102,7 @@ export class LeaveService {
     );
 
     const spanDays = spanRows.map((r) => ({
-      date: (r.date as string).slice(0, 10),
+      date: isoDay(r.date),
       isWeeklyOff: !!r.is_off,
     }));
 
@@ -184,7 +189,7 @@ export class LeaveService {
       await insertRow(tx, 'leave_ledger', {
         employeeId: app.employee_id,
         leaveTypeId: app.leave_type_id,
-        txnDate: (app.start_date as string).slice(0, 10),
+        txnDate: isoDay(app.start_date),
         kind: 'AVAIL',
         days: -daysToDeduct,
         balanceAfter,

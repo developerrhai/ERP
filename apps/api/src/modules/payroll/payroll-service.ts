@@ -436,8 +436,11 @@ export class PayrollService {
       // Step 2: Attendance (Paid days, LOP, NCP, OT)
       // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
       const attSummaries = await db.$queryRaw<any[]>`
-        SELECT * FROM "attendance_period_summary"
-        WHERE "employee_id" = ${emp.id}::uuid AND "period_month" = ${run.month}
+        SELECT s."payable_days" AS paid_days, s."lop_days", 0::numeric AS ncp_days,
+               (s."ot_minutes" / 60.0) AS approved_ot_hours
+        FROM "attendance_period_summary" s
+        WHERE s."employee_id" = ${emp.id}::uuid
+          AND s."period_start" = ${run.start_date}::date AND s."period_end" = ${run.end_date}::date
       `;
       const att = attSummaries[0] ?? {
         paid_days: calendarDays,

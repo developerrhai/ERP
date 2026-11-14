@@ -241,6 +241,13 @@ export const PHASE_ADDED_PAGES: readonly {
     purpose: 'Every department movement; Director, Admin and Owner.',
   },
   {
+    id: 'my-approvals',
+    title: 'Approval Inbox',
+    family: 'Executive',
+    after: 'dept-movement-inbox',
+    purpose: 'Manager inbox for department acceptance, operational approvals, sent movements and decision history.',
+  },
+  {
     id: 'sales-enquiries',
     title: 'Sales Enquiries',
     family: 'Sales',

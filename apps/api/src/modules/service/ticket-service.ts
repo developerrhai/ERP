@@ -108,7 +108,7 @@ export class TicketService {
 
     const events = await query(
       prisma,
-      `SELECT te.*, u.username AS actor_name
+      `SELECT te.*, u.login_id AS actor_name
        FROM ticket_events te
        LEFT JOIN users u ON u.id = te.actor_id
        WHERE te.ticket_id = $1::uuid

@@ -158,7 +158,7 @@ async function priceLines(
       hsn = (it.hsn as string | null) ?? null;
       l.uom = l.uom ?? it.base_uom;
       await UomService.toBase(tx, { itemId: S(l.itemId), uom: S(l.uom), qty });
-    } else l.uom = l.uom ?? 'NOS';
+    } else l.uom = l.uom ?? 'Nos';
     if ((l.rate === undefined || l.rate === null || S(l.rate) === '') && l.itemId) {
       try {
         const p = await pricingService.lookup({

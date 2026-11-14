@@ -19,8 +19,8 @@ const moduleParams = z.object({ moduleId: z.string().min(1).max(80) }).strict();
 
 const inboxQuery = z
   .object({
-    dept: z.string().uuid().optional(),
-    tab: z.enum(['receive', 'accept', 'work', 'returned', 'sent', 'all']).optional(),
+    dept: z.union([z.string().uuid(), z.literal('all')]).optional(),
+    tab: z.enum(['receive', 'accept', 'work', 'returned', 'sent', 'all', 'pending', 'completed']).optional(),
     docType: z.string().max(80).optional(),
     late: z.enum(['true', 'false']).optional(),
     q: z.string().max(60).optional(),
@@ -105,6 +105,10 @@ export function createWorkRouter(): Router {
   r.get('/inbox', validate({ query: inboxQuery }), asyncHandler(async (req: Request, res: Response) => {
     const q = validated(res, 'query', inboxQuery);
     ok(res, await workService.inbox(callerOf(req), { ...q, late: q.late === 'true' }));
+  }));
+  r.get('/audit', asyncHandler(async (req: Request, res: Response) => {
+    const dept = typeof req.query.dept === 'string' ? z.union([z.string().uuid(), z.literal('all')]).parse(req.query.dept) : undefined;
+    ok(res, await workService.audit(callerOf(req), { dept }));
   }));
   r.get('/work-center', asyncHandler(async (req: Request, res: Response) => {
     const dept = typeof req.query.dept === 'string' ? z.string().uuid().parse(req.query.dept) : undefined;

@@ -72,6 +72,19 @@ async function myDepartmentIds(caller: Caller, db: Tx | typeof prisma = prisma):
   return rows.map((r) => String(r.id));
 }
 
+/** The departments a list may cover: one chosen department (own only, unless Owner / Admin), or "all". */
+async function resolveDepartments(caller: Caller, mine: string[], dept: string | undefined, what: string): Promise<string[]> {
+  const elevated = isElevated(caller);
+  if (dept === 'all') {
+    if (!elevated) return mine;
+    return (await query(prisma, `SELECT id::text AS id FROM departments`)).map((r) => String(r.id));
+  }
+  const one = dept ?? mine[0];
+  if (!one) return [];
+  if (!elevated && !mine.includes(one)) throw Errors.forbidden(`You can only open your own department ${what}.`);
+  return [one];
+}
+
 export function isElevated(caller: Caller): boolean {
   const u = accessUserOf(caller.auth.user);
   return u.allUnits || u.level >= ADMIN_LEVEL;
@@ -420,9 +433,9 @@ export const workService = {
     p: { dept?: string; tab?: string; docType?: string; late?: boolean; q?: string; cursor?: string; limit?: number },
   ) {
     const mine = await myDepartmentIds(caller);
-    const dept = p.dept ?? mine[0];
-    if (!dept) return { rows: [], nextCursor: null, hasMore: false };
-    if (!isElevated(caller) && !mine.includes(dept)) throw Errors.forbidden('You can only open your own department inbox.');
+    // dept "all" = every department the caller may see: all of them for Owner / Admin, the caller's own otherwise
+    const depts = await resolveDepartments(caller, mine, p.dept, 'inbox');
+    if (depts.length === 0) return { rows: [], nextCursor: null, hasMore: false };
     const limit = Math.min(Math.max(p.limit ?? 25, 1), 100);
     const conds: string[] = [`(m.unit_id = ANY($1::uuid[]) OR m.to_unit_id = ANY($1::uuid[]))`];
     const args: unknown[] = [caller.ctx.unitIds];
@@ -430,14 +443,19 @@ export const workService = {
       args.push(v);
       return `$${args.length}`;
     };
-    const d = arg(dept);
+    const d = arg(depts);
     switch (p.tab ?? 'receive') {
-      case 'receive': conds.push(`m.to_department_id = ${d}::uuid AND m.state = 'SENT'`); break;
-      case 'accept': conds.push(`m.to_department_id = ${d}::uuid AND m.state = 'RECEIVED'`); break;
-      case 'work': conds.push(`m.to_department_id = ${d}::uuid AND m.state IN ('ACCEPTED','IN_WORK','WAITING_APPROVAL')`); break;
-      case 'returned': conds.push(`m.from_department_id = ${d}::uuid AND m.state = 'RETURNED'`); break;
-      case 'sent': conds.push(`m.from_department_id = ${d}::uuid AND m.state IN ('SENT','RECEIVED','ACCEPTED','IN_WORK','WAITING_APPROVAL')`); break;
-      default: conds.push(`(m.to_department_id = ${d}::uuid OR m.from_department_id = ${d}::uuid)`);
+      case 'receive': conds.push(`m.to_department_id = ANY(${d}::uuid[]) AND m.state = 'SENT'`); break;
+      case 'accept': conds.push(`m.to_department_id = ANY(${d}::uuid[]) AND m.state = 'RECEIVED'`); break;
+      case 'work': conds.push(`m.to_department_id = ANY(${d}::uuid[]) AND m.state IN ('ACCEPTED','IN_WORK','WAITING_APPROVAL')`); break;
+      // V40 Approval Inbox views: Pending = not yet accepted (sent or received); Completed = closed either way
+      case 'pending': conds.push(`m.to_department_id = ANY(${d}::uuid[]) AND m.state IN ('SENT','RECEIVED')`); break;
+      case 'completed':
+        conds.push(`(m.to_department_id = ANY(${d}::uuid[]) OR m.from_department_id = ANY(${d}::uuid[])) AND m.state IN ('COMPLETED','FORWARDED','RETURNED','RECALLED','CANCELLED')`);
+        break;
+      case 'returned': conds.push(`m.from_department_id = ANY(${d}::uuid[]) AND m.state = 'RETURNED'`); break;
+      case 'sent': conds.push(`m.from_department_id = ANY(${d}::uuid[]) AND m.state IN ('SENT','RECEIVED','ACCEPTED','IN_WORK','WAITING_APPROVAL')`); break;
+      default: conds.push(`(m.to_department_id = ANY(${d}::uuid[]) OR m.from_department_id = ANY(${d}::uuid[]))`);
     }
     if (p.docType) conds.push(`m.doc_type = ${arg(p.docType)}`);
     if (p.late) conds.push(`m.sla_due_at < now() AND m.state IN ('SENT','RECEIVED','ACCEPTED','IN_WORK','WAITING_APPROVAL')`);
@@ -483,6 +501,27 @@ export const workService = {
       groups.set(k, [...(groups.get(k) ?? []), r]);
     }
     return { groups: [...groups.entries()].map(([docType, items]) => ({ docType, items })) };
+  },
+
+  /** V40 Approval Inbox "Audit" view: the latest movement events of a department, scoped to the caller's plants. */
+  async audit(caller: Caller, p: { dept?: string; limit?: number }) {
+    const mine = await myDepartmentIds(caller);
+    const depts = await resolveDepartments(caller, mine, p.dept, 'audit');
+    if (depts.length === 0) return [];
+    const limit = Math.min(Math.max(p.limit ?? 100, 1), 200);
+    return query(
+      prisma,
+      `SELECT e.event, e.from_state, e.to_state, e.at, e.note, d.name AS department, u.name AS actor, m.number, m.doc_type, m.doc_no
+         FROM movement_events e
+         JOIN work_movements m ON m.id = e.movement_id
+         LEFT JOIN departments d ON d.id = e.department_id
+         LEFT JOIN users u ON u.id = e.actor_id
+        WHERE (m.to_department_id = ANY($1::uuid[]) OR m.from_department_id = ANY($1::uuid[]))
+          AND (m.unit_id = ANY($2::uuid[]) OR m.to_unit_id = ANY($2::uuid[]))
+        ORDER BY e.at DESC, e.id DESC LIMIT ${limit}`,
+      depts,
+      caller.ctx.unitIds,
+    );
   },
 
   /** The history of one document (every handover, oldest first) and its current holder. */

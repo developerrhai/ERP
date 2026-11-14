@@ -124,11 +124,12 @@ export class TimesheetService {
     }
 
     const timesheetId = await insertRow(prisma, 'timesheets', {
+      timesheet_no: `TS-${input.weekStartDate.replace(/-/g, '')}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`,
       employee_id: input.employeeId,
       week_start: input.weekStartDate,
       total_hours: totalHours,
-      total_billable_hours: totalBillable,
       status: 'DRAFT',
+      created_by_id: caller.auth.userId,
     });
 
     for (const l of input.lines) {
