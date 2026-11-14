@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { KitRegistrar } from '../src/kit/registry';
 import { defineKitSchema } from '../src/kit/schema';
-import type { TypedHandler } from '../src/modules/inventory/typed';
+import type { TypedHandler, TypedRecordDto } from '../src/modules/inventory/typed';
 import { Errors } from '../src/core/http/errors';
 
 export interface FixtureRecord {
@@ -19,6 +19,9 @@ export interface FixtureRecord {
   createdAt: string;
   version: number;
 }
+
+/** The fixture keeps flat in-memory records; the kit tests read them back in this flat shape. */
+const asDto = (rec: FixtureRecord): TypedRecordDto => rec as unknown as TypedRecordDto;
 
 export const inMemoryStore: FixtureRecord[] = [];
 let counter = 1;
@@ -54,6 +57,8 @@ export const fixtureSchema = defineKitSchema({
       key: 'activate',
       label: 'Activate',
       variant: 'primary',
+      confirm: null,
+      requires: 'edit',
       allowedFrom: ['Draft'],
       payloadFields: [
         { key: 'reason', label: 'Activation Reason', type: 'text', required: false },
@@ -63,6 +68,8 @@ export const fixtureSchema = defineKitSchema({
       key: 'close',
       label: 'Close',
       variant: 'default',
+      confirm: null,
+      requires: 'edit',
       allowedFrom: ['Active'],
     },
   ],
@@ -72,6 +79,7 @@ export const fixtureSchema = defineKitSchema({
       label: 'Batch Recalculate',
       variant: 'primary',
       requires: 'add',
+      confirm: null,
       fields: [
         { key: 'multiplier', label: 'Multiplier', type: 'qty', required: true },
       ],
@@ -93,10 +101,12 @@ export const fixtureHandler: TypedHandler = {
   pageId: 'kit-test',
   async list(caller, query) {
     let rows = [...inMemoryStore];
-    if (query?.severity) {
-      rows = rows.filter((r) => r.severity === query.severity);
+    const severity = query?.filters?.severity;
+    const activeOnly = query?.filters?.activeOnly;
+    if (severity) {
+      rows = rows.filter((r) => r.severity === severity);
     }
-    if (query?.activeOnly === true || query?.activeOnly === 'true') {
+    if (activeOnly === true || activeOnly === 'true') {
       rows = rows.filter((r) => r.status === 'Active');
     }
     if (query?.q) {
@@ -104,14 +114,14 @@ export const fixtureHandler: TypedHandler = {
       rows = rows.filter((r) => r.title.toLowerCase().includes(q) || r.code.toLowerCase().includes(q));
     }
     return {
-      rows,
+      rows: rows.map(asDto),
       total: rows.length,
     };
   },
   async get(caller, id) {
     const found = inMemoryStore.find((r) => r.id === id);
     if (!found) throw Errors.notFound(`Record ${id} not found.`);
-    return found;
+    return asDto(found);
   },
   async create(caller, body) {
     const id = randomUUID();
@@ -132,9 +142,9 @@ export const fixtureHandler: TypedHandler = {
       version: 1,
     };
     inMemoryStore.push(rec);
-    return rec;
+    return asDto(rec);
   },
-  async update(caller, id, body, version) {
+  async update(caller, id, version, body) {
     const idx = inMemoryStore.findIndex((r) => r.id === id);
     if (idx === -1) throw Errors.notFound(`Record ${id} not found.`);
     const existing = inMemoryStore[idx]!;
@@ -151,9 +161,9 @@ export const fixtureHandler: TypedHandler = {
       version: existing.version + 1,
     };
     inMemoryStore[idx] = updated;
-    return updated;
+    return asDto(updated);
   },
-  async action(caller, id, actionKey, payload) {
+  async action(caller, id, actionKey) {
     const idx = inMemoryStore.findIndex((r) => r.id === id);
     if (idx === -1) throw Errors.notFound(`Record ${id} not found.`);
     const existing = inMemoryStore[idx]!;
@@ -164,7 +174,7 @@ export const fixtureHandler: TypedHandler = {
       }
       existing.status = 'Active';
       existing.version += 1;
-      return { record: existing };
+      return { record: asDto(existing), replay: false };
     }
     if (actionKey === 'close') {
       if (existing.status !== 'Active') {
@@ -172,7 +182,7 @@ export const fixtureHandler: TypedHandler = {
       }
       existing.status = 'Closed';
       existing.version += 1;
-      return { record: existing };
+      return { record: asDto(existing), replay: false };
     }
     throw Errors.badRequest(`Unknown action ${actionKey}`);
   },

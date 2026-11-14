@@ -198,7 +198,8 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
 
   const afterSave = (row: RecordRow, verb: string): void => {
     setForm(null);
-    setDrawerRow((cur) => (cur && cur.id === row.id ? row : cur));
+    // Phase 37 C10: after a save the dialog closes and the saved record opens.
+    setDrawerRow(row);
     changed();
     const vouchers = voucherView(schema);
     if (activeView?.columns && vouchers) {

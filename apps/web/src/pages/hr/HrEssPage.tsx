@@ -14,6 +14,7 @@ export function HrEssPage() {
       setError('');
       const res = await getEssDashboard();
       setData(res);
+      if (!res) setError('Your login is not linked to an employee record. Ask HR.');
     } catch (e: any) {
       setError(e.message || 'Failed to load ESS portal');
     } finally {

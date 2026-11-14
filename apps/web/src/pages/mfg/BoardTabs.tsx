@@ -9,6 +9,7 @@ import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, Pill, todayIso } from '../finance/shared';
 import { FileButton, FormModal, s } from './Kit';
 import { addDays } from './Ui';
+import { DateField } from '../../ui/components';
 
 // ------------------------------------------------------------------------------------------------ daily board
 const QTY_COLS: [string, string][] = [
@@ -43,7 +44,7 @@ export function CapacityTab() {
     <>
       <div className="toolbar">
         <label htmlFor="cap-from">From</label>
-        <input id="cap-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        <DateField id="cap-from" value={from} onChange={(e) => setFrom(e.target.value)} />
         <span>Working days:</span>
         {WEEKDAYS.map(([k, label]) => (
           <label key={k}>
@@ -144,9 +145,9 @@ export function DailyBoard({ actions }: { actions: ActionSet }) {
     <>
       <div className="toolbar">
         <label htmlFor="pl-from">From</label>
-        <input id="pl-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        <DateField id="pl-from" value={from} onChange={(e) => setFrom(e.target.value)} />
         <label htmlFor="pl-to">To</label>
-        <input id="pl-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        <DateField id="pl-to" value={to} onChange={(e) => setTo(e.target.value)} />
         {actions.add ? (
           <button type="button" className="btn primary" onClick={() => setEdit('new')}>
             + Add to the board

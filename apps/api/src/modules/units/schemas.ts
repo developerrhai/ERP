@@ -23,7 +23,10 @@ export const createUnitSchema = z
     name: unitNameSchema,
     address: nullableText(300).optional(),
     city: nullableText(100).optional(),
-    stateCode: z.string().trim().regex(/^\d{2}$/, 'State code must be 2 digits.').nullable().optional(),
+    stateCode: z
+      .string({ required_error: 'State code is required: it decides CGST/SGST or IGST.' })
+      .trim()
+      .regex(/^\d{2}$/, 'State code must be 2 digits.'),
     pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits.').nullable().optional(),
     gstin: gstinSchema.optional(),
   })
@@ -36,7 +39,7 @@ export const updateUnitSchema = z
     name: unitNameSchema.optional(),
     address: nullableText(300).optional(),
     city: nullableText(100).optional(),
-    stateCode: z.string().trim().regex(/^\d{2}$/, 'State code must be 2 digits.').nullable().optional(),
+    stateCode: z.string().trim().regex(/^\d{2}$/, 'State code must be 2 digits.').optional(),
     pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits.').nullable().optional(),
     gstin: gstinSchema.optional(),
     status: unitStatusSchema.optional(),

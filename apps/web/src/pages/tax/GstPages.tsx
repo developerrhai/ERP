@@ -12,6 +12,7 @@ import type { Row } from '../../lib/scmApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
+import { DateField } from '../../ui/components';
 
 const s = (v: unknown): string =>
   v === null || v === undefined
@@ -248,7 +249,7 @@ function FileDialog({
       </div>
       <div className="field">
         <label htmlFor="fon">Filed on *</label>
-        <input id="fon" type="date" value={on} onChange={(e) => setOn(e.target.value)} />
+        <DateField id="fon" value={on} onChange={(e) => setOn(e.target.value)} />
       </div>
     </Modal>
   );
@@ -644,7 +645,7 @@ function ReversalDialog({ onClose, onDone }: { onClose: () => void; onDone: () =
       </div>
       <div className="field">
         <label htmlFor="rd">Date *</label>
-        <input id="rd" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <DateField id="rd" value={date} onChange={(e) => setDate(e.target.value)} />
       </div>
       {[
         ['CGST', cgst, setCgst],
@@ -732,9 +733,8 @@ function SettleTab({
       {actions.post && !done ? (
         <div className="toolbar">
           <label htmlFor="st-date">Paid on</label>
-          <input
+          <DateField
             id="st-date"
-            type="date"
             value={paidOn}
             onChange={(e) => setPaidOn(e.target.value)}
           />
@@ -1436,9 +1436,9 @@ export function RegisterExport({ kind }: { kind: 'sales' | 'purchase' | 'tds' | 
   return (
     <div className="toolbar">
       <label htmlFor="rx-from">Export from</label>
-      <input id="rx-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+      <DateField id="rx-from" value={from} onChange={(e) => setFrom(e.target.value)} />
       <label htmlFor="rx-to">to</label>
-      <input id="rx-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+      <DateField id="rx-to" value={to} onChange={(e) => setTo(e.target.value)} />
       <button
         type="button"
         className="btn"

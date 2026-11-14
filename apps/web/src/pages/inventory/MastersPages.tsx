@@ -24,6 +24,7 @@ import {
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, PageHead, Pill, qty, WarehouseSelect } from './shared';
+import { DateField } from '../../ui/components';
 
 const DISPOSITIONS = [
   'Use First',
@@ -264,8 +265,7 @@ function BatchDialog({
               <div className="field">
                 <label>
                   Extend expiry to
-                  <input
-                    type="date"
+                  <DateField
                     value={newExpiry}
                     onChange={(e) => setNewExpiry(e.target.value)}
                   />

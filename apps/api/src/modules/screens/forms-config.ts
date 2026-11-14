@@ -55,6 +55,12 @@ const L = {
     searchSql: ['x.name', 'x.login_id'],
     where: `x.status = 'ACTIVE'`,
   },
+  gstRates: {
+    from: 'gst_rates x',
+    label: `x.name || ' (IGST ' || x.igst_pct::text || ' %)'`,
+    searchSql: ['x.code', 'x.name'],
+    where: `x.deleted_at IS NULL AND x.status = 'ACTIVE'`,
+  },
   customers: {
     from: 'customers x',
     label: `x.code || ' — ' || x.name`,
@@ -169,11 +175,21 @@ export const FORMS: Record<string, FormConfig> = {
     table: 'hsn_sac_codes',
     title: 'HSN / SAC',
     softDelete: true,
-    lookups: {},
+    lookups: { gstRates: L.gstRates },
+    // The dated rate row (hsn_sac_rates) is written with the code; later rate changes use "Add rate".
+    afterCreate: async (tx, id, v) => {
+      if (!v.gstRate) return;
+      await tx.$executeRaw`
+        INSERT INTO hsn_sac_rates (hsn_id, gst_rate_id, cess_pct, effective_from)
+        VALUES (${id}::uuid, ${String(v.gstRate)}::uuid, ${String(v.cess ?? '0')}::numeric, ${String(v.effectiveFrom)}::date)`;
+    },
     fields: [
       { key: 'code', label: 'HSN / SAC Code', column: 'code', type: 'text', required: true, maxLength: 8, editable: false, help: '4, 6 or 8 digits; 99… is a service (SAC)' },
       { key: 'description', label: 'Description', column: 'description', type: 'text', required: true, maxLength: 300 },
       { key: 'uqc', label: 'Default UQC', column: 'default_uqc', type: 'text', maxLength: 10 },
+      { key: 'gstRate', label: 'GST Rate', column: 'id', type: 'lookup', lookup: 'gstRates', required: true, editable: false, virtual: true, help: 'Lines with this HSN take this rate. Later changes: add a new dated rate.' },
+      { key: 'cess', label: 'Cess %', column: 'id', type: 'number', min: 0, max: 100, default: 0, editable: false, virtual: true },
+      { key: 'effectiveFrom', label: 'Rate Effective From', column: 'id', type: 'date', required: true, editable: false, virtual: true },
       status(['ACTIVE', 'INACTIVE'], 'ACTIVE'),
     ],
   },

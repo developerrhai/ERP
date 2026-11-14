@@ -1,6 +1,7 @@
 // Phase 9: purchase invoice with 3-way match, GST (ITC flags, RCM), TDS ledger, MSME due date and the GL chain;
 // debit notes (return / rate difference). Every post = assertCanPost + numbering + StockService + PostingService
 // in one transaction. No rate is decided in code: GST % comes from the PO / the invoice, TDS % from dated rows.
+import { lineNoGstRate } from '../masters/party-rules';
 import { prisma } from '../../core/db/prisma';
 import type { Db } from '../../core/db/prisma';
 import { AppError, Errors } from '../../core/http/errors';
@@ -37,7 +38,7 @@ import {
   todayIst,
   updateRow,
 } from './core';
-import { S, approvalHandler } from './core';
+import { S, approvalHandler, unitState } from './core';
 import type { DocDef, Actor, Row } from './core';
 import {
   addDays,
@@ -109,13 +110,6 @@ approvalService.register('fin-debitnote', {
 });
 
 const normInvNo = (s: string): string => s.toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-async function unitState(tx: Db, unitId: string): Promise<string> {
-  const u = (await query(tx, `SELECT state_code, gstin FROM units WHERE id=$1::uuid`, unitId))[0];
-  const st = (u?.state_code as string | null) || ((u?.gstin as string | null)?.slice(0, 2) ?? null);
-  if (!st) throw Errors.validation({ unitId: 'Set the state (or GSTIN) of this unit first.' });
-  return st;
-}
 
 // ============================================================================================ input
 export interface InvLineIn {
@@ -410,7 +404,7 @@ async function saveInvoice(
       if (pct === null) pct = await resolveGstPct(tx, hsn, b.invoiceDate);
       if (pct === null)
         throw Errors.validation({
-          [at('gstPct')]: `Enter the GST rate: no rate is set for ${hsn ?? 'this line'}.`,
+          [at('gstPct')]: lineNoGstRate(hsn),
         });
       const t = lineTax({ qty, rate: D(l.rate), discountPct: ZERO, gstPct: D(pct), intra });
       // tax printed on the vendor invoice wins (that is what the supplier will report), the difference is a match exception

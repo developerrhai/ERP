@@ -549,7 +549,7 @@ export class BiService {
       case 'proj_active': {
         const r = await query(
           prisma,
-          `SELECT COUNT(*) AS cnt FROM projects WHERE status IN ('PLANNING','ACTIVE') AND ($1::uuid IS NULL OR unit_id = $1::uuid)`,
+          `SELECT COUNT(*) AS cnt FROM projects WHERE status IN ('DRAFT','PLANNED','ACTIVE') AND ($1::uuid IS NULL OR unit_id = $1::uuid)`,
           unitFilter,
         );
         rowCount = Number(r[0]?.cnt ?? 0);

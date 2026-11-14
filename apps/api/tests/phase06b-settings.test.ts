@@ -1107,8 +1107,8 @@ describe('print formats', () => {
     expect(out.notes).toBe('Thank you');
     expect(out.signatures).toEqual([{ label: 'Prepared by' }]);
     expect(out.letterhead).toEqual({});
-    expect(out.layout).toEqual({ paper: 'A5', orientation: 'landscape', showLetterhead: false });
-    expect(out.formatVersion).toEqual({ id: 'f1', version: 4 });
+    expect((out as typeof out & { layout?: unknown }).layout).toEqual({ paper: 'A5', orientation: 'landscape', showLetterhead: false });
+    expect((out as typeof out & { formatVersion?: unknown }).formatVersion).toEqual({ id: 'f1', version: 4 });
     expect(dto.title).toBe('Quotation'); // input untouched
   });
 });

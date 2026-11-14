@@ -3,7 +3,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assertCanPost } from '../src/core/posting';
-import { prisma, TAL } from './helpers';
+import { prisma } from './helpers';
 
 describe('assertCanPost Posting Guard', () => {
   let fyId: string;

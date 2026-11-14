@@ -54,7 +54,7 @@ describe('T-KIT-10: FilterBar', () => {
     const onFilterChange = vi.fn();
     render(<FilterBar filters={filters} activeFilters={{}} onFilterChange={onFilterChange} />);
 
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-11-04' } });
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '04-11-2026' } });
     expect(onFilterChange).toHaveBeenCalledWith('date', '2026-11-04');
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-11' } });

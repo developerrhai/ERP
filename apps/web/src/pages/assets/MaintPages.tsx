@@ -28,6 +28,7 @@ import {
   todayIso,
   useUserOptions,
 } from './Shared';
+import { DateField } from '../../ui/components';
 
 const pill = (v: unknown) => <Pill tone={TONE[s(v)]}>{s(v).replace(/_/g, ' ')}</Pill>;
 
@@ -1150,9 +1151,9 @@ export function MtbfPage() {
       />
       <div className="toolbar">
         <label htmlFor="mt-from">From</label>
-        <input id="mt-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        <DateField id="mt-from" value={from} onChange={(e) => setFrom(e.target.value)} />
         <label htmlFor="mt-to">To</label>
-        <input id="mt-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        <DateField id="mt-to" value={to} onChange={(e) => setTo(e.target.value)} />
       </div>
       <ErrorBox message={d.error} />
       <Grid

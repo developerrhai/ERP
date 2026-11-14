@@ -1,7 +1,7 @@
 // apps/api/src/modules/hr/ess-service.ts
 // Employee Self Service: personal details, attendance, leave, expenses, requests, privacy notice.
 import { prisma } from '../../core/db/prisma';
-import { Errors } from '../../core/http/errors';
+import { AppError, Errors } from '../../core/http/errors';
 import {
   norm,
   query,
@@ -26,6 +26,16 @@ export class EssService {
     )[0];
     if (!emp) throw Errors.notFound('No employee profile linked to this user account.');
     return norm(emp);
+  }
+
+  /** null when the login has no employee record (the screen shows a plain message instead of an error). */
+  async findMyProfile(caller: Caller): Promise<Row | null> {
+    try {
+      return await this.getEmployeeForUser(caller.auth.userId);
+    } catch (e) {
+      if (e instanceof AppError && e.status === 404) return null;
+      throw e;
+    }
   }
 
   async getMyProfile(caller: Caller): Promise<Row> {

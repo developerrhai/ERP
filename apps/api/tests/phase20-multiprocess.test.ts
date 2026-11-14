@@ -11,7 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PASSWORD, makeUser, prisma } from './helpers';
 import { TEST_ENV, TEST_OWNER } from './test-env';
 
-const require = createRequire(import.meta.url);
+const require = createRequire(__filename);
 const apiDir = path.resolve(__dirname, '..');
 const compiledServer = path.join(apiDir, 'dist', 'server.js');
 const tsxCli = path.join(path.dirname(require.resolve('tsx/package.json')), 'dist', 'cli.mjs');

@@ -47,6 +47,8 @@ export const hsnDigits = (n: number): string =>
   `Use at least ${n} digits of HSN (your turnover rule).`;
 export const noGstRate = (code: string, date: string): string =>
   `No GST rate is set for HSN ${code} on ${date}. Ask accounts to add one.`;
+export const lineNoGstRate = (code: string | null): string =>
+  `No GST rate for HSN ${code ?? '(none)'} — set it in HSN / SAC.`;
 export const rateOverlap = (from: string, to: string): string =>
   `This date overlaps the rate valid ${from}–${to}.`;
 export const termsSum = (sum: string): string =>

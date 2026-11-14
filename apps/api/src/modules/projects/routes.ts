@@ -39,9 +39,16 @@ projectsRouter.post(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
     const caller = callerOf(req);
+    // The web form used snake_case names; accept both spellings.
+    const b = req.body as Record<string, unknown>;
     const result = await projectService.createProject(caller, {
-      ...req.body,
-      unitId: req.body.unitId || caller.ctx.unitId || '',
+      ...b,
+      name: String(b.name ?? ''),
+      startDate: String(b.startDate ?? b.start_date ?? ''),
+      endDate: String(b.endDate ?? b.end_date ?? ''),
+      contractValue: b.contractValue !== undefined || b.contract_value !== undefined ? Number(b.contractValue ?? b.contract_value) : 0,
+      billingType: (b.billingType ?? b.billing_type) as string | undefined,
+      unitId: (b.unitId as string | undefined) || caller.ctx.unitId || '',
     });
     res.status(201).json(result);
   }),

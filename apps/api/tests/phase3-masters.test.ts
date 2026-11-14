@@ -232,6 +232,7 @@ describe('Unit Master /units', () => {
     const c = code();
     const res = await create(admin, {
       code: c.toLowerCase(),
+      stateCode: '27',
       name: `Chakan ${c}`,
       address: 'Chakan MIDC',
       gstin: '27aapfu0939f1zv',
@@ -256,11 +257,11 @@ describe('Unit Master /units', () => {
   });
 
   it('409 DUPLICATE for a taken code or (case-insensitive) name; 422 for bad input', async () => {
-    const dupCode = await create(admin, { code: 'tal', name: `Other ${code()}` });
+    const dupCode = await create(admin, { code: 'tal', name: `Other ${code()}`, stateCode: '27' });
     expect(dupCode.status).toBe(409);
     expect(errorOf(dupCode)).toMatchObject({ code: 'DUPLICATE' });
     expect(errorOf(dupCode).fields?.code).toBeDefined();
-    const dupName = await create(admin, { code: code(), name: 'talwade' });
+    const dupName = await create(admin, { code: code(), name: 'talwade', stateCode: '27' });
     expect(dupName.status).toBe(409);
     expect(errorOf(dupName).fields?.name).toBeDefined();
     for (const [body, field] of [

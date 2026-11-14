@@ -1,6 +1,17 @@
 // Labelled form controls in the prototype .field/.pass style, wiring label, aria-invalid and
 // the error text under the field (422 field errors) in one place.
 import { useId, useState, type InputHTMLAttributes, type ReactNode } from 'react';
+import { DateField } from '../ui/components';
+
+function omitDateProps(input: InputHTMLAttributes<HTMLInputElement>): Omit<InputHTMLAttributes<HTMLInputElement>, 'min' | 'max' | 'value' | 'onChange' | 'type'> {
+  const rest = { ...input };
+  delete rest.type;
+  delete rest.value;
+  delete rest.onChange;
+  delete rest.min;
+  delete rest.max;
+  return rest;
+}
 
 interface FieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
   label: string;
@@ -13,12 +24,26 @@ export function Field({ label, error, ...input }: FieldProps) {
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <input
-        id={id}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errId : undefined}
-        {...input}
-      />
+      {input.type === 'date' ? (
+        // Phase 37 C8: every date is typed and shown as dd-mm-yyyy, never the browser's own format.
+        <DateField
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errId : undefined}
+          {...omitDateProps(input)}
+          value={typeof input.value === 'string' ? input.value : ''}
+          {...(typeof input.min === 'string' ? { min: input.min } : {})}
+          {...(typeof input.max === 'string' ? { max: input.max } : {})}
+          onChange={input.onChange as unknown as (e: { target: { value: string } }) => void}
+        />
+      ) : (
+        <input
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errId : undefined}
+          {...input}
+        />
+      )}
       {error ? (
         <span className="field-error" id={errId}>
           {error}

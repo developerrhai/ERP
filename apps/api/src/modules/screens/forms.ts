@@ -214,7 +214,7 @@ export async function createRecord(
       };
       for (const f of cfg.fields) {
         const v = values[f.key];
-        if (v === undefined) continue;
+        if (v === undefined || f.virtual) continue;
         args.push(v);
         cols.push(f.column);
         exprs.push(`$${args.length}${CAST[f.type]}`);
@@ -300,7 +300,7 @@ export async function updateRecord(
       const sets: string[] = [];
       const args: unknown[] = [];
       for (const f of cfg.fields) {
-        if (f.editable === false || !(f.key in values)) continue;
+        if (f.editable === false || f.virtual || !(f.key in values)) continue;
         args.push(values[f.key]);
         sets.push(`"${f.column}" = $${args.length}${CAST[f.type]}`);
       }
@@ -358,7 +358,7 @@ export async function loadForEdit(
   cfg: FormConfig,
   id: string,
 ): Promise<{ values: Record<string, unknown>; lines: Record<string, unknown>[]; version: number; status: string | null } | null> {
-  const sel = cfg.fields.map((f, i) => `t."${f.column}"::text AS f${i}`).join(', ');
+  const sel = cfg.fields.map((f, i) => (f.virtual ? `NULL::text AS f${i}` : `t."${f.column}"::text AS f${i}`)).join(', ');
   const rows = await prisma.$queryRawUnsafe<Record<string, string | null>[]>(
     `SELECT t.version, ${cfg.statusColumn ? `t."${cfg.statusColumn}"::text` : 'NULL::text'} AS _status, ${sel} FROM "${cfg.table}" t WHERE t.id = $1::uuid AND t.deleted_at IS NULL`,
     id,

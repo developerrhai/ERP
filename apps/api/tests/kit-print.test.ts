@@ -8,7 +8,7 @@ import { invalidateAccessCache } from '../src/core/rbac/access';
 import { bootKit } from '../src/kit/boot';
 import { clearKitRegistrationsForTest, registerKitModule } from '../src/kit/registry';
 import { defineKitSchema } from '../src/kit/schema';
-import type { TypedHandler } from '../src/modules/inventory/typed';
+import type { TypedHandler, TypedRecordDto } from '../src/modules/inventory/typed';
 import { prisma } from '../src/core/db/prisma';
 import { API, newApp, signInAs, signInOwner, unitIds } from './helpers';
 import type { Signed } from './helpers';
@@ -60,7 +60,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
       printTemplates: [
         { key: 'standard', label: 'Standard Inspection Form', kind: 'web', scope: 'record' },
       ],
-      fields: [{ key: 'title', label: 'Title', type: 'text' }],
+      fields: [{ key: 'title', label: 'Title', type: 'text', required: false, readOnly: false }],
     });
 
     const handler: TypedHandler = {
@@ -77,7 +77,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
           createdAt: new Date().toISOString(),
           status: 'Active',
           title: 'Sample Inspection',
-        };
+        } as unknown as TypedRecordDto;
       },
       async create() {
         throw new Error('not implemented');
@@ -159,7 +159,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
       printTemplates: [
         { key: 'pdf-cert', label: 'Quality Certificate PDF', kind: 'pdf', scope: 'record' },
       ],
-      fields: [{ key: 'title', label: 'Title', type: 'text' }],
+      fields: [{ key: 'title', label: 'Title', type: 'text', required: false, readOnly: false }],
     });
 
     const handler: TypedHandler = {
@@ -176,7 +176,7 @@ describe('T-KIT-11 — Kit Print / PDF Registry & Routes', () => {
           createdAt: new Date().toISOString(),
           status: 'Active',
           title: 'Certificate #1',
-        };
+        } as unknown as TypedRecordDto;
       },
       async create() {
         throw new Error('not implemented');

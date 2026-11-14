@@ -202,12 +202,32 @@ export async function loadDoc(
 
 export async function loadLines(db: Db, def: DocDef, id: string): Promise<Row[]> {
   if (!def.linesTable || !def.parentCol) return [];
-  const order = (await castsOf(db, def.linesTable)).has('line_no') ? 'line_no' : 'created_at, id';
-  return query(
+  const casts = await castsOf(db, def.linesTable);
+  const order = casts.has('line_no') ? 'l.line_no' : 'l.created_at, l.id';
+  // Phase 37 C1: a line never shows a bare uuid. Lines that point at an item also carry the item's
+  // code, name, unit and HSN/SAC (the line's own uom / hsn_sac wins when it has one).
+  if (!casts.has('item_id')) {
+    return query(
+      db,
+      `SELECT * FROM "${def.linesTable}" l WHERE l."${def.parentCol}" = $1::uuid ORDER BY ${order}`,
+      id,
+    );
+  }
+  const rows = await query(
     db,
-    `SELECT * FROM "${def.linesTable}" WHERE "${def.parentCol}" = $1::uuid ORDER BY ${order}`,
+    `SELECT l.*, i.code AS item_code, i.name AS item_name, i.base_uom AS item_uom, i.hsn_sac AS item_hsn_sac
+       FROM "${def.linesTable}" l LEFT JOIN items i ON i.id = l.item_id
+      WHERE l."${def.parentCol}" = $1::uuid ORDER BY ${order}`,
     id,
   );
+  for (const r of rows) {
+    if (casts.has('uom') && !r.uom) r.uom = r.item_uom;
+    else if (!casts.has('uom')) r.uom = r.item_uom;
+    if (casts.has('hsn_sac') ? !r.hsn_sac : true) r.hsn_sac = r.item_hsn_sac;
+    delete r.item_uom;
+    delete r.item_hsn_sac;
+  }
+  return rows;
 }
 
 export function assertEditable(row: Row, what = 'record', draft = 'Draft'): void {
@@ -456,3 +476,17 @@ export const S = (v: unknown): string =>
       : typeof v === 'object'
         ? (v as { toString(): string }).toString()
         : (v as number | boolean | bigint).toString();
+
+/**
+ * State code (first 2 digits of the GSTIN, or units.state_code) of the plant a document belongs to. It decides
+ * CGST/SGST or IGST. Phase 37 C3: one shared check, one plain message.
+ */
+export async function unitState(tx: Db, unitId: string): Promise<string> {
+  const u = (await query(tx, `SELECT name, state_code, gstin FROM units WHERE id=$1::uuid`, unitId))[0];
+  const st = (u?.state_code as string | null) || ((u?.gstin as string | null)?.slice(0, 2) ?? null);
+  if (!st)
+    throw Errors.validation({
+      unitId: `Plant ${(u?.name as string | undefined) ?? ''} has no state set. Ask Admin to complete it.`.replace('Plant  has', 'This plant has'),
+    });
+  return st;
+}

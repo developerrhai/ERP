@@ -23,6 +23,7 @@ import {
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, Pill, todayIso } from './shared';
+import { DateField } from '../../ui/components';
 
 const FREQ: Record<string, string> = {
   WEEKLY: 'Every week',
@@ -445,8 +446,7 @@ export function FxModal({ canEdit, onClose }: { canEdit: boolean; onClose: () =>
       </div>
       <h3 style={{ marginTop: 16 }}>Month-end revaluation check</h3>
       <div className="recordbar">
-        <input
-          type="date"
+        <DateField
           aria-label="Revalue as on"
           value={asOf}
           onChange={(e) => setAsOf(e.target.value)}

@@ -8,6 +8,7 @@ import { formatDateTime } from '../../lib/format';
 import { useLoad } from '../../lib/useLoad';
 import type { AuditLog } from '../../types';
 import { AUDIT_ACTIONS, listAuditActions, listAuditLogs } from './adminApi';
+import { DateField } from '../../ui/components';
 
 const PAGE_SIZE = 25;
 
@@ -112,8 +113,7 @@ export function AuditTrailPage() {
         <div className="v8-table-toolbar">
           <label className="audit-date">
             From
-            <input
-              type="date"
+            <DateField
               value={from}
               max={to || undefined}
               onChange={(e) => reset(setFrom)(e.target.value)}
@@ -121,8 +121,7 @@ export function AuditTrailPage() {
           </label>
           <label className="audit-date">
             To
-            <input
-              type="date"
+            <DateField
               value={to}
               min={from || undefined}
               onChange={(e) => reset(setTo)(e.target.value)}

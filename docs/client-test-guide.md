@@ -849,3 +849,26 @@ Best regards,
 
 ### Release status (final)
 All 35 phases are built. Everything shown in this guide has been checked automatically on the server side. Screens were checked by building them cleanly; the full click-through of every screen with all nine roles, the load test and the restore drill still have to be run and signed off before the final go-live.
+
+---
+
+### Phase 36 - new look and buttons
+- **Anyone:** open any page you checked before. ✔️ A row of buttons at the top: Return, Email, Industry PDF, Word, Import, Export, Duplicates, Documents, Submit Approval, Approval Queue, Move Forward, Project History. Those that need a record are grey with the reason on hover.
+- **Anyone:** press **Return**. ✔️ You go back to the previous page. Press **Approval Queue**. ✔️ The approvals page opens.
+- **Sales:** Sales Orders → ＋ New Sales Order → type a few letters of a customer name. ✔️ Matching customers appear; pick one. Add a line, type an item name. ✔️ Items appear as you type (all items, not just 30). Enter quantity, rate and GST %. ✔️ A totals box shows Taxable value, CGST, SGST/IGST, Grand Total and the amount in words.
+- **Any manager:** Home. ✔️ Eight work cards with counts (the last three show a dash for now).
+- **Anyone:** open Inbox for a department (for example Sales Inbox). ✔️ It opens (it used to say "Page not found").
+- **Laptop:** press ☰ Menu. ✔️ The left menu hides and shows. **Phone:** open the ERP. ✔️ No sideways scrolling; a bottom bar with Home, Inbox, Approvals, Menu.
+- **Administrator:** open /admin/ui-kit. ✔️ A page showing every button, table and form field.
+
+## Phase 37 - fixes check (steps by role)
+1. Administrator: Menu > Tax > HSN / SAC > Add. Enter code 7208, description, GST Rate 18 %, Rate Effective From 01-04-2026. Save. ✔️ Saved; the record opens.
+2. Administrator: Add an HSN without a GST rate. ✔️ "GST Rate is required".
+3. Sales user: Sales Quotation > Add a line with an item whose HSN has the rate. ✔️ GST % fills by itself.
+4. Administrator: Administration > Units > Add Unit without a State Code. ✔️ The form asks for the 2-digit state code.
+5. Any user: open a date box on any page. ✔️ It shows dd-mm-yyyy and accepts 15-08-2026 typed in.
+6. HR user: Attendance > month 02-2027. ✔️ The page opens (empty or with days), no error.
+7. A user with no employee record: Employee Self-Service. ✔️ "Your login is not linked to an employee record. Ask HR."
+8. Projects user: create a project, an approved budget, activate it, add two tasks, a dependency and an expense. ✔️ Each step saves; the project is Active.
+9. Employee: Submit a Draft for approval, open it again. ✔️ Submit Approval is greyed: "Already sent for approval."
+10. Any user: add a record in a form dialog and save. ✔️ The dialog closes and the new record opens.

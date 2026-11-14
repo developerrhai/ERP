@@ -1,5 +1,6 @@
 // Phase 9: purchase orders. Released = Approved and not being amended; fulfilment (Open / Partly received /
 // Closed / Delayed) is derived from the line counters, never stored as a status.
+import { lineNoGstRate } from '../masters/party-rules';
 import { prisma } from '../../core/db/prisma';
 import type { Db } from '../../core/db/prisma';
 import { AppError, Errors } from '../../core/http/errors';
@@ -23,7 +24,7 @@ import {
   todayIst,
   updateRow,
 } from './core';
-import { S } from './core';
+import { S, unitState } from './core';
 import type { DocDef, Row } from './core';
 import { addDays, deliveryStatus, headerTotals, lineTax, netRate } from './math';
 import type { LineTax } from './math';
@@ -90,16 +91,6 @@ export const PO_DEF: DocDef = {
   },
 };
 registerDoc(PO_DEF);
-
-async function unitStateOf(tx: Db, unitId: string): Promise<string> {
-  const u = (await query(tx, `SELECT state_code, gstin FROM units WHERE id=$1::uuid`, unitId))[0];
-  const st = (u?.state_code as string | null) || ((u?.gstin as string | null)?.slice(0, 2) ?? null);
-  if (!st)
-    throw Errors.validation({
-      unitId: 'Set the state (or GSTIN) of this unit first. It decides CGST/SGST or IGST.',
-    });
-  return st;
-}
 
 export async function resolveGstPct(
   tx: Db,
@@ -174,8 +165,8 @@ export const poCrud = makeCrud({
       if (!w || w.unit_id !== c.unitId)
         throw Errors.validation({ shipToWarehouseId: 'Choose a warehouse of this unit.' });
     }
-    const unitState = await unitStateOf(c.tx, c.unitId);
-    const intra = sup.stateCode === unitState;
+    const posState = await unitState(c.tx, c.unitId);
+    const intra = sup.stateCode === posState;
     const poDate = S(c.header.poDate ?? c.existing?.po_date ?? todayIst());
     const out: Row[] = [];
     const taxes: LineTax[] = [];
@@ -224,7 +215,7 @@ export const poCrud = makeCrud({
       if (gst === null) gst = await resolveGstPct(c.tx, hsn, poDate);
       if (gst === null)
         throw Errors.validation({
-          [at('gstPct')]: `Enter the GST rate: no rate is set for HSN/SAC ${hsn ?? '(none)'}.`,
+          [at('gstPct')]: lineNoGstRate(hsn),
         });
       const t = lineTax({
         qty,
@@ -258,7 +249,7 @@ export const poCrud = makeCrud({
       header: {
         ...c.header,
         supplierId,
-        posState: unitState,
+        posState,
         regime: intra ? 'INTRA' : 'INTER',
         taxableTotal: str(h.taxable),
         cgstTotal: str(h.cgst),

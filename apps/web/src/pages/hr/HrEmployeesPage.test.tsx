@@ -66,8 +66,8 @@ describe('HrEmployeesPage', () => {
     await user.selectOptions(within(dialog).getByLabelText('Gender *'), 'MALE');
     await user.selectOptions(within(dialog).getByLabelText('Unit *'), 'unit-tal');
     await user.selectOptions(within(dialog).getByLabelText('Department *'), 'Production');
-    await user.type(within(dialog).getByLabelText('Date of Birth *'), '1992-08-15');
-    await user.type(within(dialog).getByLabelText('Date of Joining *'), '2026-04-10');
+    await user.type(within(dialog).getByLabelText('Date of Birth *'), '15-08-1992');
+    await user.type(within(dialog).getByLabelText('Date of Joining *'), '10-04-2026');
     await user.type(within(dialog).getByLabelText('Mobile (10 digits) *'), '9822012345');
     await user.type(within(dialog).getByLabelText('Personal Email'), 'rohan@example.com');
     await user.type(within(dialog).getByLabelText('Aadhaar (12 digits) *'), '462261196921');

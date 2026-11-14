@@ -112,9 +112,10 @@ describe('Phase 19 BI, Dashboards, Search, AI, Automation, Webhooks & Comm Tests
     expect(z.anomaly).toBe(true);
 
     const dash = await biService.getDepartmentDashboard(ownerCaller, 'Production');
-    expect(dash.kpis.length).toBeGreaterThanOrEqual(2);
-    expect(dash.kpis[0].formulaText).toBeDefined();
-    expect(dash.kpis[0].rowCount).toBeDefined();
+    const dashKpis = dash.kpis as Array<{ formulaText?: unknown; rowCount?: unknown }>;
+    expect(dashKpis.length).toBeGreaterThanOrEqual(2);
+    expect(dashKpis[0]!.formulaText).toBeDefined();
+    expect(dashKpis[0]!.rowCount).toBeDefined();
   });
 
   it('Owner Check 3 & Permission Leakage: TAL-only user never sees SAW invoice in search/BI; sensitive fields masked', async () => {

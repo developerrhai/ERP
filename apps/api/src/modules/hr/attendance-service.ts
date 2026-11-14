@@ -32,6 +32,32 @@ export class AttendanceService {
     return rows.map(norm);
   }
 
+  /** Phase 37 C4: daily attendance of a month for the plants the caller chose (ScopeFilter.units), optionally one employee. */
+  async listDays(caller: Caller, month: string, employeeId?: string): Promise<Row[]> {
+    if (!/^\d{4}-\d{2}$/.test(month)) throw Errors.validation({ month: 'Use the month as yyyy-mm.' });
+    const args: unknown[] = [`${month}-01`, caller.ctx.unitIds];
+    let emp = '';
+    if (employeeId) {
+      args.push(employeeId);
+      emp = `AND d.employee_id = $3::uuid`;
+    }
+    const rows = await query(
+      prisma,
+      `SELECT d.*, e.emp_code, trim(e.first_name || ' ' || coalesce(e.last_name, '')) AS employee_name, s.code AS shift_code
+         FROM attendance_days d
+         JOIN employees e ON e.id = d.employee_id
+         JOIN LATERAL (SELECT a.unit_id FROM employee_assignments a WHERE a.employee_id = e.id
+                        AND a.effective_from <= d.attendance_date AND (a.effective_to IS NULL OR a.effective_to >= d.attendance_date)
+                        ORDER BY a.effective_from DESC LIMIT 1) asg ON asg.unit_id = ANY($2::uuid[])
+         LEFT JOIN shifts s ON s.id = d.shift_id
+        WHERE d.attendance_date >= $1::date AND d.attendance_date < ($1::date + INTERVAL '1 month')::date ${emp}
+        ORDER BY d.attendance_date, e.emp_code
+        LIMIT 5000`,
+      ...args,
+    );
+    return rows.map(norm);
+  }
+
   async getRosters(params: { from: string; to: string; unitId?: string }): Promise<Row[]> {
     const args: unknown[] = [params.from, params.to];
     let unitCond = '';

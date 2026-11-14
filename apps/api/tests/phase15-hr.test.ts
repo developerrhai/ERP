@@ -45,6 +45,7 @@ describe('Phase 15 HRMS Unit Tests', () => {
       halfDayMinutes: 240,
       fullDayMinutes: 480,
       breakMinutes: 60,
+      absentBelowMinutes: 240,
     };
 
     const punches = [

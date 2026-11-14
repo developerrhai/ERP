@@ -5,6 +5,7 @@ import { ApiError } from '../lib/api';
 import { ROUTE_TYPES, WORK_STATUSES, workApi, type DocMovement, type Dept } from '../lib/workApi';
 import { Drawer } from './Drawer';
 import { Modal } from './Modal';
+import { DateField } from '../ui/components';
 
 const CYCLE_TEXT =
   'Move Forward → next department marks Received → Accepted → works on the record → Send for Approval to a selected department → approval Accepted → Move Forward becomes available again.';
@@ -149,7 +150,7 @@ export function MoveForwardDialog({
       </div>
       <div className="field">
         <label htmlFor="mf-by">Required By</label>
-        <input id="mf-by" type="date" value={requiredBy} onChange={(e) => setRequiredBy(e.target.value)} />
+        <DateField id="mf-by" value={requiredBy} onChange={(e) => setRequiredBy(e.target.value)} />
       </div>
       <div className="field">
         <label htmlFor="mf-ws">Work Status</label>

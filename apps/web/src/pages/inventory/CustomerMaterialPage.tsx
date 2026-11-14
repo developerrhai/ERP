@@ -37,6 +37,7 @@ import {
   todayIso,
   WarehouseSelect,
 } from './shared';
+import { DateField } from '../../ui/components';
 
 const GUIDE: GuideDef = {
   goal: 'This is the customer’s own material kept in our store. It is NOT our stock and has no rupee value, so it never mixes with our stock or accounts.',
@@ -576,8 +577,7 @@ function CancelDialog({
       <div className="field">
         <label>
           Cancel date
-          <input
-            type="date"
+          <DateField
             value={date}
             max={todayIso()}
             onChange={(e) => setDate(e.target.value)}
@@ -717,8 +717,7 @@ function ReceiptForm({ onClose, onDone }: { onClose: () => void; onDone: (code: 
         <div className="field">
           <label>
             Date on the challan
-            <input
-              type="date"
+            <DateField
               value={challanDate}
               max={todayIso()}
               onChange={(e) => setChallanDate(e.target.value)}
@@ -729,8 +728,7 @@ function ReceiptForm({ onClose, onDone }: { onClose: () => void; onDone: (code: 
         <div className="field">
           <label>
             Date received
-            <input
-              type="date"
+            <DateField
               value={docDate}
               max={todayIso()}
               onChange={(e) => setDate(e.target.value)}
@@ -780,8 +778,7 @@ function ReceiptForm({ onClose, onDone }: { onClose: () => void; onDone: (code: 
           <div className="field">
             <label>
               Made on (optional)
-              <input
-                type="date"
+              <DateField
                 value={l.mfgDate}
                 onChange={(e) => set(i, { mfgDate: e.target.value })}
               />
@@ -790,8 +787,7 @@ function ReceiptForm({ onClose, onDone }: { onClose: () => void; onDone: (code: 
           <div className="field">
             <label>
               Expires on (if printed)
-              <input
-                type="date"
+              <DateField
                 value={l.expiryDate}
                 onChange={(e) => set(i, { expiryDate: e.target.value })}
               />
@@ -910,8 +906,7 @@ function TakeForm({
         <div className="field">
           <label>
             Date
-            <input
-              type="date"
+            <DateField
               value={docDate}
               max={todayIso()}
               onChange={(e) => setDate(e.target.value)}

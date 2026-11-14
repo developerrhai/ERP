@@ -22,6 +22,7 @@ import {
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
+import { DateField } from '../../ui/components';
 
 const s = (v: unknown): string =>
   v === null || v === undefined
@@ -692,7 +693,7 @@ function InvoiceForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: D
         </div>
         <div className="field">
           <label htmlFor="d">Invoice date *</label>
-          <input id="d" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <DateField id="d" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
       </div>
       <div className="table-wrap">
@@ -1146,9 +1147,8 @@ export function ApPage({ actions }: { actions: ActionSet }) {
             ＋ Proposal for invoices due till
           </button>
         ) : null}
-        <input
+        <DateField
           aria-label="Due till"
-          type="date"
           value={till}
           onChange={(e) => setTill(e.target.value)}
         />

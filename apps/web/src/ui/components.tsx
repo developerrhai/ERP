@@ -276,6 +276,55 @@ export function DateInput({
   );
 }
 
+/**
+ * Drop-in replacement for `<input type="date">` (Phase 37 C8): the person always types and sees dd-mm-yyyy,
+ * whatever the browser language is. `value` is ISO yyyy-mm-dd or ''. onChange gets an event-shaped
+ * `{ target: { value } }` with ISO (or '' while the text is not a real date), so existing handlers keep working.
+ */
+export function DateField({
+  value,
+  onChange,
+  min,
+  max,
+  ...rest
+}: {
+  value: string | null | undefined;
+  onChange?: (e: { target: { value: string } }) => void;
+  /** ISO yyyy-mm-dd bounds; a date outside them is flagged invalid and reported as ''. */
+  min?: string;
+  max?: string;
+} & Omit<InputProps, 'min' | 'max'>) {
+  const shown = (v: string | null | undefined): string => {
+    const t = formatDMY(v ?? null);
+    return t === '—' ? '' : t;
+  };
+  const [text, setText] = useState(shown(value));
+  const inRange = (iso: string | null): boolean => iso !== null && (!min || iso >= min) && (!max || iso <= max);
+  useEffect(() => {
+    // The parent changed the value from outside (reset, load): show it. What the person typed is left alone.
+    const typed = inRange(parseDMY(text)) ? parseDMY(text) : '';
+    if ((value ?? '') !== (typed ?? '')) setText(shown(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  const parsed = parseDMY(text);
+  return (
+    <input
+      {...rest}
+      type="text"
+      placeholder="dd-mm-yyyy"
+      inputMode="numeric"
+      maxLength={10}
+      value={text}
+      aria-invalid={text !== '' && !inRange(parsed)}
+      onChange={(e) => {
+        setText(e.target.value);
+        const iso = parseDMY(e.target.value);
+        onChange?.({ target: { value: iso !== null && inRange(iso) ? iso : '' } });
+      }}
+    />
+  );
+}
+
 export interface Option {
   value: string;
   label: string;

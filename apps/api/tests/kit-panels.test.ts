@@ -53,7 +53,7 @@ describe('T-KIT-04 — Kit Panels DTO, Registry, Routes, and Helpers', () => {
   function setupPanelsModule(overrides?: {
     builderOverview?: any;
     builderSummary?: any;
-    summaryRequires?: 'approve' | 'view';
+    summaryRequires?: 'approve' | 'edit';
   }) {
     const testRecordTal: TypedRecordDto = {
       id: '11111111-2222-3333-4444-555555555555',
@@ -306,8 +306,8 @@ describe('T-KIT-04 — Kit Panels DTO, Registry, Routes, and Helpers', () => {
     expect(result.meta.size).toBe(10);
     expect(result.meta.total).toBe(45);
     expect(result.rows).toHaveLength(10);
-    expect(result.rows[0].id).toBe('id-10');
-    expect(result.rows[9].id).toBe('id-19');
+    expect(result.rows[0]!.id).toBe('id-10');
+    expect(result.rows[9]!.id).toBe('id-19');
   });
 
   it('10. Cache-Control: no-store', async () => {

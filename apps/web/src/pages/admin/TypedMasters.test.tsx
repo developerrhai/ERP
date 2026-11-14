@@ -126,7 +126,6 @@ describe('DesignationMasterPage', () => {
       code: 'LEAD',
       name: 'Team Lead',
       level: 10,
-      status: 'ACTIVE',
     });
   });
 

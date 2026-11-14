@@ -55,6 +55,18 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
   IN_PROGRESS: { label: 'In progress', tone: 'info' },
   OVERDUE: { label: 'Overdue', tone: 'bad' },
   ON_HOLD: { label: 'On hold', tone: 'warn' },
+  PENDING_L1: { label: 'Pending approval (level 1)', tone: 'warn' },
+  PENDING_L2: { label: 'Pending approval (level 2)', tone: 'warn' },
+  PENDING_L3: { label: 'Pending approval (level 3)', tone: 'warn' },
+  NOT_REQUIRED: { label: 'Not required', tone: 'mute' },
+  NONE: { label: '—', tone: 'mute' },
+  RETURNED: { label: 'Returned', tone: 'warn' },
+  WAITING_APPROVAL: { label: 'Waiting for approval', tone: 'warn' },
+  IN_WORK: { label: 'In department work', tone: 'info' },
+  PLANNED: { label: 'Planned', tone: 'info' },
+  DONE: { label: 'Done', tone: 'ok' },
+  PARTIALLY_RECEIVED: { label: 'Partly received', tone: 'warn' },
+  REVERSED: { label: 'Reversed', tone: 'bad' },
 };
 
 /** One status code -> one word and one colour for every module (a raw code is never shown). */

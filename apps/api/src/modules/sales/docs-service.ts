@@ -1,6 +1,7 @@
 // Phase 10 pre-sales and orders: customer RFQ with the internal engineering + finance review (client requirement 1),
 // customer-wise quotation with revisions and the customer's decision, sales order with the credit check, and stock
 // reservation for the order lines. Rates come from the Phase 6 price lists or from the person: never from code.
+import { lineNoGstRate } from '../masters/party-rules';
 import { prisma } from '../../core/db/prisma';
 import type { Db } from '../../core/db/prisma';
 import { AppError, Errors } from '../../core/http/errors';
@@ -23,6 +24,7 @@ import {
   todayIst,
   updateRow,
 } from '../procurement/core';
+import { unitState } from '../procurement/core';
 import type { DocDef, Row } from '../procurement/core';
 import { headerTotals, lineTax } from '../procurement/math';
 import type { LineTax } from '../procurement/math';
@@ -117,16 +119,6 @@ export const SO_DEF: DocDef = {
 registerDoc(SQ_DEF);
 registerDoc(SO_DEF);
 
-async function unitState(tx: Db, unitId: string): Promise<string> {
-  const u = (await query(tx, `SELECT state_code, gstin FROM units WHERE id=$1::uuid`, unitId))[0];
-  const st = (u?.state_code as string | null) || ((u?.gstin as string | null)?.slice(0, 2) ?? null);
-  if (!st)
-    throw Errors.validation({
-      unitId: 'Set the state (or GSTIN) of this unit first. It decides CGST/SGST or IGST.',
-    });
-  return st;
-}
-
 /** Fills hsn, rate (price list when none typed), GST, tax and totals for quotation / order lines. */
 async function priceLines(
   tx: Db,
@@ -187,7 +179,7 @@ async function priceLines(
     if (gst === null) gst = await resolveGstPct(tx, hsn, date);
     if (gst === null)
       throw Errors.validation({
-        [at('gstPct')]: `Enter the GST rate: no rate is set for HSN/SAC ${hsn ?? '(none)'}.`,
+        [at('gstPct')]: lineNoGstRate(hsn),
       });
     const t = lineTax({
       qty,

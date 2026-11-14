@@ -187,11 +187,7 @@ describe('Phase 21 Notifications, Push & Preferences', () => {
       where: { id: empTal.user.id },
       include: { role: true },
     });
-    empTal = await signIn(app, {
-      id: empUser.id,
-      loginId: empUser.loginId,
-      role: empUser.role.code,
-    });
+    empTal = await signIn(app, empUser);
   });
 });
 

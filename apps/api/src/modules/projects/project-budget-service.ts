@@ -48,7 +48,6 @@ export class ProjectBudgetService {
         costHead: string;
         accountId?: string;
         amount: number;
-        notes?: string;
       }>;
     },
   ): Promise<Row> {
@@ -62,7 +61,9 @@ export class ProjectBudgetService {
     const budgetId = await insertRow(prisma, 'project_budgets', {
       project_id: input.projectId,
       version,
+      total_budget: input.lines.reduce((t, l) => t + Number(l.amount), 0),
       status: 'DRAFT',
+      created_by_id: caller.auth.userId,
     });
 
     for (const l of input.lines) {
@@ -71,7 +72,6 @@ export class ProjectBudgetService {
         cost_head: l.costHead,
         account_id: l.accountId ?? null,
         amount: l.amount,
-        notes: l.notes ?? null,
       });
     }
 
@@ -85,7 +85,7 @@ export class ProjectBudgetService {
     await exec(
       prisma,
       `UPDATE project_budgets
-       SET status = 'SUPERSEDED', updated_at = now()
+       SET status = 'SUPERSEDED'
        WHERE project_id = $1::uuid AND status = 'APPROVED'`,
       b.project_id,
     );
@@ -95,8 +95,7 @@ export class ProjectBudgetService {
       `UPDATE project_budgets
        SET status = 'APPROVED',
            approved_by_id = $1::uuid,
-           approved_at = now(),
-           updated_at = now()
+           approved_at = now()
        WHERE id = $2::uuid`,
       caller.auth.userId,
       id,
@@ -165,11 +164,15 @@ export class ProjectBudgetService {
   async listExpenses(caller: Caller, projectId: string): Promise<Row[]> {
     const rows = await query(
       prisma,
-      `SELECT e.*, emp.first_name || ' ' || emp.last_name AS employee_name
+      `SELECT e.*, e.payee_employee_id AS employee_id, e.total_amount AS amount, e.total_tax AS tax_amount,
+              (SELECT l.cost_head FROM project_expense_lines l WHERE l.project_expense_id = e.id ORDER BY l.date LIMIT 1) AS category,
+              (SELECT l.description FROM project_expense_lines l WHERE l.project_expense_id = e.id ORDER BY l.date LIMIT 1) AS description,
+              emp.first_name || ' ' || emp.last_name AS employee_name
        FROM project_expenses e
-       LEFT JOIN employees emp ON emp.id = e.employee_id
+       LEFT JOIN employees emp ON emp.id = e.payee_employee_id
        WHERE e.project_id = $1::uuid
-       ORDER BY e.created_at DESC`,
+       ORDER BY e.created_at DESC
+       LIMIT 500`,
       projectId,
     );
     return rows.map(norm);
@@ -180,40 +183,64 @@ export class ProjectBudgetService {
     input: {
       projectId: string;
       employeeId?: string;
+      /** LABOUR | MATERIAL | SUBCONTRACT | TRAVEL | EXPENSE | OVERHEAD */
       category: string;
+      /** Amount before tax. */
       amount: number;
       taxAmount?: number;
       billable?: boolean;
       description: string;
     },
   ): Promise<Row> {
-    const expenseNo = `PEXP-${input.projectId.slice(0, 6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+    const expenseNo = `PEXP-${input.projectId.slice(0, 6).toUpperCase()}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+    const today = new Date().toISOString().slice(0, 10);
+    const tax = input.taxAmount ?? 0;
     const id = await insertRow(prisma, 'project_expenses', {
       expense_no: expenseNo,
       project_id: input.projectId,
-      employee_id: input.employeeId ?? null,
-      category: input.category,
-      amount: input.amount,
-      tax_amount: input.taxAmount ?? 0,
-      billable: input.billable ?? false,
-      description: input.description,
+      date: today,
+      payee_employee_id: input.employeeId ?? null,
+      total_amount: input.amount + tax,
+      total_tax: tax,
       status: 'SUBMITTED',
+      created_by_id: caller.auth.userId,
     });
-    const rows = await query(prisma, `SELECT * FROM project_expenses WHERE id = $1::uuid`, id);
-    return norm(rows[0]!);
+    await insertRow(prisma, 'project_expense_lines', {
+      project_expense_id: id,
+      date: today,
+      cost_head: input.category.toUpperCase(),
+      description: input.description,
+      amount: input.amount,
+      tax,
+      billable: input.billable ?? false,
+    });
+    return this.getExpense(id);
+  }
+
+  /** Header with the first line's category / description and the old amount names the screens use. */
+  private async getExpense(id: string): Promise<Row> {
+    const rows = await query(
+      prisma,
+      `SELECT e.*, e.payee_employee_id AS employee_id, e.total_tax AS tax_amount,
+              (e.total_amount - e.total_tax) AS amount,
+              (SELECT l.cost_head FROM project_expense_lines l WHERE l.project_expense_id = e.id ORDER BY l.date LIMIT 1) AS category,
+              (SELECT l.description FROM project_expense_lines l WHERE l.project_expense_id = e.id ORDER BY l.date LIMIT 1) AS description
+         FROM project_expenses e WHERE e.id = $1::uuid`,
+      id,
+    );
+    if (!rows[0]) throw Errors.notFound(`Project expense not found: ${id}`);
+    return norm(rows[0]);
   }
 
   async approveExpense(caller: Caller, id: string): Promise<Row> {
-    const rows = await query(prisma, `SELECT * FROM project_expenses WHERE id = $1::uuid`, id);
-    if (!rows[0]) throw Errors.notFound(`Project expense not found: ${id}`);
-    const exp = norm(rows[0]);
+    const exp = await this.getExpense(id);
 
     if (exp.status === 'APPROVED') return exp;
 
     // Post to GL through PostingService
     // Dr Category/Travel [with project_id], Dr Input Tax / Cr EMPLOYEE_PAYABLE
     const glLines: any[] = [];
-    const baseAmt = Number(exp.amount);
+    const baseAmt = Number(exp.amount ?? 0);
     const taxAmt = Number(exp.tax_amount ?? 0);
     const totalAmt = baseAmt + taxAmt;
 
@@ -278,18 +305,13 @@ export class ProjectBudgetService {
       prisma,
       `UPDATE project_expenses
        SET status = 'APPROVED',
-           approved_by_id = $1::uuid,
-           approved_at = now(),
-           journal_id = $2::uuid,
-           updated_at = now()
-       WHERE id = $3::uuid`,
-      caller.auth.userId,
+           journal_id = $1::uuid
+       WHERE id = $2::uuid`,
       journalId,
       id,
     );
 
-    const updated = await query(prisma, `SELECT * FROM project_expenses WHERE id = $1::uuid`, id);
-    return norm(updated[0]!);
+    return this.getExpense(id);
   }
 }
 

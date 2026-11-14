@@ -5,6 +5,7 @@ import { ApiError } from '../../lib/api';
 import { clApi } from '../../lib/clApi';
 import { saveFile } from '../../lib/docsMailApi';
 import { useLoad } from '../../lib/useLoad';
+import { DateField } from '../../ui/components';
 
 const errText = (e: unknown): string => {
   if (e instanceof ApiError) {
@@ -68,7 +69,7 @@ export function ContractorsPage() {
       {adding ? (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Add contractor"><div className="modal"><h2>New contractor</h2>
           {([['code', 'Code'], ['name', 'Name'], ['pan', 'PAN'], ['email', 'Email']] as const).map(([k, l]) => <label key={k}>{l}<input value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></label>)}
-          {([['licenceValidUntil', 'Licence valid until'], ['agreementEnd', 'Agreement end'], ['insuranceExpiry', 'Insurance expiry']] as const).map(([k, l]) => <label key={k}>{l}<input type="date" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></label>)}
+          {([['licenceValidUntil', 'Licence valid until'], ['agreementEnd', 'Agreement end'], ['insuranceExpiry', 'Insurance expiry']] as const).map(([k, l]) => <label key={k}>{l}<DateField value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></label>)}
           <div className="modal-actions"><button type="button" className="btn" onClick={() => setAdding(false)}>Cancel</button>
             <button type="button" className="btn primary" onClick={() => void run(() => clApi.addContractor({ code: f.code, name: f.name, pan: f.pan || null, email: f.email || null, licenceValidUntil: f.licenceValidUntil || null, agreementEnd: f.agreementEnd || null, insuranceExpiry: f.insuranceExpiry || null }).then(() => setAdding(false)), 'Contractor saved.')}>Save</button></div></div></div>
       ) : null}
@@ -96,8 +97,8 @@ export function ClWorkOrdersPage() {
           <label>Contractor<select value={f.contractorId} onChange={(e) => setF({ ...f, contractorId: e.target.value })}><option value="">Choose</option>{(contractors.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.code} {c.name}</option>)}</select></label>
           <label>Skill<select value={f.skillCategory} onChange={(e) => setF({ ...f, skillCategory: e.target.value })}><option>Unskilled</option><option>Semi-skilled</option><option>Skilled</option><option>Highly skilled</option></select></label>
           {([['requiredHeadcount', 'Required headcount'], ['rate', 'Daily rate'], ['serviceChargePct', 'Service charge %'], ['budget', 'Budget']] as const).map(([k, l]) => <label key={k}>{l}<input inputMode="decimal" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></label>)}
-          <label>Start<input type="date" value={f.startDate} onChange={(e) => setF({ ...f, startDate: e.target.value })} /></label>
-          <label>End<input type="date" value={f.endDate} onChange={(e) => setF({ ...f, endDate: e.target.value })} /></label>
+          <label>Start<DateField value={f.startDate} onChange={(e) => setF({ ...f, startDate: e.target.value })} /></label>
+          <label>End<DateField value={f.endDate} onChange={(e) => setF({ ...f, endDate: e.target.value })} /></label>
           <div className="modal-actions"><button type="button" className="btn" onClick={() => setAdding(false)}>Cancel</button>
             <button type="button" className="btn primary" onClick={() => void run(() => clApi.addWorkOrder({ contractorId: f.contractorId, skillCategory: f.skillCategory, requiredHeadcount: Number(f.requiredHeadcount), rate: Number(f.rate), serviceChargePct: Number(f.serviceChargePct), startDate: f.startDate, endDate: f.endDate, budget: Number(f.budget) }).then(() => setAdding(false)), 'Work order saved.')}>Save</button></div></div></div>
       ) : null}
@@ -127,7 +128,7 @@ export function WorkersPage() {
       {sel ? (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Checks and deployment"><div className="modal"><h2>Checks and deployment</h2>
           <label>Check<select value={chk.kind} onChange={(e) => setChk({ ...chk, kind: e.target.value })}>{CHECKS.map((c) => <option key={c}>{c}</option>)}</select></label>
-          <label>Valid until<input type="date" value={chk.validUntil} onChange={(e) => setChk({ ...chk, validUntil: e.target.value })} /></label>
+          <label>Valid until<DateField value={chk.validUntil} onChange={(e) => setChk({ ...chk, validUntil: e.target.value })} /></label>
           <button type="button" className="btn" onClick={() => void run(() => clApi.check(sel, { kind: chk.kind, validUntil: chk.validUntil || null }), 'Check saved.')}>Save check</button>
           <label>Work order<select value={wo} onChange={(e) => setWo(e.target.value)}><option value="">Choose</option>{(wos.data ?? []).filter((w) => w.status === 'Active').map((w) => <option key={w.id} value={w.id}>{w.number} · {w.contractor}</option>)}</select></label>
           <div className="modal-actions"><button type="button" className="btn" onClick={() => setSel(null)}>Close</button><button type="button" className="btn primary" onClick={() => void run(() => clApi.deploy(sel, { workOrderId: wo }), 'Deployed.')}>Deploy</button></div></div></div>
@@ -153,7 +154,7 @@ export function ClAttendancePage() {
   return (
     <div className="dash-page">
       <div className="page-head"><div><h1>Contract Attendance</h1><p className="muted">The daily muster is built from the device punches.</p></div></div>
-      <div className="inline-form"><label>Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+      <div className="inline-form"><label>Date<DateField value={date} onChange={(e) => setDate(e.target.value)} /></label>
         <button type="button" className="btn primary" onClick={() => void run(() => clApi.generateMuster(date), 'Muster built.')}>Build muster</button></div>
       <table className="register-table"><thead><tr><th>Date</th><th>Worker</th><th>Name</th><th>Regular h</th><th>OT h</th><th>Status</th><th>Payable</th><th>Gate</th><th /></tr></thead><tbody>
         {(list.data ?? []).map((a) => <tr key={String(a.id)}><td>{d(a.att_date)}</td><td>{String(a.worker_no)}</td><td>{String(a.name)}</td><td>{String(a.regular_hours)}</td><td>{String(a.ot_hours)}</td><td>{String(a.status)}</td><td>{String(a.payable_days)}</td><td>{a.gate_match === false ? 'Mismatch' : a.gate_match === true ? 'OK' : '—'}</td>
@@ -215,7 +216,7 @@ export function BillsPage() {
           <label>Contractor<select value={f.contractorId} onChange={(e) => setF({ ...f, contractorId: e.target.value })}><option value="">Choose</option>{(contractors.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
           <label>Work order<select value={f.workOrderId} onChange={(e) => setF({ ...f, workOrderId: e.target.value })}><option value="">Choose</option>{(wos.data ?? []).filter((w) => !f.contractorId || w.contractor).map((w) => <option key={w.id} value={w.id}>{w.number}</option>)}</select></label>
           {([['invoiceNo', 'Bill number'], ['headcount', 'Headcount'], ['billedManDays', 'Billed man-days']] as const).map(([k, l]) => <label key={k}>{l}<input value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></label>)}
-          <label>Bill date<input type="date" value={f.invoiceDate} onChange={(e) => setF({ ...f, invoiceDate: e.target.value })} /></label>
+          <label>Bill date<DateField value={f.invoiceDate} onChange={(e) => setF({ ...f, invoiceDate: e.target.value })} /></label>
           <label>Billing month<input type="month" value={f.billingMonth} onChange={(e) => setF({ ...f, billingMonth: e.target.value })} /></label>
           <div className="modal-actions"><button type="button" className="btn" onClick={() => setAdding(false)}>Cancel</button>
             <button type="button" className="btn primary" onClick={() => void run(() => clApi.addBill({ invoiceNo: f.invoiceNo, invoiceDate: f.invoiceDate, contractorId: f.contractorId, workOrderId: f.workOrderId, billingMonth: f.billingMonth, headcount: Number(f.headcount || 0), billedManDays: Number(f.billedManDays) }).then(() => setAdding(false)), 'Bill saved.')}>Save</button></div></div></div>
@@ -270,7 +271,7 @@ export function IncidentsPage() {
       </tbody></table>
       {adding ? (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Add incident"><div className="modal"><h2>New incident</h2>
-          <label>Date<input type="date" value={f.incidentDate} onChange={(e) => setF({ ...f, incidentDate: e.target.value })} /></label>
+          <label>Date<DateField value={f.incidentDate} onChange={(e) => setF({ ...f, incidentDate: e.target.value })} /></label>
           <label>Severity<select value={f.severity} onChange={(e) => setF({ ...f, severity: e.target.value })}><option>Near miss</option><option>Minor</option><option>Major</option><option>Fatal</option></select></label>
           <label>Description<textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
           <label>Lost time (hours)<input inputMode="decimal" value={f.lostTimeHours} onChange={(e) => setF({ ...f, lostTimeHours: e.target.value })} /></label>

@@ -191,7 +191,7 @@ describe('AuditTrailPage', () => {
       screen.getByRole('button', { name: 'Clear user filter (Owner Person (owner))' }),
     ).toBeInTheDocument();
     await ue.type(screen.getByLabelText('Search action, target or details'), 'ghost');
-    await ue.type(screen.getByLabelText('To'), '2026-11-01');
+    await ue.type(screen.getByLabelText('To'), '01-11-2026');
     await waitFor(() => {
       const url = calls.filter((c) => c.path.endsWith('/audit-logs')).at(-1)?.url ?? '';
       const p = new URL(url, 'http://t').searchParams;

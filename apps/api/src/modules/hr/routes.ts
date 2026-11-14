@@ -7,6 +7,7 @@ import { authenticate, requirePasswordChanged } from '../../core/auth/authentica
 import { resolveContext } from '../../core/context/resolve-context';
 import { asyncHandler } from '../../core/http/async-handler';
 import { Errors } from '../../core/http/errors';
+import { requirePageAction } from '../../core/rbac/access';
 import { prisma } from '../../core/db/prisma';
 import { norm, query } from '../procurement/core';
 import { callerOf } from '../inventory/routes-shared';
@@ -201,6 +202,21 @@ hrRouter.post(
   }),
 );
 
+hrRouter.get(
+  '/attendance/days',
+  requirePageAction('hr-attendance', 'view'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const caller = callerOf(req);
+    const { month, employeeId } = req.query;
+    const rows = await attendanceService.listDays(
+      caller,
+      typeof month === 'string' ? month : new Date().toISOString().slice(0, 7),
+      typeof employeeId === 'string' ? employeeId : undefined,
+    );
+    res.json({ data: rows });
+  }),
+);
+
 hrRouter.post(
   '/attendance/periods/summarise',
   asyncHandler(async (req: Request, res: Response) => {
@@ -351,7 +367,12 @@ hrRouter.get(
   '/ess/me',
   asyncHandler(async (req: Request, res: Response) => {
     const caller = callerOf(req);
-    const row = await essService.getMyProfile(caller);
+    const row = await essService.findMyProfile(caller);
+    // Phase 37 C4: a login without an employee record is not an error.
+    if (!row) {
+      res.json({ data: null, message: 'Your login is not linked to an employee record. Ask HR.' });
+      return;
+    }
     res.json({ data: row });
   }),
 );

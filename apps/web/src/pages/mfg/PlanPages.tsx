@@ -12,6 +12,7 @@ import { RefPicker, Tabs } from '../qms/Shared';
 import { CapacityTab, DailyBoard } from './BoardTabs';
 import { FileButton, ORDER_TONE, OptionSelect, s, useWarehouses } from './Kit';
 import { Act, Dialog, Grid, num } from './Ui';
+import { DateField } from '../../ui/components';
 
 // ------------------------------------------------------------------------------------------------ production plans
 export function ProductionPlansPage({ actions }: { actions: ActionSet }) {
@@ -195,9 +196,8 @@ function PlanForm({ onClose, onSaved }: { onClose: () => void; onSaved: (id: str
                   />
                 </td>
                 <td>
-                  <input
+                  <DateField
                     aria-label={`Needed by ${i + 1}`}
-                    type="date"
                     value={l.requiredDate}
                     onChange={(e) => set(i, { requiredDate: e.target.value })}
                   />

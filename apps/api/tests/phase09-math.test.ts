@@ -1,11 +1,18 @@
 // The API runtime math (modules/procurement/math.ts, Decimal) must agree with the calc package
 // (packages/calc/src/procurement, the unit-tested reference) on every worked example of PHASE-09.
-import { describe, expect, it } from 'vitest';
-import * as calc from '../../../packages/calc/src/procurement/index';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { D } from '../src/modules/inventory/money';
 import * as m from '../src/modules/procurement/math';
 
+// packages/calc is an ES module; this package is CommonJS, so it is loaded with a dynamic import.
+type Calc = typeof import('../../../packages/calc/src/procurement/index.js', { with: { 'resolution-mode': 'import' } });
+let calc: Calc;
+
 describe('API math == calc package', () => {
+  beforeAll(async () => {
+    calc = await import('../../../packages/calc/src/procurement/index.js');
+  });
+
   it('tax, header total, over-receipt, landed cost', () => {
     const t = m.lineTax({
       qty: D(10),

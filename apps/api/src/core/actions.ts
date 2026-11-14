@@ -44,7 +44,7 @@ export const WORD_REASON = 'Arrives in Phase 27.';
 export const MOVE_REASON = 'Arrives in Phase 25.';
 
 const POSTED = ['Posted', 'Approved', 'Closed', 'Cancelled', 'Paid', 'Disbursed', 'Completed', 'Released', 'Locked'];
-const PENDING = ['Pending Approval', 'Pending', 'Submitted', 'In Approval'];
+const PENDING = ['Pending Approval', 'Pending', 'Submitted', 'In Approval', 'PENDING_L1', 'PENDING_L2', 'PENDING_L3', 'PENDING_APPROVAL', 'WAITING_APPROVAL'];
 const DRAFTY = ['Draft', 'Rejected', 'Returned'];
 
 export type StateClass = 'draft' | 'pending' | 'posted' | 'other';

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { PageHead, Pill, ErrorBox, inr, Empty } from '../finance/shared';
 import { getExpenseClaims, createExpenseClaim } from '../../lib/hrApi';
+import { DateField } from '../../ui/components';
 
 export function HrExpensePage() {
   const [claims, setClaims] = useState<any[]>([]);
@@ -128,8 +129,7 @@ export function HrExpensePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700">Date *</label>
-                  <input
-                    type="date"
+                  <DateField
                     required
                     value={form.claim_date}
                     onChange={(e) => setForm({ ...form, claim_date: e.target.value })}

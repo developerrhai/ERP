@@ -40,6 +40,7 @@ import {
   todayIst,
   updateRow,
 } from '../procurement/core';
+import { unitState } from '../procurement/core';
 import type { Actor, DocDef, Row } from '../procurement/core';
 import { anyCostCenter } from '../procurement/ap-service';
 import { addDays, headerTotals, lineTax } from '../procurement/math';
@@ -92,12 +93,6 @@ registerDoc(DISP_DEF);
 registerDoc(INV_DEF);
 registerDoc(RET_DEF);
 
-async function unitState(tx: Db, unitId: string): Promise<string> {
-  const u = (await query(tx, `SELECT state_code, gstin FROM units WHERE id=$1::uuid`, unitId))[0];
-  const st = (u?.state_code as string | null) || ((u?.gstin as string | null)?.slice(0, 2) ?? null);
-  if (!st) throw Errors.validation({ unitId: 'Set the state (or GSTIN) of this unit first.' });
-  return st;
-}
 const keyMap = async (tx: Db) =>
   // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
   new Map((await tx.itemTypeAccount.findMany()).map((r) => [r.itemType, r.inventoryKey]));

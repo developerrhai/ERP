@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { cashFlow } from '../../lib/financeApi';
 import { useLoad } from '../../lib/useLoad';
 import { Empty, ErrorBox, inr, PageHead, todayIso } from './shared';
+import { DateField } from '../../ui/components';
 
 const fyStart = (): string => {
   const d = new Date();
@@ -63,13 +64,12 @@ export function CashFlowPage() {
   return (
     <>
       <PageHead title="Cash Flow" sub="Where the cash came from and where it went in the period.">
-        <input
-          type="date"
+        <DateField
           aria-label="From"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
         />
-        <input type="date" aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
+        <DateField aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
       </PageHead>
       <ErrorBox message={error} />
       {data ? (

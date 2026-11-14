@@ -28,6 +28,7 @@ import {
   todayIso,
   WarehouseSelect,
 } from './shared';
+import { DateField } from '../../ui/components';
 
 export function StockAgeingPage() {
   const [page, setPage] = useState(1);
@@ -204,10 +205,10 @@ export function ValuationPage({ actions }: { actions: ActionSet }) {
       />
       <div className="filters">
         <label>
-          From <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          From <DateField value={from} onChange={(e) => setFrom(e.target.value)} />
         </label>
         <label>
-          To <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          To <DateField value={to} onChange={(e) => setTo(e.target.value)} />
         </label>
       </div>
       <ErrorBox message={list.error || err} />

@@ -53,7 +53,7 @@ export class TimesheetService {
 
     const lines = await query(
       prisma,
-      `SELECT l.*, p.name AS project_name, p.project_no, k.name AS task_name
+      `SELECT l.*, p.name AS project_name, p.code AS project_no, k.name AS task_name
        FROM timesheet_lines l
        JOIN projects p ON p.id = l.project_id
        LEFT JOIN project_tasks k ON k.id = l.task_id
@@ -97,7 +97,7 @@ export class TimesheetService {
     for (const l of input.lines) {
       const pRows = await query(
         prisma,
-        `SELECT project_no, status FROM projects WHERE id = $1::uuid`,
+        `SELECT code AS project_no, status FROM projects WHERE id = $1::uuid`,
         l.projectId,
       );
       if (!pRows[0]) throw Errors.notFound(`Project not found: ${l.projectId}`);
@@ -246,7 +246,7 @@ export class TimesheetService {
       prisma,
       `UPDATE timesheets
        SET status = 'APPROVED',
-           approved_by_id = $1::uuid,
+           approver_id = $1::uuid,
            approved_at = now(),
            journal_id = $2::uuid,
            updated_at = now()

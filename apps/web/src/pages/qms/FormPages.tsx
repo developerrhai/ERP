@@ -10,6 +10,7 @@ import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, PageHead, Pill, todayIso } from '../finance/shared';
 import { DynamicFields, STATUS_TONE, Tabs, s } from './Shared';
+import { DateField } from '../../ui/components';
 
 export type FormKind = 'EIGHT_D' | 'ALERT' | 'MOM' | 'CI';
 export const FORM_LABEL: Record<FormKind, string> = {
@@ -167,9 +168,8 @@ function FormEditor({
         </div>
         <div className="field">
           <label htmlFor="qf-date">Date *</label>
-          <input
+          <DateField
             id="qf-date"
-            type="date"
             value={docDate}
             disabled={!editable}
             onChange={(e) => setDocDate(e.target.value)}

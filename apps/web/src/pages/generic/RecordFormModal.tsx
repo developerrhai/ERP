@@ -31,6 +31,7 @@ import {
 } from './fieldModel';
 import { LookupCombobox } from './LookupCombobox';
 import { useFormFormat } from '../settings/useFormFormat';
+import { DateField } from '../../ui/components';
 
 interface Props {
   schema: PageSchema;
@@ -342,9 +343,8 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
               );
             case 'date':
               return (
-                <input
+                <DateField
                   {...c}
-                  type="date"
                   value={text}
                   onChange={(e) => set(f.key, e.target.value)}
                 />

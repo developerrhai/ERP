@@ -34,7 +34,7 @@ export class ProjectService {
     const offset = (page - 1) * size;
 
     const sql = `
-      SELECT p.*, c.name AS customer_name,
+      SELECT p.*, p.code AS project_no, p.project_manager_id AS manager_id, p.billing_method AS billing_type, c.name AS customer_name,
         COALESCE((
           SELECT SUM(l.amount)
           FROM project_budgets b
@@ -61,10 +61,11 @@ export class ProjectService {
   async getProject(caller: Caller, id: string): Promise<Row> {
     const rows = await query(
       prisma,
-      `SELECT p.*, c.name AS customer_name, m.first_name || ' ' || m.last_name AS manager_name
+      `SELECT p.*, p.code AS project_no, p.project_manager_id AS manager_id, p.billing_method AS billing_type,
+              c.name AS customer_name, m.first_name || ' ' || m.last_name AS manager_name
        FROM projects p
        LEFT JOIN customers c ON c.id = p.customer_id
-       LEFT JOIN employees m ON m.id = p.manager_id
+       LEFT JOIN employees m ON m.id = p.project_manager_id
        WHERE p.id = $1::uuid`,
       id,
     );
@@ -73,7 +74,7 @@ export class ProjectService {
 
     const milestones = await query(
       prisma,
-      `SELECT * FROM project_milestones WHERE project_id = $1::uuid ORDER BY due_date ASC`,
+      `SELECT * FROM project_milestones WHERE project_id = $1::uuid ORDER BY target_date ASC`,
       id,
     );
     const team = await query(
@@ -100,6 +101,7 @@ export class ProjectService {
       startDate: string;
       endDate: string;
       contractValue?: number;
+      /** FIXED_MILESTONE | TIME_MATERIAL | NON_BILLABLE */
       billingType?: string;
     },
   ): Promise<Row> {
@@ -116,16 +118,18 @@ export class ProjectService {
       prefix: 'PRJ',
     });
     const id = await insertRow(prisma, 'projects', {
-      project_no: projectNo,
+      code: projectNo,
       name: input.name,
       customer_id: input.customerId ?? null,
-      manager_id: input.managerId ?? null,
+      project_manager_id: input.managerId ?? null,
       unit_id: unitId,
       start_date: input.startDate,
       end_date: input.endDate,
       contract_value: input.contractValue ?? 0,
-      billing_type: input.billingType ?? 'FIXED_PRICE',
-      status: 'PLANNING',
+      project_type: 'CUSTOMER',
+      billing_method: input.billingType ?? 'FIXED_MILESTONE',
+      status: 'DRAFT',
+      created_by_id: caller.auth.userId,
     });
 
     return this.getProject(caller, id);
@@ -134,7 +138,7 @@ export class ProjectService {
   async updateProject(caller: Caller, id: string, input: Partial<Row>): Promise<Row> {
     const p = await this.getProject(caller, id);
     if (p.status === 'CLOSED') {
-      throw Errors.conflict(`PRJ_CLOSED: Project ${p.project_no} is closed; reopen it to edit.`);
+      throw Errors.conflict(`PRJ_CLOSED: Project ${p.code} is closed; reopen it to edit.`);
     }
 
     const updates: string[] = [];
@@ -150,7 +154,7 @@ export class ProjectService {
     }
     if (input.managerId !== undefined) {
       args.push(input.managerId);
-      updates.push(`manager_id = $${args.length}::uuid`);
+      updates.push(`project_manager_id = $${args.length}::uuid`);
     }
     if (input.startDate) {
       args.push(input.startDate);
@@ -222,9 +226,9 @@ export class ProjectService {
       prisma,
       `SELECT t.*, e.first_name || ' ' || e.last_name AS assignee_name
        FROM project_tasks t
-       LEFT JOIN employees e ON e.id = t.assigned_to_id
+       LEFT JOIN employees e ON e.id = t.owner_id
        WHERE t.project_id = $1::uuid
-       ORDER BY t.wbs_code ASC, t.created_at ASC`,
+       ORDER BY t.number ASC, t.created_at ASC`,
       projectId,
     );
     const tasks = tasksRows.map(norm);
@@ -292,12 +296,14 @@ export class ProjectService {
     // 2. EV from tasks budget * progress
     const tRows = await query(
       prisma,
-      `SELECT COALESCE(SUM(estimated_cost * (progress_pct / 100.0)), 0)::numeric AS ev
+      `SELECT COALESCE(SUM(COALESCE(NULLIF(weight, 0), 1) * (progress_pct / 100.0))
+                       / NULLIF(SUM(COALESCE(NULLIF(weight, 0), 1)), 0), 0)::numeric AS done_fraction
        FROM project_tasks
        WHERE project_id = $1::uuid`,
       projectId,
     );
-    const ev = Number(tRows[0]?.ev ?? 0);
+    // EV = approved budget x weighted share of work done (task weight, default 1).
+    const ev = Math.round(Number(tRows[0]?.done_fraction ?? 0) * bac * 100) / 100;
 
     // 3. AC from gl_entries where project_id = projectId and root_type = 'Expense'
     const glRows = await query(
@@ -407,9 +413,9 @@ export class ProjectService {
       prisma,
       `SELECT t.*, e.first_name || ' ' || e.last_name AS assignee_name
        FROM project_tasks t
-       LEFT JOIN employees e ON e.id = t.assigned_to_id
+       LEFT JOIN employees e ON e.id = t.owner_id
        WHERE t.project_id = $1::uuid
-       ORDER BY t.wbs_code ASC, t.created_at ASC`,
+       ORDER BY t.number ASC, t.created_at ASC`,
       projectId,
     );
     return rows.map(norm);
@@ -425,21 +431,19 @@ export class ProjectService {
       plannedStart: string;
       plannedEnd: string;
       durationDays?: number;
-      estimatedCost?: number;
       estimatedHours?: number;
     },
   ): Promise<Row> {
     const id = await insertRow(prisma, 'project_tasks', {
       project_id: input.projectId,
       name: input.name,
-      wbs_code: input.wbsCode ?? '1.0',
-      assigned_to_id: input.assignedToId ?? null,
+      number: input.wbsCode ?? '1.0',
+      owner_id: input.assignedToId ?? null,
       planned_start: input.plannedStart,
       planned_end: input.plannedEnd,
       duration_days: input.durationDays ?? 1,
-      estimated_cost: input.estimatedCost ?? 0,
-      estimated_hours: input.estimatedHours ?? 0,
-      status: 'NOT_STARTED',
+      estimated_hrs: input.estimatedHours ?? 0,
+      status: 'OPEN',
     });
     const rows = await query(prisma, `SELECT * FROM project_tasks WHERE id = $1::uuid`, id);
     return norm(rows[0]!);
@@ -448,8 +452,8 @@ export class ProjectService {
   async updateTaskProgress(caller: Caller, taskId: string, progressPct: number): Promise<Row> {
     const pct = Math.max(0, Math.min(100, progressPct));
     let status = 'IN_PROGRESS';
-    if (pct === 0) status = 'NOT_STARTED';
-    if (pct === 100) status = 'COMPLETED';
+    if (pct === 0) status = 'OPEN';
+    if (pct === 100) status = 'DONE';
 
     await exec(
       prisma,

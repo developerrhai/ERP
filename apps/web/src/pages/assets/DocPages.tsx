@@ -25,6 +25,7 @@ import {
   useUnitOptions,
   useUserOptions,
 } from './Shared';
+import { DateField } from '../../ui/components';
 
 const pill = (v: unknown) => <Pill tone={TONE[s(v)]}>{s(v).replace(/_/g, ' ')}</Pill>;
 const day = (v: unknown) => (v ? dmy(s(v).slice(0, 10)) : '—');
@@ -232,7 +233,7 @@ function CapForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         </div>
         <div className="field">
           <label htmlFor="cap-date">Available for use from *</label>
-          <input id="cap-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <DateField id="cap-date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div className="field">
           <label htmlFor="cap-src">Source</label>

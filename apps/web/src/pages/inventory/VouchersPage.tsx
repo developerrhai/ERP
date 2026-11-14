@@ -37,6 +37,7 @@ import {
   todayIso,
   WarehouseSelect,
 } from './shared';
+import { DateField } from '../../ui/components';
 
 const TITLES: Record<VoucherKind, { title: string; sub: string; add: string }> = {
   opening: {
@@ -437,7 +438,7 @@ function CancelDialog({
           <div className="field">
             <label>
               Cancel date
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <DateField value={date} onChange={(e) => setDate(e.target.value)} />
             </label>
           </div>
           <div className="field">
@@ -567,7 +568,7 @@ function VoucherForm({
         <div className="field">
           <label>
             Date
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <DateField value={date} onChange={(e) => setDate(e.target.value)} />
           </label>
           {fields.postingDate ? <span className="field-error">{fields.postingDate}</span> : null}
         </div>
@@ -696,16 +697,14 @@ function VoucherForm({
                       <span className="field-error">{fields[`lines.${i}.batchNo`]}</span>
                     ) : null}
                     <div className="row-gap">
-                      <input
+                      <DateField
                         aria-label={`Manufactured ${i + 1}`}
-                        type="date"
                         title="Manufacturing date"
                         value={l.mfgDate}
                         onChange={(e) => set(i, { mfgDate: e.target.value })}
                       />
-                      <input
+                      <DateField
                         aria-label={`Expiry ${i + 1}`}
-                        type="date"
                         title="Expiry date"
                         value={l.expiryDate}
                         onChange={(e) => set(i, { expiryDate: e.target.value })}

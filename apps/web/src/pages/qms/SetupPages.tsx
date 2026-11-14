@@ -12,6 +12,7 @@ import { dmy, Empty, ErrorBox, PageHead, Pill, todayIso } from '../finance/share
 import { KIND_LABEL } from './InspectionPages';
 import type { Kind } from './InspectionPages';
 import { RefPicker, Tabs, s } from './Shared';
+import { DateField } from '../../ui/components';
 
 // ------------------------------------------------------------------------------------------------ plans
 interface CharState {
@@ -761,9 +762,8 @@ function HistoryCard({
               <div className="form-grid">
                 <div className="field">
                   <label htmlFor="cal-on">Calibrated on *</label>
-                  <input
+                  <DateField
                     id="cal-on"
-                    type="date"
                     value={f.calibratedOn}
                     onChange={(e) => setF({ ...f, calibratedOn: e.target.value })}
                   />
@@ -773,9 +773,8 @@ function HistoryCard({
                 </div>
                 <div className="field">
                   <label htmlFor="cal-until">Valid until (empty = frequency from the card)</label>
-                  <input
+                  <DateField
                     id="cal-until"
-                    type="date"
                     value={f.validUntil}
                     onChange={(e) => setF({ ...f, validUntil: e.target.value })}
                   />

@@ -3,6 +3,7 @@
 
 import type { PageFilter } from '../engineApi';
 import { LookupCombobox } from '../LookupCombobox';
+import { DateField } from '../../../ui/components';
 
 export interface FilterBarProps {
   filters: PageFilter[];
@@ -54,8 +55,7 @@ export function FilterControl({
 
     case 'date':
       return (
-        <input
-          type="date"
+        <DateField
           aria-label={filter.label}
           title={filter.label}
           value={value}

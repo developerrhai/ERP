@@ -19,7 +19,7 @@ export interface Project {
   end_date: string;
   contract_value: number;
   billing_type: string;
-  status: 'PLANNING' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CLOSED';
+  status: 'DRAFT' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CLOSED';
   approved_budget?: number;
   actual_cost?: number;
   milestones?: any[];

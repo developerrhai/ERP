@@ -233,7 +233,7 @@ describe('Phase 18 Logistics, Fleet, Gate & DMS Integration Tests', () => {
     await gateService.approvePass(ownerCaller, String(outPass.id));
     await gateService.exitPass(ownerCaller, String(outPass.id));
 
-    const outLineId = String(outPass.lines[0].id);
+    const outLineId = String((outPass.lines as Array<{ id: unknown }>)[0]!.id);
     const inRet = await gateService.createPass(ownerCaller, {
       direction: 'IN',
       passType: 'INWARD_RETURN',
@@ -249,8 +249,9 @@ describe('Phase 18 Logistics, Fleet, Gate & DMS Integration Tests', () => {
     // Partial return 6 -> balance = 4
     await gateService.recordReturn(ownerCaller, String(inRet.id), [{ outLineId, qty: 6 }]);
     const refreshedOut = await gateService.getPass(String(outPass.id));
-    expect(Number(refreshedOut.lines[0].returnedQty)).toBe(6);
-    expect(Number(refreshedOut.lines[0].balanceQty)).toBe(4);
+    const refreshedLines = refreshedOut.lines as Array<{ returnedQty: unknown; balanceQty: unknown }>;
+    expect(Number(refreshedLines[0]!.returnedQty)).toBe(6);
+    expect(Number(refreshedLines[0]!.balanceQty)).toBe(4);
   });
 
   it('Owner Check 5: DMS Restricted ACL, Postgres FTS Search Never Leaks, Checkout Lock & Legal Hold', async () => {

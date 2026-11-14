@@ -4,6 +4,7 @@ import { useToast } from '../../components/Toast';
 import { ApiError } from '../../lib/api';
 import { opsApi, type Task } from '../../lib/opsApi';
 import { useLoad } from '../../lib/useLoad';
+import { DateField } from '../../ui/components';
 
 const errText = (e: unknown): string => {
   if (e instanceof ApiError) {
@@ -86,7 +87,7 @@ export function TasksPage() {
             <h2>New task</h2>
             <label>Task<input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} /></label>
             <label>Department<input value={f.department} onChange={(e) => setF({ ...f, department: e.target.value })} /></label>
-            <label>Due date<input type="date" value={f.dueDate} onChange={(e) => setF({ ...f, dueDate: e.target.value })} /></label>
+            <label>Due date<DateField value={f.dueDate} onChange={(e) => setF({ ...f, dueDate: e.target.value })} /></label>
             <label>Priority<select value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value })}><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></label>
             <label className="plant-remember"><input type="checkbox" checked={f.approvalRequired} onChange={(e) => setF({ ...f, approvalRequired: e.target.checked })} /> Needs approval when done</label>
             <div className="modal-actions"><button type="button" className="btn" onClick={() => setAdding(false)}>Cancel</button>
@@ -132,7 +133,7 @@ export function HandoverPage() {
           <div className="modal">
             <h2>New handover</h2>
             <label>Department<input value={f.department} onChange={(e) => setF({ ...f, department: e.target.value })} /></label>
-            <label>Date<input type="date" value={f.handoverDate} onChange={(e) => setF({ ...f, handoverDate: e.target.value })} /></label>
+            <label>Date<DateField value={f.handoverDate} onChange={(e) => setF({ ...f, handoverDate: e.target.value })} /></label>
             <label>Incoming in-charge (user id)<input value={f.incomingUserId} onChange={(e) => setF({ ...f, incomingUserId: e.target.value })} /></label>
             <label>Issues<textarea value={f.issues} onChange={(e) => setF({ ...f, issues: e.target.value })} /></label>
             <label>Safety note<input value={f.safetyNote} onChange={(e) => setF({ ...f, safetyNote: e.target.value })} /></label>
@@ -190,7 +191,7 @@ export function VisitorsPage() {
           <div className="modal">
             <h2>Pre-register a visitor</h2>
             {([['visitorName', 'Visitor name'], ['company', 'Company'], ['mobile', 'Mobile'], ['purpose', 'Purpose'], ['vehicleNo', 'Vehicle no.'], ['idLast4', 'ID: last 4 characters only']] as const).map(([k, l]) => <label key={k}>{l}<input value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></label>)}
-            <label>Visit date<input type="date" value={f.visitDate} onChange={(e) => setF({ ...f, visitDate: e.target.value })} /></label>
+            <label>Visit date<DateField value={f.visitDate} onChange={(e) => setF({ ...f, visitDate: e.target.value })} /></label>
             <label>Planned out<input type="datetime-local" value={f.plannedOut} onChange={(e) => setF({ ...f, plannedOut: e.target.value })} /></label>
             <div className="modal-actions"><button type="button" className="btn" onClick={() => setAdding(false)}>Cancel</button>
               <button type="button" className="btn primary" onClick={() => void run(() => opsApi.addVisitor({ visitorName: f.visitorName, company: f.company || null, mobile: f.mobile || null, purpose: f.purpose, visitDate: f.visitDate, plannedOut: f.plannedOut ? new Date(f.plannedOut).toISOString() : null, vehicleNo: f.vehicleNo || null, idLast4: f.idLast4 || null }).then(() => setAdding(false)), 'Pass created.')}>Save</button></div>

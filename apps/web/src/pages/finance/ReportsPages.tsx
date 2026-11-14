@@ -13,6 +13,7 @@ import {
 } from '../../lib/financeApi';
 import { useLoad } from '../../lib/useLoad';
 import { amt, dmy, Empty, ErrorBox, inr, PageHead, todayIso } from './shared';
+import { DateField } from '../../ui/components';
 
 const fyStart = (): string => {
   const d = new Date();
@@ -29,8 +30,7 @@ export function TrialBalancePage() {
         title="Trial Balance"
         sub="Every account's balance. Total debit must equal total credit."
       >
-        <input
-          type="date"
+        <DateField
           aria-label="As on"
           value={asOf}
           onChange={(e) => setAsOf(e.target.value)}
@@ -127,13 +127,12 @@ export function ProfitLossPage() {
   return (
     <>
       <PageHead title="Profit & Loss" sub="What you earned and spent in the period.">
-        <input
-          type="date"
+        <DateField
           aria-label="From"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
         />
-        <input type="date" aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
+        <DateField aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
       </PageHead>
       <ErrorBox message={error} />
       {s ? (
@@ -173,8 +172,7 @@ export function BalanceSheetPage() {
         title="Balance Sheet"
         sub="What you own, what you owe, and what is left for the owners."
       >
-        <input
-          type="date"
+        <DateField
           aria-label="As on"
           value={asOf}
           onChange={(e) => setAsOf(e.target.value)}
@@ -230,13 +228,12 @@ export function GeneralLedgerPage() {
         title="General Ledger"
         sub="Every entry of one account, with the balance after each."
       >
-        <input
-          type="date"
+        <DateField
           aria-label="From"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
         />
-        <input type="date" aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
+        <DateField aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
       </PageHead>
       <ErrorBox message={error} />
       <SelectField label="Account" value={accountId} onChange={setAccountId}>
@@ -309,8 +306,7 @@ export function AgeingPage({ side }: { side: 'RECEIVABLE' | 'PAYABLE' }) {
         title={side === 'RECEIVABLE' ? 'Accounts Receivable' : 'Accounts Payable'}
         sub={`What each ${who.toLowerCase()} ${side === 'RECEIVABLE' ? 'owes you' : 'is owed'}, by how late it is.`}
       >
-        <input
-          type="date"
+        <DateField
           aria-label="As on"
           value={asOf}
           onChange={(e) => setAsOf(e.target.value)}

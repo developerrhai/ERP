@@ -13,6 +13,7 @@ import { JobWorkTab } from './JobWork';
 import { JobCardPanel } from './JobCard';
 import { FileButton, ORDER_TONE, OptionSelect, s, useWarehouses, useWorkCentres } from './Kit';
 import { Act, Dialog, Grid, ReasonAct, num } from './Ui';
+import { DateField } from '../../ui/components';
 
 const STATUSES = [
   'Planned',
@@ -201,9 +202,8 @@ function OrderForm({ onClose, onSaved }: { onClose: () => void; onSaved: (id: st
         </div>
         <div className="field">
           <label htmlFor="po-due">Due date *</label>
-          <input
+          <DateField
             id="po-due"
-            type="date"
             value={f.dueDate}
             onChange={(e) => set({ dueDate: e.target.value })}
           />

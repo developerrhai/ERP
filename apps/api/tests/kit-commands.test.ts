@@ -62,7 +62,9 @@ describe('T-KIT-05 — Kit Header Commands Route & Registry', () => {
         {
           key: 'recalculate',
           label: 'Recalculate',
+          variant: 'primary',
           requires: 'add',
+          confirm: null,
         },
       ],
       actions: [],
@@ -118,6 +120,9 @@ describe('T-KIT-05 — Kit Header Commands Route & Registry', () => {
         {
           key: 'batch-run',
           label: 'Batch Run',
+          variant: 'primary',
+          requires: 'add',
+          confirm: null,
         },
       ],
       actions: [],
@@ -200,7 +205,9 @@ describe('T-KIT-05 — Kit Header Commands Route & Registry', () => {
         {
           key: 'approve-all',
           label: 'Approve All',
+          variant: 'primary',
           requires: 'approve',
+          confirm: null,
         },
       ],
       actions: [],
@@ -263,10 +270,16 @@ describe('T-KIT-05 — Kit Header Commands Route & Registry', () => {
         {
           key: 'unit-cmd',
           label: 'Unit Command',
+          variant: 'primary',
+          requires: 'add',
+          confirm: null,
         },
         {
           key: 'global-cmd',
           label: 'Global Command',
+          variant: 'primary',
+          requires: 'add',
+          confirm: null,
         },
       ],
       actions: [],
@@ -370,7 +383,7 @@ describe('T-KIT-05 — Kit Header Commands Route & Registry', () => {
       statuses: ['Draft'],
       editableStatuses: ['Draft'],
       tabs: ['Register'],
-      commands: [{ key: 'big-data', label: 'Big Data' }],
+      commands: [{ key: 'big-data', label: 'Big Data', variant: 'primary', requires: 'add', confirm: null }],
       actions: [],
       fields: [
         { key: 'code', label: 'Code', type: 'code', required: true, readOnly: true },
@@ -416,7 +429,7 @@ describe('T-KIT-05 — Kit Header Commands Route & Registry', () => {
       statuses: ['Draft'],
       editableStatuses: ['Draft'],
       tabs: ['Register'],
-      commands: [{ key: 'missing-runner', label: 'Missing Runner' }],
+      commands: [{ key: 'missing-runner', label: 'Missing Runner', variant: 'primary', requires: 'add', confirm: null }],
       actions: [],
       fields: [
         { key: 'code', label: 'Code', type: 'code', required: true, readOnly: true },

@@ -11,6 +11,7 @@ import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, PageHead, Pill, todayIso } from '../finance/shared';
 import { DynamicFields, STATUS_TONE, Tabs, s } from './Shared';
+import { DateField } from '../../ui/components';
 
 export type Kind = 'INCOMING' | 'IN_PROCESS' | 'PRE_DISPATCH' | 'ISIR' | 'WELDING' | 'VT';
 export const KIND_LABEL: Record<Kind, string> = {
@@ -341,9 +342,8 @@ function SheetEditor({
       <div className="form-grid">
         <div className="field">
           <label htmlFor="sh-date">Date *</label>
-          <input
+          <DateField
             id="sh-date"
-            type="date"
             value={docDate}
             disabled={!editable}
             onChange={(e) => setDocDate(e.target.value)}

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { PageHead, Pill, inr, dmy } from '../finance/shared';
 import { projectsApi, type Project } from '../../lib/projectsApi';
+import { DateField } from '../../ui/components';
 
 export function ProjectsListPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -13,7 +14,7 @@ export function ProjectsListPage() {
     startDate: new Date().toISOString().slice(0, 10),
     endDate: new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
     contractValue: 500000,
-    billingType: 'FIXED_PRICE',
+    billingType: 'FIXED_MILESTONE',
   });
 
   const loadProjects = async () => {
@@ -114,12 +115,12 @@ export function ProjectsListPage() {
                 <td style={{ textAlign: 'right' }}>{inr(p.approved_budget ?? 0)}</td>
                 <td style={{ textAlign: 'right' }}>{inr(p.actual_cost ?? 0)}</td>
                 <td>
-                  <Pill tone={p.status === 'ACTIVE' ? 'success' : p.status === 'PLANNING' ? 'neutral' : 'warning'}>
+                  <Pill tone={p.status === 'ACTIVE' ? 'success' : p.status === 'DRAFT' ? 'neutral' : 'warning'}>
                     {p.status}
                   </Pill>
                 </td>
                 <td>
-                  {p.status === 'PLANNING' && (
+                  {p.status === 'DRAFT' && (
                     <button className="btn small" onClick={() => handleActivate(p.id)}>
                       Activate
                     </button>
@@ -158,8 +159,7 @@ export function ProjectsListPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div className="form-group">
                   <label>Start Date</label>
-                  <input
-                    type="date"
+                  <DateField
                     required
                     value={form.startDate}
                     onChange={(e) => setForm({ ...form, startDate: e.target.value })}
@@ -168,8 +168,7 @@ export function ProjectsListPage() {
                 </div>
                 <div className="form-group">
                   <label>End Date</label>
-                  <input
-                    type="date"
+                  <DateField
                     required
                     value={form.endDate}
                     onChange={(e) => setForm({ ...form, endDate: e.target.value })}

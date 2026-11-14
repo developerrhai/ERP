@@ -38,6 +38,7 @@ const units: Unit[] = [
     name: 'Talwade',
     address: 'Talwade MIDC',
     gstin: null,
+    stateCode: '27',
     status: 'ACTIVE',
     version: 2,
   },
@@ -189,6 +190,7 @@ describe('Unit Master', () => {
       name: 'Chakan',
       address: null,
       gstin: '27ABCDE1234F1Z5',
+      stateCode: '27',
       status: 'ACTIVE',
       version: 1,
     };
@@ -211,6 +213,7 @@ describe('Unit Master', () => {
     expect(countCalls(calls, 'POST', '/units')).toBe(0);
     await ue.type(d.getByLabelText('Code'), 'hk');
     await ue.type(d.getByLabelText('Name'), 'Chakan');
+    await ue.type(d.getByLabelText('State Code *'), '27');
     await ue.clear(d.getByLabelText('GSTIN'));
     await ue.type(d.getByLabelText('GSTIN'), '27ABCDE1234F1Z5');
     await ue.click(d.getByRole('button', { name: 'Create Unit' }));
@@ -220,6 +223,7 @@ describe('Unit Master', () => {
       name: 'Chakan',
       address: null,
       gstin: '27ABCDE1234F1Z5',
+      stateCode: '27',
     });
     await waitFor(() => expect(countCalls(calls, 'GET', '/me/context')).toBe(2));
   });
@@ -303,7 +307,7 @@ describe('Financial Years', () => {
   it('lists years; the current year cannot be closed; closed years can be reopened', async () => {
     signedIn(owner, { 'GET /api/v1/financial-years': () => json(200, { data: fys }) });
     renderApp('/m/admin-fy');
-    await screen.findByText('FY 2026-27');
+    await screen.findByRole('table');
     const current = within(rowOf('FY 2026-27'));
     expect(current.getByText('Current')).toBeInTheDocument();
     expect(current.getByText('01 Apr 2026')).toBeInTheDocument();

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { PageHead, ErrorBox } from '../finance/shared';
 import { getLeaveBalances, applyLeave, getHrEmployees } from '../../lib/hrApi';
+import { DateField } from '../../ui/components';
 
 export function HrLeavePage() {
   const [employees, setEmployees] = useState<any[]>([]);
@@ -122,8 +123,7 @@ export function HrLeavePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700">From Date</label>
-                  <input
-                    type="date"
+                  <DateField
                     required
                     value={applyForm.from_date}
                     onChange={(e) => setApplyForm({ ...applyForm, from_date: e.target.value })}
@@ -132,8 +132,7 @@ export function HrLeavePage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700">To Date</label>
-                  <input
-                    type="date"
+                  <DateField
                     required
                     value={applyForm.to_date}
                     onChange={(e) => setApplyForm({ ...applyForm, to_date: e.target.value })}

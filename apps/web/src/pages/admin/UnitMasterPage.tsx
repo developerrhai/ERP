@@ -210,8 +210,8 @@ function UnitFormModal({ unit, onReload, onClose, onSaved }: FormProps) {
     if (n.length < 2 || n.length > 60) f.name = 'Name must be 2–60 characters.';
     if (address.trim().length > 300) f.address = 'At most 300 characters.';
     if (city.trim().length > 100) f.city = 'At most 100 characters.';
-    if (stateCode.trim() && !/^\d{2}$/.test(stateCode.trim())) {
-      f.stateCode = 'State code must be 2 digits (e.g. 27).';
+    if (!/^\d{2}$/.test(stateCode.trim())) {
+      f.stateCode = 'Enter the 2-digit GST state code (e.g. 27 for Maharashtra). It decides CGST/SGST or IGST.';
     }
     if (pincode.trim() && !/^\d{6}$/.test(pincode.trim())) {
       f.pincode = 'Pincode must be 6 digits.';
@@ -235,7 +235,7 @@ function UnitFormModal({ unit, onReload, onClose, onSaved }: FormProps) {
       address: address.trim() || null,
       gstin: gstin.trim() || null,
       ...(city.trim() ? { city: city.trim() } : {}),
-      ...(stateCode.trim() ? { stateCode: stateCode.trim() } : {}),
+      stateCode: stateCode.trim(),
       ...(pincode.trim() ? { pincode: pincode.trim() } : {}),
     };
     inFlight.current = true;
@@ -331,7 +331,7 @@ function UnitFormModal({ unit, onReload, onClose, onSaved }: FormProps) {
             onChange={(e) => setCity(e.target.value)}
           />
           <Field
-            label="State Code"
+            label="State Code *"
             value={stateCode}
             maxLength={2}
             autoComplete="off"

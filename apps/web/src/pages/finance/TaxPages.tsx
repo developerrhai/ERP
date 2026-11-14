@@ -17,6 +17,7 @@ import {
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { amt, dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from './shared';
+import { DateField } from '../../ui/components';
 
 const fyStart = (): string => {
   const d = new Date();
@@ -39,13 +40,12 @@ export function TaxRegisterPage({ kind }: { kind: 'sales' | 'purchase' }) {
             : 'Every supplier bill and note booked, with the input tax on it.'
         }
       >
-        <input
-          type="date"
+        <DateField
           aria-label="From"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
         />
-        <input type="date" aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
+        <DateField aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
       </PageHead>
       <ErrorBox message={error} />
       {data ? (
@@ -142,13 +142,12 @@ export function TdsPage({ kind, actions }: { kind: 'tds' | 'tcs'; actions: Actio
         title={label}
         sub={`Tax ${kind === 'tds' ? 'deducted from supplier payments' : 'collected'} and whether it has been deposited.`}
       >
-        <input
-          type="date"
+        <DateField
           aria-label="From"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
         />
-        <input type="date" aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
+        <DateField aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
         {actions.add ? (
           <button
             type="button"

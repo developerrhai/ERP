@@ -15,6 +15,7 @@ import {
   type ProjectOption,
 } from '../../lib/spineApi';
 import { useLoad } from '../../lib/useLoad';
+import { DateField } from '../../ui/components';
 
 const errText = (e: unknown): string => {
   if (e instanceof ApiError) {
@@ -407,7 +408,7 @@ export function StageGatesPage({ section = 'gates' }: { section?: 'gates' | 'spe
                 <div className="progress" aria-label={`Readiness ${g.readinessPct} percent`}><div className="progress-bar" style={{ width: `${g.readinessPct}%` }} /></div>
                 <p className="muted">Ready {g.readinessPct} %{g.missing.length > 0 && g.state !== 'APPROVED' ? ` · needs ${g.missing.join(', ')}` : ''}</p>
                 {g.reject_comment ? <p role="alert">Rejected: {g.reject_comment}</p> : null}
-                <label>Due<input type="date" value={g.due_date?.slice(0, 10) ?? ''} onChange={(e) => void run(() => spineApi.setDue(pid, g.id, e.target.value || null), 'Due date saved.', [gates.reload])} /></label>
+                <label>Due<DateField value={g.due_date?.slice(0, 10) ?? ''} onChange={(e) => void run(() => spineApi.setDue(pid, g.id, e.target.value || null), 'Due date saved.', [gates.reload])} /></label>
                 <div className="row-actions">
                   {g.state === 'OPEN' ? <button type="button" className="btn" onClick={() => void run(() => spineApi.startGate(pid, g.id), 'Gate started.', [gates.reload])}>Start</button> : null}
                   {g.state === 'OPEN' || g.state === 'IN_WORK' ? <button type="button" className="btn primary" onClick={() => void run(() => spineApi.submitGate(pid, g.id), 'Submitted.', reloadAll())}>Submit</button> : null}

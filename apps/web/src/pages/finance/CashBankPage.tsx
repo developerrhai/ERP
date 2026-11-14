@@ -17,6 +17,7 @@ import {
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { amt, dmy, Empty, ErrorBox, inr, PageHead, todayIso } from './shared';
+import { DateField } from '../../ui/components';
 
 export function CashBankPage({ cash, actions }: { cash: boolean; actions: ActionSet }) {
   const toast = useToast();
@@ -74,14 +75,12 @@ export function CashBankPage({ cash, actions }: { cash: boolean; actions: Action
               </option>
             ))}
           </select>
-          <input
-            type="date"
+          <DateField
             aria-label="From date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
           />
-          <input
-            type="date"
+          <DateField
             aria-label="To date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
