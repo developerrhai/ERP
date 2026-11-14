@@ -18,6 +18,9 @@ export interface UnitDto {
   code: string;
   name: string;
   address: string | null;
+  city: string | null;
+  stateCode: string | null;
+  pincode: string | null;
   gstin: string | null;
   status: 'ACTIVE' | 'INACTIVE';
   /** Users explicitly assigned to the unit (ADMIN+ have every unit implicitly and are not counted). */
@@ -33,6 +36,9 @@ export function toUnitDto(u: Unit, userCount: number): UnitDto {
     code: u.code,
     name: u.name,
     address: u.address,
+    city: u.city,
+    stateCode: u.stateCode,
+    pincode: u.pincode,
     gstin: u.gstin,
     status: u.status,
     userCount,
@@ -87,8 +93,8 @@ async function load(id: string): Promise<UnitWithCount> {
   return unit;
 }
 
-type Tracked = 'code' | 'name' | 'address' | 'gstin' | 'status';
-const TRACKED: readonly Tracked[] = ['code', 'name', 'address', 'gstin', 'status'];
+type Tracked = 'code' | 'name' | 'address' | 'city' | 'stateCode' | 'pincode' | 'gstin' | 'status';
+const TRACKED: readonly Tracked[] = ['code', 'name', 'address', 'city', 'stateCode', 'pincode', 'gstin', 'status'];
 
 export const unitService = {
   async list(query: ListUnitsQuery): Promise<UnitDto[]> {
@@ -104,6 +110,9 @@ export const unitService = {
             code: input.code,
             name: input.name,
             address: input.address ?? null,
+            city: input.city ?? null,
+            stateCode: input.stateCode,
+            pincode: input.pincode ?? null,
             gstin: input.gstin ?? null,
           },
           tx,
