@@ -78,6 +78,20 @@ const NOUNS: Record<string, string> = {
   'tax-eway': 'E-Way Bills',
   'tax-salesreg': 'Sales Register',
   'tax-purchasereg': 'Purchase Register',
+  'inv-items': 'Item / SKU Master',
+  'inv-stock': 'Stock Balance',
+  'inv-transactions': 'Inventory Transactions',
+  'inv-opening': 'Opening Stock',
+  'inv-adjustment': 'Stock Adjustment',
+  'inv-transfer': 'Stock Transfer',
+  'inv-reservation': 'Stock Reservation',
+  'inv-valuation': 'Stock Valuation',
+  'inv-ageing': 'Stock Ageing',
+  'inv-reorder': 'Smart Reorder',
+  'inv-batch': 'Batch / Lot Tracking',
+  'inv-serial': 'Serial Number Tracking',
+  'inv-expiry': 'Expiry Tracking',
+  'inv-reconciliation': 'Stock Reconciliation',
 };
 
 export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
@@ -85,6 +99,6 @@ export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
 export const FAM_PAGE_CFG: Record<string, { noun: string; print?: boolean }> = Object.fromEntries(
   Object.entries(NOUNS).map(([id, noun]) => [
     id,
-    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') ? { noun, print: true } : { noun },
+    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') || id.startsWith('inv-') ? { noun, print: true } : { noun },
   ]),
 );

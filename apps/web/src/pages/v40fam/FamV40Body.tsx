@@ -76,6 +76,20 @@ const WMS_TITLES: Record<string, string> = {
   'tax-eway': 'E-Way Bill Queue – Detailed Table',
   'tax-salesreg': 'Sales Register – Detailed Table',
   'tax-purchasereg': 'Purchase Register – Detailed Table',
+  'inv-items': 'Item / SKU Master – Detailed Table',
+  'inv-stock': 'Stock Balance – Detailed Table',
+  'inv-transactions': 'Inventory Transactions – Detailed Ledger',
+  'inv-opening': 'Opening Stock – Detailed Table',
+  'inv-adjustment': 'Stock Adjustment – Detailed Table',
+  'inv-transfer': 'Stock Transfer – Detailed Table',
+  'inv-reservation': 'Stock Reservation – Detailed Table',
+  'inv-valuation': 'Stock Valuation – Detailed Table',
+  'inv-ageing': 'Stock Ageing – Detailed Table',
+  'inv-reorder': 'Smart Reorder – Detailed Table',
+  'inv-batch': 'Batch / Lot Tracking – Detailed Table',
+  'inv-serial': 'Serial Number Tracking – Detailed Table',
+  'inv-expiry': 'Expiry Tracking – Detailed Table',
+  'inv-reconciliation': 'Stock Reconciliation – Detailed Table',
 };
 
 const DEPARTMENTS = [
@@ -229,7 +243,7 @@ function RecordControlsBar({
         <option value="">{`Record: [Select ${title}]`}</option>
         {rows.map((r) => (
           <option key={r.id} value={r.id}>
-            {`Record: [${r['Vendor Invoice'] || r['Invoice No'] || r['GSTIN'] || r['TDS Entry No'] || r['TCS Entry No'] || r['HSN SAC'] || r['EWB No'] || r['Return Period'] || r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
+            {`Record: [${r['Item Code'] || r['itemCode'] || r['Batch No'] || r['batchNo'] || r['Serial No'] || r['serialNo'] || r['Voucher No'] || r['txnId'] || r['Opening Ref'] || r['openingRef'] || r['Adjustment No'] || r['adjNo'] || r['Transfer No'] || r['transferNo'] || r['Reservation No'] || r['resNo'] || r['Reconciliation No'] || r['reconNo'] || r['Vendor Invoice'] || r['Invoice No'] || r['GSTIN'] || r['TDS Entry No'] || r['TCS Entry No'] || r['HSN SAC'] || r['EWB No'] || r['Return Period'] || r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
           </option>
         ))}
       </select>
@@ -761,6 +775,20 @@ export function FamV40Body({
       case 'tax-eway': return { label: 'Active E-Way', value: `${total}` };
       case 'tax-salesreg': return { label: 'Total Sales Tax', value: '₹ 18,60,000' };
       case 'tax-purchasereg': return { label: 'ITC Eligible', value: '₹ 12,40,000' };
+      case 'inv-items': return { label: 'Active SKUs', value: `${total}` };
+      case 'inv-stock': return { label: 'Total Stock Valuation', value: '₹ 4.82 Cr' };
+      case 'inv-transactions': return { label: 'Transactions Today', value: `${total}` };
+      case 'inv-opening': return { label: 'Opening Batches', value: `${total}` };
+      case 'inv-adjustment': return { label: 'Variance Impact', value: '₹ 0 Low' };
+      case 'inv-transfer': return { label: 'Transfers Dispatched', value: `${total}` };
+      case 'inv-reservation': return { label: 'Stock Allocated', value: '98.5%' };
+      case 'inv-valuation': return { label: 'Inventory Assets', value: '₹ 4.82 Cr' };
+      case 'inv-ageing': return { label: 'Healthy Stock (<90d)', value: '94.2%' };
+      case 'inv-reorder': return { label: 'Suggested Orders', value: `${total}` };
+      case 'inv-batch': return { label: 'Active Lots', value: `${total}` };
+      case 'inv-serial': return { label: 'Tracked Serials', value: `${total}` };
+      case 'inv-expiry': return { label: 'Expired Stock', value: '0 Low' };
+      case 'inv-reconciliation': return { label: 'Audit Compliance', value: '100%' };
       case 'wms-warehouses': return { label: 'Storage Capacity', value: '94% Utilized' };
       case 'wms-zones': return { label: 'Active Zones', value: `${total}` };
       case 'wms-racks': return { label: 'Active Racks', value: `${total}` };
