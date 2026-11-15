@@ -80,6 +80,16 @@ function ProtectedApp() {
           <Route path="gate-nonreturn" element={<Navigate to="/m/gate-nonreturn" replace />} />
           <Route path="ops-visitors" element={<Navigate to="/m/ops-visitors" replace />} />
           <Route path="container-track" element={<Navigate to="/m/container-track" replace />} />
+          <Route path="qms-plans" element={<Navigate to="/m/qms-plans" replace />} />
+          <Route path="qms-incoming" element={<Navigate to="/m/qms-incoming" replace />} />
+          <Route path="qms-process" element={<Navigate to="/m/qms-process" replace />} />
+          <Route path="qms-final" element={<Navigate to="/m/qms-final" replace />} />
+          <Route path="qms-supplier" element={<Navigate to="/m/qms-supplier" replace />} />
+          <Route path="qms-inspections" element={<Navigate to="/m/qms-inspections" replace />} />
+          <Route path="qms-ncr" element={<Navigate to="/m/qms-ncr" replace />} />
+          <Route path="qms-capa" element={<Navigate to="/m/qms-capa" replace />} />
+          <Route path="qms-5why" element={<Navigate to="/m/qms-5why" replace />} />
+          <Route path="qms-calibration" element={<Navigate to="/m/qms-calibration" replace />} />
           <Route path="m/:pageId" element={<ModulePage user={user} />} />
           <Route path="m/:pageId/:sub" element={<ModulePage user={user} />} />
           <Route path="*" element={<NotFoundPage />} />

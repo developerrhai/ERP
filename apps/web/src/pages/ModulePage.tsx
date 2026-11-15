@@ -455,6 +455,8 @@ function PageBody({
       return <NcrPage actions={actions} />;
     case 'qms-capa':
       return <CapaPage actions={actions} />;
+    case 'qms-5why':
+      return <CapaPage actions={actions} />;
     case 'qms-calibration':
       return <CalibrationPage actions={actions} />;
     // Phase 13 manufacturing screens

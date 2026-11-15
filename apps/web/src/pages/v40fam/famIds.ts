@@ -40,6 +40,16 @@ const NOUNS: Record<string, string> = {
   'asset-depreciation': 'Depreciation Runs',
   'asset-disposal': 'Disposals',
   'asset-qr': 'QR Labels',
+  'qms-plans': 'Inspection Plans',
+  'qms-incoming': 'Incoming Quality',
+  'qms-process': 'In-Process Quality',
+  'qms-final': 'Final Quality',
+  'qms-supplier': 'Supplier Quality',
+  'qms-inspections': 'Quality Inspections',
+  'qms-ncr': 'Non-Conformance / NCR',
+  'qms-capa': 'CAPA',
+  'qms-5why': '5 Why Cases',
+  'qms-calibration': 'Instruments',
 };
 
 export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));

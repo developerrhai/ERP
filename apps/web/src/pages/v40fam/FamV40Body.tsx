@@ -381,6 +381,17 @@ export function FamV40Body({
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [askDelete, setAskDelete] = useState<V40Row | null>(null);
+  const [onlyDueOrExpired, setOnlyDueOrExpired] = useState(false);
+  const [qmsParams, setQmsParams] = useState<Array<{ name: string; val1: string; val2: string; res: string }>>([
+    { name: 'Dimension A', val1: '10.0', val2: '9.5', res: 'Pass' },
+    { name: 'Dimension B', val1: '10.5', val2: '10.0', res: 'Pass' },
+    { name: 'Surface', val1: '11.0', val2: '10.5', res: 'Pass' },
+    { name: 'Hardness', val1: '11.5', val2: '11.0', res: 'Pass' },
+    { name: 'Visual', val1: '12.0', val2: '11.5', res: 'Pass' },
+    { name: 'Functional', val1: '12.5', val2: '12.0', res: 'Fail' },
+    { name: 'Packaging', val1: '13.0', val2: '12.5', res: 'Pass' },
+    { name: 'Traceability', val1: '13.5', val2: '13.0', res: 'Pass' },
+  ]);
 
   const cfg = FAM_PAGE_CFG[pageId] ?? { noun: 'Records' };
   const title = cfg.noun;
@@ -415,15 +426,22 @@ export function FamV40Body({
     };
   }, [pageId, frame?.tabName, frame?.index, q, status, page, tick]);
 
-  // Department-filtered rows
+  // Department-filtered rows (with calibration due/expired toggle)
   const filteredRows = useMemo(() => {
-    if (!dept || dept === 'All Departments') return dataRows;
+    let list = dataRows;
+    if (pageId === 'qms-calibration' && onlyDueOrExpired) {
+      list = list.filter((r) => {
+        const cal = String(r['Status'] ?? r['Compliance'] ?? r.status ?? '').toLowerCase();
+        return cal.includes('expired') || cal.includes('overdue') || cal.includes('due') || cal.includes('tolerance');
+      });
+    }
+    if (!dept || dept === 'All Departments') return list;
     const dLow = dept.toLowerCase();
-    return dataRows.filter((r) => {
+    return list.filter((r) => {
       const match = Object.values(r).some((v) => typeof v === 'string' && v.toLowerCase().includes(dLow));
       return match;
     });
-  }, [dataRows, dept]);
+  }, [dataRows, dept, pageId, onlyDueOrExpired]);
 
   const activeRecord = useMemo(
     () => dataRows.find((r) => r.id === activeRecordId) ?? dataRows[0] ?? null,
@@ -550,6 +568,16 @@ export function FamV40Body({
       case 'gate-nonreturn': return { label: 'Non-Returnable Passes', value: `${total}` };
       case 'ops-visitors': return { label: 'Visitors Today', value: `${total}` };
       case 'container-track': return { label: 'Containers Tracked', value: `${total}` };
+      case 'qms-plans': return { label: 'Inspection Plans', value: `${total}` };
+      case 'qms-incoming': return { label: 'Accepted Rate', value: '98.5%' };
+      case 'qms-process': return { label: 'Checkpoints Checked', value: `${total}` };
+      case 'qms-final': return { label: 'FG Release Yield', value: '99.2%' };
+      case 'qms-supplier': return { label: 'Vendor Quality', value: '96/100' };
+      case 'qms-inspections': return { label: 'Inspections Done', value: `${total}` };
+      case 'qms-ncr': return { label: 'Open NCRs', value: `${total}` };
+      case 'qms-capa': return { label: 'Active CAPAs', value: `${total}` };
+      case 'qms-5why': return { label: 'Root Cause Cases', value: `${total}` };
+      case 'qms-calibration': return { label: 'Calibrated In Date', value: `${total}` };
       default: return { label: 'Active Units', value: `${total}` };
     }
   }, [pageId, totalCount, filteredRows.length]);
@@ -610,8 +638,101 @@ export function FamV40Body({
         </div>
       </div>
 
+      {/* 3.5 Quality / Inspection Workspace Panel (When viewing QMS modules) */}
+      {pageId.startsWith('qms-') ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>{`${title} Workspace`}</h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  Inspection, acceptance criteria, NCR/CAPA and root-cause decision workspace.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● Working
+              </span>
+            </div>
+            <div>
+              {qmsParams.map((p, idx) => (
+                <div key={p.name} className="v9-param">
+                  <b>{p.name}</b>
+                  <input
+                    type="text"
+                    value={p.val1}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQmsParams((prev) =>
+                        prev.map((item, i) => (i === idx ? { ...item, val1: val } : item)),
+                      );
+                    }}
+                    aria-label={`${p.name} Value 1`}
+                  />
+                  <input
+                    type="text"
+                    value={p.val2}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQmsParams((prev) =>
+                        prev.map((item, i) => (i === idx ? { ...item, val2: val } : item)),
+                      );
+                    }}
+                    aria-label={`${p.name} Value 2`}
+                  />
+                  <select
+                    value={p.res}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQmsParams((prev) =>
+                        prev.map((item, i) => (i === idx ? { ...item, res: val } : item)),
+                      );
+                    }}
+                    aria-label={`${p.name} Result`}
+                  >
+                    <option value="Pass">Pass</option>
+                    <option value="Fail">Fail</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="btn primary"
+              style={{ marginTop: 10 }}
+              onClick={() => toast('Inspection parameters and measurements saved.')}
+            >
+              Save Inspection
+            </button>
+          </div>
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 8px 0' }}>Quality Action</h3>
+            <div className="notice" style={{ marginBottom: 12 }}>
+              <b>1 parameter requires review.</b>
+              <br />
+              Create NCR, assign root cause and CAPA owner before closure.
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={() => toast(`NCR created from ${title}.`)}
+              >
+                Create NCR
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => toast(`CAPA task created from ${title}.`)}
+              >
+                Create CAPA
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* 4. Toolbar: Search, Status, Department Filter */}
-      <div className="toolbar proc-toolbar">
+      <div className="toolbar proc-toolbar" style={{ marginTop: 12 }}>
         <input
           type="search"
           placeholder={`Search ${title}...`}
@@ -638,6 +759,19 @@ export function FamV40Body({
           <option value="DELIVERED">Delivered</option>
           <option value="CLOSED">Closed</option>
         </select>
+        {pageId === 'qms-calibration' ? (
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={onlyDueOrExpired}
+              onChange={(e) => {
+                setOnlyDueOrExpired(e.target.checked);
+                setPage(1);
+              }}
+            />
+            Only due or expired
+          </label>
+        ) : null}
         <select
           value={dept}
           onChange={(e) => setDept(e.target.value)}
@@ -706,6 +840,13 @@ export function FamV40Body({
                             <button
                               type="button"
                               className="btn sm"
+                              onClick={() => handleRowAction('view', r)}
+                            >
+                              View
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
                               onClick={() => handleRowAction('edit', r)}
                             >
                               Edit
@@ -713,9 +854,30 @@ export function FamV40Body({
                             <button
                               type="button"
                               className="btn sm"
+                              onClick={() => handleRowAction('docs', r)}
+                            >
+                              Docs
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() => handleRowAction('email', r)}
+                            >
+                              Email
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
                               onClick={() => void handleWordExport(r)}
                             >
                               Word
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() => handleRowAction('pdf', r)}
+                            >
+                              PDF
                             </button>
                             <button
                               type="button"
@@ -760,6 +922,29 @@ export function FamV40Body({
             ) : null}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="actions pv40-pager" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--card2, #f8fafc)', border: '1px solid var(--line, #e2e8f0)', borderRadius: 8, marginTop: 8 }}>
+        <button
+          type="button"
+          className="btn sm"
+          disabled={page <= 1}
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+        >
+          Previous
+        </button>
+        <span style={{ fontSize: 12, color: 'var(--muted, #64748b)' }}>
+          Page {page} of {Math.max(1, Math.ceil((totalCount || filteredRows.length) / 50))}
+        </span>
+        <button
+          type="button"
+          className="btn sm"
+          disabled={page >= Math.ceil((totalCount || filteredRows.length) / 50)}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Next
+        </button>
       </div>
 
       {/* 6. Secondary Detailed Register Table */}
