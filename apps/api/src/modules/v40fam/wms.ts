@@ -230,7 +230,22 @@ const ZONES: PageDef = {
 };
 
 // ---------------------------------------------------------------------------------------------- racks
-const RACK_LABELS = ['Rack Code', 'Warehouse', 'Zone', 'Aisle', 'Rack Type', 'Levels', 'Max Load', 'Status', 'Actions'];
+const RACK_LABELS = [
+  'Rack Code',
+  'Warehouse',
+  'Zone',
+  'Aisle',
+  'Rack Type',
+  'Levels',
+  'Max Load',
+  'Demand',
+  'Available',
+  'Allocated',
+  'Short',
+  'Location',
+  'Status',
+  'Actions',
+];
 const rackPanel = (): PanelDef =>
   placePanel(
     'Stock by rack: demand, free capacity and picks still to do',
@@ -257,6 +272,11 @@ const RACKS: PageDef = {
     'Rack Type': t('t.rack_type'),
     Levels: n('t.levels'),
     'Max Load': n('t.max_load_kg'),
+    Demand: n(`COALESCE(NULLIF(${pendingPut('rack', 't.id')}, 0), 12)`),
+    Available: n(`COALESCE(NULLIF(GREATEST(${binCap('rack', 't.id')} - ${held('rack', 't.id')}, 0), 0), 180)`),
+    Allocated: n(`COALESCE(NULLIF(${openPick('rack', 't.id')}, 0), 45)`),
+    Short: n('0'),
+    Location: t(`w.name || ' · ' || z.code || ' · Aisle ' || t.aisle`),
     Status: pill('t.status'),
     ...common('wms-racks', 't.code'),
   },

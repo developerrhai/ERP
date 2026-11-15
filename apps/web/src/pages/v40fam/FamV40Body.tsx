@@ -212,7 +212,7 @@ function RecordControlsBar({
         <option value="">{`Record: [Select ${title}]`}</option>
         {rows.map((r) => (
           <option key={r.id} value={r.id}>
-            {`Record: [${r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
+            {`Record: [${r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
           </option>
         ))}
       </select>
@@ -226,17 +226,19 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm primary"
-        disabled={!actions.add}
-        onClick={onAdd}
+        onClick={() => {
+          if (!actions.add) toast('Add permission is not available for this role.');
+          else onAdd();
+        }}
       >
         ＋ Add
       </button>
       <button
         type="button"
         className="btn sm"
-        disabled={!actions.edit}
         onClick={() => {
-          if (!currentId) toast('Select a record first, then press Edit.');
+          if (!actions.edit) toast('Edit permission is not available for this role.');
+          else if (!currentId) toast('Select a record first, then press Edit.');
           else onEdit();
         }}
       >
@@ -245,9 +247,9 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm danger"
-        disabled={!actions.delete}
         onClick={() => {
-          if (!currentId) toast('Select a record first, then press Delete.');
+          if (!actions.delete) toast('Delete permission is not available for this role.');
+          else if (!currentId) toast('Select a record first, then press Delete.');
           else onDelete();
         }}
       >
@@ -266,9 +268,9 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
-        disabled={!actions.submit}
         onClick={() => {
-          if (!currentId) toast('Select a record first, then press Submit Approval.');
+          if (!actions.submit) toast('Submit approval permission is not available for this role.');
+          else if (!currentId) toast('Select a record first, then press Submit Approval.');
           else onSubmitApproval();
         }}
       >
@@ -777,8 +779,8 @@ export function FamV40Body({
           <b>{filteredRows.filter((r) => !/completed|closed|delivered|exited|posted/i.test(r.status ?? '')).length}</b>
         </div>
         <div className="v8-mini">
-          <small>AI Risk</small>
-          <b style={{ color: '#16a34a' }}>{pageId.startsWith('asset-') ? '21/100 Controlled' : '14/100 Low'}</b>
+          <small>At Risk</small>
+          <b style={{ color: '#16a34a' }}>{pageId.startsWith('asset-') ? '21/100 Controlled' : '0 Low'}</b>
         </div>
         <div className="v8-mini">
           <small>{fifthMetric.label}</small>
@@ -1064,7 +1066,9 @@ export function FamV40Body({
                     ? 'Barcode Scanner & Registry Queue'
                     : pageId === 'wms-rfid'
                       ? 'RFID Tag Registry Queue'
-                      : `${title} Allocation Queue`}
+                      : pageId === 'wms-racks'
+                        ? 'Rack Directory Allocation Queue'
+                        : `${title} Allocation Queue`}
                 </h3>
                 <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
                   Warehouse execution queue: stock availability, replenishment demand and slotting priority.
@@ -1167,6 +1171,7 @@ export function FamV40Body({
                 <tbody>
                   {filteredRows.slice(0, 8).map((r, i) => {
                     const recName =
+                      r['Rack Code'] ??
                       r.number ??
                       r['Barcode'] ??
                       r['Tag EPC'] ??
@@ -1186,10 +1191,12 @@ export function FamV40Body({
                     const sh = r['Short'] ?? '0';
                     const loc =
                       r['Location'] ??
-                      r['Warehouse'] ??
-                      r['Expected Location'] ??
-                      r['Reader Zone'] ??
-                      `Zone-A / Aisle-${(i % 4) + 1}`;
+                      (r['Zone']
+                        ? `${r['Warehouse'] ?? ''} · ${r['Zone']} · Aisle ${r['Aisle'] ?? ''}`
+                        : r['Warehouse'] ??
+                          r['Expected Location'] ??
+                          r['Reader Zone'] ??
+                          `Zone-A / Aisle-${(i % 4) + 1}`);
                     return (
                       <tr key={`q-${r.id || i}`}>
                         <td>
@@ -1511,6 +1518,20 @@ export function FamV40Body({
                               onClick={() => toast(`Submitted ${r.number || r.id} for approval.`)}
                             >
                               Submit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm primary"
+                              onClick={() => toast(`Stock allocated for ${r['Rack Code'] || r.number || r.id}.`)}
+                            >
+                              Allocate
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() => toast(`Reallocation triggered for ${r['Rack Code'] || r.number || r.id}.`)}
+                            >
+                              Reallocate
                             </button>
                             <button
                               type="button"

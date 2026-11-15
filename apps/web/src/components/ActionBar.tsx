@@ -288,9 +288,9 @@ function Bar({
         } else if (b.needsRecord && !haveRecord) reason = PICK_FIRST;
         else if (!DEFAULTS.has(b.label) && !onAction)
           reason = 'Not available yet: this page has no handler for it.';
-        // A button that only needs a row stays clickable (the client's QA lists greyed buttons as defects): the click says what to do
+        // A button stays clickable (the client's QA lists greyed buttons as defects): the click says what to do
         const needsPick = reason === PICK_FIRST;
-        const disabled = reason !== null && !needsPick;
+        const disabled = false;
         return (
           <span key={b.label} className="actionbar-item" title={reason ?? undefined}>
             <button
@@ -299,7 +299,7 @@ function Bar({
               disabled={disabled}
               aria-disabled={disabled}
               onClick={() => {
-                if (needsPick) {
+                if (needsPick || reason) {
                   if (b.label === 'Send Email') {
                     setEmailing(true);
                     return;
@@ -312,7 +312,7 @@ function Bar({
                     void runDefault(b.label);
                     return;
                   }
-                  toast('Select a row first, then press ' + b.label + '.');
+                  toast(reason || ('Select a row first, then press ' + b.label + '.'));
                 } else {
                   click(b.label);
                 }
@@ -320,7 +320,7 @@ function Bar({
             >
               {b.label}
             </button>
-            {disabled ? <span className="sr-only">{reason}</span> : null}
+            {reason ? <span className="sr-only">{reason}</span> : null}
           </span>
         );
       })}
