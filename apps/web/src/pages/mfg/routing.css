@@ -1,0 +1,24 @@
+/* Phase 41 plant-flow pages: route builder, live routing, BOM & material approval, material transfer note. */
+.rt-page { display: grid; gap: 14px; }
+.rt-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.rt-card { padding: 12px 14px; }
+.rt-card .rt-num { font-size: 1.6rem; font-weight: 700; }
+.rt-plants { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0; border-top: 3px solid var(--primary, #0b5c63); }
+.rt-plant { padding: 12px 14px; border-right: 1px solid var(--border, #dde3ea); }
+.rt-plant:last-child { border-right: 0; }
+.rt-plant .rt-num { font-size: 1.4rem; font-weight: 700; }
+.rt-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; }
+.rt-note { padding: 10px 14px; background: var(--info-bg, #eaf3ff); }
+.rt-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rt-steps { display: flex; overflow-x: auto; border-top: 3px solid var(--primary, #0b5c63); }
+.rt-sketch { min-width: 170px; padding: 12px; border-right: 1px solid var(--border, #dde3ea); }
+.rt-sketch b { display: block; }
+.rt-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.rt-form label { display: grid; gap: 4px; font-size: 0.85rem; font-weight: 600; }
+.rt-step-input { min-width: 120px; }
+.rt-num-cell { text-align: right; }
+.rt-short { color: var(--danger, #b42318); font-weight: 700; }
+.rt-ok { color: var(--success, #067647); font-weight: 700; }
+.rt-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.rt-reason { font-size: 0.8rem; color: var(--muted, #5b6672); }
+.rt-dialog { display: grid; gap: 10px; padding: 14px; }

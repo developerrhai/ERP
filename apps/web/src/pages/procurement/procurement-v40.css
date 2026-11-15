@@ -1,0 +1,25 @@
+/* V40 body of the Procurement / SCM pages (workspace panels + register table). Own file: shared app.css is not touched. */
+.proc-v40 .proc-section { background: var(--card, #fff); border: 1px solid var(--line, #e2e8f0); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.proc-v40 .proc-section-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.proc-v40 .proc-section h3 { margin: 0 0 2px; font-size: 14px; }
+.proc-v40 .proc-section .muted { margin: 0 0 8px; font-size: 12px; }
+.proc-v40 .proc-split { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.proc-v40 .proc-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 8px; }
+.proc-v40 .proc-big { font-size: 26px; font-weight: 700; margin: 4px 0 8px; }
+.proc-v40 .proc-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.proc-v40 .proc-review { margin-top: 6px; font-size: 12px; max-width: 360px; overflow-wrap: anywhere; }
+.proc-v40 .proc-chart { width: 100%; max-height: 140px; color: #2563eb; }
+.proc-v40 .proc-bar { flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; margin: 0 8px; }
+.proc-v40 .proc-bar i { display: block; height: 100%; background: #2563eb; border-radius: 4px; }
+.proc-v40 .proc-spark { display: flex; align-items: flex-end; gap: 3px; height: 90px; }
+.proc-v40 .proc-spark i { flex: 1; background: #2563eb; border-radius: 2px 2px 0 0; }
+.proc-v40 .proc-detail { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px 16px; margin: 0; }
+.proc-v40 .proc-detail dt { font-size: 11px; color: #64748b; }
+.proc-v40 .proc-detail dd { margin: 0; font-weight: 600; }
+.proc-v40 .proc-row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.proc-v40 .proc-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; }
+.proc-v40 td.num { text-align: right; white-space: nowrap; }
+.proc-v40 .table-wrap { overflow-x: auto; }
+@media (max-width: 760px) {
+  .proc-v40 .proc-split { grid-template-columns: 1fr; }
+}

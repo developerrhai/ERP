@@ -112,6 +112,8 @@ describe('Phase 21 Notifications, Push & Preferences', () => {
   });
 
   it('handles Web Push subscribe, 404/410 auto-revocation, 429 Retry-After backoff, and logout-all revocation', async () => {
+    // Other test files leave queued push rows behind; the drain batch must only see this test's.
+    await prisma.$executeRaw`DELETE FROM notification_deliveries WHERE channel = 'PUSH' AND status IN ('QUEUED', 'HELD')`;
     const epGone = `https://push.example.test/gone-${Date.now()}`;
     const subRes = await request(app).post(`${API}/push/subscriptions`).set(hdr(empTal)).send({
       endpoint: epGone,
@@ -193,6 +195,18 @@ describe('Phase 21 Notifications, Push & Preferences', () => {
 
 describe('Phase 21 Broadcasts: unit isolation, >50 approval, emergency bypass & withdraw', () => {
   it('enforces unit audience isolation, Director+ CRITICAL approval & blocks self-approval, supports withdraw and emergency bypass', async () => {
+    // The TAL audience grows with the users other test files leave behind; the >50 rule is not under
+    // test here, so lift the threshold for this test and restore it afterwards.
+    const t = (await prisma.$queryRaw<{ t: number }[]>`SELECT broadcast_approval_threshold_users AS t FROM notification_settings WHERE id = 1`)[0]!.t;
+    await prisma.$executeRaw`UPDATE notification_settings SET broadcast_approval_threshold_users = 1000000 WHERE id = 1`;
+    try {
+      await broadcastFlow();
+    } finally {
+      await prisma.$executeRaw`UPDATE notification_settings SET broadcast_approval_threshold_users = ${t} WHERE id = 1`;
+    }
+  });
+
+  async function broadcastFlow() {
     // 1. Unit-scoped INFO broadcast reaches TAL only, never SAW-only user
     const d1 = await request(app)
       .post(`${API}/admin/broadcasts`)
@@ -298,7 +312,7 @@ describe('Phase 21 Broadcasts: unit isolation, >50 approval, emergency bypass & 
       .set(hdr(owner))
       .send({});
     expect(emSub.body.data.status).toBe('SENT');
-  });
+  }
 });
 
 describe('Phase 21 Email Automation: Idempotency, 7MB cutoff, Encrypted Payslip, Signed SNS Bounce', () => {

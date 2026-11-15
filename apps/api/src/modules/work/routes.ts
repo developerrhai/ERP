@@ -1,5 +1,6 @@
 // Phase 25 routes: /api/v1/work. Inbox, Work Center, Move Forward and the receive / accept / return / recall / complete
 // actions, history, the Workflow Matrix. Nothing here forwards by itself.
+import { docPicker } from './picker';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -9,7 +10,11 @@ import { asyncHandler } from '../../core/http/async-handler';
 import { validate, validated } from '../../core/http/validate';
 import { requirePageAction } from '../../core/rbac/access';
 import { callerOf } from '../inventory/routes-shared';
+import { plantFlowService } from './plantflow';
 import { workService } from './service';
+// --- movements-ext begin
+import { registerMovementRoutes } from './movements-ext';
+// --- movements-ext end
 
 const ok = (res: Response, data: unknown, status = 200) => res.status(status).json({ data });
 
@@ -20,7 +25,7 @@ const moduleParams = z.object({ moduleId: z.string().min(1).max(80) }).strict();
 const inboxQuery = z
   .object({
     dept: z.union([z.string().uuid(), z.literal('all')]).optional(),
-    tab: z.enum(['receive', 'accept', 'work', 'returned', 'sent', 'all', 'pending', 'completed']).optional(),
+    tab: z.enum(['receive', 'accept', 'work', 'returned', 'sent', 'all', 'pending', 'completed', 'open', 'ready', 'waiting']).optional(),
     docType: z.string().max(80).optional(),
     late: z.enum(['true', 'false']).optional(),
     q: z.string().max(60).optional(),
@@ -106,6 +111,10 @@ export function createWorkRouter(): Router {
     const q = validated(res, 'query', inboxQuery);
     ok(res, await workService.inbox(callerOf(req), { ...q, late: q.late === 'true' }));
   }));
+  r.get('/inbox/counts', asyncHandler(async (req: Request, res: Response) => {
+    const dept = typeof req.query.dept === 'string' ? z.union([z.string().uuid(), z.literal('all')]).parse(req.query.dept) : undefined;
+    ok(res, await workService.inboxCounts(callerOf(req), { dept }));
+  }));
   r.get('/audit', asyncHandler(async (req: Request, res: Response) => {
     const dept = typeof req.query.dept === 'string' ? z.union([z.string().uuid(), z.literal('all')]).parse(req.query.dept) : undefined;
     ok(res, await workService.audit(callerOf(req), { dept }));
@@ -113,6 +122,10 @@ export function createWorkRouter(): Router {
   r.get('/work-center', asyncHandler(async (req: Request, res: Response) => {
     const dept = typeof req.query.dept === 'string' ? z.string().uuid().parse(req.query.dept) : undefined;
     ok(res, await workService.workCenter(callerOf(req), dept));
+  }));
+
+  r.get('/plant-flow/:id', validate({ params: idParams }), asyncHandler(async (req: Request, res: Response) => {
+    ok(res, await plantFlowService.overview(callerOf(req), validated(res, 'params', idParams).id));
   }));
 
   r.post('/movements', validate({ body: forwardBody }), asyncHandler(async (req: Request, res: Response) => {
@@ -131,6 +144,11 @@ export function createWorkRouter(): Router {
     ok(res, { holder: await workService.holder(p.docType, p.docId), ...(await workService.history(p.docType, p.docId)) });
   }));
 
+  r.get('/doc-picker/:pageId', asyncHandler(async (req: Request, res: Response) => {
+    const pageId = z.string().min(1).max(80).parse(req.params.pageId);
+    const q = z.string().max(60).default('').parse(req.query.q ?? '');
+    ok(res, await docPicker(callerOf(req), pageId, q));
+  }));
   r.get('/workflow-rules', requirePageAction('admin-workflow', 'view'), asyncHandler(async (_req: Request, res: Response) => {
     ok(res, await workService.listRules());
   }));
@@ -141,6 +159,10 @@ export function createWorkRouter(): Router {
   r.get('/workflow-rules/suggest', asyncHandler(async (req: Request, res: Response) => {
     ok(res, await workService.suggest(z.string().min(1).max(80).parse(req.query.docType)));
   }));
+
+  // --- movements-ext begin
+  registerMovementRoutes(r);
+  // --- movements-ext end
 
   return r;
 }

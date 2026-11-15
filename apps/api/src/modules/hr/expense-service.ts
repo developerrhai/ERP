@@ -158,6 +158,32 @@ export class ExpenseService {
     });
   }
 
+  private async costCenterFor(tx: Db, employeeId: string, unitId: string): Promise<string | null> {
+    const rows = await query(
+      tx,
+      `SELECT c.id
+         FROM cost_centers c
+        WHERE c.deleted_at IS NULL AND c.status = 'Active' AND NOT c.is_group
+          AND (c.unit_id IS NULL OR c.unit_id = $2::uuid)
+        ORDER BY
+          CASE
+            WHEN EXISTS (SELECT 1 FROM employee_assignments a
+                          WHERE a.employee_id = $1::uuid AND a.effective_to IS NULL
+                            AND (lower(a.cost_centre) = lower(c.code) OR lower(a.cost_centre) = lower(c.name))) THEN 0
+            WHEN EXISTS (SELECT 1 FROM employee_assignments a
+                          WHERE a.employee_id = $1::uuid AND a.effective_to IS NULL
+                            AND lower(a.department) = lower(c.department)) THEN 1
+            ELSE 2
+          END,
+          CASE WHEN c.unit_id = $2::uuid THEN 0 ELSE 1 END,
+          c.code
+        LIMIT 1`,
+      employeeId,
+      unitId,
+    );
+    return rows[0] ? String(rows[0].id) : null;
+  }
+
   async approveClaim(caller: Caller, claimId: string): Promise<void> {
     await prisma.$transaction(async (tx) => {
       const claim = (
@@ -176,6 +202,22 @@ export class ExpenseService {
         claimId,
       );
 
+      // Most expense accounts need a cost centre: the employee's own, else their department's, else the plant's first.
+      const costCenterId = await this.costCenterFor(tx, String(claim.employee_id), String(claim.unit_id));
+      if (!costCenterId) {
+        throw Errors.validation({
+          costCenter: 'No cost centre is set up for this employee, their department or the plant. Ask Finance to add one, then approve again.',
+        });
+      }
+
+      // The payable to the employee is kept against the employee's login (the party master for employees is the user).
+      const login = (await query(tx, `SELECT user_id, emp_code FROM employees WHERE id = $1::uuid`, String(claim.employee_id)))[0];
+      if (!login?.user_id) {
+        throw Errors.validation({
+          employee: `Employee ${String(login?.emp_code ?? '')} has no login linked, so the reimbursement cannot be booked. Ask HR to link the employee to a user, then approve again.`,
+        });
+      }
+
       const postLines = [];
       let totalClaim = 0;
 
@@ -183,9 +225,10 @@ export class ExpenseService {
         const amt = Number(ln.amount);
         totalClaim += amt;
         postLines.push({
-          accountCode: String(ln.gl_key ?? '6260'),
+          accountCode: String(ln.gl_key ?? '6264'),
           debit: amt.toFixed(2),
           credit: '0.00',
+          costCenterId,
           narration: String(ln.description),
         });
       }
@@ -194,7 +237,7 @@ export class ExpenseService {
         accountCode: '2104',
         debit: '0.00',
         credit: totalClaim.toFixed(2),
-        partyId: String(claim.employee_id),
+        partyId: String(login.user_id),
         partyType: 'EMPLOYEE' as const,
         narration: `Expense claim ${claim.claim_no}`,
       });
@@ -203,7 +246,7 @@ export class ExpenseService {
         tx,
         {
           unitId: String(claim.unit_id),
-          docDate: (claim.claim_date as string).slice(0, 10),
+          docDate: claim.claim_date instanceof Date ? claim.claim_date.toISOString().slice(0, 10) : String(claim.claim_date).slice(0, 10),
           voucherType: 'Expense',
           source: 'EXPENSE',
           sourceDocType: 'hr-expense',

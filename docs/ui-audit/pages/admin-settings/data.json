@@ -1,0 +1,75 @@
+{
+ "id": "admin-settings",
+ "role": "super",
+ "at": "2026-11-14T14:24:23.769Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [],
+    "fields": [],
+    "buttons": [
+     "← Return",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Project History"
+    ],
+    "cards": [],
+    "filters": [],
+    "badges": [],
+    "rows": 0,
+    "textLen": 891,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [],
+    "fields": [],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "System ControlsEnable modules, owner department, approvals, edit/delete/export.",
+     "Company MasterLegal company setup.",
+     "Unit MasterUnit setup.",
+     "Department MasterDepartment login and routing.",
+     "User MasterDepartment users and roles.",
+     "Role MasterAuthority hierarchy.",
+     "Permission MasterView/Add/Edit/Delete/Approve rights.",
+     "Approval MatrixDepartment and amount thresholds.Phase 6",
+     "Finance Approval LimitsAmounts from which journals and notes need approval.",
+     "Letterhead & PDFCompany PDF template settings.",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [],
+    "badges": [
+     "Phase 6"
+    ],
+    "rows": 0,
+    "textLen": 841,
+    "sideways": false
+   }
+  }
+ }
+}

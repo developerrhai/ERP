@@ -1,0 +1,327 @@
+{"id":"dashboard","rows":3,"rowButton":false,"pageButton":false,"result":"NO BUTTON"}
+{"id":"project-global-history","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN Please fix the highlighted fields. "}
+{"id":"ops-mfg-dashboard","rows":23,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"my-approvals","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"process-exceptions","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"command-center","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"ai-insights","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"notifications","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"global-search","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dept-inbox-administration","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dept-inbox-sales","rows":1,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"dept-inbox-projects","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dept-inbox-engineering","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dept-inbox-purchase","rows":1,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"dept-inbox-warehouse","rows":3,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"dept-inbox-production","rows":1,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"dept-inbox-quality","rows":2,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"dept-inbox-finance","rows":2,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"dept-inbox-service","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dept-inbox-maintenance","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dept-inbox-hr","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"crm-leads","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"crm-opportunities","rows":9,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"crm-pipeline","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"crm-followups","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"crm-meetings","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"crm-customer360","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"master-customers","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"crm-feedback","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"crm-sources","rows":10,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dept-work-sales","rows":1,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"sales-quotations","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"sales-orders","rows":16,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"ops-order-360","rows":2,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"sales-reservations","rows":10,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"sales-delivery","rows":15,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"sales-dispatch","rows":9,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"sales-invoices","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"sales-collections","rows":2,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"sales-pricelist","rows":5,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"sales-credit","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"sales-returns","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"sales-enquiries","rows":16,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dept-work-purchase","rows":1,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"scm-pr","rows":15,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"scm-rfq","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"scm-vendorquote","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"scm-comparison","rows":2,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"scm-po","rows":13,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"scm-grn","rows":10,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"scm-purchaseinvoice","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"scm-approval","rows":25,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"scm-suppliers","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"scm-evaluation","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"scm-contracts","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"inv-items","rows":10,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"master-products","rows":10,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"master-materials","rows":10,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"inv-stock","rows":10,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"inv-transactions","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"inv-opening","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"inv-adjustment","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"inv-transfer","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"inv-reservation","rows":10,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"inv-reconciliation","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"inv-ageing","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"inv-valuation","rows":23,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"inv-reorder","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"inv-batch","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"inv-serial","rows":10,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"inv-expiry","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dept-work-warehouse","rows":3,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"wms-warehouses","rows":5,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"wms-zones","rows":7,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"wms-racks","rows":11,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"wms-shelves","rows":22,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"wms-bins","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"wms-putaway","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"wms-pick","rows":8,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"wms-packing","rows":4,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"wms-cycle","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"wms-physical","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"wms-transfer","rows":4,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"wms-barcode","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"wms-rfid","rows":12,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"dept-work-production","rows":1,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"mfg-bom","rows":7,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-routing","rows":7,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-workcenters","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-plan","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-orders","rows":11,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-mrp","rows":2,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-material-issue","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"mfg-workorders","rows":16,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-shopfloor","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"mfg-wip","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"mfg-fg","rows":9,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-scrap","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-rework","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-costing","rows":9,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dept-work-quality","rows":2,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"qms-plans","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"qms-incoming","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"qms-process","rows":7,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"qms-final","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"qms-supplier","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"qms-inspections","rows":25,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"qms-ncr","rows":15,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"qms-capa","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"qms-5why","rows":6,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"qms-calibration","rows":7,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dept-work-maintenance","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"maint-machines","rows":14,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"maint-equipment","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"maint-preventive","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"maint-breakdown","rows":7,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"maint-workorders","rows":10,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"maint-spares","rows":15,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"maint-schedule","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"maint-downtime","rows":13,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"maint-mtbf","rows":10,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"maint-alerts","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dept-work-finance","rows":2,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"fin-coa","rows":225,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-gl","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"fin-journal","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-cashbook","rows":9,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-bankbook","rows":13,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-ap","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-ar","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-creditnote","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-debitnote","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-bankreco","rows":2,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-costcenter","rows":11,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-profitcenter","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-expenses","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-budget","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fin-trial","rows":34,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN Balanced: ₹ 3,70,54,996.44 on both sides. "}
+{"id":"fin-pnl","rows":19,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"fin-bs","rows":29,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"fin-cashflow","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"fin-ageing","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"tax-gst","rows":10,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"tax-gstr1","rows":13,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"tax-gstr3b","rows":15,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"tax-tds","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"tax-tcs","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"tax-hsn","rows":4,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"tax-einvoice","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"tax-eway","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"tax-salesreg","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"tax-purchasereg","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dept-work-hr","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"hr-employees","rows":25,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"hr-recruitment","rows":24,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"hr-onboarding","rows":5,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"hr-attendance","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"hr-leave","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"hr-expense","rows":7,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"hr-performance","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"hr-training","rows":6,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"hr-documents","rows":25,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"hr-exit","rows":3,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"hr-ess","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN Your login is not linked to an employee record. Ask HR. "}
+{"id":"pay-structure","rows":13,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"pay-processing","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"pay-overtime","rows":25,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"pay-incentive","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"pay-loan","rows":5,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"pay-pf","rows":13,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"pay-esic","rows":13,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"pay-pt","rows":13,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"pay-tds","rows":13,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"pay-payslip","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"pay-bank","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"pay-register","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN Cannot read properties of undefined (reading 'status') "}
+{"id":"dept-work-projects","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"proj-demo-control","rows":7,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"proj-stage-gates","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"proj-dependencies","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"proj-specifications","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"proj-test-records","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"proj-documents","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"proj-projects","rows":7,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"proj-tasks","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"proj-subtasks","rows":25,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"proj-milestones","rows":20,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"proj-team","rows":25,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"proj-timesheets","rows":12,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"proj-expenses","rows":16,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"proj-budget","rows":4,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"proj-kanban","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"proj-gantt","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"proj-profitability","rows":7,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"asset-master","rows":18,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"asset-capitalization","rows":15,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"asset-allocation","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"asset-transfer","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"asset-maintenance","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"asset-depreciation","rows":2,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"asset-disposal","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"asset-qr","rows":18,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dept-work-service","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"service-tickets","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"service-requests","rows":6,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"service-technicians","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"service-visits","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"service-spares","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"service-history","rows":8,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"service-amc","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"service-warranty","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"service-claims","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"log-transporters","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"log-routes","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"log-freight","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"log-shipments","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"log-tracking","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"log-pod","rows":2,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"customer-receipts","rows":2,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fleet-vehicles","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fleet-drivers","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fleet-fuel","rows":9,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fleet-service","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"fleet-documents","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"gate-in","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"gate-out","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"gate-return","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"gate-nonreturn","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"container-track","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"document-movement-center","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dms-folders","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dms-docs","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dms-versions","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dms-permissions","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dms-tags","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dms-search","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"bi-builder","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"bi-reports","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"bi-dashboards","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"bi-scheduler","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"bi-sales","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"bi-purchase","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"bi-inventory","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"bi-finance","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"bi-branch","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"bi-profit","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"ai-copilot","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"ai-demand","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"ai-inventory","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"ai-sales","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"ai-vendor","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"ai-finance","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"ai-executive","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"auto-workflows","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"auto-rules","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"auto-jobs","rows":50,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"auto-webhooks","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"comm-whatsapp","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"comm-email","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"comm-sms","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"comm-templates","rows":17,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"comm-logs","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"comm-payment","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dept-work-engineering","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"dept-work-administration","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-company","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-branches","rows":3,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-departments","rows":12,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-designations","rows":10,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-users","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-roles","rows":9,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-permissions","rows":9,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-fy","rows":2,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-currency","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-taxes","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-numbering","rows":133,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-uom","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-customfields","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-formbuilder","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-workflow","rows":8,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-import","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-duplicates","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-audit","rows":25,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-security","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-backup","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-api","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"admin-integrations","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-settings","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"cl-command-center","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"cl-contractors","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-workorders","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-workers","rows":16,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-onboarding","rows":16,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-deployment","rows":16,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-attendance","rows":182,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-wages","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-invoices","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-compliance","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-safety","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-ppe","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-medical","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-incidents","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-gatepass","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"cl-canteen","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":1}
+{"id":"cl-exit","rows":16,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"ops-tasks","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"hr-shifts","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"ops-shift-roster","rows":5,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"ops-visitors","rows":14,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"ops-canteen","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"plant-flow-command","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"plant-project-forward","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"maint-part-movement","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"plant-process-movement","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"plant-unit-routing","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"plant-department-movement","rows":13,"rowButton":true,"pageButton":true,"disabled":false,"result":"DIALOG","depts":13}
+{"id":"plant-interplant-movement","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"flow-bom-approval","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"mfg-unit-route","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"mfg-transfer-note","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"business-documents","rows":0,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"dispatch-dc","rows":9,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"quality-certificate","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
+{"id":"accounts-gst-invoice","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"hr-offer-letter","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"hr-appointment-letter","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
+{"id":"admin-approval","rows":44,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}

@@ -1,5 +1,8 @@
 // Reservations + holds, counts (cycle / physical / weekly Powder Stock Monitoring Sheet) and Smart Reorder.
 import { useState } from 'react';
+import { INV_HEADS } from './v40/heads';
+import { InvTabView } from './v40/InvTabView';
+import { useInvTab } from './v40/useInvTab';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
 import { useToast } from '../../components/Toast';
@@ -58,14 +61,21 @@ function useAct(reload: () => void) {
 
 // ---------------------------------------------------------------------------------------------
 export function ReservationsPage({ actions }: { actions: ActionSet }) {
+  const tab = useInvTab('inv-reservation', actions, INV_HEADS['inv-reservation']);
+  return tab ?? <ReservationsPageBody actions={actions} />;
+}
+
+function ReservationsPageBody({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<'res' | 'hold'>('res');
   const [page, setPage] = useState(1);
   const res = useLoad(() => listReservations({ page }), [page]);
   const holds = useLoad(() => listHolds(page), [page]);
   const [adding, setAdding] = useState<'res' | 'hold' | null>(null);
+  const [refresh, setRefresh] = useState(0);
   const { err, act } = useAct(() => {
     res.reload();
     holds.reload();
+    setRefresh((n) => n + 1);
   });
   return (
     <>
@@ -101,80 +111,42 @@ export function ReservationsPage({ actions }: { actions: ActionSet }) {
       </div>
       <ErrorBox message={res.error || holds.error || err} />
       {tab === 'res' ? (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Number</th>
-                <th scope="col">Item</th>
-                <th scope="col">Warehouse</th>
-                <th scope="col">Priority</th>
-                <th scope="col" style={{ textAlign: 'right' }}>
-                  Needed
-                </th>
-                <th scope="col" style={{ textAlign: 'right' }}>
-                  Reserved
-                </th>
-                <th scope="col">Until</th>
-                <th scope="col">Status</th>
-                <th scope="col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(res.data?.rows.length ?? 0) === 0 && !res.loading ? (
-                <Empty cols={9}>No reservations yet. Click + New Reservation.</Empty>
-              ) : null}
-              {(res.data?.rows ?? []).map((r) => (
-                <tr key={r.id}>
-                  <td>
-                    <strong>{r.code}</strong>
-                  </td>
-                  <td>
-                    {r.itemCode} · {r.itemName}
-                  </td>
-                  <td>{r.warehouseCode}</td>
-                  <td>{r.priority}</td>
-                  <td style={{ textAlign: 'right' }}>{qty(r.requiredQty)}</td>
-                  <td style={{ textAlign: 'right' }}>{qty(r.reservedQty)}</td>
-                  <td>{dmy(r.reservedUntil)}</td>
-                  <td>
-                    <Pill>{r.status}</Pill>
-                  </td>
-                  <td>
-                    {['Waiting', 'Partial', 'Reserved'].includes(r.status) && actions.edit ? (
-                      <div className="actions">
-                        <button
-                          type="button"
-                          className="btn sm"
-                          onClick={() =>
-                            void act(
-                              () => extendReservation(r.id, r.version, 7),
-                              'Extended by 7 days.',
-                            )
-                          }
-                        >
-                          +7 days
-                        </button>
-                        <button
-                          type="button"
-                          className="btn sm danger"
-                          onClick={() =>
-                            void act(
-                              () => releaseReservation(r.id, r.version, 'Released by user'),
-                              'Reservation released.',
-                            )
-                          }
-                        >
-                          Release
-                        </button>
-                      </div>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <InvTabView
+          pageId="inv-reservation"
+          tab="Reservation Register"
+          perms={actions}
+          refresh={refresh}
+          rowAction={(row) =>
+            row.id && ['Waiting', 'Partial', 'Reserved'].includes(row.status ?? '') && actions.edit ? (
+              <div className="actions">
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() =>
+                    void act(
+                      () => extendReservation(row.id as string, row.version ?? 0, 7),
+                      'Extended by 7 days.',
+                    )
+                  }
+                >
+                  +7 days
+                </button>
+                <button
+                  type="button"
+                  className="btn sm danger"
+                  onClick={() =>
+                    void act(
+                      () => releaseReservation(row.id as string, row.version ?? 0, 'Released by user'),
+                      'Reservation released.',
+                    )
+                  }
+                >
+                  Release
+                </button>
+              </div>
+            ) : null
+          }
+        />
       ) : (
         <div className="card table-wrap">
           <table>
@@ -222,12 +194,9 @@ export function ReservationsPage({ actions }: { actions: ActionSet }) {
           </table>
         </div>
       )}
-      <Pager
-        page={page}
-        size={20}
-        total={(tab === 'res' ? res.data?.meta.total : holds.data?.meta.total) ?? 0}
-        onPage={setPage}
-      />
+      {tab === 'hold' ? (
+        <Pager page={page} size={20} total={holds.data?.meta.total ?? 0} onPage={setPage} />
+      ) : null}
       {adding ? (
         <ReserveForm
           mode={adding}
@@ -236,6 +205,7 @@ export function ReservationsPage({ actions }: { actions: ActionSet }) {
             setAdding(null);
             res.reload();
             holds.reload();
+            setRefresh((n) => n + 1);
           }}
         />
       ) : null}
@@ -341,13 +311,18 @@ function ReserveForm({
 }
 
 // ---------------------------------------------------------------------------------------------
-export function CountsPage({
-  type,
-  actions,
-}: {
+type CountsProps = {
   type?: 'CYCLE' | 'PHYSICAL' | 'POWDER_WEEKLY';
   actions: ActionSet;
-}) {
+};
+
+/** Stock Reconciliation (no type) has V40 tabs; the typed count pages (Physical / Cycle / weekly sheet) are other pages. */
+export function CountsPage(props: CountsProps) {
+  const tab = useInvTab(props.type ? '' : 'inv-reconciliation', props.actions, INV_HEADS['inv-reconciliation']);
+  return tab ?? <CountsPageBody {...props} />;
+}
+
+function CountsPageBody({ type, actions }: CountsProps) {
   const titles = {
     ALL: {
       t: 'Stock Reconciliation',
@@ -372,6 +347,7 @@ export function CountsPage({
     [type, page],
   );
   const [adding, setAdding] = useState(false);
+  const [refresh, setRefresh] = useState(0);
   const [open, setOpen] = useState<string | null>(null);
   return (
     <>
@@ -382,47 +358,63 @@ export function CountsPage({
           </button>
         ) : null}
       </PageHead>
-      <ErrorBox message={list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Number</th>
-              <th scope="col">Date</th>
-              {type === 'POWDER_WEEKLY' ? <th scope="col">Month</th> : null}
-              <th scope="col">Accuracy</th>
-              <th scope="col">Status</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows.length ?? 0) === 0 && !list.loading ? (
-              <Empty
-                cols={type === 'POWDER_WEEKLY' ? 6 : 5}
-              >{`Nothing here yet. Click + New ${type === 'POWDER_WEEKLY' ? 'Sheet' : 'Count'}.`}</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((c: CountHead) => (
-              <tr key={c.id}>
-                <td>
-                  <strong>{c.code}</strong>
-                </td>
-                <td>{dmy(c.plannedDate)}</td>
-                {type === 'POWDER_WEEKLY' ? <td>{c.monthLabel}</td> : null}
-                <td>{c.accuracyPct === null ? '—' : `${c.accuracyPct}%`}</td>
-                <td>
-                  <Pill>{c.status}</Pill>
-                </td>
-                <td>
-                  <button type="button" className="btn sm" onClick={() => setOpen(c.id)}>
-                    Open
-                  </button>
-                </td>
+      {!type ? (
+        <InvTabView
+          pageId="inv-reconciliation"
+          tab="System vs Physical"
+          perms={actions}
+          refresh={refresh}
+          rowAction={(row) => (
+            <button type="button" className="btn sm" onClick={() => row.id && setOpen(row.id)}>
+              Open
+            </button>
+          )}
+        />
+      ) : (
+        <>
+        <ErrorBox message={list.error} />
+        <div className="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Number</th>
+                <th scope="col">Date</th>
+                {type === 'POWDER_WEEKLY' ? <th scope="col">Month</th> : null}
+                <th scope="col">Accuracy</th>
+                <th scope="col">Status</th>
+                <th scope="col">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} size={20} total={list.data?.meta.total ?? 0} onPage={setPage} />
+            </thead>
+            <tbody>
+              {(list.data?.rows.length ?? 0) === 0 && !list.loading ? (
+                <Empty
+                  cols={type === 'POWDER_WEEKLY' ? 6 : 5}
+                >{`Nothing here yet. Click + New ${type === 'POWDER_WEEKLY' ? 'Sheet' : 'Count'}.`}</Empty>
+              ) : null}
+              {(list.data?.rows ?? []).map((c: CountHead) => (
+                <tr key={c.id}>
+                  <td>
+                    <strong>{c.code}</strong>
+                  </td>
+                  <td>{dmy(c.plannedDate)}</td>
+                  {type === 'POWDER_WEEKLY' ? <td>{c.monthLabel}</td> : null}
+                  <td>{c.accuracyPct === null ? '—' : `${c.accuracyPct}%`}</td>
+                  <td>
+                    <Pill>{c.status}</Pill>
+                  </td>
+                  <td>
+                    <button type="button" className="btn sm" onClick={() => setOpen(c.id)}>
+                      Open
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Pager page={page} size={20} total={list.data?.meta.total ?? 0} onPage={setPage} />
+        </>
+      )}
       {adding && type ? (
         <CountForm
           type={type}
@@ -440,6 +432,7 @@ export function CountsPage({
           onClose={() => {
             setOpen(null);
             list.reload();
+            setRefresh((n) => n + 1);
           }}
         />
       ) : null}
@@ -699,13 +692,20 @@ function CountDialog({
 
 // ---------------------------------------------------------------------------------------------
 export function ReorderPage({ actions }: { actions: ActionSet }) {
-  const [tab, setTab] = useState<'sug' | 'pol'>('sug');
+  const tab = useInvTab('inv-reorder', actions, INV_HEADS['inv-reorder']);
+  return tab ?? <ReorderPageBody actions={actions} />;
+}
+
+function ReorderPageBody({ actions }: { actions: ActionSet }) {
+  const [tab, setTab] = useState<'sug' | 'pol'>('pol');
   const [page, setPage] = useState(1);
+  const [refresh, setRefresh] = useState(0);
   const sug = useLoad(() => listSuggestions('Open', page), [page]);
   const pol = useLoad(() => listPolicies(page), [page]);
   const { err, act } = useAct(() => {
     sug.reload();
     pol.reload();
+    setRefresh((n) => n + 1);
   });
   const [adding, setAdding] = useState(false);
   const [asking, setAsking] = useState<{ id: string; action: 'convert' | 'dismiss' } | null>(null);
@@ -812,52 +812,11 @@ export function ReorderPage({ actions }: { actions: ActionSet }) {
           </table>
         </div>
       ) : (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Item</th>
-                <th scope="col">Warehouse</th>
-                <th scope="col">Method</th>
-                <th scope="col" style={{ textAlign: 'right' }}>
-                  Min / Max
-                </th>
-                <th scope="col" style={{ textAlign: 'right' }}>
-                  Order level
-                </th>
-                <th scope="col">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(pol.data?.rows.length ?? 0) === 0 && !pol.loading ? (
-                <Empty cols={6}>No policies yet. Click + Add Policy.</Empty>
-              ) : null}
-              {(pol.data?.rows ?? []).map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    {p.itemCode} · {p.itemName}
-                  </td>
-                  <td>{p.warehouse}</td>
-                  <td>{p.method === 'MIN_MAX' ? 'Min / Max' : 'Reorder point + EOQ'}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    {qty(p.minQty)} / {qty(p.maxQty)}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>{qty(p.calc?.trigger)}</td>
-                  <td>
-                    <Pill>{p.calc?.status ?? p.status}</Pill>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <InvTabView pageId="inv-reorder" tab="Reorder Dashboard" perms={actions} refresh={refresh} />
       )}
-      <Pager
-        page={page}
-        size={20}
-        total={(tab === 'sug' ? sug.data?.meta.total : pol.data?.meta.total) ?? 0}
-        onPage={setPage}
-      />
+      {tab === 'sug' ? (
+        <Pager page={page} size={20} total={sug.data?.meta.total ?? 0} onPage={setPage} />
+      ) : null}
       {asking ? (
         <Modal
           title={asking.action === 'convert' ? 'Mark as ordered' : 'Dismiss this suggestion'}

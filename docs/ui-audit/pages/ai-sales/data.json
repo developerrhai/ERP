@@ -1,0 +1,80 @@
+{
+ "id": "ai-sales",
+ "role": "super",
+ "at": "2026-11-14T14:17:12.278Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [
+     "#",
+     "Module",
+     "Type",
+     "Severity",
+     "Finding / Recommended Action",
+     "Confidence"
+    ],
+    "fields": [],
+    "buttons": [
+     "← Return",
+     "AI Report PDF",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Project History",
+     "Ask AI"
+    ],
+    "cards": [
+     "20-Point Business Trend + Forecast",
+     "Cross-Module Risk",
+     "Enterprise AI Copilot",
+     "AI Governance Controls"
+    ],
+    "filters": [
+     "SELECT",
+     "Ask about sales, purchase, inventory, finance, production, HR, risk or automation"
+    ],
+    "badges": [],
+    "rows": 20,
+    "textLen": 3302,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [],
+    "fields": [],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [],
+    "badges": [],
+    "rows": 0,
+    "textLen": 410,
+    "sideways": false
+   }
+  }
+ }
+}

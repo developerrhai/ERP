@@ -882,3 +882,42 @@ describe('instruments and calibration reminders', () => {
     void fx;
   });
 });
+
+describe('list queries: forms without a kind, plans with paging', () => {
+  it('lists forms of every kind when no kind is given, and still filters by kind', async () => {
+    const { v } = ctx;
+    const alertItem = await mkItem({ itemType: 'Finished Goods' });
+    const mk = (kind: string, title: string) =>
+      v.call('post', '/qms/forms', {
+        kind,
+        title,
+        data:
+          kind === 'ALERT'
+            ? { part: alertItem.id, notification_date: TODAY, issue: 'Burr' }
+            : { d1_team: 'QA', d2_problem: 'x' },
+      });
+    const a = await mk('EIGHT_D', 'ListAll 8D');
+    const b = await mk('ALERT', 'ListAll alert');
+    expect(a.status, JSON.stringify(a.body)).toBe(201);
+    expect(b.status, JSON.stringify(b.body)).toBe(201);
+    const all = await v.call('get', '/qms/forms?q=ListAll&page=1&size=50');
+    expect(all.status, JSON.stringify(all.body)).toBe(200);
+    expect(all.body.data.map((x: any) => x.kind).sort()).toEqual(['ALERT', 'EIGHT_D']);
+    expect(all.body.meta.total).toBe(2);
+    const one = await v.call('get', '/qms/forms?q=ListAll&kind=ALERT');
+    expect(one.body.data.map((x: any) => x.kind)).toEqual(['ALERT']);
+  });
+
+  it('accepts the normal paging params on /qms/plans', async () => {
+    const { v } = ctx;
+    const r = await v.call('get', '/qms/plans?page=1&size=10&q=zzzz-none');
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
+    expect(r.body.data.rows).toEqual([]);
+    expect(r.body.data.total).toBe(0);
+    const plain = await v.call('get', '/qms/plans');
+    expect(plain.status).toBe(200);
+    const sized = await v.call('get', '/qms/plans?page=1&size=1');
+    expect(sized.status).toBe(200);
+    expect(sized.body.data.rows.length).toBeLessThanOrEqual(1);
+  });
+});

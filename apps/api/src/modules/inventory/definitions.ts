@@ -243,6 +243,8 @@ const WAREHOUSES = define({
     text('address', 'Address', 300),
     text('manager', 'Manager', 100),
     qty('totalCapacity', 'Total Capacity'),
+    // computed from stock_balances (quantity on hand in this warehouse); never typed in
+    qty('usedCapacity', 'Used Capacity', { readOnly: true }),
     qty('dockDoors', 'Dock Doors'),
     text('operatingHours', 'Operating Hours', 100),
     select('temperatureZone', 'Temperature Zone', TEMPERATURE_ZONES),

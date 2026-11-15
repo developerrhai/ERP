@@ -1,7 +1,7 @@
 // Phase 4 documents: upload pipeline (type sniffing, size, scan), lock matrix, download, remove, audit.
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { API, auditRows, errorOf, newApp, prisma, signInOwner } from './helpers';
+import { API, auditRows, cleanGenericRecordsAndSeries, errorOf, newApp, prisma, signInOwner } from './helpers';
 import type { Signed } from './helpers';
 import { api, dataOf, sampleData, schemaOf } from './phase4-helpers';
 import type { RecordBody } from './phase4-helpers';
@@ -57,9 +57,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.recordDocument.deleteMany({});
-  await prisma.genericRecord.deleteMany({});
+  await cleanGenericRecordsAndSeries();
   await prisma.idempotencyKey.deleteMany({});
-  await prisma.numberSeries.deleteMany({ where: { NOT: { pageId: { startsWith: 'inv-' } } } });
 });
 
 describe('documents', () => {

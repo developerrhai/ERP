@@ -456,6 +456,46 @@ describe('rounding and double clicks', () => {
   );
 });
 
+describe('dispatch dated before the last stock movement', () => {
+  it(
+    'submit answers with the real reason (backdated before the last movement), not "needs approve rights"',
+    { timeout: 120_000 },
+    async () => {
+      const { v, fx } = ctx;
+      const cust = await mkCustomer();
+      const item = await mkItem({ itemType: 'Finished Good' });
+      await vclient(app, owner, fx.unitId).post('transactions', {
+        warehouseId: fx.warehouseId,
+        txType: 'Receipt',
+        lines: [{ itemId: item.id, qty: 5, unitCost: 10 }],
+      });
+      const o = body(
+        await v.call('post', '/sales/orders', {
+          customerId: cust.id,
+          customerPoNo: `PO-${tag()}`,
+          lines: [{ itemId: item.id, qty: 1, uom: 'Kg', rate: 20, gstPct: 18 }],
+        }),
+      );
+      expect((await submit(v, '/sales/orders', o)).status).toBe(200);
+      const order = body(await v.call('get', `/sales/orders/${o.id}`));
+      const early = new Date(Date.now() - 3 * 86_400_000).toISOString().slice(0, 10);
+      const d = body(
+        await v.call('post', '/sales/dispatch', {
+          orderId: o.id,
+          warehouseId: fx.warehouseId,
+          dispatchDate: early,
+          lines: [{ orderLineId: order.lines[0].id, qty: 1 }],
+        }),
+      );
+      const res = await submit(v, '/sales/dispatch', d);
+      expect(res.status, JSON.stringify(res.body)).toBe(409);
+      expect(res.body.error.code).toBe('BACKDATED_POSTING');
+      expect(res.body.error.message).toContain('is earlier than the last stock movement');
+      expect(res.body.error.message).not.toContain('needs a user with approve rights');
+    },
+  );
+});
+
 describe('guards', () => {
   it('401 without a token and every read route answers the owner', async () => {
     const reads = [

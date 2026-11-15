@@ -91,6 +91,19 @@ describe('screen forms', () => {
     expect(tag.status, JSON.stringify(tag.body)).toBe(201);
   });
 
+  it('lists, places and removes the bins of a shelf (GET, POST, DELETE all authorise against wms-shelves)', async () => {
+    const list = await call('get', `/screens/wms-shelves/${shelfId}/bins`);
+    expect(list.status, JSON.stringify(list.body)).toBe(200);
+    expect(list.body.data.bins.map((x: { code: string }) => x.code)).toContain(`${TAG}-B01`);
+    const binId = list.body.data.bins.find((x: { code: string }) => x.code === `${TAG}-B01`).id as string;
+    const del = await call('delete', `/screens/wms-shelves/${shelfId}/bins/${binId}`);
+    expect(del.status, JSON.stringify(del.body)).toBe(200);
+    expect(del.body.data.bins.map((x: { id: string }) => x.id)).not.toContain(binId);
+    const put = await call('post', `/screens/wms-shelves/${shelfId}/bins`).send({ binId });
+    expect(put.status, JSON.stringify(put.body)).toBe(201);
+    expect(put.body.data.bins.map((x: { id: string }) => x.id)).toContain(binId);
+  });
+
   it('refuses a duplicate code, a missing field and another plant', async () => {
     const dup = await call('post', '/screens/wms-zones').send({ values: { warehouse: whTal, code: `${TAG}-ZA`, name: 'Again' } });
     expect(dup.status).toBe(409);

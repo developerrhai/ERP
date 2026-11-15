@@ -16,6 +16,9 @@ import type { ActionSet, User } from '../../types';
 import { ACTION_ICONS, ActionConfirmModal, actionsFor, variantClass } from './RecordActions';
 import { RecordDrawer } from './RecordDrawer';
 import { RecordFormModal } from './RecordFormModal';
+import { genericTabFor, useFrame } from '../frame/V40TabFrame';
+import { useInvTab } from '../inventory/v40/useInvTab';
+import { forcedTabFilters, tabShape } from '../inventory/v40/itemShapes';
 import { PAGE_SIZES, RegisterTab, type QueryPatch, type RegisterQuery } from './RegisterTab';
 import { AuditTab, DashboardTab, DataQualityTab, PhaseNotice, ReportsTab } from './ModuleTabs';
 import { DocumentsTab } from './DocumentsPanel';
@@ -97,7 +100,17 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
   const viewSchema = useMemo(() => schemaForView(schema, activeView), [schema, activeView]);
   const registerTab = registerTabName(schema);
   const tabParam = params.get('tab') ?? '';
-  const tab = tabs.includes(tabParam) ? tabParam : DASHBOARD_TAB;
+  const frame = useFrame();
+  // Inventory V40 tabs: InvTabView draws the tabs that are not the register (null for every other page)
+  const invBody = useInvTab(schema.pageId, perms);
+  useEffect(() => {
+    frame?.claim();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Inside the V40 tab strip the frame owns the tabs: V40's first tab is the register, the standard tabs map to ours
+  const wanted = frame ? genericTabFor(frame.tabName, frame.index) : null;
+  const framedTab = wanted === 'register' ? registerTab : wanted === 'dashboard' ? DASHBOARD_TAB : wanted;
+  const tab = framedTab && tabs.includes(framedTab) ? framedTab : frame ? registerTab : tabs.includes(tabParam) ? tabParam : DASHBOARD_TAB;
   const sizeParam = Number(params.get('size'));
   const query: RegisterQuery = {
     q: params.get('q') ?? '',
@@ -110,6 +123,7 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
         (schema.filters ?? []).map((flt) => [flt.param, params.get(flt.param) ?? '']),
       ),
       ...(activeView ? { view: activeView.key } : {}),
+      ...(frame ? (forcedTabFilters(schema.pageId, frame.tabName, frame.index) ?? {}) : {}),
     },
   };
   const setFilter = useCallback(
@@ -160,6 +174,9 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
 
   const [reloadToken, setReloadToken] = useState(0);
   const changed = useCallback(() => setReloadToken((n) => n + 1), []);
+  // Item Master: each V40 tab is the same register with that tab's columns
+  const itemShape = frame ? tabShape(schema, frame.tabName, frame.index, perms.edit, changed) : null;
+  const registerSchema = itemShape ? itemShape.schema : viewSchema;
   const [form, setForm] = useState<FormState>(null);
   const [drawerRow, setDrawerRow] = useState<RecordRow | null>(null);
   const [deleteRow, setDeleteRow] = useState<RecordRow | null>(null);
@@ -340,7 +357,7 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
           ))}
         </div>
       ) : null}
-      <div className="tabs" role="tablist" aria-label="Module views">
+      <div className="tabs" role="tablist" aria-label="Module views" hidden={frame !== null}>
         {tabs.map((t) => (
           <button
             key={t}
@@ -355,12 +372,16 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
         ))}
       </div>
       <div role="tabpanel" aria-label={tab}>
-        {tab === DASHBOARD_TAB ? (
+        {!invBody && tab === registerTab ? itemShape?.header : null}
+        {invBody ? (
+          invBody
+        ) : tab === DASHBOARD_TAB ? (
           <DashboardTab schema={schema} reloadToken={reloadToken} onView={setDrawerRow} />
         ) : tab === registerTab ? (
           <RegisterTab
             key={activeView?.key ?? 'register'}
-            schema={viewSchema}
+            schema={registerSchema}
+            {...(itemShape ? { cellRender: itemShape.cellRender } : {})}
             {...(schema.views ? { views: schema.views } : {})}
             {...(activeView ? { activeView: activeView.key } : {})}
             onSwitchView={(key) => setFilter('view', key)}

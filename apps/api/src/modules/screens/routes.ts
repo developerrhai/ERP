@@ -329,7 +329,11 @@ export function createScreensRouter(): Router {
   r.get(
     '/wms-shelves/:id/bins',
     validate({ params: shelfParams }),
-    requireParamPageAction('view'),
+    asyncHandler(async (req, res, next) => {
+      const user = accessUserOf(requireAuth(req));
+      if (!(await can(user, 'wms-shelves', 'view'))) throw Errors.forbidden();
+      next();
+    }),
     asyncHandler(async (req, res) => {
       const { id } = validated(res, 'params', shelfParams);
       await assertVisible(req, configOf('wms-shelves'), id);

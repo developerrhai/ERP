@@ -1,13 +1,14 @@
 // Stock vouchers with lines: Opening Stock, Receipt / Issue, Stock Adjustment, Stock Transfer. One screen, four kinds.
 // Draft -> Submit -> (Approve) -> Post (or Dispatch / Receive for transfers) -> Cancel. A cancel needs a reason and a date.
 import { useState, type ReactNode } from 'react';
+import { INV_HEADS } from './v40/heads';
+import { useInvTab } from './v40/useInvTab';
 import { Link } from 'react-router-dom';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
 import { useToast } from '../../components/Toast';
 import { toUiError } from '../../lib/errors';
 import {
-  listLedger,
   createVoucher,
   deleteVoucher,
   listVouchers,
@@ -24,6 +25,9 @@ import {
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { CustomerMaterialPage } from './CustomerMaterialPage';
+import { cellClass, V40Value } from './v40/V40Cell';
+import { useV40Cols } from './v40/useV40Cols';
+import { InvTabView } from './v40/InvTabView';
 import {
   dmy,
   Empty,
@@ -103,6 +107,9 @@ function VouchersList({
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
   const list = useLoad(() => listVouchers(kind, { page, status, q }), [kind, page, status, q]);
+  // the columns V40 shows on the first tab of this page, with the real numbers of each voucher on screen
+  const v40 = useV40Cols(KIND_PAGE[kind], FIRST_TAB[kind] ?? '', { q, status, page, size: 20 }, list.data);
+  const v40Cols = FIRST_TAB[kind] && v40.cols ? v40.cols.filter((c) => c.format !== 'open') : null;
   const [editing, setEditing] = useState<Voucher | 'new' | null>(null);
   const [cancelling, setCancelling] = useState<Voucher | null>(null);
   const [viewing, setViewing] = useState<Voucher | null>(null);
@@ -170,15 +177,25 @@ function VouchersList({
         <table>
           <thead>
             <tr>
-              <th scope="col">Number</th>
-              <th scope="col">Date</th>
-              <th scope="col">{kind === 'transfer' ? 'From → To' : 'Warehouse'}</th>
-              {kind === 'transactions' ? <th scope="col">Type</th> : null}
-              <th scope="col">Lines</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Value
-              </th>
-              <th scope="col">Status</th>
+              {v40Cols ? (
+                v40Cols.map((c, ci) => (
+                  <th key={`${c.key}-${ci}`} scope="col" className={c.format === 'qty' || c.format === 'money' || c.format === 'days' ? 'num' : undefined}>
+                    {c.label}
+                  </th>
+                ))
+              ) : (
+                <>
+                  <th scope="col">Number</th>
+                  <th scope="col">Date</th>
+                  <th scope="col">{kind === 'transfer' ? 'From → To' : 'Warehouse'}</th>
+                  {kind === 'transactions' ? <th scope="col">Type</th> : null}
+                  <th scope="col">Lines</th>
+                  <th scope="col" style={{ textAlign: 'right' }}>
+                    Value
+                  </th>
+                  <th scope="col">Status</th>
+                </>
+              )}
               <th scope="col">Action</th>
             </tr>
           </thead>
@@ -190,25 +207,46 @@ function VouchersList({
             ) : null}
             {(list.data?.rows ?? []).map((v) => (
               <tr key={v.id}>
-                <td>
-                  <button type="button" className="link" onClick={() => setViewing(v)}>
-                    <strong>{v.number}</strong>
-                  </button>
-                </td>
-                <td>{dmy(v.postingDate)}</td>
-                <td>
-                  {kind === 'transfer'
-                    ? `${v.warehouse?.code ?? ''} → ${v.toWarehouse?.code ?? ''}`
-                    : (v.warehouse?.code ?? '—')}
-                </td>
-                {kind === 'transactions' ? <td>{v.txType}</td> : null}
-                <td>{v.lines.length}</td>
-                <td style={{ textAlign: 'right' }}>
-                  {v.totalValue === null ? '—' : inr(v.totalValue)}
-                </td>
-                <td>
-                  <Pill>{v.status}</Pill>
-                </td>
+                {v40Cols ? (
+                  v40Cols.map((c, ci) => {
+                    const vr = v40.byId.get(v.id);
+                    return (
+                      <td key={`${c.key}-${ci}`} className={cellClass(c, vr)}>
+                        {!vr ? (
+                          '—'
+                        ) : /^(openingRef|adjNo|transferNo|w_record)$/.test(c.key) ? (
+                          <button type="button" className="link" onClick={() => setViewing(v)}>
+                            <strong>{typeof vr.cells[c.key] === 'string' ? (vr.cells[c.key] as string) : v.number}</strong>
+                          </button>
+                        ) : (
+                          <V40Value col={c} row={vr} canEdit={actions.edit} onChanged={() => { list.reload(); v40.reload(); }} />
+                        )}
+                      </td>
+                    );
+                  })
+                ) : (
+                  <>
+                    <td>
+                      <button type="button" className="link" onClick={() => setViewing(v)}>
+                        <strong>{v.number}</strong>
+                      </button>
+                    </td>
+                    <td>{dmy(v.postingDate)}</td>
+                    <td>
+                      {kind === 'transfer'
+                        ? `${v.warehouse?.code ?? ''} → ${v.toWarehouse?.code ?? ''}`
+                        : (v.warehouse?.code ?? '—')}
+                    </td>
+                    {kind === 'transactions' ? <td>{v.txType}</td> : null}
+                    <td>{v.lines.length}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      {v.totalValue === null ? '—' : inr(v.totalValue)}
+                    </td>
+                    <td>
+                      <Pill>{v.status}</Pill>
+                    </td>
+                  </>
+                )}
                 <td>
                   <div className="actions">
                     {(v.status === 'Draft' || v.status === 'Rejected') && actions.edit ? (
@@ -775,7 +813,28 @@ function VoucherForm({
 }
 
 /** Inventory Transactions opens on the stock ledger (every movement, newest first); Vouchers is the document list. */
+const KIND_PAGE: Record<VoucherKind, string> = {
+  opening: 'inv-opening',
+  transactions: 'inv-transactions',
+  adjustment: 'inv-adjustment',
+  transfer: 'inv-transfer',
+};
+
+/** The first V40 tab of each voucher page: its columns are the ones the working register below shows. */
+const FIRST_TAB: Partial<Record<VoucherKind, string>> = {
+  opening: 'Opening Stock Register',
+  adjustment: 'Adjustment Register',
+  transfer: 'Transfer Orders',
+};
+
+/** Tab 1 of the V40 strip is the working register below; the other V40 tabs are drawn by InvTabView. */
 export function VouchersPage({ kind, actions }: { kind: VoucherKind; actions: ActionSet }) {
+  const page = KIND_PAGE[kind];
+  const tab = useInvTab(page, actions, INV_HEADS[page]);
+  return tab ?? <VouchersPageBody kind={kind} actions={actions} />;
+}
+
+function VouchersPageBody({ kind, actions }: { kind: VoucherKind; actions: ActionSet }) {
   const [view, setView] = useState<'ledger' | 'vouchers' | 'customer'>('ledger');
   if (kind !== 'transactions') return <VouchersList kind={kind} actions={actions} />;
   const toolbar = (
@@ -802,11 +861,7 @@ export function VouchersPage({ kind, actions }: { kind: VoucherKind; actions: Ac
   );
 }
 
-const txt = (v: unknown): string => (typeof v === 'string' ? v : '');
-
 function LedgerView({ toolbar }: { toolbar: ReactNode }) {
-  const [page, setPage] = useState(1);
-  const list = useLoad(() => listLedger(page), [page]);
   return (
     <>
       <PageHead
@@ -814,51 +869,7 @@ function LedgerView({ toolbar }: { toolbar: ReactNode }) {
         sub="Every stock movement, newest first. Nothing here can be edited: a mistake is corrected by cancelling its voucher."
       />
       {toolbar}
-      <ErrorBox message={list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Date</th>
-              <th scope="col">Voucher</th>
-              <th scope="col">Type</th>
-              <th scope="col">Item</th>
-              <th scope="col">Warehouse</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                In
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Out
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Value
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Balance
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {!list.loading && (list.data?.rows.length ?? 0) === 0 ? (
-              <Empty cols={9}>No stock movements yet. Post a receipt or opening stock.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((r) => (
-              <tr key={r.id}>
-                <td>{dmy(txt(r.data.postingDate))}</td>
-                <td>{txt(r.data.voucherNo) || r.code}</td>
-                <td>{txt(r.data.voucherType)}</td>
-                <td>{txt(r.data.item)}</td>
-                <td>{txt(r.data.warehouse)}</td>
-                <td style={{ textAlign: 'right' }}>{qty(Number(r.data.qtyIn ?? 0) || null)}</td>
-                <td style={{ textAlign: 'right' }}>{qty(Number(r.data.qtyOut ?? 0) || null)}</td>
-                <td style={{ textAlign: 'right' }}>{inr(Number(r.data.value ?? 0))}</td>
-                <td style={{ textAlign: 'right' }}>{qty(Number(r.data.balanceQty ?? 0))}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} size={20} total={list.data?.meta.total ?? 0} onPage={setPage} />
+      <InvTabView pageId="inv-transactions" tab="Movement Ledger" />
     </>
   );
 }

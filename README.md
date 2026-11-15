@@ -1,27 +1,28 @@
 # Sawant Group Enterprise ERP
 
-Production-ready ERP system for **Sawant Group (Ready Hand)** with multi-unit industrial operations:
-* **Unit 1**: Talwade
-* **Unit 2**: Sawardari
-* **Unit 3**: Varale
+> **IMPORTANT**: Read [docs/phases/ROADMAP.md](docs/phases/ROADMAP.md) first before undertaking any development.
+> The single source of truth for all requirements, architecture, and standards is located in [docs/phases/](docs/phases/).
+> Historic plans in `docs/archive/` are kept for reference only.
 
-Built with: **React (Frontend)** + **Node/Express + Prisma + PostgreSQL (Backend)**.
-Reference prototype: `index.html` (kept at root as executable design standard).
+Production-grade web ERP for **Sawant Group (Ready Hand)** with multi-unit industrial operations:
+* **Unit 1**: Talwade (`TAL`)
+* **Unit 2**: Sawardari (`SAW`)
+* **Unit 3**: Varale (`VAR`)
 
-* Git Repository: [https://github.com/developerrhai/first-erp.git](https://github.com/developerrhai/first-erp.git)
-* Full architecture & plan: [`PLAN.md`](PLAN.md)
-* Phase specifications: [`docs/`](docs/)
+Built with: **React 18 + TypeScript (Frontend)** + **Node 20 / Express + Prisma + PostgreSQL 16 (Backend)**.
+Reference prototype: `index.html` (kept at root as frozen visual design standard).
 
-## Layout
+## Project Structure
 
-| Folder / File | What it is |
+| Folder / File | Description |
 |---|---|
-| `apps/api` | Express + TypeScript + Prisma API (auth, sessions, RBAC, users, audit, module controls) |
-| `apps/web` | React + Vite frontend: split-screen login, Sawant Group branding, unit selectors, app shell, modules |
-| `index.html` | Original interactive prototype and visual source of truth |
+| `docs/phases/` | **Source of truth**: Standards, Roadmap, Phase contracts, Status |
+| `docs/archive/` | Historic plans, legacy phase contracts, and deployment reviews (reference only) |
+| `apps/api` | Express + TypeScript + Prisma API backend |
+| `apps/web` | React + Vite frontend application shell and modules |
 | `packages/registry` | Page registry definitions across all 22 families and 248 enterprise modules |
-| `deploy_to_ec2.ps1` | Automated deployment script to AWS EC2 instance (`13.204.199.132` on isolated port 5010) |
-| `dump/` | Archive folder for non-production scratch artifacts (excluded from git) |
+| `packages/calc` | Pure calculation engine for statutory, tax, payroll, and valuation formulas |
+| `index.html` | Visual reference prototype and frozen UI source of truth |
 
 ## Prerequisites
 

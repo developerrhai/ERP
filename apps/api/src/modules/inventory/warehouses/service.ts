@@ -63,8 +63,20 @@ function toData(row: WarehouseWithUnit): Record<string, unknown> {
   };
 }
 
+/** Used Capacity = quantity on hand in each warehouse (stock_balances), read in one query for the page. */
+async function usedCapacity(ids: string[]): Promise<Map<string, number>> {
+  if (ids.length === 0) return new Map();
+  // unpaginated: one row per warehouse of the page being shown
+  const found = await prisma.$queryRawUnsafe<{ warehouse_id: string; used: string }[]>(
+    `SELECT warehouse_id::text AS warehouse_id, coalesce(sum(on_hand), 0)::text AS used FROM stock_balances WHERE warehouse_id = ANY($1::uuid[]) GROUP BY warehouse_id`,
+    ids,
+  );
+  return new Map(found.map((r) => [r.warehouse_id, Number(r.used)]));
+}
+
 async function toDtos(rows: WarehouseWithUnit[]): Promise<TypedRecordDto[]> {
   const names = await userNames(rows.map((r) => r.createdById));
+  const used = await usedCapacity(rows.map((r) => r.id));
   return rows.map((row) => ({
     id: row.id,
     code: row.code,
@@ -72,7 +84,7 @@ async function toDtos(rows: WarehouseWithUnit[]): Promise<TypedRecordDto[]> {
     unitId: row.unitId,
     fyId: null,
     department: INVENTORY_DEPARTMENT,
-    data: { ...toData(row), status: masterStatusLabel(row.status) },
+    data: { ...toData(row), usedCapacity: used.get(row.id) ?? 0, status: masterStatusLabel(row.status) },
     version: row.version,
     amount: null,
     createdAt: row.createdAt.toISOString(),

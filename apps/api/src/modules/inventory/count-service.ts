@@ -452,7 +452,9 @@ export const countService = {
         }
       }
       const upd = await tx.stockCountLine.update({ where: { id: l.id }, data });
-      return lineDto(upd, false);
+      // The comparison above used the stored system quantity on the server; a blind counter is not told it
+      // (nor the variance), only whether the line was accepted or needs a recount.
+      return lineDto(upd, c.blind);
     });
   },
 

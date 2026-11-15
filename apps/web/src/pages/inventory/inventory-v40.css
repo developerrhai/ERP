@@ -1,0 +1,47 @@
+/* V40 tab tables of the Inventory pages (InvTabView). Uses the shared tokens and table classes; nothing here changes other pages. */
+.inv-v40 .inv-v40-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 10px;
+}
+.inv-v40 .inv-v40-bar input[type='search'] {
+  min-width: 220px;
+}
+.inv-v40 .inv-v40-spacer {
+  flex: 1 1 auto;
+}
+.inv-v40 .inv-v40-table td.num,
+.inv-v40 .inv-v40-table th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.inv-v40 .inv-v40-table td.dash {
+  color: var(--muted, #667085);
+}
+.inv-v40 .inv-v40-table .inv-v40-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.inv-v40 .inv-v40-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 10px 0;
+}
+.inv-v40 .inv-v40-totals span {
+  display: flex;
+  flex-direction: column;
+}
+.inv-v40 .inv-v40-sub {
+  margin: 18px 0 8px;
+  font-size: 14px;
+}
+@media (max-width: 640px) {
+  .inv-v40 .inv-v40-bar input[type='search'] {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+}

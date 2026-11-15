@@ -643,6 +643,63 @@ export const assetService = {
     return assetService.get(caller, pageId, id);
   },
 
+  /**
+   * Soft delete. Refused (409) while the asset still has an open breakdown, an open work order or a live allocation:
+   * those rows would otherwise point at a missing asset.
+   */
+  async remove(
+    caller: Caller,
+    pageId: string,
+    id: string,
+    version: number | undefined,
+  ): Promise<{ deleted: true }> {
+    const cur = await assetService.get(caller, pageId, id);
+    checkVersion(cur, version);
+    const no = S(cur.assetNo);
+    const open = async (sql: string): Promise<number> =>
+      Number((await query(prisma, sql, id))[0]?.n ?? 0);
+    const breakdowns = await open(
+      `SELECT count(*)::int AS n FROM breakdown_tickets WHERE asset_id=$1::uuid AND status IN ('OPEN','ACK','IN_REPAIR') AND deleted_at IS NULL`,
+    );
+    if (breakdowns > 0)
+      throw Errors.conflict(
+        `Asset ${no} cannot be deleted: it has ${breakdowns} open breakdown${breakdowns === 1 ? '' : 's'}. Resolve or cancel ${breakdowns === 1 ? 'it' : 'them'} first.`,
+      );
+    const orders = await open(
+      `SELECT count(*)::int AS n FROM maint_work_orders WHERE asset_id=$1::uuid AND status IN ('PLANNED','APPROVED','IN_PROGRESS') AND deleted_at IS NULL`,
+    );
+    if (orders > 0)
+      throw Errors.conflict(
+        `Asset ${no} cannot be deleted: it has ${orders} open work order${orders === 1 ? '' : 's'}. Complete or cancel ${orders === 1 ? 'it' : 'them'} first.`,
+      );
+    const allocations = await open(
+      `SELECT count(*)::int AS n FROM asset_allocations WHERE asset_id=$1::uuid AND status='ALLOCATED' AND deleted_at IS NULL`,
+    );
+    if (allocations > 0)
+      throw Errors.conflict(
+        `Asset ${no} cannot be deleted: it is allocated to someone. Take it back first.`,
+      );
+    await prisma.$transaction(async (tx) => {
+      await exec(
+        tx,
+        `UPDATE assets SET deleted_at=now(), updated_by_id=$1::uuid, updated_at=now(), version=version+1 WHERE id=$2::uuid AND deleted_at IS NULL`,
+        caller.auth.userId,
+        id,
+      );
+      await audit(
+        tx,
+        caller,
+        caller.auth.userId,
+        'ASSET_DELETED',
+        'asset',
+        { id, code: no },
+        pageId,
+        {},
+      );
+    }, TX);
+    return { deleted: true };
+  },
+
   // ---------------------------------------------------------------------------------------------- meters
   async addMeter(
     caller: Caller,

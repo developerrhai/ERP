@@ -37,6 +37,7 @@ import { createDepartmentsRouter } from './modules/departments/routes';
 import { createMeRouter, createRoleLandingRouter } from './modules/me/routes';
 import { createDashboardsRouter, createTvRouter } from './modules/dashboards/routes';
 import { createWorkRouter } from './modules/work/routes';
+import { createRoutingRouter } from './modules/routing/routes';
 import { createSpineRouter } from './modules/spine/routes';
 import { createDocsMailRouter } from './modules/docsmail/routes';
 import { createAttAutoRouter, createDevicePushRouter } from './modules/attauto/routes';
@@ -184,6 +185,7 @@ export function createApp(options: AppOptions = {}): Express {
   api.use(createDashboardsRouter());
   api.use('/tv', createTvRouter());
   api.use('/work', createWorkRouter());
+  api.use('/routing', createRoutingRouter());
   api.use(createSpineRouter());
   api.use(createDocsMailRouter());
   api.use('/iclock', createDevicePushRouter()); // Phase 28: biometric devices push here (serial authenticated)

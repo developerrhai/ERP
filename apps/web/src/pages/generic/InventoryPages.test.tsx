@@ -41,7 +41,7 @@ function setup(schema: PageSchema, handlers: Record<string, Handler> = {}) {
 }
 
 const rowOf = (code: string): HTMLElement =>
-  screen.getByText(code, { selector: 'td' }).closest('tr') as HTMLElement;
+  screen.getAllByText(code, { selector: 'td' })[0]?.closest('tr') as HTMLElement;
 const params = (c: Call | undefined): URLSearchParams =>
   new URL(c?.url ?? '', 'http://test').searchParams;
 
@@ -66,7 +66,7 @@ describe('Stock Balance (list-only typed page)', () => {
   it('shows the totals bar from meta.totals (qty and ₹ en-IN) and no write buttons', async () => {
     setup(STOCK_SCHEMA, { [`GET ${P}/records`]: list });
     renderApp(open());
-    await screen.findByText('ITM/00001');
+    await screen.findAllByText('ITM/00001');
     const bar = within(screen.getByLabelText('Totals'));
     expect(bar.getByText('Total On Hand')).toBeInTheDocument();
     expect(bar.getByText('104')).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe('Stock Balance (list-only typed page)', () => {
   it('highlights Below Reorder rows and shows the pill', async () => {
     setup(STOCK_SCHEMA, { [`GET ${P}/records`]: list });
     renderApp(open());
-    await screen.findByText('ITM/00001');
+    await screen.findAllByText('ITM/00001');
     const low = rowOf('ITM/00002');
     expect(low).toHaveClass('row-low');
     expect(within(low).getByText('Below Reorder')).toHaveClass('status', 'below-reorder');
@@ -91,7 +91,7 @@ describe('Stock Balance (list-only typed page)', () => {
   it('schema filters are controls that send query parameters and update the totals', async () => {
     const { calls } = setup(STOCK_SCHEMA, { [`GET ${P}/records`]: list });
     renderApp(open());
-    await screen.findByText('ITM/00001');
+    await screen.findAllByText('ITM/00001');
     const ue = userEvent.setup();
     await ue.click(screen.getByRole('checkbox', { name: 'Below reorder only' }));
     await waitFor(() =>
@@ -99,7 +99,7 @@ describe('Stock Balance (list-only typed page)', () => {
         params(calls.filter((c) => c.path === `${P}/records`).at(-1)).get('belowReorder'),
       ).toBe('true'),
     );
-    await waitFor(() => expect(screen.queryByText('ITM/00001')).toBeNull());
+    await waitFor(() => expect(screen.queryAllByText('ITM/00001')).toHaveLength(0));
     expect(within(screen.getByLabelText('Totals')).getByText('₹ 200')).toBeInTheDocument();
     const wh = screen.getByRole('combobox', { name: 'Warehouse' });
     expect(
@@ -121,7 +121,7 @@ describe('Stock Balance (list-only typed page)', () => {
   it('restores a filter from the URL', async () => {
     const { calls } = setup(STOCK_SCHEMA, { [`GET ${P}/records`]: list });
     renderApp(`${open()}&belowReorder=true`);
-    await screen.findByText('ITM/00002');
+    await screen.findAllByText('ITM/00002');
     expect(screen.getByRole('checkbox', { name: 'Below reorder only' })).toBeChecked();
     expect(params(calls.find((c) => c.path === `${P}/records`)).get('belowReorder')).toBe('true');
   });

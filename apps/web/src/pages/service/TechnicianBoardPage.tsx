@@ -2,6 +2,22 @@
 import { useEffect, useState } from 'react';
 import { PageHead, Pill } from '../finance/shared';
 import { serviceApi, type ServiceTicket } from '../../lib/serviceApi';
+import { FormModal } from '../mfg/Kit';
+import { useToast } from '../../components/Toast';
+
+/** "PUMP_MECH:4, WELD:2" to the API's skill list; a skill without a level counts as level 1. */
+function parseSkills(text: string | undefined): Array<{ skillCode: string; level: number }> {
+  return (text ?? '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => {
+      const [code = '', lvl] = p.split(':');
+      return { skillCode: code.trim().toUpperCase(), level: lvl ? Number(lvl) : 1 };
+    });
+}
+const skillsText = (skills: Array<{ skillCode: string; level: number }> | undefined): string =>
+  (skills ?? []).map((k) => `${k.skillCode}:${k.level}`).join(', ');
 
 export function TechnicianBoardPage() {
   const [board, setBoard] = useState<{
@@ -10,6 +26,10 @@ export function TechnicianBoardPage() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const toast = useToast();
+  // null = closed, 'new' = add, otherwise the technician being edited
+  const [form, setForm] = useState<null | 'new' | any>(null);
+  const [employees, setEmployees] = useState<Array<{ id: string; label: string }>>([]);
 
   const loadBoard = async () => {
     try {
@@ -28,12 +48,38 @@ export function TechnicianBoardPage() {
     loadBoard();
   }, []);
 
+  const openAdd = async () => {
+    setError('');
+    try {
+      setEmployees(await serviceApi.technicianEmployeeOptions());
+      setForm('new');
+    } catch (err: any) {
+      setError(err.message || 'Could not load the employees.');
+    }
+  };
+  const deactivate = async (tech: any) => {
+    setError('');
+    try {
+      await serviceApi.deactivateTechnician(tech.id);
+      toast('Technician deactivated');
+      loadBoard();
+    } catch (err: any) {
+      setError(err.message || 'Could not deactivate the technician.');
+    }
+  };
+
   return (
     <div className="page-body">
       <PageHead
         title="Technician Dispatch Board"
         sub="Dispatch lanes per technician with real-time job load, skill levels, and unassigned backlog."
       />
+
+      <div style={{ marginBottom: '0.75rem' }}>
+        <button type="button" className="btn primary" onClick={() => void openAdd()}>
+          + Add technician
+        </button>
+      </div>
 
       {error && <div className="notice error">{error}</div>}
 
@@ -77,7 +123,7 @@ export function TechnicianBoardPage() {
             {board.lanes.map((lane) => {
               const tech = lane.technician;
               const load = lane.assignedTickets.length;
-              const max = tech.max_open_jobs || 5;
+              const max = tech.maxOpenJobs || 5;
               const isFull = load >= max;
 
               return (
@@ -95,10 +141,18 @@ export function TechnicianBoardPage() {
                   <div style={{ padding: '0.75rem 1rem', background: '#e8eaed', borderBottom: '1px solid #dadce0' }}>
                     <div style={{ fontWeight: 700 }}>{tech.name}</div>
                     <div style={{ fontSize: '11px', color: '#5f6368', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>{tech.emp_code}</span>
+                      <span>{tech.empCode}</span>
                       <span style={{ fontWeight: 600, color: isFull ? '#c5221f' : '#137333' }}>
                         Load: {load}/{max}
                       </span>
+                    </div>
+                    <div style={{ marginTop: '0.4rem', display: 'flex', gap: '0.4rem' }}>
+                      <button type="button" className="btn small" onClick={() => setForm(tech)}>
+                        Edit
+                      </button>
+                      <button type="button" className="btn small" onClick={() => void deactivate(tech)}>
+                        Deactivate
+                      </button>
                     </div>
                   </div>
 
@@ -125,6 +179,37 @@ export function TechnicianBoardPage() {
             })}
           </div>
         </div>
+      ) : null}
+      {form ? (
+        <FormModal
+          title={form === 'new' ? 'Add technician' : `Edit ${form.name ?? 'technician'}`}
+          sub="A technician is an employee of this plant. Skills are written as CODE:level (1 to 5), separated by commas."
+          fields={[
+            ...(form === 'new'
+              ? [{ key: 'employeeId', label: 'Employee', type: 'select' as const, required: true, options: employees }]
+              : []),
+            { key: 'maxOpenJobs', label: 'Most open jobs at once' },
+            { key: 'skills', label: 'Skills (e.g. PUMP_MECH:4, WELD:2)' },
+          ]}
+          initial={
+            form === 'new'
+              ? { maxOpenJobs: '5' }
+              : { maxOpenJobs: String(form.maxOpenJobs ?? 5), skills: skillsText(form.skills) }
+          }
+          onClose={() => setForm(null)}
+          onSubmit={async (v) => {
+            const body = {
+              ...(form === 'new' ? { employeeId: v.employeeId } : {}),
+              ...(v.maxOpenJobs ? { maxOpenJobs: Number(v.maxOpenJobs) } : {}),
+              skills: parseSkills(v.skills),
+            };
+            if (form === 'new') await serviceApi.createTechnician(body);
+            else await serviceApi.updateTechnician(form.id, body);
+            toast('Saved');
+            setForm(null);
+            loadBoard();
+          }}
+        />
       ) : null}
     </div>
   );

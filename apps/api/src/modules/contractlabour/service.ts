@@ -394,7 +394,15 @@ export const clService = {
     const headcount = await query(prisma, `SELECT u.code AS unit_code, c.name AS contractor, count(*)::int AS headcount FROM cl_deployments d JOIN cl_workers w ON w.id = d.worker_id JOIN contractors c ON c.id = w.contractor_id JOIN units u ON u.id = d.unit_id WHERE d.released_at IS NULL AND d.unit_id = ANY($1::uuid[]) GROUP BY 1, 2 ORDER BY 1, 2`, units);
     const expiries = await query(prisma, `SELECT name, 'Licence' AS what, licence_valid_until AS on_date FROM contractors WHERE status = 'Active' AND licence_valid_until BETWEEN $1::date AND $1::date + 30 UNION ALL SELECT name, 'Insurance', insurance_expiry FROM contractors WHERE status = 'Active' AND insurance_expiry BETWEEN $1::date AND $1::date + 30 UNION ALL SELECT name, 'Agreement', agreement_end FROM contractors WHERE status = 'Active' AND agreement_end BETWEEN $1::date AND $1::date + 30 ORDER BY 3`, today);
     const blockers = await query(prisma, `SELECT i.invoice_no, c.name AS contractor, i.block_reason FROM cl_invoices i JOIN contractors c ON c.id = i.contractor_id WHERE i.unit_id = ANY($1::uuid[]) AND i.status = 'PAYMENT_BLOCKED'`, units);
-    return { tiles: { workersOnSite: onSite, contractorsActive: contractors, licencesExpiring30: licences, wageSheetsPending: sheets, billsBlocked: blocked, incidentsThisMonth: incidents }, headcount, expiries, blockers };
+    // the three alert counts of the V40 command center: high-risk compliance this month, workers not yet cleared to deploy,
+    // value of contractor bills not yet approved for payment
+    const [highRisk, notCleared, outstanding] = await Promise.all([
+      one(`SELECT count(*)::int AS n FROM cl_compliance_months WHERE unit_id = ANY($1::uuid[]) AND month = $2 AND risk_level = 'High'`, units, month),
+      one(`SELECT count(*)::int AS n FROM cl_workers WHERE status IN ('Registered','Blocked') AND (unit_id IS NULL OR unit_id = ANY($1::uuid[]))`, units),
+      one(`SELECT COALESCE(sum(net_payable), 0)::float8 AS n FROM cl_invoices WHERE unit_id = ANY($1::uuid[]) AND status <> 'APPROVED'`, units),
+    ]);
+    const alerts = { highRiskCompliance: highRisk, onboardingBlocked: notCleared, invoiceOutstanding: outstanding };
+    return { tiles: { workersOnSite: onSite, contractorsActive: contractors, licencesExpiring30: licences, wageSheetsPending: sheets, billsBlocked: blocked, incidentsThisMonth: incidents }, alerts, headcount, expiries, blockers };
   },
 };
 

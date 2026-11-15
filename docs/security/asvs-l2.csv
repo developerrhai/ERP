@@ -1,0 +1,18 @@
+Chapter,ASVS_ID,Requirement,Status,Evidence_or_Rationale
+V1 Architecture,1.1.1,Secure SDLC & Standards compliance,Pass,"STANDARDS.md + TypeScript strict + ESLint + Vitest/Playwright gates"
+V2 Authentication,2.1.1,Strong password length >= 12 & breached check,Pass,"apps/api/src/core/auth/password-policy.ts + seclists-10k.txt"
+V2 Authentication,2.4.1,Memory-hard password hashing (Argon2id),Pass,"apps/api/src/core/auth/password.ts + ARGON2_MAX_CONCURRENCY=4"
+V2 Authentication,2.8.1,Time-based OTP MFA for privileged accounts,Pass,"apps/api/src/core/auth/mfa-service.ts (enforced for level >= 95)"
+V3 Session Management,3.2.1,Random high-entropy refresh tokens rotated on use,Pass,"opaque 32-byte tokens, reuse grace & revocation in session-repository.ts"
+V3 Session Management,3.5.1,Signed stateless access tokens with rotation support,Pass,"JWT_ACCESS_SECRET (>=48 chars prod) + JWT_ACCESS_SECRET_PREVIOUS"
+V4 Access Control,4.1.1,Trusted server-side RBAC + data scope on every route,Pass,"apps/api/src/core/rbac/access.ts + route-matrix / rbac-matrix tests"
+V4 Access Control,4.2.1,Multi-process permission invalidation < 2s,Pass,"pg_notify('erp_cache') + dedicated LISTEN client + /health/ready gate"
+V5 Validation,5.1.1,Strict schema validation & SQL parameterization,Pass,"Zod .strict() schemas + Prisma parameterized queries"
+V6 Cryptography,6.2.1,AES-256-GCM for stored TOTP secrets; SSE-KMS on S3,Pass,"mfa-crypto.ts + S3StorageService ServerSideEncryption aws:kms"
+V7 Error Handling & Logging,7.1.1,No PII/secrets in logs or error payloads,Pass,"pino REDACT_PATHS (passwords, Aadhaar, PAN, bank/IFSC) + errorHandler"
+V8 Data Protection,8.3.4,Sensitive fields masked unless permitted + DPDP compliance,Pass,"BI sensitive masking + DPDP Notice/Request Register/Retention sweep"
+V9 Communications,9.1.1,TLS 1.2/1.3 only + HSTS,Pass,"infra/nginx/sawant-erp.conf (Mozilla Intermediate + OCSP + HSTS 1yr)"
+V12 File Handling,12.1.1,Extension + magic-byte sniff + scanner + S3 KMS presign,Pass,"core/scan + S3StorageService 5-min presigned download URL"
+V13 API & Webhooks,13.2.1,SSRF IP blocklist & HMAC signature validation on webhooks,Pass,"bi/automation-comm-service.ts validateWebhookUrl + Standard Webhooks"
+V14 Configuration,14.4.1,CSP, nosniff, Referrer-Policy, X-Powered-By off,Pass,"apps/web/vercel.json + helmet() + Nginx headers"
+

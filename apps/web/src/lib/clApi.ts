@@ -15,7 +15,7 @@ export interface Worker { id: string; worker_no: string; name: string; contracto
 export interface WageSheet { id: string; unit_code: string; month: string; contractor: string; status: string; total_gross: string; total_net: string; workers: number }
 export interface Bill { id: string; invoice_no: string; contractor: string; billing_month: string; billed_man_days: string; gross_invoice: string; net_payable: string; disputed_amount: string; approved_amount: string; status: string; block_reason: string | null; recon: Row | null }
 export interface Compliance { id: string; month: string; contractor: string; scorePct: number; risk: string; passed: number; required: number; checks: { kind: string; label: string; passed: boolean; uploaded: boolean }[]; blocked: boolean; blockReason: string | null; docs: { id: string; kind: string; reference: string | null; verified_at: string | null }[] }
-export interface CommandCenter { tiles: Record<string, number>; headcount: { unit_code: string; contractor: string; headcount: number }[]; expiries: { name: string; what: string; on_date: string }[]; blockers: { invoice_no: string; contractor: string; block_reason: string }[] }
+export interface CommandCenter { tiles: Record<string, number>; alerts?: { highRiskCompliance: number; onboardingBlocked: number; invoiceOutstanding: number }; headcount: { unit_code: string; contractor: string; headcount: number }[]; expiries: { name: string; what: string; on_date: string }[]; blockers: { invoice_no: string; contractor: string; block_reason: string }[] }
 
 export const clApi = {
   command: () => api<CommandCenter>('/cl/command-center'),

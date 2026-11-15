@@ -1,0 +1,130 @@
+{
+ "id": "command-center",
+ "role": "super",
+ "at": "2026-11-14T22:31:25.535Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [
+     "Area",
+     "Issue",
+     "Record",
+     "Owner",
+     "Due",
+     "Exposure",
+     "Severity",
+     "Status",
+     "Open"
+    ],
+    "fields": [
+     "Action / Issue",
+     "Owner",
+     "Severity",
+     "Due Date"
+    ],
+    "buttons": [
+     "← Return",
+     "Notification Center",
+     "Global Search",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Project History",
+     "＋ Add to Command Center",
+     "Open Record"
+    ],
+    "cards": [
+     "Open Items24",
+     "Critical3",
+     "High Priority10",
+     "Value Exposure₹ 78.6 L",
+     "Departments8",
+     "System🟢 GREEN",
+     "Risk by Business Area",
+     "Add Command Item"
+    ],
+    "filters": [
+     "Example: Review urgent dispatch",
+     "SELECT"
+    ],
+    "badges": [
+     "Critical",
+     "Medium",
+     "Low",
+     "High"
+    ],
+    "rows": 24,
+    "textLen": 3487,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [
+     "Area",
+     "Issue",
+     "Record",
+     "Owner",
+     "Due",
+     "Exposure",
+     "Severity",
+     "Status",
+     "Open"
+    ],
+    "fields": [
+     "Action / Issue",
+     "Owner",
+     "Severity",
+     "Due Date"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "Notification Center",
+     "Global Search",
+     "＋ Add to Command Center",
+     "Open Record",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [
+     "Open Items30Critical2High Priority4Value Exposure—Department",
+     "Open Items30",
+     "Critical2",
+     "High Priority4",
+     "Value Exposure—",
+     "Departments6",
+     "SystemRED"
+    ],
+    "filters": [
+     "Example: Review urgent dispatch",
+     "SELECT",
+     "Department Filter"
+    ],
+    "badges": [],
+    "rows": 30,
+    "textLen": 4394,
+    "sideways": false
+   }
+  }
+ }
+}

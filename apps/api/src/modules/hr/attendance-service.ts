@@ -26,10 +26,50 @@ function hhmm(v: unknown): string {
   return String(v).slice(0, 5);
 }
 
+/** The plant's time zone is fixed India time (UTC+05:30, no daylight saving). */
+const IST_OFFSET_MIN = 330;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The instant when the wall clock in India shows `date` (yyyy-mm-dd) at `time` (HH:MM). */
+export function istInstant(date: string, time: string): Date {
+  return new Date(`${date}T${time}:00+05:30`);
+}
+
+/** The yyyy-mm-dd of an instant as seen on a clock in India. */
+export function istDateOf(at: Date): string {
+  return new Date(at.getTime() + IST_OFFSET_MIN * 60_000).toISOString().slice(0, 10);
+}
+
+/**
+ * The time span in which punches belong to the shift day `date` (India time): from the shift start minus its
+ * "window before" to the shift end (next day for a night shift) plus its "window after". The window never reaches
+ * the next day's window, so a punch is counted for exactly one shift day.
+ */
+export function shiftPunchWindow(
+  date: string,
+  shift: { start: string; end: string; windowBeforeMin?: number | null; windowAfterMin?: number | null },
+): { from: Date; to: Date } {
+  const start = istInstant(date, shift.start);
+  let end = istInstant(date, shift.end);
+  if (end.getTime() <= start.getTime()) end = new Date(end.getTime() + DAY_MS); // night shift ends the next morning
+  const before = (shift.windowBeforeMin ?? 120) * 60_000;
+  const after = Math.max(shift.windowAfterMin ?? 120, 240) * 60_000; // people stay on for overtime
+  const from = new Date(start.getTime() - before);
+  const nextFrom = start.getTime() + DAY_MS - before;
+  const to = new Date(Math.min(end.getTime() + after, nextFrom - 1));
+  return { from, to };
+}
+
 export class AttendanceService {
+  /** Shifts with start and end as HH:MM text (a TIME column otherwise comes out as 1970-01-01). */
   async listShifts(): Promise<Row[]> {
     const rows = await query(prisma, `SELECT * FROM shifts WHERE active = true ORDER BY code`);
-    return rows.map(norm);
+    return rows.map((r) => {
+      const n = norm(r) as Record<string, unknown>;
+      n.startTime = hhmm(r.start_time);
+      n.endTime = hhmm(r.end_time);
+      return n as Row;
+    });
   }
 
   /** Phase 37 C4: daily attendance of a month for the plants the caller chose (ScopeFilter.units), optionally one employee. */
@@ -249,9 +289,19 @@ export class AttendanceService {
 
           if (emp) {
             const empId = emp.id as string;
-            const dateStr = p.punchAt.toISOString().slice(0, 10);
+            // India date of the punch, and the day before it (a night shift's morning punch belongs to that day)
+            const dateStr = istDateOf(p.punchAt);
+            const prevStr = istDateOf(new Date(p.punchAt.getTime() - DAY_MS));
             if (!affectedMap.has(empId)) affectedMap.set(empId, new Set());
             affectedMap.get(empId)!.add(dateStr);
+            const nightPrev = await query(
+              tx,
+              `SELECT 1 FROM shift_rosters r JOIN shifts s ON s.id = r.shift_id
+                WHERE r.employee_id = $1::uuid AND r.roster_date = $2::date AND (s.is_night OR s.end_time <= s.start_time)`,
+              empId,
+              prevStr,
+            );
+            if (nightPrev.length > 0) affectedMap.get(empId)!.add(prevStr);
           } else {
             unknownCount++;
             await insertRow(tx, 'attendance_punch_exceptions', {
@@ -337,15 +387,24 @@ export class AttendanceService {
 
     const isWeeklyOff = roster ? !!roster.is_off : false;
 
+    // Punches of this shift day only: the shift's own window in India time (a night shift runs into the next
+    // morning), not a fixed UTC midnight window that would also swallow the neighbouring days' punches.
+    const win = shiftPunchWindow(attendanceDate, {
+      start: hhmm(shiftData.start_time),
+      end: hhmm(shiftData.end_time),
+      windowBeforeMin: shiftData.window_before_minutes as number | null,
+      windowAfterMin: shiftData.window_after_minutes as number | null,
+    });
     const punches = await query(
       db,
       `SELECT punch_at FROM attendance_punches
        WHERE biometric_code = $1
-         AND punch_at >= ($2::date - INTERVAL '12 hours')
-         AND punch_at <= ($2::date + INTERVAL '36 hours')
+         AND punch_at >= $2::timestamptz
+         AND punch_at <= $3::timestamptz
        ORDER BY punch_at ASC`,
       emp.biometric_code,
-      attendanceDate,
+      win.from.toISOString(),
+      win.to.toISOString(),
     );
 
     const shiftConfig: ShiftConfig = {
@@ -360,7 +419,7 @@ export class AttendanceService {
       fullDayMinutes: (shiftData.full_day_minutes as number) ?? 450,
       otBlockMinutes: (shiftData.ot_block_minutes as number) ?? 15,
       otMinMinutes: (shiftData.ot_min_minutes as number) ?? 30,
-      isNight: !!shiftData.is_night,
+      isNight: !!shiftData.is_night || hhmm(shiftData.end_time) <= hhmm(shiftData.start_time),
       restAfterMinutes: 300,
       maxDailyMinutes: 540,
     };

@@ -7,11 +7,12 @@ import { NumberingService } from '../../core/numbering/numbering-service';
 import { prisma } from '../../core/db/prisma';
 import { Errors } from '../../core/http/errors';
 import { ADMIN_LEVEL } from '../../core/rbac/role-rules';
-import { accessUserOf } from '../../core/rbac/access';
+import { accessUserOf, can } from '../../core/rbac/access';
 import { query } from '../procurement/core';
 import type { Row } from '../procurement/core';
 import type { Caller } from '../records/service';
 import { notificationService } from '../notifications/service';
+import { derivedOwnerDepartment } from './doc-owner';
 import { mailAutomation } from '../docsmail/automation';
 import {
   ACTOR_SIDE,
@@ -227,11 +228,14 @@ export const workService = {
         const recordDept = record?.department
           ? String((await query(tx, `SELECT id::text AS id FROM departments WHERE name = $1`, record.department))[0]?.id ?? '')
           : '';
-        const holder = owner && mine.includes(owner) ? owner : recordDept && mine.includes(recordDept) ? recordDept : null;
+        // a page with no workflow rule and no stored department: whoever may open the page (the department gate of the page family) holds it
+        const openedHere = !rule && !record && !!mine[0] && (await can(accessUserOf(caller.auth.user), input.docType, 'view'));
+        const holder = owner && mine.includes(owner) ? owner : recordDept && mine.includes(recordDept) ? recordDept : openedHere ? mine[0] ?? null : null;
         if (!holder && !elevated) {
           throw Errors.forbidden('Only the department that owns this record can send it on.');
         }
-        fromDept = (elevated ? input.fromDepartmentId : null) ?? holder ?? owner ?? home ?? '';
+        const derived = elevated && !input.fromDepartmentId && !holder && !owner ? await derivedOwnerDepartment(tx, input.docType, input.docId) : null;
+        fromDept = (elevated ? input.fromDepartmentId : null) ?? holder ?? owner ?? derived ?? home ?? '';
         if (!fromDept) throw Errors.validation({ fromDepartment: 'Choose the department that is sending this.' });
       }
 
@@ -453,6 +457,10 @@ export const workService = {
       case 'completed':
         conds.push(`(m.to_department_id = ANY(${d}::uuid[]) OR m.from_department_id = ANY(${d}::uuid[])) AND m.state IN ('COMPLETED','FORWARDED','RETURNED','RECALLED','CANCELLED')`);
         break;
+      // department mailbox views: Inbox = everything open for the department, Ready to Move = accepted work, Approval = waiting
+      case 'open': conds.push(`m.to_department_id = ANY(${d}::uuid[]) AND m.state IN ('SENT','RECEIVED','ACCEPTED','IN_WORK','WAITING_APPROVAL')`); break;
+      case 'ready': conds.push(`m.to_department_id = ANY(${d}::uuid[]) AND m.state IN ('ACCEPTED','IN_WORK')`); break;
+      case 'waiting': conds.push(`m.to_department_id = ANY(${d}::uuid[]) AND m.state = 'WAITING_APPROVAL'`); break;
       case 'returned': conds.push(`m.from_department_id = ANY(${d}::uuid[]) AND m.state = 'RETURNED'`); break;
       case 'sent': conds.push(`m.from_department_id = ANY(${d}::uuid[]) AND m.state IN ('SENT','RECEIVED','ACCEPTED','IN_WORK','WAITING_APPROVAL')`); break;
       default: conds.push(`(m.to_department_id = ANY(${d}::uuid[]) OR m.from_department_id = ANY(${d}::uuid[]))`);
@@ -501,6 +509,45 @@ export const workService = {
       groups.set(k, [...(groups.get(k) ?? []), r]);
     }
     return { groups: [...groups.entries()].map(([docType, items]) => ({ docType, items })) };
+  },
+
+  /** Counters for the department mailbox cards and view buttons (same scope rules as inbox). */
+  async inboxCounts(caller: Caller, p: { dept?: string }) {
+    const mine = await myDepartmentIds(caller);
+    const depts = await resolveDepartments(caller, mine, p.dept, 'inbox');
+    const zero = { pendingReceipt: 0, pendingAcceptance: 0, work: 0, approval: 0, ready: 0, open: 0, returned: 0, needsAction: 0, sentWaiting: 0 };
+    if (depts.length === 0) return zero;
+    const r = (
+      await query(
+        prisma,
+        `SELECT
+           count(*) FILTER (WHERE m.to_department_id = ANY($2::uuid[]) AND m.state = 'SENT')::int AS pending_receipt,
+           count(*) FILTER (WHERE m.to_department_id = ANY($2::uuid[]) AND m.state = 'RECEIVED')::int AS pending_acceptance,
+           count(*) FILTER (WHERE m.to_department_id = ANY($2::uuid[]) AND m.state IN ('ACCEPTED','IN_WORK','WAITING_APPROVAL'))::int AS work,
+           count(*) FILTER (WHERE m.to_department_id = ANY($2::uuid[]) AND m.state = 'WAITING_APPROVAL')::int AS approval,
+           count(*) FILTER (WHERE m.to_department_id = ANY($2::uuid[]) AND m.state IN ('ACCEPTED','IN_WORK'))::int AS ready,
+           count(*) FILTER (WHERE m.to_department_id = ANY($2::uuid[]) AND m.state IN ('SENT','RECEIVED','ACCEPTED','IN_WORK','WAITING_APPROVAL'))::int AS open,
+           count(*) FILTER (WHERE m.from_department_id = ANY($2::uuid[]) AND m.state = 'RETURNED')::int AS returned,
+           count(*) FILTER (WHERE m.from_department_id = ANY($2::uuid[]) AND m.state IN ('SENT','RECEIVED','ACCEPTED','IN_WORK','WAITING_APPROVAL'))::int AS sent_waiting
+         FROM work_movements m
+        WHERE (m.unit_id = ANY($1::uuid[]) OR m.to_unit_id = ANY($1::uuid[]))
+          AND (m.to_department_id = ANY($2::uuid[]) OR m.from_department_id = ANY($2::uuid[]))`,
+        caller.ctx.unitIds,
+        depts,
+      )
+    )[0] as Record<string, number>;
+    const n = (k: string): number => Number(r?.[k] ?? 0);
+    return {
+      pendingReceipt: n('pending_receipt'),
+      pendingAcceptance: n('pending_acceptance'),
+      work: n('work'),
+      approval: n('approval'),
+      ready: n('ready'),
+      open: n('open'),
+      returned: n('returned'),
+      sentWaiting: n('sent_waiting'),
+      needsAction: n('pending_receipt') + n('pending_acceptance') + n('returned'),
+    };
   },
 
   /** V40 Approval Inbox "Audit" view: the latest movement events of a department, scoped to the caller's plants. */

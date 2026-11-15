@@ -217,3 +217,14 @@ export async function auditRows(
 ) {
   return prisma.auditLog.findMany({ where: { action, ...where }, orderBy: { at: 'asc' } });
 }
+
+/**
+ * Delete the generic records AND the number series of the pages those records belong to.
+ * Never wipe number_series wholesale: other test files' documents (gate passes, vouchers...) keep
+ * their numbers, and a reset counter would hand out duplicates to the next file.
+ */
+export async function cleanGenericRecordsAndSeries(): Promise<void> {
+  const pages = (await prisma.genericRecord.findMany({ distinct: ['pageId'], select: { pageId: true } })).map((r) => r.pageId);
+  await prisma.genericRecord.deleteMany({});
+  if (pages.length) await prisma.numberSeries.deleteMany({ where: { pageId: { in: pages } } });
+}

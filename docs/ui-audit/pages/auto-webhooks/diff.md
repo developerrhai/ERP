@@ -1,0 +1,118 @@
+# Webhooks (auto-webhooks) - V40 vs ERP
+
+Family: AI & Automation - role: super - 2026-11-14T14:18:04.341Z
+
+## Tabs
+V40: Webhook Registry | Event Subscriptions | Endpoints & Secrets | Delivery Log | Retry Queue | Webhook Health | Analytics & Graphs | Calendar & Schedule | Documents | Approvals | Reports | Audit Trail
+ERP: Webhook Registry | Event Subscriptions | Endpoints & Secrets | Delivery Log | Retry Queue | Webhook Health | Analytics & Graphs | Calendar & Schedule | Documents | Approvals | Reports | Audit Trail
+Missing in ERP: -
+Extra in ERP: -
+
+## Tab: Webhook Registry
+- columns: V40 9, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Actions; extra: Name, HTTPS URL, Secret
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 36, ERP 37; **missing:** ＋ Add New, Load Selected, ＋ Add, Run Connection Test, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Rules, Run History, Webhooks, Background Jobs, Register Webhook, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 2; **missing:** SELECT; extra: Endpoint Name, https://hooks.partner.com/webhook
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Event Subscriptions
+- columns: V40 9, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Actions; extra: Name, HTTPS URL, Secret
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 36, ERP 37; **missing:** ＋ Add New, Load Selected, ＋ Add, Open AI Decision Center, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Rules, Run History, Webhooks, Background Jobs, Register Webhook, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 2; **missing:** SELECT; extra: Endpoint Name, https://hooks.partner.com/webhook
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Endpoints & Secrets
+- columns: V40 9, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Actions; extra: Name, HTTPS URL, Secret
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 36, ERP 37; **missing:** ＋ Add New, Load Selected, ＋ Add, Open AI Decision Center, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Rules, Run History, Webhooks, Background Jobs, Register Webhook, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 2; **missing:** SELECT; extra: Endpoint Name, https://hooks.partner.com/webhook
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Delivery Log
+- columns: V40 9, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Actions; extra: Name, HTTPS URL, Secret
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 36, ERP 37; **missing:** ＋ Add New, Load Selected, ＋ Add, Update, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Rules, Run History, Webhooks, Background Jobs, Register Webhook, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 2; **missing:** SELECT; extra: Endpoint Name, https://hooks.partner.com/webhook
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Retry Queue
+- columns: V40 13, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Last HTTP Code, Failure Count, Project Number, Docs, Actions; extra: Name, HTTPS URL, Secret
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 41, ERP 37; **missing:** ＋ Add New, Load Selected, ＋ Add, Reset 25 Demo, Export Selected, Delete Selected, View, Email, PDF, Previous, Next, Docs; extra: ⚙ Settings, Submit Approval, 360° Tracking, Rules, Run History, Webhooks, Background Jobs, Register Webhook, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 2, ERP 2; **missing:** SELECT, Search Webhooks...; extra: Endpoint Name, https://hooks.partner.com/webhook
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 16, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Webhook Health
+- columns: V40 9, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Actions; extra: Name, HTTPS URL, Secret
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 36, ERP 37; **missing:** ＋ Add New, Load Selected, ＋ Add, Run Connection Test, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Rules, Run History, Webhooks, Background Jobs, Register Webhook, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 2; **missing:** SELECT; extra: Endpoint Name, https://hooks.partner.com/webhook
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Analytics & Graphs
+- columns: V40 9, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Actions; extra: Name, HTTPS URL, Secret
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 35, ERP 37; **missing:** ＋ Add New, Load Selected, ＋ Add, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Rules, Run History, Webhooks, Background Jobs, Register Webhook, Privacy Notice (DPDP)
+- cards: V40 8, ERP 0; **missing:** Records8Data pointsAverage-26Webhook IDAI Risk21/100Controll, Records8Data points, Average-26Webhook ID, AI Risk21/100Controlled, Data Quality100%Completeness, Analytics & Graphs • 20-Point Trend & Forecast, Status / Business Distribution, Analysis Summary; extra: -
+- filters: V40 1, ERP 2; **missing:** SELECT; extra: Endpoint Name, https://hooks.partner.com/webhook
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Calendar & Schedule
+- columns: V40 9, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Actions; extra: Name, HTTPS URL, Secret
+- fields: V40 3, ERP 0; **missing:** Date, Subject, Owner; extra: -
+- buttons: V40 36, ERP 37; **missing:** ＋ Add New, Load Selected, ＋ Add, ＋ Add Schedule, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Rules, Run History, Webhooks, Background Jobs, Register Webhook, Privacy Notice (DPDP)
+- cards: V40 3, ERP 0; **missing:** August 2026, Schedule / Reminder, Upcoming; extra: -
+- filters: V40 1, ERP 2; **missing:** SELECT; extra: Endpoint Name, https://hooks.partner.com/webhook
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Documents
+- columns: V40 9, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Actions; extra: Name, HTTPS URL, Secret
+- fields: V40 5, ERP 0; **missing:** File, Category, Document No., Issue Date, Expiry Date; extra: -
+- buttons: V40 36, ERP 37; **missing:** ＋ Add New, Load Selected, ＋ Add, ＋ Add Document, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Rules, Run History, Webhooks, Background Jobs, Register Webhook, Privacy Notice (DPDP)
+- cards: V40 1, ERP 0; **missing:** Document Addition; extra: -
+- filters: V40 1, ERP 2; **missing:** SELECT; extra: Endpoint Name, https://hooks.partner.com/webhook
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Approvals
+- columns: V40 14, ERP 6; **missing:** Request, Record, Current Role, Actions, Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery; extra: Document, Level, Waiting on
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 35, ERP 32; **missing:** ＋ Add New, Load Selected, ＋ Add, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 0; **missing:** SELECT; extra: -
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 1; sideways scroll ERP: false
+
+## Tab: Reports
+- columns: V40 9, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Actions; extra: Name, HTTPS URL, Secret
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 38, ERP 37; **missing:** ＋ Add New, Load Selected, ＋ Add, Download Excel, Download Letterhead PDF, Restore 25 Demo Rows, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Rules, Run History, Webhooks, Background Jobs, Register Webhook, Privacy Notice (DPDP)
+- cards: V40 8, ERP 0; **missing:** Records8CurrentExcelReadyAll rowsLetterhead PDFReadyA4 compa, Records8Current, ExcelReadyAll rows, Letterhead PDFReadyA4 company format, Data Quality100%Validated, Report Trend Preview • 20 Points, Report Distribution, Reports & Downloads; extra: -
+- filters: V40 1, ERP 2; **missing:** SELECT; extra: Endpoint Name, https://hooks.partner.com/webhook
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Audit Trail
+- columns: V40 9, ERP 4; **missing:** Webhook ID, Event, Endpoint, Secret Status, Timeout, Max Retries, Last Delivery, Status, Actions; extra: When, Person, Action, Record
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 35, ERP 34; **missing:** ＋ Add New, Load Selected, ＋ Add, PDF, View, Docs, Email; extra: ⚙ Settings, Submit Approval, 360° Tracking, Previous, Next, Privacy Notice (DPDP)
+- cards: V40 1, ERP 0; **missing:** Audit Trail; extra: -
+- filters: V40 1, ERP 0; **missing:** SELECT; extra: -
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Administration, Approval: No, Pending, Ready, Completed, Active, Approved, In Progress; extra: -
+- rows: V40 8, ERP 1; sideways scroll ERP: false
+

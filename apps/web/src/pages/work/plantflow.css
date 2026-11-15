@@ -1,0 +1,37 @@
+/* V40 Integrated Plant Flow pages (plant-flow-command, plant-project-forward). Only classes used by PlantFlowPages.tsx. */
+.pf-hero { background: linear-gradient(135deg, #0f3d5e, #0f766e); color: #fff; border: 0; }
+.pf-hero h1 { margin: 0 0 4px; font-size: 22px; color: #fff; }
+.pf-hero p { margin: 0 0 12px; font-size: 12px; opacity: 0.9; }
+.pf-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.pf-stat { padding: 10px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); }
+.pf-stat small { display: block; font-size: 10px; opacity: 0.85; }
+.pf-stat b { font-size: 18px; }
+.pf-cycle { margin: 10px 0; background: #ecfdf5; border-color: #a7f3d0; font-size: 12px; }
+.pf-steps { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+.pf-step { padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font-size: 12px; font-weight: 600; }
+.pf-step small { display: block; color: var(--muted); font-weight: 400; }
+.pf-step-first { background: #eff6ff; border-color: #bfdbfe; }
+.pf-step-last { background: #ecfdf5; border-color: #a7f3d0; }
+.pf-picker { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 12px; }
+.pf-picker label { display: grid; gap: 4px; font-size: 11px; font-weight: 700; }
+.pf-picker select { min-width: 260px; }
+.pf-ident { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.pf-ident small { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+.pf-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.pf-card { border-top: 4px solid var(--line); padding: 10px 12px; }
+.pf-card small { display: block; color: var(--muted); font-size: 10px; }
+.pf-card-done { border-top-color: #16a34a; }
+.pf-card-now { border-top-color: #2563eb; }
+.pf-card-wait { border-top-color: #d97706; }
+.pf-depts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.pf-gate { display: grid; grid-template-columns: 1fr 200px 240px; gap: 12px; align-items: center; border-left: 4px solid var(--line); margin-bottom: 8px; padding: 10px 12px; }
+.pf-gate-done { border-left-color: #16a34a; }
+.pf-gate-now { border-left-color: #2563eb; }
+.pf-gate-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.pf-reason { font-size: 11px; color: var(--muted); }
+.pf-other { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+@media (max-width: 900px) {
+  .pf-stats, .pf-cards, .pf-steps, .pf-ident { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf-gate { grid-template-columns: 1fr; }
+  .pf-picker select { min-width: 0; width: 100%; }
+}

@@ -12,6 +12,7 @@ import {
   getBook,
   listAccounts,
   listBankAccounts,
+  listDimension,
   type BankAccount,
 } from '../../lib/financeApi';
 import { useLoad } from '../../lib/useLoad';
@@ -178,12 +179,16 @@ function EntryForm({
   const [bankAccountId, setBank] = useState(defaultBook);
   const [toBank, setToBank] = useState('');
   const [counter, setCounter] = useState('');
+  const [costCentreId, setCostCentre] = useState('');
   const [docDate, setDocDate] = useState(todayIso());
   const [amount, setAmount] = useState('');
   const [mode, setMode] = useState('NEFT');
   const [reference, setReference] = useState('');
   const [narration, setNarration] = useState('');
   const accounts = useLoad(() => listAccounts({ postable: true, size: 200 }), []);
+  const centers = useLoad(() => listDimension('cost'), []);
+  const counterAccount = (accounts.data?.rows ?? []).find((a) => a.id === counter);
+  const needsCostCentre = counterAccount?.costCenterRequired === true;
   const [err, setErr] = useState<UiError | null>(null);
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
@@ -200,6 +205,8 @@ function EntryForm({
     if (kind === 'TRANSFER' && !toBank) f.toBankAccountId = 'Choose the account to transfer to.';
     if (kind !== 'TRANSFER' && !counter)
       f.counterAccountId = 'Choose the account for the other side.';
+    if (kind !== 'TRANSFER' && needsCostCentre && !costCentreId)
+      f.costCentreId = 'This account needs a cost centre. Choose one.';
     if (Object.keys(f).length) {
       setErr({ message: '', fields: f, code: 'LOCAL' });
       return;
@@ -215,6 +222,7 @@ function EntryForm({
         amount,
         mode: effectiveMode,
         ...(kind === 'TRANSFER' ? { toBankAccountId: toBank } : { counterAccountId: counter }),
+        ...(kind !== 'TRANSFER' && costCentreId ? { costCentreId } : {}),
         ...(reference.trim() ? { referenceNo: reference.trim() } : {}),
         ...(narration.trim() ? { narration: narration.trim() } : {}),
       });
@@ -289,7 +297,10 @@ function EntryForm({
                 : 'Paid for (expense / other account) *'
             }
             value={counter}
-            onChange={setCounter}
+            onChange={(v) => {
+              setCounter(v);
+              setCostCentre('');
+            }}
             error={err?.fields.counterAccountId}
           >
             <option value="">Choose…</option>
@@ -302,6 +313,23 @@ function EntryForm({
               ))}
           </SelectField>
         )}
+        {kind !== 'TRANSFER' ? (
+          <SelectField
+            label={needsCostCentre ? 'Cost centre *' : 'Cost centre'}
+            value={costCentreId}
+            onChange={setCostCentre}
+            error={err?.fields.costCentreId}
+          >
+            <option value="">{needsCostCentre ? 'Choose…' : 'Not needed / choose…'}</option>
+            {(centers.data?.rows ?? [])
+              .filter((d) => !d.isGroup)
+              .map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.code} · {d.name}
+                </option>
+              ))}
+          </SelectField>
+        ) : null}
         <div className="grid2">
           <Field
             label="Date *"

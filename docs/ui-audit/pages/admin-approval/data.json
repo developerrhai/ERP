@@ -1,0 +1,88 @@
+{
+ "id": "admin-approval",
+ "role": "super",
+ "at": "2026-11-14T14:31:45.041Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [],
+    "fields": [],
+    "buttons": [
+     "← Return",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Project History"
+    ],
+    "cards": [],
+    "filters": [],
+    "badges": [],
+    "rows": 0,
+    "textLen": 891,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [
+     "Department",
+     "Document",
+     "Unit",
+     "Level",
+     "Threshold (₹)",
+     "Approver",
+     "SLA (h)",
+     "Escalate to",
+     "Actions"
+    ],
+    "fields": [
+     "Department",
+     "Document",
+     "Amount (₹, empty = no amount)"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "Approval Center",
+     "＋ Add Rule Set",
+     "Edit set",
+     "Test",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [
+     "Test an amount"
+    ],
+    "filters": [
+     "Department",
+     "Document type",
+     "Unit",
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 44,
+    "textLen": 13141,
+    "sideways": false
+   }
+  }
+ }
+}

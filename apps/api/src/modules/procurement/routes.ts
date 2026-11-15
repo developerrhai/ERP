@@ -39,6 +39,8 @@ import { DN_DEF, PINV_DEF, debitNoteService, invoiceService } from './invoice-se
 import { SPP_DEF, apService } from './ap-service';
 import { SupplierScoreService, reportsService } from './reports-service';
 import { evaluateMonth } from './jobs';
+import { V40_KINDS, v40PageOf, v40Register } from './v40-view';
+import type { V40Kind } from './v40-view';
 import type { DocDef, Row } from './core';
 
 const h = (fn: (req: Request, res: Response) => Promise<unknown>): RequestHandler =>
@@ -1266,6 +1268,26 @@ export function createProcurementRouter(): Router {
       }),
     ),
   );
+  // V40 flat registers (one row per PO line / GRN line / PR line ..., with the computed V40 columns)
+  const v40Q = z
+    .object({
+      q: z.string().trim().max(100).optional(),
+      status: z.string().max(20).optional(),
+      ...pageQuery,
+    })
+    .strict();
+  for (const kind of V40_KINDS as V40Kind[]) {
+    router.get(
+      `/scm/v40/${kind}`,
+      g(v40PageOf(kind), 'view'),
+      validate({ query: v40Q }),
+      h(async (req, res) => {
+        const q = validated(res, 'query', v40Q);
+        const { rows, total } = await v40Register(callerOf(req), kind, q);
+        res.json({ data: rows, meta: { page: q.page, size: q.size, total } });
+      }),
+    );
+  }
   void TX;
   return router;
 }

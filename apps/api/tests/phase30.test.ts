@@ -285,6 +285,8 @@ describe('Phase 30 (API)', () => {
   it('command center is plant-scoped; incidents are raised with a number', async () => {
     const cc = (await get(ownerToken, '/cl/command-center')).body.data;
     expect(cc.tiles.workersOnSite).toBeGreaterThanOrEqual(1);
+    expect(cc.alerts).toEqual({ highRiskCompliance: expect.any(Number), onboardingBlocked: expect.any(Number), invoiceOutstanding: expect.any(Number) });
+    expect(cc.alerts.invoiceOutstanding).toBeGreaterThanOrEqual(0);
     expect(cc.headcount.some((h: { unit_code: string; contractor: string }) => h.unit_code === 'TAL')).toBe(true);
     const sawOnly = await makeUser({ roleCode: 'TEST30_MGR', department: 'HR', unitCodes: ['SAW'], defaultUnitCode: 'SAW' });
     cleanup.push(() => prisma.userUnit.deleteMany({ where: { userId: sawOnly.id } }));

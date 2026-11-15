@@ -133,12 +133,17 @@ import { FleetPage } from './logistics/FleetPage';
 import { GateKioskPage } from './logistics/GateKioskPage';
 import { DmsPage } from './logistics/DmsPage';
 import { BiBuilderPage } from './bi/BiBuilderPage';
-import { AiCopilotPage } from './bi/AiCopilotPage';
 import { AutomationStudioPage } from './bi/AutomationStudioPage';
 import { CommCenterPage } from './bi/CommCenterPage';
 import { AdminNotifConsolePage } from './admin/AdminNotifConsolePage';
 import { NotificationPrefsPage } from './notifications/NotificationPrefsPage';
 import { DashboardPage } from './DashboardPage';
+import { MasterItemsPage } from './inventory/v40/MasterItemsPage';
+import { CommandCenterPage } from './executive/CommandCenterPage';
+import { AiInsightsPage } from './executive/AiInsightsPage';
+import { BiAnalyticsPage } from './bi/BiAnalyticsPage';
+import { BiLibraryPage } from './bi/BiLibraryPage';
+import { AiInsightsPage as BiAiInsightsPage } from './bi/AiInsightsPage';
 import { ActionBar } from '../components/ActionBar';
 import { AdminPageHealthPage } from './admin/AdminPageHealthPage';
 import { AdminRegistryPage } from './admin/AdminRegistryPage';
@@ -151,7 +156,20 @@ import {
 } from './dashboards/DashboardPages';
 import { KpiAlertsPage, KpiTargetsPage } from './dashboards/TargetsAlertsPages';
 import { DeptInboxPage, DeptWorkPage, WorkflowMatrixPage } from './work/WorkPages';
-import { Order360Page, ProcessExceptionsPage, ProjectHistoryPage, SalesEnquiriesPage, StageGatesPage } from './spine/SpinePages';
+import { MyApprovalsPage } from './work/MyApprovalsPage';
+import { V40TabFrame, v40TabsFor } from './frame/V40TabFrame';
+import { DeptMailboxPage } from './work/DeptMailboxPage';
+import { DepartmentMovementPage, InterplantMovementPage, MaintPartMovementPage, ProcessMovementPage } from './work/MovementRegisterPage';
+import { PlantUnitRoutingPage } from './mfg/RoutePlantUnitRouting';
+import { MfgUnitRoutePage } from './mfg/RouteLivePage';
+import { BomApprovalPage } from './mfg/BomApprovalPage';
+import { TransferNotePage } from './mfg/TransferNotePage';
+import { PlantFlowCommandPage, PlantProjectForwardPage } from './work/PlantFlowPages';
+import { DeptWorkCenterPage } from './work/DeptWorkCenterPage';
+import { Order360Page } from './spine/Order360Page';
+import { ProjectHistoryPage } from './spine/ProjectHistoryPage';
+import { DocumentMovementCenterPage } from './work/DocumentMovementCenterPage';
+import { ProcessExceptionsPage, SalesEnquiriesPage, StageGatesPage } from './spine/SpinePages';
 import { IntegrationsPage, WebhooksPage } from './integrations/IntegrationPages';
 import { ApiKeysPage, CustomFieldsPage, FormRulesPage, HealthPage, LoginPoliciesPage, ModulePlantsPage, NumberingPage, SessionsPage, ViewAsPage } from './control/ControlPages';
 import { BillsPage, ClAttendancePage, ClCommandPage, ClWagesPage, CompliancePage, ContractorsPage, IncidentsPage, ClWorkOrdersPage, WorkersPage } from './contractlabour/ClPages';
@@ -179,21 +197,13 @@ export function AccessDenied({ message }: { message?: string }) {
  * "Page not found" (the client approved these ids in V40). Order matters: first match wins.
  */
 export const V40_ALIASES: readonly (readonly [RegExp, string])[] = [
-  [/^dept-inbox-.+$/, '/m/dept-inbox'],
-  [/^dept-work-.+$/, '/m/dept-work'],
   [/^master-customers$/, '/m/crm-customer360'],
   [/^master-suppliers$/, '/m/scm-suppliers'],
-  [/^master-(products|materials)$/, '/m/inv-items'],
-  [/^my-approvals$/, '/approvals'],
   [/^ops-mfg-dashboard$/, '/m/plant-dashboard'],
   [/^mfg-material-issue$/, '/m/inv-transactions'],
   [/^proj-demo-control$/, '/m/proj-projects'],
   [/^proj-dependencies$/, '/m/proj-gantt'],
   [/^customer-receipts$/, '/m/sales-collections'],
-  [/^(document-movement-center|maint-part-movement|plant-(flow-command|project-forward|process-movement|unit-routing|department-movement|interplant-movement))$/, '/m/dept-movement-inbox'],
-  [/^mfg-unit-route$/, '/m/log-routes'],
-  [/^mfg-transfer-note$/, '/m/inv-transfer'],
-  [/^flow-bom-approval$/, '/m/mfg-bom'],
   [/^dispatch-dc$/, '/m/sales-dispatch'],
   [/^accounts-gst-invoice$/, '/m/sales-invoices'],
   [/^hr-appointment-letter$/, '/m/hr-offer-letter'],
@@ -242,7 +252,13 @@ function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: 
       {SCREEN_PAGES.has(pageId) || pageId === 'dashboard' ? null : (
         <ActionBar actions={perms.actions} mode="page" pageId={pageId} />
       )}
-      <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
+      {v40TabsFor(pageId).length > 0 ? (
+        <V40TabFrame pageId={pageId} tabs={v40TabsFor(pageId)}>
+          <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
+        </V40TabFrame>
+      ) : (
+        <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
+      )}
     </>
   );
 }
@@ -269,6 +285,8 @@ function PageBody({
       />
     );
   }
+  if (/^dept-inbox-.+$/.test(pageId)) return <DeptMailboxPage pageId={pageId} />;
+  if (/^dept-work-.+$/.test(pageId)) return <DeptWorkCenterPage pageId={pageId} />;
   switch (pageId) {
     case 'dashboard':
       return <DashboardPage user={user} />;
@@ -712,36 +730,36 @@ function PageBody({
       return <DmsPage />;
 
     // Phase 19 Dashboards, BI, Search, AI, Automation & Comm screens
+    case 'master-products':
+    case 'master-materials':
+      return <MasterItemsPage pageId={pageId} actions={actions} />;
     case 'command-center':
-      return <BiBuilderPage initialTab="COMMAND" />;
+      return <CommandCenterPage />;
     case 'global-search':
       return <BiBuilderPage initialTab="SEARCH" />;
-    case 'bi-builder':
-    case 'bi-dashboards':
-      return <BiBuilderPage initialTab="BUILDER" />;
-    case 'bi-reports':
     case 'bi-sales':
     case 'bi-purchase':
     case 'bi-inventory':
     case 'bi-finance':
     case 'bi-branch':
     case 'bi-profit':
-      return <BiBuilderPage initialTab="REPORTS" />;
+      return <BiAnalyticsPage pageId={pageId} />;
+    case 'bi-builder':
+    case 'bi-dashboards':
+    case 'bi-reports':
     case 'bi-scheduler':
-      return <BiBuilderPage initialTab="SCHEDULER" />;
+      return <BiLibraryPage pageId={pageId} />;
 
     case 'ai-copilot':
     case 'ai-executive':
-      return <AiCopilotPage pageId={pageId} initialTab="COPILOT" />;
     case 'ai-demand':
     case 'ai-inventory':
     case 'ai-finance':
-      return <AiCopilotPage pageId={pageId} initialTab="FORECAST" />;
-    case 'ai-insights':
-      return <AiCopilotPage pageId={pageId} initialTab="INSIGHTS" />;
     case 'ai-sales':
     case 'ai-vendor':
-      return <AiCopilotPage pageId={pageId} />;
+      return <BiAiInsightsPage pageId={pageId} />;
+    case 'ai-insights':
+      return <AiInsightsPage />;
 
     case 'auto-rules':
     case 'auto-workflows':
@@ -870,8 +888,32 @@ function PageBody({
       return <DeptInboxPage />;
     case 'dept-work':
       return <DeptWorkPage />;
+    case 'document-movement-center':
+      return <DocumentMovementCenterPage department={user.department} />;
+    case 'plant-flow-command':
+      return <PlantFlowCommandPage />;
+    case 'plant-project-forward':
+      return <PlantProjectForwardPage />;
+    case 'maint-part-movement':
+      return <MaintPartMovementPage />;
+    case 'plant-process-movement':
+      return <ProcessMovementPage />;
+    case 'plant-department-movement':
+      return <DepartmentMovementPage />;
+    case 'plant-interplant-movement':
+      return <InterplantMovementPage />;
+    case 'plant-unit-routing':
+      return <PlantUnitRoutingPage />;
+    case 'mfg-unit-route':
+      return <MfgUnitRoutePage />;
+    case 'flow-bom-approval':
+      return <BomApprovalPage />;
+    case 'mfg-transfer-note':
+      return <TransferNotePage />;
+    case 'my-approvals':
+      return <MyApprovalsPage />;
     case 'dept-movement-inbox':
-      return <DeptInboxPage all />;
+      return <DeptMailboxPage pageId="dept-movement-inbox" deptName={user.department ?? 'Administration'} />;
     case 'admin-workflow':
       return <WorkflowMatrixPage actions={actions} />;
     case 'my-dashboard':

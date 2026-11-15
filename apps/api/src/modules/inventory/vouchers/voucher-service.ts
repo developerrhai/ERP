@@ -172,6 +172,29 @@ export async function assertSameGstin(db: Db, fromUnit: string, toUnit: string):
   if (a !== b) throw Errors.conflict(E24_MESSAGE);
 }
 
+/** Opening stock is only for an item with no stock movement yet in the warehouse. Checked once per item, so two
+ * batches of one item in one voucher are fine. Runs at create/update/submit and again at post. */
+async function assertOpeningAllowed(
+  db: Db,
+  warehouseId: string,
+  items: { itemId: string; code?: string | null }[],
+): Promise<void> {
+  const done = new Set<string>();
+  for (const it of items) {
+    if (done.has(it.itemId)) continue;
+    done.add(it.itemId);
+    if ((await countLedgerRows(db, it.itemId, warehouseId)) > 0) {
+      const code =
+        it.code ??
+        (await db.item.findUnique({ where: { id: it.itemId }, select: { code: true } }))?.code ??
+        it.itemId;
+      throw Errors.conflict(
+        `Opening stock of ${code} is allowed only when the item has no other stock movement in this warehouse.`,
+      );
+    }
+  }
+}
+
 async function normalize(
   db: Db,
   info: KindInfo,
@@ -303,6 +326,7 @@ async function normalize(
       reservationId: l.reservationId ?? null,
     });
   }
+  if (info.kind === 'OPENING') await assertOpeningAllowed(db, h.warehouseId, out);
   return { lines: out, toUnitId };
 }
 
@@ -690,6 +714,13 @@ export const voucherService = {
     const cur = await load(caller, info, id);
     if (info.kind === 'TRANSFER' && cur.toUnitId)
       await assertSameGstin(prisma, cur.unitId, cur.toUnitId);
+    if (info.kind === 'OPENING') {
+      await assertOpeningAllowed(
+        prisma,
+        cur.warehouseId,
+        cur.lines.map((l) => ({ itemId: l.itemId, code: l.item.code })),
+      );
+    }
     await approvalService.submit(caller, info.pageId, id, { docVersion: version });
     return toDto(await load(caller, info, id));
   },
@@ -890,6 +921,14 @@ async function doPost(c: Ctx): Promise<void> {
           })
         )?.id ?? null)
       : null;
+  if (info.kind === 'OPENING') {
+    // Once up front: posting the first line must not make a second batch of the same item fail.
+    await assertOpeningAllowed(
+      tx,
+      v.warehouseId,
+      v.lines.map((l) => ({ itemId: l.itemId, code: l.item.code })),
+    );
+  }
   const records: MoveRecord[] = [];
   const sysFigures = new Map<string, { system: Dec; variance: Dec; cost: Dec }>();
 
@@ -915,11 +954,6 @@ async function doPost(c: Ctx): Promise<void> {
     };
     let inputs: StockMoveInput[] = [];
     if (info.kind === 'OPENING') {
-      if ((await countLedgerRows(tx, line.itemId, v.warehouseId)) > 0) {
-        throw Errors.conflict(
-          `Opening stock of ${line.item.code} is allowed only when the item has no other stock movement in this warehouse.`,
-        );
-      }
       inputs = [
         {
           ...base,

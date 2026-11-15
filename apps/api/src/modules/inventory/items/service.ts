@@ -24,6 +24,8 @@ import {
 } from '../typed';
 import type { ListResult, TypedHandler, TypedListQuery, TypedRecordDto } from '../typed';
 import { itemRepository as repo } from './repository';
+import { itemStats } from '../v40/stats';
+import type { ItemStat } from '../v40/stats';
 
 const PAGE = 'inv-items';
 const schema = TYPED_SCHEMAS['inv-items'] as unknown as PageSchema;
@@ -89,7 +91,23 @@ function toData(row: Item): Record<string, unknown> {
   };
 }
 
-async function toDtos(rows: Item[]): Promise<TypedRecordDto[]> {
+/** Stock numbers of the item over the plant(s) in view: the computed columns of the V40 Planning tab (read-only, never stored). */
+function stockData(s: ItemStat | undefined): Record<string, unknown> {
+  if (!s) return {};
+  return {
+    stockOnHand: s.onHand,
+    stockAvailable: s.available,
+    stockDemand: s.demand,
+    stockAllocated: s.allocated,
+    stockShort: s.short,
+    stockLocation: s.location,
+  };
+}
+
+async function toDtos(
+  rows: Item[],
+  stats?: ReadonlyMap<string, ItemStat>,
+): Promise<TypedRecordDto[]> {
   const names = await userNames(rows.map((r) => r.createdById));
   return rows.map((row) => ({
     id: row.id,
@@ -98,7 +116,7 @@ async function toDtos(rows: Item[]): Promise<TypedRecordDto[]> {
     unitId: null,
     fyId: null,
     department: INVENTORY_DEPARTMENT,
-    data: { ...toData(row), status: masterStatusLabel(row.status) },
+    data: { ...toData(row), ...stockData(stats?.get(row.id)), status: masterStatusLabel(row.status) },
     version: row.version,
     amount: num(row.standardCost),
     createdAt: row.createdAt.toISOString(),
@@ -185,13 +203,17 @@ function createData(values: Record<string, unknown>) {
 export const itemHandler: TypedHandler = {
   pageId: PAGE,
 
-  async list(_caller: Caller, query: TypedListQuery): Promise<ListResult> {
+  async list(caller: Caller, query: TypedListQuery): Promise<ListResult> {
     const { rows, total } = await repo.list(
       { q: query.q, status: statusFilter(query.status), deleted: query.deleted === true },
       orderBy(query.sort),
       { skip: (query.page - 1) * query.size, take: query.size },
     );
-    return { rows: await toDtos(rows), total };
+    const stats = await itemStats(
+      caller,
+      rows.map((r) => r.id),
+    );
+    return { rows: await toDtos(rows, stats), total };
   },
 
   async get(_caller, id) {

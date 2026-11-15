@@ -763,8 +763,6 @@ export async function decideInspection(
         rejectReason: note || undefined,
         actorId: caller.auth.userId,
       });
-    if (S(cur.source_type) === 'MFG_LOT' && lotHook)
-      await lotHook(tx, caller, S(cur.source_id), acc.toFixed(), rej.toFixed());
     await exec(
       tx,
       `UPDATE qms_inspections SET status='Decided', decision=$1, decision_note=$2, accepted_qty=$3::numeric, rejected_qty=$4::numeric,
@@ -776,6 +774,10 @@ export async function decideInspection(
       caller.auth.userId,
       id,
     );
+    // After the UPDATE (same transaction): the manufacturing hook re-reads the order's decided inspections
+    // (syncOrder sums accepted_qty of status='Decided'), so the sheet must already be Decided here.
+    if (S(cur.source_type) === 'MFG_LOT' && lotHook)
+      await lotHook(tx, caller, S(cur.source_id), acc.toFixed(), rej.toFixed());
     if (rej.gt(0)) {
       const kind = S(cur.kind) as Kind;
       const part = (

@@ -1,0 +1,142 @@
+{
+ "id": "ops-order-360",
+ "role": "super",
+ "at": "2026-11-14T13:29:14.310Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [
+     "#",
+     "Product / Service",
+     "Quantity",
+     "Rate",
+     "Discount",
+     "GST",
+     "Line Total",
+     "MRP Line",
+     "Material",
+     "Required",
+     "Initial",
+     "Reserved",
+     "Purchased",
+     "Shortage",
+     "PR",
+     "Status"
+    ],
+    "fields": [],
+    "buttons": [
+     "← Return",
+     "Load",
+     "Recalculate",
+     "Run Next Controlled Step",
+     "Send Email",
+     "Word",
+     "Excel",
+     "PDF",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Project History",
+     "Open Received / Accepted",
+     "Approval Inbox",
+     "Open"
+    ],
+    "cards": [
+     "Multi-Product Order Lines",
+     "Department Movement Journey",
+     "PO → Department Approvals → Manufacturing → Quality/Dispatch",
+     "Sales Order Parent Record",
+     "Quantity Control",
+     "Financial Control",
+     "Mandatory Process Rules",
+     "Complete Approval, Receipt, Acceptance & Movement History"
+    ],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 4,
+    "textLen": 4645,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [
+     "#",
+     "Product / Service",
+     "Quantity",
+     "Rate",
+     "Discount",
+     "GST",
+     "Line Total",
+     "MRP Line",
+     "Material",
+     "Required",
+     "Initial",
+     "Reserved",
+     "Purchased",
+     "Shortage",
+     "PR",
+     "Status"
+    ],
+    "fields": [
+     "Department Filter"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "Load",
+     "Recalculate",
+     "Run Next Controlled Step",
+     "Excel",
+     "PDF",
+     "Open Received / Accepted",
+     "Approval Inbox",
+     "Open",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [
+     "Multi-Product Order Lines",
+     "Department Movement Journey",
+     "Material Requirement (MRP)",
+     "PO → Department Approvals → Manufacturing → Quality/Dispatch",
+     "Sales Order Parent Record",
+     "Quantity Control",
+     "Financial Control",
+     "Mandatory Process Rules",
+     "Complete Approval, Receipt, Acceptance & Movement History"
+    ],
+    "filters": [
+     "Order",
+     "SELECT"
+    ],
+    "badges": [
+     "LIVE 360° TRACE"
+    ],
+    "rows": 4,
+    "textLen": 2807,
+    "sideways": false
+   }
+  }
+ }
+}

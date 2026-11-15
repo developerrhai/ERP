@@ -1,0 +1,297 @@
+/* BI analytics, BI library and AI insight dashboards. Colours come from the app theme variables (--primary, --success, --warn,
+   --danger, --line, --muted, --card), so they follow the theme. Nothing here changes the shared styles. */
+.bi-dash {
+  --bi-a: var(--primary, #1d4ed8);
+  --bi-b: var(--success, #16a34a);
+  --bi-warn: var(--warn, #d97706);
+  --bi-bad: var(--danger, #dc2626);
+  min-width: 0;
+  max-width: 100%;
+}
+.bi-dash h1 {
+  margin: 4px 0 4px;
+  font-size: 23px;
+}
+.bi-dash .bi-purpose {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.bi-dash .kpis {
+  margin-top: 12px;
+}
+.bi-dash .kpi small,
+.bi-dash .kpi .good {
+  display: block;
+}
+.bi-dash .kpi .good.warn {
+  color: var(--bi-warn);
+}
+.bi-dash .kpi .good.bad {
+  color: var(--bi-bad);
+}
+.bi-dash .kpis.six {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.bi-graphs {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.bi-graphs > .card,
+.bi-two > .card {
+  min-width: 0;
+}
+.bi-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+.bi-sub {
+  color: var(--muted);
+  font-size: 11px;
+  margin: -6px 0 8px;
+}
+.bi-chart {
+  margin: 0;
+  width: 100%;
+}
+.bi-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+}
+.bi-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.bi-axis {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.bi-line {
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+.bi-line.a,
+.bi-dot.a {
+  stroke: var(--bi-a);
+}
+.bi-line.b,
+.bi-dot.b {
+  stroke: var(--bi-b);
+}
+.bi-dot {
+  fill: var(--card, #fff);
+  stroke-width: 2;
+}
+.bi-bar {
+  fill: var(--bi-a);
+}
+.bi-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.bi-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 5px;
+}
+.bi-swatch.a {
+  background: var(--bi-a);
+}
+.bi-swatch.b {
+  background: var(--bi-b);
+}
+.bi-empty {
+  padding: 22px 14px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: var(--card2, #f8fafc);
+  font-size: 13px;
+}
+.bi-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.bi-note summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.bi-note ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.bi-table-card {
+  margin-top: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+.bi-table-card .toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 11px 14px;
+}
+.bi-table-card .table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.bi-table-card table {
+  min-width: 0;
+  width: 100%;
+}
+.bi-table-card td.num,
+.bi-table-card th.num {
+  text-align: right;
+}
+.bi-table-card td.wrap {
+  white-space: normal;
+  min-width: 220px;
+}
+.bi-badge {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.bi-badge.high,
+.bi-badge.shortage,
+.bi-badge.off {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.bi-badge.medium,
+.bi-badge.overstock {
+  background: #fef3c7;
+  color: #92400e;
+}
+.bi-badge.low,
+.bi-badge.ok,
+.bi-badge.within {
+  background: #dcfce7;
+  color: #166534;
+}
+.bi-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin-top: 12px;
+}
+.bi-filter label {
+  font-weight: 700;
+  font-size: 12px;
+}
+.bi-filter select {
+  min-width: 150px;
+}
+.bi-filter small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.bi-ask {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bi-ask input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.bi-answer {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card2, #f8fafc);
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bi-answer strong {
+  display: block;
+  margin-bottom: 4px;
+}
+.bi-notice {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.bi-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: end;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+}
+.bi-form label {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 0;
+}
+.bi-form input,
+.bi-form select {
+  min-width: 0;
+  max-width: 100%;
+}
+.bi-star {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--muted);
+}
+.bi-star[aria-pressed='true'] {
+  color: var(--bi-warn);
+}
+.bi-err {
+  color: var(--bi-bad);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .bi-graphs,
+  .bi-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bi-dash .kpis.six {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .bi-dash h1 {
+    font-size: 19px;
+  }
+  .bi-dash .kpis.six {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bi-form label,
+  .bi-form button {
+    flex: 1 1 100%;
+  }
+}

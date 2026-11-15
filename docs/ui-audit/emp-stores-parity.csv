@@ -1,0 +1,3359 @@
+page,kind,v40,erp,verdict
+ops-mfg-dashboard,tab,control dashboard,,MISSING
+ops-mfg-dashboard,tab,sales,,MISSING
+ops-mfg-dashboard,tab,purchase,,MISSING
+ops-mfg-dashboard,tab,production,,MISSING
+ops-mfg-dashboard,tab,inventory,,MISSING
+ops-mfg-dashboard,tab,dispatch,,MISSING
+ops-mfg-dashboard,tab,finance,,MISSING
+my-approvals,tab,pending,,MISSING
+my-approvals,tab,received,,MISSING
+my-approvals,tab,sent,,MISSING
+my-approvals,tab,completed,,MISSING
+my-approvals,tab,audit,,MISSING
+my-approvals,tab,,waiting for me,EXTRA
+my-approvals,tab,,submitted by me,EXTRA
+my-approvals,tab,,all in my scope,EXTRA
+my-approvals,tab,,delegations,EXTRA
+process-exceptions,tab,exception register,,MISSING
+process-exceptions,tab,ownership,,MISSING
+process-exceptions,tab,corrective action,,MISSING
+process-exceptions,tab,sla,,MISSING
+process-exceptions,tab,closure,,MISSING
+process-exceptions,tab,audit,,MISSING
+process-exceptions,tab,analytics & graphs,,MISSING
+process-exceptions,tab,documents,,MISSING
+process-exceptions,tab,approvals,,MISSING
+process-exceptions,tab,reports,,MISSING
+process-exceptions,tab,audit trail,,MISSING
+ai-insights,tab,executive ai insights workspace,,MISSING
+ai-insights,tab,executive ai insights details,,MISSING
+ai-insights,tab,executive ai insights workflow,,MISSING
+ai-insights,tab,executive ai insights exceptions,,MISSING
+ai-insights,tab,executive ai insights performance,,MISSING
+ai-insights,tab,executive ai insights controls,,MISSING
+notifications,tab,,notifications,EXTRA
+notifications,tab,,preferences,EXTRA
+dept-inbox-administration,tab,,to receive,EXTRA
+dept-inbox-administration,tab,,to accept,EXTRA
+dept-inbox-administration,tab,,in work,EXTRA
+dept-inbox-administration,tab,,returned,EXTRA
+dept-inbox-administration,tab,,sent by us,EXTRA
+dept-inbox-administration,tab,,all,EXTRA
+dept-inbox-sales,tab,,to receive,EXTRA
+dept-inbox-sales,tab,,to accept,EXTRA
+dept-inbox-sales,tab,,in work,EXTRA
+dept-inbox-sales,tab,,returned,EXTRA
+dept-inbox-sales,tab,,sent by us,EXTRA
+dept-inbox-sales,tab,,all,EXTRA
+dept-inbox-projects,tab,,to receive,EXTRA
+dept-inbox-projects,tab,,to accept,EXTRA
+dept-inbox-projects,tab,,in work,EXTRA
+dept-inbox-projects,tab,,returned,EXTRA
+dept-inbox-projects,tab,,sent by us,EXTRA
+dept-inbox-projects,tab,,all,EXTRA
+dept-inbox-engineering,tab,,to receive,EXTRA
+dept-inbox-engineering,tab,,to accept,EXTRA
+dept-inbox-engineering,tab,,in work,EXTRA
+dept-inbox-engineering,tab,,returned,EXTRA
+dept-inbox-engineering,tab,,sent by us,EXTRA
+dept-inbox-engineering,tab,,all,EXTRA
+dept-inbox-purchase,tab,,to receive,EXTRA
+dept-inbox-purchase,tab,,to accept,EXTRA
+dept-inbox-purchase,tab,,in work,EXTRA
+dept-inbox-purchase,tab,,returned,EXTRA
+dept-inbox-purchase,tab,,sent by us,EXTRA
+dept-inbox-purchase,tab,,all,EXTRA
+dept-inbox-warehouse,tab,,to receive,EXTRA
+dept-inbox-warehouse,tab,,to accept,EXTRA
+dept-inbox-warehouse,tab,,in work,EXTRA
+dept-inbox-warehouse,tab,,returned,EXTRA
+dept-inbox-warehouse,tab,,sent by us,EXTRA
+dept-inbox-warehouse,tab,,all,EXTRA
+dept-inbox-production,tab,,to receive,EXTRA
+dept-inbox-production,tab,,to accept,EXTRA
+dept-inbox-production,tab,,in work,EXTRA
+dept-inbox-production,tab,,returned,EXTRA
+dept-inbox-production,tab,,sent by us,EXTRA
+dept-inbox-production,tab,,all,EXTRA
+dept-inbox-quality,tab,,to receive,EXTRA
+dept-inbox-quality,tab,,to accept,EXTRA
+dept-inbox-quality,tab,,in work,EXTRA
+dept-inbox-quality,tab,,returned,EXTRA
+dept-inbox-quality,tab,,sent by us,EXTRA
+dept-inbox-quality,tab,,all,EXTRA
+dept-inbox-finance,tab,,to receive,EXTRA
+dept-inbox-finance,tab,,to accept,EXTRA
+dept-inbox-finance,tab,,in work,EXTRA
+dept-inbox-finance,tab,,returned,EXTRA
+dept-inbox-finance,tab,,sent by us,EXTRA
+dept-inbox-finance,tab,,all,EXTRA
+dept-inbox-service,tab,,to receive,EXTRA
+dept-inbox-service,tab,,to accept,EXTRA
+dept-inbox-service,tab,,in work,EXTRA
+dept-inbox-service,tab,,returned,EXTRA
+dept-inbox-service,tab,,sent by us,EXTRA
+dept-inbox-service,tab,,all,EXTRA
+dept-inbox-maintenance,tab,,to receive,EXTRA
+dept-inbox-maintenance,tab,,to accept,EXTRA
+dept-inbox-maintenance,tab,,in work,EXTRA
+dept-inbox-maintenance,tab,,returned,EXTRA
+dept-inbox-maintenance,tab,,sent by us,EXTRA
+dept-inbox-maintenance,tab,,all,EXTRA
+dept-inbox-hr,tab,,to receive,EXTRA
+dept-inbox-hr,tab,,to accept,EXTRA
+dept-inbox-hr,tab,,in work,EXTRA
+dept-inbox-hr,tab,,returned,EXTRA
+dept-inbox-hr,tab,,sent by us,EXTRA
+dept-inbox-hr,tab,,all,EXTRA
+crm-leads,tab,lead register,,MISSING
+crm-leads,tab,qualification desk,,MISSING
+crm-leads,tab,communication timeline,,MISSING
+crm-leads,tab,followup queue,,MISSING
+crm-leads,tab,lead scoring,,MISSING
+crm-leads,tab,conversion analytics,,MISSING
+crm-leads,tab,analytics & graphs,,MISSING
+crm-leads,tab,calendar & schedule,,MISSING
+crm-leads,tab,documents,,MISSING
+crm-leads,tab,approvals,,MISSING
+crm-leads,tab,reports,,MISSING
+crm-leads,tab,audit trail,,MISSING
+crm-opportunities,tab,opportunity register,,MISSING
+crm-opportunities,tab,stage progress,,MISSING
+crm-opportunities,tab,probability & forecast,,MISSING
+crm-opportunities,tab,proposal activity,,MISSING
+crm-opportunities,tab,competitor tracking,,MISSING
+crm-opportunities,tab,win loss analysis,,MISSING
+crm-opportunities,tab,analytics & graphs,,MISSING
+crm-opportunities,tab,documents,,MISSING
+crm-opportunities,tab,approvals,,MISSING
+crm-opportunities,tab,reports,,MISSING
+crm-opportunities,tab,audit trail,,MISSING
+crm-pipeline,tab,sales pipeline kanban workspace,,MISSING
+crm-pipeline,tab,sales pipeline kanban details,,MISSING
+crm-pipeline,tab,sales pipeline kanban workflow,,MISSING
+crm-pipeline,tab,sales pipeline kanban exceptions,,MISSING
+crm-pipeline,tab,sales pipeline kanban performance,,MISSING
+crm-pipeline,tab,sales pipeline kanban controls,,MISSING
+crm-followups,tab,followup planner,,MISSING
+crm-followups,tab,due today,,MISSING
+crm-followups,tab,overdue actions,,MISSING
+crm-followups,tab,reminder automation,,MISSING
+crm-followups,tab,outcome log,,MISSING
+crm-followups,tab,completion analytics,,MISSING
+crm-followups,tab,analytics & graphs,,MISSING
+crm-followups,tab,calendar & schedule,,MISSING
+crm-followups,tab,documents,,MISSING
+crm-followups,tab,approvals,,MISSING
+crm-followups,tab,reports,,MISSING
+crm-followups,tab,audit trail,,MISSING
+crm-meetings,tab,meeting calendar,,MISSING
+crm-meetings,tab,call log,,MISSING
+crm-meetings,tab,agenda & notes,,MISSING
+crm-meetings,tab,participants,,MISSING
+crm-meetings,tab,action items,,MISSING
+crm-meetings,tab,engagement analytics,,MISSING
+crm-meetings,tab,analytics & graphs,,MISSING
+crm-meetings,tab,calendar & schedule,,MISSING
+crm-meetings,tab,documents,,MISSING
+crm-meetings,tab,approvals,,MISSING
+crm-meetings,tab,reports,,MISSING
+crm-meetings,tab,audit trail,,MISSING
+crm-customer360,tab,customer 360 workspace,,MISSING
+crm-customer360,tab,customer 360 details,,MISSING
+crm-customer360,tab,customer 360 workflow,,MISSING
+crm-customer360,tab,customer 360 exceptions,,MISSING
+crm-customer360,tab,customer 360 performance,,MISSING
+crm-customer360,tab,customer 360 controls,,MISSING
+crm-customer360,tab,analytics & graphs,,MISSING
+crm-customer360,tab,documents,,MISSING
+crm-customer360,tab,approvals,,MISSING
+crm-customer360,tab,reports,,MISSING
+crm-customer360,tab,audit trail,,MISSING
+master-customers,tab,customer register,,MISSING
+master-customers,tab,addresses,,MISSING
+master-customers,tab,credit & payment,,MISSING
+master-customers,tab,gst details,,MISSING
+master-customers,tab,order history,,MISSING
+master-customers,tab,controls,,MISSING
+master-customers,tab,analytics & graphs,,MISSING
+master-customers,tab,calendar & schedule,,MISSING
+master-customers,tab,documents,,MISSING
+master-customers,tab,approvals,,MISSING
+master-customers,tab,reports,,MISSING
+master-customers,tab,audit trail,,MISSING
+crm-feedback,tab,feedback inbox,,MISSING
+crm-feedback,tab,csat & nps,,MISSING
+crm-feedback,tab,issue categories,,MISSING
+crm-feedback,tab,response workflow,,MISSING
+crm-feedback,tab,improvement actions,,MISSING
+crm-feedback,tab,sentiment trends,,MISSING
+crm-feedback,tab,analytics & graphs,,MISSING
+crm-feedback,tab,documents,,MISSING
+crm-feedback,tab,approvals,,MISSING
+crm-feedback,tab,reports,,MISSING
+crm-feedback,tab,audit trail,,MISSING
+crm-sources,tab,source master,,MISSING
+crm-sources,tab,campaign mapping,,MISSING
+crm-sources,tab,utm tracking,,MISSING
+crm-sources,tab,source cost,,MISSING
+crm-sources,tab,source quality,,MISSING
+crm-sources,tab,roi analysis,,MISSING
+crm-sources,tab,analytics & graphs,,MISSING
+crm-sources,tab,documents,,MISSING
+crm-sources,tab,approvals,,MISSING
+crm-sources,tab,reports,,MISSING
+crm-sources,tab,audit trail,,MISSING
+sales-quotations,tab,quotation register,quotation register,OK
+sales-quotations,tab,items & tax,,MISSING
+sales-quotations,tab,terms,,MISSING
+sales-quotations,tab,approval,,MISSING
+sales-quotations,tab,conversion,,MISSING
+sales-quotations,tab,audit,,MISSING
+sales-quotations,tab,analytics & graphs,,MISSING
+sales-quotations,tab,documents,,MISSING
+sales-quotations,tab,approvals,,MISSING
+sales-quotations,tab,reports,,MISSING
+sales-quotations,tab,audit trail,,MISSING
+sales-quotations,tab,,customer rfqs internal review,EXTRA
+sales-orders,tab,order register,,MISSING
+sales-orders,tab,order items,,MISSING
+sales-orders,tab,production link,,MISSING
+sales-orders,tab,delivery balance,,MISSING
+sales-orders,tab,billing balance,,MISSING
+sales-orders,tab,approval & audit,,MISSING
+sales-orders,tab,analytics & graphs,,MISSING
+sales-orders,tab,calendar & schedule,,MISSING
+sales-orders,tab,documents,,MISSING
+sales-orders,tab,approvals,,MISSING
+sales-orders,tab,reports,,MISSING
+sales-orders,tab,audit trail,,MISSING
+ops-order-360,tab,order timeline,,MISSING
+ops-order-360,tab,material & purchase,,MISSING
+ops-order-360,tab,production & quality,,MISSING
+ops-order-360,tab,delivery & billing,,MISSING
+ops-order-360,tab,exceptions,,MISSING
+ops-order-360,tab,audit,,MISSING
+sales-reservations,tab,reservation queue,,MISSING
+sales-reservations,tab,warehouse allocation,,MISSING
+sales-reservations,tab,batch serial allocation,,MISSING
+sales-reservations,tab,expiry priority,,MISSING
+sales-reservations,tab,release & reallocate,,MISSING
+sales-reservations,tab,reservation exceptions,,MISSING
+sales-reservations,tab,analytics & graphs,,MISSING
+sales-reservations,tab,calendar & schedule,,MISSING
+sales-reservations,tab,documents,,MISSING
+sales-reservations,tab,approvals,,MISSING
+sales-reservations,tab,reports,,MISSING
+sales-reservations,tab,audit trail,,MISSING
+sales-reservations,tab,,reservations,EXTRA
+sales-reservations,tab,,holds,EXTRA
+sales-delivery,tab,delivery plan,,MISSING
+sales-delivery,tab,promise dates,,MISSING
+sales-delivery,tab,route & vehicle,,MISSING
+sales-delivery,tab,load planning,,MISSING
+sales-delivery,tab,delivery exceptions,,MISSING
+sales-delivery,tab,otif performance,,MISSING
+sales-delivery,tab,analytics & graphs,,MISSING
+sales-delivery,tab,calendar & schedule,,MISSING
+sales-delivery,tab,documents,,MISSING
+sales-delivery,tab,approvals,,MISSING
+sales-delivery,tab,reports,,MISSING
+sales-delivery,tab,audit trail,,MISSING
+sales-dispatch,tab,dispatch queue,,MISSING
+sales-dispatch,tab,pick pack readiness,,MISSING
+sales-dispatch,tab,vehicle & driver,,MISSING
+sales-dispatch,tab,dispatch documents,,MISSING
+sales-dispatch,tab,pod status,,MISSING
+sales-dispatch,tab,dispatch analytics,,MISSING
+sales-dispatch,tab,analytics & graphs,,MISSING
+sales-dispatch,tab,calendar & schedule,,MISSING
+sales-dispatch,tab,documents,,MISSING
+sales-dispatch,tab,approvals,,MISSING
+sales-dispatch,tab,reports,,MISSING
+sales-dispatch,tab,audit trail,,MISSING
+sales-invoices,tab,invoice register,,MISSING
+sales-invoices,tab,tax breakdown,,MISSING
+sales-invoices,tab,einvoice status,,MISSING
+sales-invoices,tab,receipts & balance,,MISSING
+sales-invoices,tab,credit notes,,MISSING
+sales-invoices,tab,invoice ageing,,MISSING
+sales-invoices,tab,analytics & graphs,,MISSING
+sales-invoices,tab,documents,,MISSING
+sales-invoices,tab,approvals,,MISSING
+sales-invoices,tab,reports,,MISSING
+sales-invoices,tab,audit trail,,MISSING
+sales-collections,tab,payment register,,MISSING
+sales-collections,tab,invoice allocation,,MISSING
+sales-collections,tab,partial payments,,MISSING
+sales-collections,tab,overdue,,MISSING
+sales-collections,tab,reconciliation,,MISSING
+sales-collections,tab,audit,,MISSING
+sales-collections,tab,analytics & graphs,,MISSING
+sales-collections,tab,calendar & schedule,,MISSING
+sales-collections,tab,documents,,MISSING
+sales-collections,tab,approvals,,MISSING
+sales-collections,tab,reports,,MISSING
+sales-collections,tab,audit trail,,MISSING
+sales-pricelist,tab,price list master,,MISSING
+sales-pricelist,tab,customer pricing,,MISSING
+sales-pricelist,tab,quantity slabs,,MISSING
+sales-pricelist,tab,promotion rules,,MISSING
+sales-pricelist,tab,effective dates,,MISSING
+sales-pricelist,tab,margin simulation,,MISSING
+sales-pricelist,tab,analytics & graphs,,MISSING
+sales-pricelist,tab,documents,,MISSING
+sales-pricelist,tab,approvals,,MISSING
+sales-pricelist,tab,reports,,MISSING
+sales-pricelist,tab,audit trail,,MISSING
+sales-credit,tab,credit profiles,,MISSING
+sales-credit,tab,limit utilization,,MISSING
+sales-credit,tab,overdue exposure,,MISSING
+sales-credit,tab,credit holds,,MISSING
+sales-credit,tab,approval overrides,,MISSING
+sales-credit,tab,risk scoring,,MISSING
+sales-credit,tab,analytics & graphs,,MISSING
+sales-credit,tab,calendar & schedule,,MISSING
+sales-credit,tab,documents,,MISSING
+sales-credit,tab,approvals,,MISSING
+sales-credit,tab,reports,,MISSING
+sales-credit,tab,audit trail,,MISSING
+sales-returns,tab,return register,,MISSING
+sales-returns,tab,return reason,,MISSING
+sales-returns,tab,inspection & disposition,,MISSING
+sales-returns,tab,credit note link,,MISSING
+sales-returns,tab,replacement flow,,MISSING
+sales-returns,tab,return analytics,,MISSING
+sales-returns,tab,analytics & graphs,,MISSING
+sales-returns,tab,documents,,MISSING
+sales-returns,tab,approvals,,MISSING
+sales-returns,tab,reports,,MISSING
+sales-returns,tab,audit trail,,MISSING
+sales-enquiries,tab,enquiry register,,MISSING
+sales-enquiries,tab,discussion,,MISSING
+sales-enquiries,tab,quotation link,,MISSING
+sales-enquiries,tab,followup,,MISSING
+sales-enquiries,tab,win loss,,MISSING
+sales-enquiries,tab,controls,,MISSING
+sales-enquiries,tab,analytics & graphs,,MISSING
+sales-enquiries,tab,calendar & schedule,,MISSING
+sales-enquiries,tab,documents,,MISSING
+sales-enquiries,tab,approvals,,MISSING
+sales-enquiries,tab,reports,,MISSING
+sales-enquiries,tab,audit trail,,MISSING
+scm-pr,tab,pr register,,MISSING
+scm-pr,tab,requirement,,MISSING
+scm-pr,tab,sales & production link,,MISSING
+scm-pr,tab,approval,,MISSING
+scm-pr,tab,po conversion,,MISSING
+scm-pr,tab,audit,,MISSING
+scm-pr,tab,analytics & graphs,,MISSING
+scm-pr,tab,documents,,MISSING
+scm-pr,tab,approvals,,MISSING
+scm-pr,tab,reports,,MISSING
+scm-pr,tab,audit trail,,MISSING
+scm-rfq,tab,rfq register,,MISSING
+scm-rfq,tab,supplier invitations,,MISSING
+scm-rfq,tab,technical requirements,,MISSING
+scm-rfq,tab,commercial terms,,MISSING
+scm-rfq,tab,response tracker,,MISSING
+scm-rfq,tab,sourcing cycle analytics,,MISSING
+scm-rfq,tab,analytics & graphs,,MISSING
+scm-rfq,tab,documents,,MISSING
+scm-rfq,tab,approvals,,MISSING
+scm-rfq,tab,reports,,MISSING
+scm-rfq,tab,audit trail,,MISSING
+scm-vendorquote,tab,quotation register,,MISSING
+scm-vendorquote,tab,commercial breakdown,,MISSING
+scm-vendorquote,tab,technical compliance,,MISSING
+scm-vendorquote,tab,negotiation history,,MISSING
+scm-vendorquote,tab,deviation log,,MISSING
+scm-vendorquote,tab,quote analytics,,MISSING
+scm-vendorquote,tab,analytics & graphs,,MISSING
+scm-vendorquote,tab,documents,,MISSING
+scm-vendorquote,tab,approvals,,MISSING
+scm-vendorquote,tab,reports,,MISSING
+scm-vendorquote,tab,audit trail,,MISSING
+scm-comparison,tab,comparison sheet,,MISSING
+scm-comparison,tab,weighted criteria,,MISSING
+scm-comparison,tab,landed cost,,MISSING
+scm-comparison,tab,technical compliance,,MISSING
+scm-comparison,tab,negotiation scenario,,MISSING
+scm-comparison,tab,award recommendation,,MISSING
+scm-comparison,tab,analytics & graphs,,MISSING
+scm-comparison,tab,documents,,MISSING
+scm-comparison,tab,approvals,,MISSING
+scm-comparison,tab,reports,,MISSING
+scm-comparison,tab,audit trail,,MISSING
+scm-po,tab,po register,,MISSING
+scm-po,tab,items,,MISSING
+scm-po,tab,commercial terms,,MISSING
+scm-po,tab,approval,,MISSING
+scm-po,tab,receipt balance,,MISSING
+scm-po,tab,audit,,MISSING
+scm-po,tab,analytics & graphs,,MISSING
+scm-po,tab,documents,,MISSING
+scm-po,tab,approvals,,MISSING
+scm-po,tab,reports,,MISSING
+scm-po,tab,audit trail,,MISSING
+scm-grn,tab,grn register,,MISSING
+scm-grn,tab,receipt quantity,,MISSING
+scm-grn,tab,batch & warehouse,,MISSING
+scm-grn,tab,incoming quality,,MISSING
+scm-grn,tab,po balance,,MISSING
+scm-grn,tab,audit,,MISSING
+scm-grn,tab,analytics & graphs,,MISSING
+scm-grn,tab,documents,,MISSING
+scm-grn,tab,approvals,,MISSING
+scm-grn,tab,reports,,MISSING
+scm-grn,tab,audit trail,,MISSING
+scm-purchaseinvoice,tab,invoice register,,MISSING
+scm-purchaseinvoice,tab,po grn matching,,MISSING
+scm-purchaseinvoice,tab,tax validation,,MISSING
+scm-purchaseinvoice,tab,debit adjustments,,MISSING
+scm-purchaseinvoice,tab,payment readiness,,MISSING
+scm-purchaseinvoice,tab,invoice exceptions,,MISSING
+scm-purchaseinvoice,tab,analytics & graphs,,MISSING
+scm-purchaseinvoice,tab,calendar & schedule,,MISSING
+scm-purchaseinvoice,tab,documents,,MISSING
+scm-purchaseinvoice,tab,approvals,,MISSING
+scm-purchaseinvoice,tab,reports,,MISSING
+scm-purchaseinvoice,tab,audit trail,,MISSING
+scm-approval,tab,approval inbox,,MISSING
+scm-approval,tab,amount matrix,,MISSING
+scm-approval,tab,department rules,,MISSING
+scm-approval,tab,delegation & escalation,,MISSING
+scm-approval,tab,decision history,,MISSING
+scm-approval,tab,approval sla,,MISSING
+scm-approval,tab,analytics & graphs,,MISSING
+scm-approval,tab,documents,,MISSING
+scm-approval,tab,approvals,,MISSING
+scm-approval,tab,reports,,MISSING
+scm-approval,tab,audit trail,,MISSING
+scm-suppliers,tab,supplier directory,,MISSING
+scm-suppliers,tab,categories,,MISSING
+scm-suppliers,tab,commercial terms,,MISSING
+scm-suppliers,tab,tax & address,,MISSING
+scm-suppliers,tab,performance,,MISSING
+scm-suppliers,tab,controls,,MISSING
+scm-suppliers,tab,analytics & graphs,,MISSING
+scm-suppliers,tab,documents,,MISSING
+scm-suppliers,tab,approvals,,MISSING
+scm-suppliers,tab,reports,,MISSING
+scm-suppliers,tab,audit trail,,MISSING
+scm-evaluation,tab,evaluation cycles,,MISSING
+scm-evaluation,tab,quality score,,MISSING
+scm-evaluation,tab,delivery otif,,MISSING
+scm-evaluation,tab,cost competitiveness,,MISSING
+scm-evaluation,tab,compliance rating,,MISSING
+scm-evaluation,tab,supplier ranking,,MISSING
+scm-evaluation,tab,analytics & graphs,,MISSING
+scm-evaluation,tab,calendar & schedule,,MISSING
+scm-evaluation,tab,documents,,MISSING
+scm-evaluation,tab,approvals,,MISSING
+scm-evaluation,tab,reports,,MISSING
+scm-evaluation,tab,audit trail,,MISSING
+scm-contracts,tab,contract register,,MISSING
+scm-contracts,tab,rate schedule,,MISSING
+scm-contracts,tab,volume commitments,,MISSING
+scm-contracts,tab,validity & renewal,,MISSING
+scm-contracts,tab,release orders,,MISSING
+scm-contracts,tab,contract utilization,,MISSING
+scm-contracts,tab,analytics & graphs,,MISSING
+scm-contracts,tab,calendar & schedule,,MISSING
+scm-contracts,tab,documents,,MISSING
+scm-contracts,tab,approvals,,MISSING
+scm-contracts,tab,reports,,MISSING
+scm-contracts,tab,audit trail,,MISSING
+inv-items,tab,item master,,MISSING
+inv-items,tab,classification & uom,,MISSING
+inv-items,tab,tax & hsn,,MISSING
+inv-items,tab,planning parameters,,MISSING
+inv-items,tab,traceability setup,,MISSING
+inv-items,tab,cost & price,,MISSING
+inv-items,tab,analytics & graphs,analytics & graphs,OK
+inv-items,tab,documents,documents,OK
+inv-items,tab,approvals,approvals,OK
+inv-items,tab,reports,reports,OK
+inv-items,tab,audit trail,audit trail,OK
+inv-items,tab,,module dashboard,EXTRA
+inv-items,tab,,ai decision center,EXTRA
+inv-items,tab,,automation studio,EXTRA
+inv-items,tab,,data quality,EXTRA
+inv-items,tab,,activity timeline,EXTRA
+master-products,tab,product register,,MISSING
+master-products,tab,planning,,MISSING
+master-products,tab,price & tax,,MISSING
+master-products,tab,bom link,,MISSING
+master-products,tab,stock policy,,MISSING
+master-products,tab,controls,,MISSING
+master-products,tab,analytics & graphs,analytics & graphs,OK
+master-products,tab,documents,documents,OK
+master-products,tab,approvals,approvals,OK
+master-products,tab,reports,reports,OK
+master-products,tab,audit trail,audit trail,OK
+master-products,tab,,module dashboard,EXTRA
+master-products,tab,,ai decision center,EXTRA
+master-products,tab,,automation studio,EXTRA
+master-products,tab,,data quality,EXTRA
+master-products,tab,,activity timeline,EXTRA
+master-materials,tab,material register,,MISSING
+master-materials,tab,stock policy,,MISSING
+master-materials,tab,vendor source,,MISSING
+master-materials,tab,tax & uom,,MISSING
+master-materials,tab,consumption,,MISSING
+master-materials,tab,controls,,MISSING
+master-materials,tab,analytics & graphs,analytics & graphs,OK
+master-materials,tab,documents,documents,OK
+master-materials,tab,approvals,approvals,OK
+master-materials,tab,reports,reports,OK
+master-materials,tab,audit trail,audit trail,OK
+master-materials,tab,,module dashboard,EXTRA
+master-materials,tab,,ai decision center,EXTRA
+master-materials,tab,,automation studio,EXTRA
+master-materials,tab,,data quality,EXTRA
+master-materials,tab,,activity timeline,EXTRA
+inv-stock,tab,stock overview,,MISSING
+inv-stock,tab,warehouse balance,,MISSING
+inv-stock,tab,reservations,,MISSING
+inv-stock,tab,low stock,,MISSING
+inv-stock,tab,batch traceability,,MISSING
+inv-stock,tab,audit,,MISSING
+inv-stock,tab,analytics & graphs,analytics & graphs,OK
+inv-stock,tab,documents,documents,OK
+inv-stock,tab,approvals,approvals,OK
+inv-stock,tab,reports,reports,OK
+inv-stock,tab,audit trail,audit trail,OK
+inv-stock,tab,,module dashboard,EXTRA
+inv-stock,tab,,ai decision center,EXTRA
+inv-stock,tab,,automation studio,EXTRA
+inv-stock,tab,,data quality,EXTRA
+inv-stock,tab,,activity timeline,EXTRA
+inv-transactions,tab,movement ledger,,MISSING
+inv-transactions,tab,receipts,,MISSING
+inv-transactions,tab,issues,,MISSING
+inv-transactions,tab,transfers,,MISSING
+inv-transactions,tab,fg & dispatch,,MISSING
+inv-transactions,tab,audit,,MISSING
+inv-transactions,tab,analytics & graphs,,MISSING
+inv-transactions,tab,calendar & schedule,,MISSING
+inv-transactions,tab,documents,,MISSING
+inv-transactions,tab,approvals,,MISSING
+inv-transactions,tab,reports,,MISSING
+inv-transactions,tab,audit trail,,MISSING
+inv-transactions,tab,,ledger,EXTRA
+inv-transactions,tab,,vouchers,EXTRA
+inv-transactions,tab,,customer material,EXTRA
+inv-opening,tab,opening stock register,,MISSING
+inv-opening,tab,warehouse upload,,MISSING
+inv-opening,tab,batch serial opening,,MISSING
+inv-opening,tab,valuation basis,,MISSING
+inv-opening,tab,validation errors,,MISSING
+inv-opening,tab,posting summary,,MISSING
+inv-opening,tab,analytics & graphs,,MISSING
+inv-opening,tab,documents,,MISSING
+inv-opening,tab,approvals,,MISSING
+inv-opening,tab,reports,,MISSING
+inv-opening,tab,audit trail,,MISSING
+inv-adjustment,tab,adjustment register,,MISSING
+inv-adjustment,tab,count variance,,MISSING
+inv-adjustment,tab,reason codes,,MISSING
+inv-adjustment,tab,approval control,,MISSING
+inv-adjustment,tab,value impact,,MISSING
+inv-adjustment,tab,adjustment audit,,MISSING
+inv-adjustment,tab,analytics & graphs,,MISSING
+inv-adjustment,tab,documents,,MISSING
+inv-adjustment,tab,approvals,,MISSING
+inv-adjustment,tab,reports,,MISSING
+inv-adjustment,tab,audit trail,,MISSING
+inv-transfer,tab,transfer orders,,MISSING
+inv-transfer,tab,source allocation,,MISSING
+inv-transfer,tab,in transit,,MISSING
+inv-transfer,tab,destination receipt,,MISSING
+inv-transfer,tab,transfer variance,,MISSING
+inv-transfer,tab,transfer sla,,MISSING
+inv-transfer,tab,analytics & graphs,,MISSING
+inv-transfer,tab,documents,,MISSING
+inv-transfer,tab,approvals,,MISSING
+inv-transfer,tab,reports,,MISSING
+inv-transfer,tab,audit trail,,MISSING
+inv-reservation,tab,reservation register,,MISSING
+inv-reservation,tab,demand source,,MISSING
+inv-reservation,tab,allocation priority,,MISSING
+inv-reservation,tab,shortage handling,,MISSING
+inv-reservation,tab,release rules,,MISSING
+inv-reservation,tab,reservation ageing,,MISSING
+inv-reservation,tab,analytics & graphs,,MISSING
+inv-reservation,tab,documents,,MISSING
+inv-reservation,tab,approvals,,MISSING
+inv-reservation,tab,reports,,MISSING
+inv-reservation,tab,audit trail,,MISSING
+inv-reservation,tab,,reservations,EXTRA
+inv-reservation,tab,,holds,EXTRA
+inv-reconciliation,tab,system vs physical,,MISSING
+inv-reconciliation,tab,variance lines,,MISSING
+inv-reconciliation,tab,root cause,,MISSING
+inv-reconciliation,tab,approval posting,,MISSING
+inv-reconciliation,tab,value impact,,MISSING
+inv-reconciliation,tab,reconciliation history,,MISSING
+inv-reconciliation,tab,analytics & graphs,,MISSING
+inv-reconciliation,tab,documents,,MISSING
+inv-reconciliation,tab,approvals,,MISSING
+inv-reconciliation,tab,reports,,MISSING
+inv-reconciliation,tab,audit trail,,MISSING
+inv-ageing,tab,ageing summary,,MISSING
+inv-ageing,tab,0 to 30 days,,MISSING
+inv-ageing,tab,31 to 90 days,,MISSING
+inv-ageing,tab,91 to 180 days,,MISSING
+inv-ageing,tab,180 plus days,,MISSING
+inv-ageing,tab,slow dead stock,,MISSING
+inv-ageing,tab,analytics & graphs,,MISSING
+inv-ageing,tab,documents,,MISSING
+inv-ageing,tab,approvals,,MISSING
+inv-ageing,tab,reports,,MISSING
+inv-ageing,tab,audit trail,,MISSING
+inv-valuation,tab,valuation summary,,MISSING
+inv-valuation,tab,fifo layers,,MISSING
+inv-valuation,tab,weighted average,,MISSING
+inv-valuation,tab,standard cost,,MISSING
+inv-valuation,tab,revaluation,,MISSING
+inv-valuation,tab,inventory gl bridge,,MISSING
+inv-valuation,tab,analytics & graphs,,MISSING
+inv-valuation,tab,documents,,MISSING
+inv-valuation,tab,approvals,,MISSING
+inv-valuation,tab,reports,,MISSING
+inv-valuation,tab,audit trail,,MISSING
+inv-reorder,tab,reorder dashboard,,MISSING
+inv-reorder,tab,min max policy,,MISSING
+inv-reorder,tab,safety stock,,MISSING
+inv-reorder,tab,eoq & lead time,,MISSING
+inv-reorder,tab,suggested pr,,MISSING
+inv-reorder,tab,forecast accuracy,,MISSING
+inv-reorder,tab,analytics & graphs,,MISSING
+inv-reorder,tab,documents,,MISSING
+inv-reorder,tab,approvals,,MISSING
+inv-reorder,tab,reports,,MISSING
+inv-reorder,tab,audit trail,,MISSING
+inv-reorder,tab,,suggested orders,EXTRA
+inv-reorder,tab,,policies,EXTRA
+inv-batch,tab,batch register,,MISSING
+inv-batch,tab,manufacturing expiry,,MISSING
+inv-batch,tab,batch stock,,MISSING
+inv-batch,tab,batch movements,,MISSING
+inv-batch,tab,quality status,,MISSING
+inv-batch,tab,batch recall,,MISSING
+inv-batch,tab,analytics & graphs,,MISSING
+inv-batch,tab,calendar & schedule,,MISSING
+inv-batch,tab,documents,,MISSING
+inv-batch,tab,approvals,,MISSING
+inv-batch,tab,reports,,MISSING
+inv-batch,tab,audit trail,,MISSING
+inv-serial,tab,serial register,,MISSING
+inv-serial,tab,ownership history,,MISSING
+inv-serial,tab,warranty link,,MISSING
+inv-serial,tab,serial movements,,MISSING
+inv-serial,tab,service history,,MISSING
+inv-serial,tab,serial exceptions,,MISSING
+inv-serial,tab,analytics & graphs,,MISSING
+inv-serial,tab,calendar & schedule,,MISSING
+inv-serial,tab,documents,,MISSING
+inv-serial,tab,approvals,,MISSING
+inv-serial,tab,reports,,MISSING
+inv-serial,tab,audit trail,,MISSING
+inv-expiry,tab,expiry dashboard,,MISSING
+inv-expiry,tab,near expiry,,MISSING
+inv-expiry,tab,expired stock,,MISSING
+inv-expiry,tab,fefo allocation,,MISSING
+inv-expiry,tab,disposition actions,,MISSING
+inv-expiry,tab,expiry loss,,MISSING
+inv-expiry,tab,analytics & graphs,,MISSING
+inv-expiry,tab,calendar & schedule,,MISSING
+inv-expiry,tab,documents,,MISSING
+inv-expiry,tab,approvals,,MISSING
+inv-expiry,tab,reports,,MISSING
+inv-expiry,tab,audit trail,,MISSING
+wms-warehouses,tab,warehouse directory,,MISSING
+wms-warehouses,tab,capacity profile,,MISSING
+wms-warehouses,tab,storage policy,,MISSING
+wms-warehouses,tab,operating calendar,,MISSING
+wms-warehouses,tab,service zones,,MISSING
+wms-warehouses,tab,warehouse kpis,,MISSING
+wms-warehouses,tab,analytics & graphs,analytics & graphs,OK
+wms-warehouses,tab,calendar & schedule,,MISSING
+wms-warehouses,tab,documents,documents,OK
+wms-warehouses,tab,approvals,approvals,OK
+wms-warehouses,tab,reports,reports,OK
+wms-warehouses,tab,audit trail,audit trail,OK
+wms-warehouses,tab,,module dashboard,EXTRA
+wms-warehouses,tab,,ai decision center,EXTRA
+wms-warehouses,tab,,automation studio,EXTRA
+wms-warehouses,tab,,data quality,EXTRA
+wms-warehouses,tab,,activity timeline,EXTRA
+wms-zones,tab,zone directory,,MISSING
+wms-zones,tab,zone capacity,,MISSING
+wms-zones,tab,storage restrictions,,MISSING
+wms-zones,tab,putaway priority,,MISSING
+wms-zones,tab,picking strategy,,MISSING
+wms-zones,tab,zone utilization,,MISSING
+wms-zones,tab,analytics & graphs,,MISSING
+wms-zones,tab,documents,,MISSING
+wms-zones,tab,approvals,,MISSING
+wms-zones,tab,reports,,MISSING
+wms-zones,tab,audit trail,,MISSING
+wms-racks,tab,rack directory,,MISSING
+wms-racks,tab,rack capacity,,MISSING
+wms-racks,tab,load limits,,MISSING
+wms-racks,tab,slotting rules,,MISSING
+wms-racks,tab,occupancy heatmap,,MISSING
+wms-racks,tab,rack audit,,MISSING
+wms-racks,tab,analytics & graphs,,MISSING
+wms-racks,tab,documents,,MISSING
+wms-racks,tab,approvals,,MISSING
+wms-racks,tab,reports,,MISSING
+wms-racks,tab,audit trail,,MISSING
+wms-shelves,tab,shelf directory,,MISSING
+wms-shelves,tab,shelf dimensions,,MISSING
+wms-shelves,tab,sku compatibility,,MISSING
+wms-shelves,tab,occupancy,,MISSING
+wms-shelves,tab,replenishment,,MISSING
+wms-shelves,tab,shelf audit,,MISSING
+wms-shelves,tab,analytics & graphs,,MISSING
+wms-shelves,tab,documents,,MISSING
+wms-shelves,tab,approvals,,MISSING
+wms-shelves,tab,reports,,MISSING
+wms-shelves,tab,audit trail,,MISSING
+wms-bins,tab,bin directory,,MISSING
+wms-bins,tab,bin capacity,,MISSING
+wms-bins,tab,sku slotting,,MISSING
+wms-bins,tab,occupancy heatmap,,MISSING
+wms-bins,tab,movement history,,MISSING
+wms-bins,tab,bin exceptions,,MISSING
+wms-bins,tab,analytics & graphs,,MISSING
+wms-bins,tab,documents,,MISSING
+wms-bins,tab,approvals,,MISSING
+wms-bins,tab,reports,,MISSING
+wms-bins,tab,audit trail,,MISSING
+wms-putaway,tab,putaway queue,,MISSING
+wms-putaway,tab,suggested bins,,MISSING
+wms-putaway,tab,rule priority,,MISSING
+wms-putaway,tab,operator tasks,,MISSING
+wms-putaway,tab,putaway exceptions,,MISSING
+wms-putaway,tab,dock to stock time,,MISSING
+wms-putaway,tab,analytics & graphs,,MISSING
+wms-putaway,tab,documents,,MISSING
+wms-putaway,tab,approvals,,MISSING
+wms-putaway,tab,reports,,MISSING
+wms-putaway,tab,audit trail,,MISSING
+wms-pick,tab,pick waves,,MISSING
+wms-pick,tab,pick tasks,,MISSING
+wms-pick,tab,route optimization,,MISSING
+wms-pick,tab,batch serial pick,,MISSING
+wms-pick,tab,short picks,,MISSING
+wms-pick,tab,pick productivity,,MISSING
+wms-pick,tab,analytics & graphs,,MISSING
+wms-pick,tab,documents,,MISSING
+wms-pick,tab,approvals,,MISSING
+wms-pick,tab,reports,,MISSING
+wms-pick,tab,audit trail,,MISSING
+wms-packing,tab,packing queue,,MISSING
+wms-packing,tab,cartonization,,MISSING
+wms-packing,tab,label printing,,MISSING
+wms-packing,tab,weight verification,,MISSING
+wms-packing,tab,packing exceptions,,MISSING
+wms-packing,tab,pack productivity,,MISSING
+wms-packing,tab,analytics & graphs,,MISSING
+wms-packing,tab,documents,,MISSING
+wms-packing,tab,approvals,,MISSING
+wms-packing,tab,reports,,MISSING
+wms-packing,tab,audit trail,,MISSING
+wms-cycle,tab,cycle count plan,,MISSING
+wms-cycle,tab,abc frequency,,MISSING
+wms-cycle,tab,count tasks,,MISSING
+wms-cycle,tab,variance review,,MISSING
+wms-cycle,tab,approval posting,,MISSING
+wms-cycle,tab,count accuracy,,MISSING
+wms-cycle,tab,analytics & graphs,,MISSING
+wms-cycle,tab,documents,,MISSING
+wms-cycle,tab,approvals,,MISSING
+wms-cycle,tab,reports,,MISSING
+wms-cycle,tab,audit trail,,MISSING
+wms-cycle,tab,,cycle counts,EXTRA
+wms-cycle,tab,,powder stock sheet weekly,EXTRA
+wms-physical,tab,physical count plan,,MISSING
+wms-physical,tab,freeze controls,,MISSING
+wms-physical,tab,count sheets,,MISSING
+wms-physical,tab,recount queue,,MISSING
+wms-physical,tab,reconciliation,,MISSING
+wms-physical,tab,audit closure,,MISSING
+wms-physical,tab,analytics & graphs,,MISSING
+wms-physical,tab,documents,,MISSING
+wms-physical,tab,approvals,,MISSING
+wms-physical,tab,reports,,MISSING
+wms-physical,tab,audit trail,,MISSING
+wms-transfer,tab,transfer queue,,MISSING
+wms-transfer,tab,inter warehouse plan,,MISSING
+wms-transfer,tab,pick dispatch,,MISSING
+wms-transfer,tab,in transit,,MISSING
+wms-transfer,tab,destination putaway,,MISSING
+wms-transfer,tab,transfer accuracy,,MISSING
+wms-transfer,tab,analytics & graphs,,MISSING
+wms-transfer,tab,calendar & schedule,,MISSING
+wms-transfer,tab,documents,,MISSING
+wms-transfer,tab,approvals,,MISSING
+wms-transfer,tab,reports,,MISSING
+wms-transfer,tab,audit trail,,MISSING
+wms-barcode,tab,barcode registry,,MISSING
+wms-barcode,tab,label templates,,MISSING
+wms-barcode,tab,scan transactions,,MISSING
+wms-barcode,tab,printer setup,,MISSING
+wms-barcode,tab,invalid scans,,MISSING
+wms-barcode,tab,scan productivity,,MISSING
+wms-barcode,tab,analytics & graphs,,MISSING
+wms-barcode,tab,documents,,MISSING
+wms-barcode,tab,approvals,,MISSING
+wms-barcode,tab,reports,,MISSING
+wms-barcode,tab,audit trail,,MISSING
+wms-rfid,tab,rfid tag registry,,MISSING
+wms-rfid,tab,reader setup,,MISSING
+wms-rfid,tab,read events,,MISSING
+wms-rfid,tab,portal mapping,,MISSING
+wms-rfid,tab,missed reads,,MISSING
+wms-rfid,tab,rfid accuracy,,MISSING
+wms-rfid,tab,analytics & graphs,,MISSING
+wms-rfid,tab,documents,,MISSING
+wms-rfid,tab,approvals,,MISSING
+wms-rfid,tab,reports,,MISSING
+wms-rfid,tab,audit trail,,MISSING
+mfg-bom,tab,bom lines,,MISSING
+mfg-bom,tab,revision,,MISSING
+mfg-bom,tab,effective dates,,MISSING
+mfg-bom,tab,cost rollup,,MISSING
+mfg-bom,tab,approval,,MISSING
+mfg-bom,tab,audit,,MISSING
+mfg-bom,tab,analytics & graphs,,MISSING
+mfg-bom,tab,documents,,MISSING
+mfg-bom,tab,approvals,,MISSING
+mfg-bom,tab,reports,,MISSING
+mfg-bom,tab,audit trail,,MISSING
+mfg-routing,tab,routing register,,MISSING
+mfg-routing,tab,operation sequence,,MISSING
+mfg-routing,tab,standard times,,MISSING
+mfg-routing,tab,work center assignment,,MISSING
+mfg-routing,tab,tooling requirements,,MISSING
+mfg-routing,tab,routing efficiency,,MISSING
+mfg-routing,tab,analytics & graphs,,MISSING
+mfg-routing,tab,documents,,MISSING
+mfg-routing,tab,approvals,,MISSING
+mfg-routing,tab,reports,,MISSING
+mfg-routing,tab,audit trail,,MISSING
+mfg-workcenters,tab,work center master,,MISSING
+mfg-workcenters,tab,capacity calendar,,MISSING
+mfg-workcenters,tab,machines & labor,,MISSING
+mfg-workcenters,tab,rates & cost,,MISSING
+mfg-workcenters,tab,shift availability,,MISSING
+mfg-workcenters,tab,utilization,,MISSING
+mfg-workcenters,tab,analytics & graphs,,MISSING
+mfg-workcenters,tab,calendar & schedule,,MISSING
+mfg-workcenters,tab,documents,,MISSING
+mfg-workcenters,tab,approvals,,MISSING
+mfg-workcenters,tab,reports,,MISSING
+mfg-workcenters,tab,audit trail,,MISSING
+mfg-plan,tab,production plans,,MISSING
+mfg-plan,tab,capacity,,MISSING
+mfg-plan,tab,material readiness,,MISSING
+mfg-plan,tab,delivery commitment,,MISSING
+mfg-plan,tab,release,,MISSING
+mfg-plan,tab,audit,,MISSING
+mfg-plan,tab,analytics & graphs,,MISSING
+mfg-plan,tab,calendar & schedule,,MISSING
+mfg-plan,tab,documents,,MISSING
+mfg-plan,tab,approvals,,MISSING
+mfg-plan,tab,reports,,MISSING
+mfg-plan,tab,audit trail,,MISSING
+mfg-orders,tab,production orders,,MISSING
+mfg-orders,tab,material status,,MISSING
+mfg-orders,tab,schedule,,MISSING
+mfg-orders,tab,output balance,,MISSING
+mfg-orders,tab,quality,,MISSING
+mfg-orders,tab,audit,,MISSING
+mfg-orders,tab,analytics & graphs,,MISSING
+mfg-orders,tab,calendar & schedule,,MISSING
+mfg-orders,tab,documents,,MISSING
+mfg-orders,tab,approvals,,MISSING
+mfg-orders,tab,reports,,MISSING
+mfg-orders,tab,audit trail,,MISSING
+mfg-mrp,tab,mrp lines,,MISSING
+mfg-mrp,tab,available material,,MISSING
+mfg-mrp,tab,shortage material,,MISSING
+mfg-mrp,tab,reservation,,MISSING
+mfg-mrp,tab,purchase link,,MISSING
+mfg-mrp,tab,audit,,MISSING
+mfg-mrp,tab,analytics & graphs,,MISSING
+mfg-mrp,tab,documents,,MISSING
+mfg-mrp,tab,approvals,,MISSING
+mfg-mrp,tab,reports,,MISSING
+mfg-mrp,tab,audit trail,,MISSING
+mfg-material-issue,tab,issue register,,MISSING
+mfg-material-issue,tab,reservation check,,MISSING
+mfg-material-issue,tab,batch allocation,,MISSING
+mfg-material-issue,tab,consumption,,MISSING
+mfg-material-issue,tab,returns,,MISSING
+mfg-material-issue,tab,audit,,MISSING
+mfg-material-issue,tab,analytics & graphs,,MISSING
+mfg-material-issue,tab,documents,,MISSING
+mfg-material-issue,tab,approvals,,MISSING
+mfg-material-issue,tab,reports,,MISSING
+mfg-material-issue,tab,audit trail,,MISSING
+mfg-material-issue,tab,,ledger,EXTRA
+mfg-material-issue,tab,,vouchers,EXTRA
+mfg-material-issue,tab,,customer material,EXTRA
+mfg-workorders,tab,work order queue,,MISSING
+mfg-workorders,tab,operation details,,MISSING
+mfg-workorders,tab,operator assignment,,MISSING
+mfg-workorders,tab,material consumption,,MISSING
+mfg-workorders,tab,downtime & scrap,,MISSING
+mfg-workorders,tab,completion,,MISSING
+mfg-workorders,tab,analytics & graphs,,MISSING
+mfg-workorders,tab,documents,,MISSING
+mfg-workorders,tab,approvals,,MISSING
+mfg-workorders,tab,reports,,MISSING
+mfg-workorders,tab,audit trail,,MISSING
+mfg-shopfloor,tab,shop floor dashboard workspace,,MISSING
+mfg-shopfloor,tab,shop floor dashboard details,,MISSING
+mfg-shopfloor,tab,shop floor dashboard workflow,,MISSING
+mfg-shopfloor,tab,shop floor dashboard exceptions,,MISSING
+mfg-shopfloor,tab,shop floor dashboard performance,,MISSING
+mfg-shopfloor,tab,shop floor dashboard controls,,MISSING
+mfg-wip,tab,wip register,,MISSING
+mfg-wip,tab,process quantity,,MISSING
+mfg-wip,tab,value,,MISSING
+mfg-wip,tab,ageing,,MISSING
+mfg-wip,tab,exceptions,,MISSING
+mfg-wip,tab,audit,,MISSING
+mfg-wip,tab,analytics & graphs,,MISSING
+mfg-wip,tab,documents,,MISSING
+mfg-wip,tab,approvals,,MISSING
+mfg-wip,tab,reports,,MISSING
+mfg-wip,tab,audit trail,,MISSING
+mfg-fg,tab,fg receipts,,MISSING
+mfg-fg,tab,so reservation,,MISSING
+mfg-fg,tab,warehouse,,MISSING
+mfg-fg,tab,dispatch availability,,MISSING
+mfg-fg,tab,returns,,MISSING
+mfg-fg,tab,audit,,MISSING
+mfg-fg,tab,analytics & graphs,,MISSING
+mfg-fg,tab,calendar & schedule,,MISSING
+mfg-fg,tab,documents,,MISSING
+mfg-fg,tab,approvals,,MISSING
+mfg-fg,tab,reports,,MISSING
+mfg-fg,tab,audit trail,,MISSING
+mfg-scrap,tab,scrap register,,MISSING
+mfg-scrap,tab,scrap reasons,,MISSING
+mfg-scrap,tab,material recovery,,MISSING
+mfg-scrap,tab,approval & disposal,,MISSING
+mfg-scrap,tab,cost impact,,MISSING
+mfg-scrap,tab,scrap trend,,MISSING
+mfg-scrap,tab,analytics & graphs,,MISSING
+mfg-scrap,tab,documents,,MISSING
+mfg-scrap,tab,approvals,,MISSING
+mfg-scrap,tab,reports,,MISSING
+mfg-scrap,tab,audit trail,,MISSING
+mfg-rework,tab,rework queue,,MISSING
+mfg-rework,tab,defect source,,MISSING
+mfg-rework,tab,rework routing,,MISSING
+mfg-rework,tab,material labor,,MISSING
+mfg-rework,tab,reinspection,,MISSING
+mfg-rework,tab,rework cost,,MISSING
+mfg-rework,tab,analytics & graphs,,MISSING
+mfg-rework,tab,documents,,MISSING
+mfg-rework,tab,approvals,,MISSING
+mfg-rework,tab,reports,,MISSING
+mfg-rework,tab,audit trail,,MISSING
+mfg-costing,tab,cost sheet,,MISSING
+mfg-costing,tab,material cost,,MISSING
+mfg-costing,tab,labor cost,,MISSING
+mfg-costing,tab,machine overhead,,MISSING
+mfg-costing,tab,variance analysis,,MISSING
+mfg-costing,tab,actual vs standard,,MISSING
+mfg-costing,tab,analytics & graphs,,MISSING
+mfg-costing,tab,documents,,MISSING
+mfg-costing,tab,approvals,,MISSING
+mfg-costing,tab,reports,,MISSING
+mfg-costing,tab,audit trail,,MISSING
+qms-plans,tab,inspection plan master,,MISSING
+qms-plans,tab,characteristics,,MISSING
+qms-plans,tab,sampling rules,,MISSING
+qms-plans,tab,specification limits,,MISSING
+qms-plans,tab,revision control,,MISSING
+qms-plans,tab,plan coverage,,MISSING
+qms-plans,tab,analytics & graphs,,MISSING
+qms-plans,tab,documents,,MISSING
+qms-plans,tab,approvals,,MISSING
+qms-plans,tab,reports,,MISSING
+qms-plans,tab,audit trail,,MISSING
+qms-incoming,tab,inspection queue,,MISSING
+qms-incoming,tab,results,,MISSING
+qms-incoming,tab,accepted stock,,MISSING
+qms-incoming,tab,rejected & vendor return,,MISSING
+qms-incoming,tab,ncr,,MISSING
+qms-incoming,tab,audit,,MISSING
+qms-incoming,tab,analytics & graphs,,MISSING
+qms-incoming,tab,documents,,MISSING
+qms-incoming,tab,approvals,,MISSING
+qms-incoming,tab,reports,,MISSING
+qms-incoming,tab,audit trail,,MISSING
+qms-process,tab,in process inspection,,MISSING
+qms-process,tab,operation checkpoints,,MISSING
+qms-process,tab,spc readings,,MISSING
+qms-process,tab,hold release,,MISSING
+qms-process,tab,defect escalation,,MISSING
+qms-process,tab,process capability,,MISSING
+qms-process,tab,analytics & graphs,,MISSING
+qms-process,tab,documents,,MISSING
+qms-process,tab,approvals,,MISSING
+qms-process,tab,reports,,MISSING
+qms-process,tab,audit trail,,MISSING
+qms-final,tab,inspection queue,,MISSING
+qms-final,tab,test results,,MISSING
+qms-final,tab,accepted fg,,MISSING
+qms-final,tab,rework,,MISSING
+qms-final,tab,scrap,,MISSING
+qms-final,tab,audit,,MISSING
+qms-final,tab,analytics & graphs,,MISSING
+qms-final,tab,documents,,MISSING
+qms-final,tab,approvals,,MISSING
+qms-final,tab,reports,,MISSING
+qms-final,tab,audit trail,,MISSING
+qms-supplier,tab,supplier quality dashboard,,MISSING
+qms-supplier,tab,ppm & rejection,,MISSING
+qms-supplier,tab,incoming trends,,MISSING
+qms-supplier,tab,scar actions,,MISSING
+qms-supplier,tab,audit findings,,MISSING
+qms-supplier,tab,supplier quality score,,MISSING
+qms-supplier,tab,analytics & graphs,,MISSING
+qms-supplier,tab,documents,,MISSING
+qms-supplier,tab,approvals,,MISSING
+qms-supplier,tab,reports,,MISSING
+qms-supplier,tab,audit trail,,MISSING
+qms-inspections,tab,inspection register,,MISSING
+qms-inspections,tab,parameter results,,MISSING
+qms-inspections,tab,sample details,,MISSING
+qms-inspections,tab,accept reject,,MISSING
+qms-inspections,tab,attachments & certificates,,MISSING
+qms-inspections,tab,inspection analytics,,MISSING
+qms-inspections,tab,analytics & graphs,,MISSING
+qms-inspections,tab,documents,,MISSING
+qms-inspections,tab,approvals,,MISSING
+qms-inspections,tab,reports,,MISSING
+qms-inspections,tab,audit trail,,MISSING
+qms-ncr,tab,ncr register,,MISSING
+qms-ncr,tab,containment,,MISSING
+qms-ncr,tab,root cause,,MISSING
+qms-ncr,tab,disposition,,MISSING
+qms-ncr,tab,responsibility & due date,,MISSING
+qms-ncr,tab,ncr trend,,MISSING
+qms-ncr,tab,analytics & graphs,,MISSING
+qms-ncr,tab,calendar & schedule,,MISSING
+qms-ncr,tab,documents,,MISSING
+qms-ncr,tab,approvals,,MISSING
+qms-ncr,tab,reports,,MISSING
+qms-ncr,tab,audit trail,,MISSING
+qms-capa,tab,capa register,,MISSING
+qms-capa,tab,problem statement,,MISSING
+qms-capa,tab,root cause,,MISSING
+qms-capa,tab,corrective action,,MISSING
+qms-capa,tab,preventive action,,MISSING
+qms-capa,tab,effectiveness check,,MISSING
+qms-capa,tab,analytics & graphs,,MISSING
+qms-capa,tab,calendar & schedule,,MISSING
+qms-capa,tab,documents,,MISSING
+qms-capa,tab,approvals,,MISSING
+qms-capa,tab,reports,,MISSING
+qms-capa,tab,audit trail,,MISSING
+qms-5why,tab,5 why cases,,MISSING
+qms-5why,tab,problem definition,,MISSING
+qms-5why,tab,why chain,,MISSING
+qms-5why,tab,root cause evidence,,MISSING
+qms-5why,tab,action linkage,,MISSING
+qms-5why,tab,closure review,,MISSING
+qms-5why,tab,analytics & graphs,,MISSING
+qms-5why,tab,documents,,MISSING
+qms-5why,tab,approvals,,MISSING
+qms-5why,tab,reports,,MISSING
+qms-5why,tab,audit trail,,MISSING
+qms-calibration,tab,instrument register,,MISSING
+qms-calibration,tab,calibration schedule,,MISSING
+qms-calibration,tab,calibration results,,MISSING
+qms-calibration,tab,out of tolerance,,MISSING
+qms-calibration,tab,certificates,,MISSING
+qms-calibration,tab,compliance status,,MISSING
+qms-calibration,tab,analytics & graphs,,MISSING
+qms-calibration,tab,calendar & schedule,,MISSING
+qms-calibration,tab,documents,,MISSING
+qms-calibration,tab,approvals,,MISSING
+qms-calibration,tab,reports,,MISSING
+qms-calibration,tab,audit trail,,MISSING
+maint-machines,tab,machine register,,MISSING
+maint-machines,tab,technical specifications,,MISSING
+maint-machines,tab,location & ownership,,MISSING
+maint-machines,tab,service history,,MISSING
+maint-machines,tab,documents,,MISSING
+maint-machines,tab,machine health,,MISSING
+maint-machines,tab,analytics & graphs,,MISSING
+maint-machines,tab,calendar & schedule,,MISSING
+maint-machines,tab,approvals,,MISSING
+maint-machines,tab,reports,,MISSING
+maint-machines,tab,audit trail,,MISSING
+maint-equipment,tab,equipment register,,MISSING
+maint-equipment,tab,criticality,,MISSING
+maint-equipment,tab,component hierarchy,,MISSING
+maint-equipment,tab,operating parameters,,MISSING
+maint-equipment,tab,maintenance history,,MISSING
+maint-equipment,tab,lifecycle cost,,MISSING
+maint-equipment,tab,analytics & graphs,,MISSING
+maint-equipment,tab,calendar & schedule,,MISSING
+maint-equipment,tab,documents,,MISSING
+maint-equipment,tab,approvals,,MISSING
+maint-equipment,tab,reports,,MISSING
+maint-equipment,tab,audit trail,,MISSING
+maint-preventive,tab,pm schedule,,MISSING
+maint-preventive,tab,maintenance plans,,MISSING
+maint-preventive,tab,due work,,MISSING
+maint-preventive,tab,checklist execution,,MISSING
+maint-preventive,tab,spare planning,,MISSING
+maint-preventive,tab,pm compliance,,MISSING
+maint-preventive,tab,analytics & graphs,,MISSING
+maint-preventive,tab,calendar & schedule,,MISSING
+maint-preventive,tab,documents,,MISSING
+maint-preventive,tab,approvals,,MISSING
+maint-preventive,tab,reports,,MISSING
+maint-preventive,tab,audit trail,,MISSING
+maint-breakdown,tab,breakdown queue,,MISSING
+maint-breakdown,tab,failure details,,MISSING
+maint-breakdown,tab,response timeline,,MISSING
+maint-breakdown,tab,repair actions,,MISSING
+maint-breakdown,tab,root cause,,MISSING
+maint-breakdown,tab,breakdown cost,,MISSING
+maint-breakdown,tab,analytics & graphs,,MISSING
+maint-breakdown,tab,calendar & schedule,,MISSING
+maint-breakdown,tab,documents,,MISSING
+maint-breakdown,tab,approvals,,MISSING
+maint-breakdown,tab,reports,,MISSING
+maint-breakdown,tab,audit trail,,MISSING
+maint-workorders,tab,maintenance wo,,MISSING
+maint-workorders,tab,job plan,,MISSING
+maint-workorders,tab,technician assignment,,MISSING
+maint-workorders,tab,parts & tools,,MISSING
+maint-workorders,tab,completion & signoff,,MISSING
+maint-workorders,tab,work order kpi,,MISSING
+maint-workorders,tab,analytics & graphs,,MISSING
+maint-workorders,tab,calendar & schedule,,MISSING
+maint-workorders,tab,documents,,MISSING
+maint-workorders,tab,approvals,,MISSING
+maint-workorders,tab,reports,,MISSING
+maint-workorders,tab,audit trail,,MISSING
+maint-spares,tab,spare master,,MISSING
+maint-spares,tab,stock availability,,MISSING
+maint-spares,tab,critical spares,,MISSING
+maint-spares,tab,consumption history,,MISSING
+maint-spares,tab,reorder planning,,MISSING
+maint-spares,tab,spare cost,,MISSING
+maint-spares,tab,analytics & graphs,,MISSING
+maint-spares,tab,documents,,MISSING
+maint-spares,tab,approvals,,MISSING
+maint-spares,tab,reports,,MISSING
+maint-spares,tab,audit trail,,MISSING
+maint-schedule,tab,maintenance calendar,,MISSING
+maint-schedule,tab,weekly plan,,MISSING
+maint-schedule,tab,monthly plan,,MISSING
+maint-schedule,tab,resource loading,,MISSING
+maint-schedule,tab,shutdown plan,,MISSING
+maint-schedule,tab,schedule compliance,,MISSING
+maint-schedule,tab,analytics & graphs,,MISSING
+maint-schedule,tab,calendar & schedule,,MISSING
+maint-schedule,tab,documents,,MISSING
+maint-schedule,tab,approvals,,MISSING
+maint-schedule,tab,reports,,MISSING
+maint-schedule,tab,audit trail,,MISSING
+maint-downtime,tab,downtime register,,MISSING
+maint-downtime,tab,planned downtime,,MISSING
+maint-downtime,tab,unplanned downtime,,MISSING
+maint-downtime,tab,reason pareto,,MISSING
+maint-downtime,tab,production loss,,MISSING
+maint-downtime,tab,downtime trend,,MISSING
+maint-downtime,tab,analytics & graphs,,MISSING
+maint-downtime,tab,documents,,MISSING
+maint-downtime,tab,approvals,,MISSING
+maint-downtime,tab,reports,,MISSING
+maint-downtime,tab,audit trail,,MISSING
+maint-mtbf,tab,reliability dashboard,,MISSING
+maint-mtbf,tab,mtbf by asset,,MISSING
+maint-mtbf,tab,mttr by asset,,MISSING
+maint-mtbf,tab,failure frequency,,MISSING
+maint-mtbf,tab,reliability trend,,MISSING
+maint-mtbf,tab,improvement actions,,MISSING
+maint-mtbf,tab,analytics & graphs,,MISSING
+maint-mtbf,tab,documents,,MISSING
+maint-mtbf,tab,approvals,,MISSING
+maint-mtbf,tab,reports,,MISSING
+maint-mtbf,tab,audit trail,,MISSING
+maint-alerts,tab,alert center,,MISSING
+maint-alerts,tab,service due,,MISSING
+maint-alerts,tab,calibration due,,MISSING
+maint-alerts,tab,document expiry,,MISSING
+maint-alerts,tab,breakdown escalation,,MISSING
+maint-alerts,tab,alert rules,,MISSING
+maint-alerts,tab,analytics & graphs,,MISSING
+maint-alerts,tab,calendar & schedule,,MISSING
+maint-alerts,tab,documents,,MISSING
+maint-alerts,tab,approvals,,MISSING
+maint-alerts,tab,reports,,MISSING
+maint-alerts,tab,audit trail,,MISSING
+fin-coa,tab,account tree,,MISSING
+fin-coa,tab,account master,,MISSING
+fin-coa,tab,group mapping,,MISSING
+fin-coa,tab,posting controls,,MISSING
+fin-coa,tab,opening balances,,MISSING
+fin-coa,tab,coa validation,,MISSING
+fin-coa,tab,analytics & graphs,,MISSING
+fin-coa,tab,documents,,MISSING
+fin-coa,tab,approvals,,MISSING
+fin-coa,tab,reports,,MISSING
+fin-coa,tab,audit trail,,MISSING
+fin-gl,tab,general ledger,,MISSING
+fin-gl,tab,voucher drilldown,,MISSING
+fin-gl,tab,account movement,,MISSING
+fin-gl,tab,cost center split,,MISSING
+fin-gl,tab,period comparison,,MISSING
+fin-gl,tab,ledger audit,,MISSING
+fin-gl,tab,analytics & graphs,,MISSING
+fin-gl,tab,documents,,MISSING
+fin-gl,tab,approvals,,MISSING
+fin-gl,tab,reports,,MISSING
+fin-gl,tab,audit trail,,MISSING
+fin-journal,tab,journal register,,MISSING
+fin-journal,tab,debit credit lines,,MISSING
+fin-journal,tab,supporting documents,,MISSING
+fin-journal,tab,approval & posting,,MISSING
+fin-journal,tab,reversal entries,,MISSING
+fin-journal,tab,journal audit,,MISSING
+fin-journal,tab,analytics & graphs,,MISSING
+fin-journal,tab,documents,,MISSING
+fin-journal,tab,approvals,,MISSING
+fin-journal,tab,reports,,MISSING
+fin-journal,tab,audit trail,,MISSING
+fin-cashbook,tab,cash book,,MISSING
+fin-cashbook,tab,receipts,,MISSING
+fin-cashbook,tab,payments,,MISSING
+fin-cashbook,tab,petty cash,,MISSING
+fin-cashbook,tab,cash reconciliation,,MISSING
+fin-cashbook,tab,cash position,,MISSING
+fin-cashbook,tab,analytics & graphs,,MISSING
+fin-cashbook,tab,calendar & schedule,,MISSING
+fin-cashbook,tab,documents,,MISSING
+fin-cashbook,tab,approvals,,MISSING
+fin-cashbook,tab,reports,,MISSING
+fin-cashbook,tab,audit trail,,MISSING
+fin-bankbook,tab,bank book,,MISSING
+fin-bankbook,tab,bank receipts,,MISSING
+fin-bankbook,tab,bank payments,,MISSING
+fin-bankbook,tab,transfers,,MISSING
+fin-bankbook,tab,uncleared items,,MISSING
+fin-bankbook,tab,bank position,,MISSING
+fin-bankbook,tab,analytics & graphs,,MISSING
+fin-bankbook,tab,calendar & schedule,,MISSING
+fin-bankbook,tab,documents,,MISSING
+fin-bankbook,tab,approvals,,MISSING
+fin-bankbook,tab,reports,,MISSING
+fin-bankbook,tab,audit trail,,MISSING
+fin-ap,tab,vendor payables,,MISSING
+fin-ap,tab,invoice queue,,MISSING
+fin-ap,tab,due schedule,,MISSING
+fin-ap,tab,payment proposal,,MISSING
+fin-ap,tab,debit notes,,MISSING
+fin-ap,tab,ap ageing,,MISSING
+fin-ap,tab,analytics & graphs,,MISSING
+fin-ap,tab,calendar & schedule,,MISSING
+fin-ap,tab,documents,,MISSING
+fin-ap,tab,approvals,,MISSING
+fin-ap,tab,reports,,MISSING
+fin-ap,tab,audit trail,,MISSING
+fin-ar,tab,customer receivables,,MISSING
+fin-ar,tab,invoice exposure,,MISSING
+fin-ar,tab,due schedule,,MISSING
+fin-ar,tab,collection allocation,,MISSING
+fin-ar,tab,credit notes,,MISSING
+fin-ar,tab,ar ageing,,MISSING
+fin-ar,tab,analytics & graphs,,MISSING
+fin-ar,tab,calendar & schedule,,MISSING
+fin-ar,tab,documents,,MISSING
+fin-ar,tab,approvals,,MISSING
+fin-ar,tab,reports,,MISSING
+fin-ar,tab,audit trail,,MISSING
+fin-creditnote,tab,credit note register,,MISSING
+fin-creditnote,tab,reference invoice,,MISSING
+fin-creditnote,tab,tax adjustment,,MISSING
+fin-creditnote,tab,approval,,MISSING
+fin-creditnote,tab,ledger posting,,MISSING
+fin-creditnote,tab,credit note analysis,,MISSING
+fin-creditnote,tab,analytics & graphs,,MISSING
+fin-creditnote,tab,documents,,MISSING
+fin-creditnote,tab,approvals,,MISSING
+fin-creditnote,tab,reports,,MISSING
+fin-creditnote,tab,audit trail,,MISSING
+fin-debitnote,tab,debit note register,,MISSING
+fin-debitnote,tab,vendor reference,,MISSING
+fin-debitnote,tab,tax adjustment,,MISSING
+fin-debitnote,tab,approval,,MISSING
+fin-debitnote,tab,ledger posting,,MISSING
+fin-debitnote,tab,debit note analysis,,MISSING
+fin-debitnote,tab,analytics & graphs,,MISSING
+fin-debitnote,tab,documents,,MISSING
+fin-debitnote,tab,approvals,,MISSING
+fin-debitnote,tab,reports,,MISSING
+fin-debitnote,tab,audit trail,,MISSING
+fin-bankreco,tab,reconciliation workspace,,MISSING
+fin-bankreco,tab,bank statement,,MISSING
+fin-bankreco,tab,erp transactions,,MISSING
+fin-bankreco,tab,auto matching,,MISSING
+fin-bankreco,tab,unmatched exceptions,,MISSING
+fin-bankreco,tab,reconciliation summary,,MISSING
+fin-bankreco,tab,analytics & graphs,,MISSING
+fin-bankreco,tab,documents,,MISSING
+fin-bankreco,tab,approvals,,MISSING
+fin-bankreco,tab,reports,,MISSING
+fin-bankreco,tab,audit trail,,MISSING
+fin-costcenter,tab,cost center master,,MISSING
+fin-costcenter,tab,hierarchy,,MISSING
+fin-costcenter,tab,budget mapping,,MISSING
+fin-costcenter,tab,transaction allocation,,MISSING
+fin-costcenter,tab,cost statement,,MISSING
+fin-costcenter,tab,variance,,MISSING
+fin-costcenter,tab,analytics & graphs,,MISSING
+fin-costcenter,tab,documents,,MISSING
+fin-costcenter,tab,approvals,,MISSING
+fin-costcenter,tab,reports,,MISSING
+fin-costcenter,tab,audit trail,,MISSING
+fin-profitcenter,tab,profit center master,,MISSING
+fin-profitcenter,tab,revenue allocation,,MISSING
+fin-profitcenter,tab,cost allocation,,MISSING
+fin-profitcenter,tab,contribution margin,,MISSING
+fin-profitcenter,tab,segment p&l,,MISSING
+fin-profitcenter,tab,performance,,MISSING
+fin-profitcenter,tab,analytics & graphs,,MISSING
+fin-profitcenter,tab,documents,,MISSING
+fin-profitcenter,tab,approvals,,MISSING
+fin-profitcenter,tab,reports,,MISSING
+fin-profitcenter,tab,audit trail,,MISSING
+fin-expenses,tab,expense register,,MISSING
+fin-expenses,tab,expense claims,,MISSING
+fin-expenses,tab,policy validation,,MISSING
+fin-expenses,tab,approval queue,,MISSING
+fin-expenses,tab,payment status,,MISSING
+fin-expenses,tab,spend analytics,,MISSING
+fin-expenses,tab,analytics & graphs,,MISSING
+fin-expenses,tab,calendar & schedule,,MISSING
+fin-expenses,tab,documents,,MISSING
+fin-expenses,tab,approvals,,MISSING
+fin-expenses,tab,reports,,MISSING
+fin-expenses,tab,audit trail,,MISSING
+fin-budget,tab,budget register,,MISSING
+fin-budget,tab,department budgets,,MISSING
+fin-budget,tab,commitments,,MISSING
+fin-budget,tab,actual consumption,,MISSING
+fin-budget,tab,budget control,,MISSING
+fin-budget,tab,variance forecast,,MISSING
+fin-budget,tab,analytics & graphs,,MISSING
+fin-budget,tab,documents,,MISSING
+fin-budget,tab,approvals,,MISSING
+fin-budget,tab,reports,,MISSING
+fin-budget,tab,audit trail,,MISSING
+fin-trial,tab,trial balance,,MISSING
+fin-trial,tab,opening balance,,MISSING
+fin-trial,tab,debit movement,,MISSING
+fin-trial,tab,credit movement,,MISSING
+fin-trial,tab,closing balance,,MISSING
+fin-trial,tab,exception review,,MISSING
+fin-trial,tab,analytics & graphs,,MISSING
+fin-trial,tab,documents,,MISSING
+fin-trial,tab,approvals,,MISSING
+fin-trial,tab,reports,,MISSING
+fin-trial,tab,audit trail,,MISSING
+fin-pnl,tab,profit & loss,,MISSING
+fin-pnl,tab,revenue breakdown,,MISSING
+fin-pnl,tab,cogs & gross margin,,MISSING
+fin-pnl,tab,operating expenses,,MISSING
+fin-pnl,tab,ebitda & net profit,,MISSING
+fin-pnl,tab,period comparison,,MISSING
+fin-pnl,tab,analytics & graphs,,MISSING
+fin-pnl,tab,documents,,MISSING
+fin-pnl,tab,approvals,,MISSING
+fin-pnl,tab,reports,,MISSING
+fin-pnl,tab,audit trail,,MISSING
+fin-bs,tab,balance sheet,,MISSING
+fin-bs,tab,assets,,MISSING
+fin-bs,tab,liabilities,,MISSING
+fin-bs,tab,equity,,MISSING
+fin-bs,tab,working capital,,MISSING
+fin-bs,tab,period comparison,,MISSING
+fin-bs,tab,analytics & graphs,,MISSING
+fin-bs,tab,documents,,MISSING
+fin-bs,tab,approvals,,MISSING
+fin-bs,tab,reports,,MISSING
+fin-bs,tab,audit trail,,MISSING
+fin-cashflow,tab,cash flow,,MISSING
+fin-cashflow,tab,operating activities,,MISSING
+fin-cashflow,tab,investing activities,,MISSING
+fin-cashflow,tab,financing activities,,MISSING
+fin-cashflow,tab,cash forecast,,MISSING
+fin-cashflow,tab,variance,,MISSING
+fin-cashflow,tab,analytics & graphs,,MISSING
+fin-cashflow,tab,documents,,MISSING
+fin-cashflow,tab,approvals,,MISSING
+fin-cashflow,tab,reports,,MISSING
+fin-cashflow,tab,audit trail,,MISSING
+fin-ageing,tab,ageing summary,,MISSING
+fin-ageing,tab,receivable buckets,,MISSING
+fin-ageing,tab,payable buckets,,MISSING
+fin-ageing,tab,top overdue accounts,,MISSING
+fin-ageing,tab,collection priority,,MISSING
+fin-ageing,tab,ageing trend,,MISSING
+fin-ageing,tab,analytics & graphs,,MISSING
+fin-ageing,tab,calendar & schedule,,MISSING
+fin-ageing,tab,documents,,MISSING
+fin-ageing,tab,approvals,,MISSING
+fin-ageing,tab,reports,,MISSING
+fin-ageing,tab,audit trail,,MISSING
+tax-gst,tab,gst configuration,,MISSING
+tax-gst,tab,gstin registrations,,MISSING
+tax-gst,tab,tax rates,,MISSING
+tax-gst,tab,place of supply,,MISSING
+tax-gst,tab,reverse charge,,MISSING
+tax-gst,tab,gst validation,,MISSING
+tax-gst,tab,analytics & graphs,,MISSING
+tax-gst,tab,documents,,MISSING
+tax-gst,tab,approvals,,MISSING
+tax-gst,tab,reports,,MISSING
+tax-gst,tab,audit trail,,MISSING
+tax-gstr1,tab,gstr 1 workspace,,MISSING
+tax-gstr1,tab,b2b invoices,,MISSING
+tax-gstr1,tab,b2c supplies,,MISSING
+tax-gstr1,tab,credit debit notes,,MISSING
+tax-gstr1,tab,hsn summary,,MISSING
+tax-gstr1,tab,return validation,,MISSING
+tax-gstr1,tab,analytics & graphs,,MISSING
+tax-gstr1,tab,documents,,MISSING
+tax-gstr1,tab,approvals,,MISSING
+tax-gstr1,tab,reports,,MISSING
+tax-gstr1,tab,audit trail,,MISSING
+tax-gstr3b,tab,gstr 3b workspace,,MISSING
+tax-gstr3b,tab,outward tax liability,,MISSING
+tax-gstr3b,tab,eligible itc,,MISSING
+tax-gstr3b,tab,ineligible itc,,MISSING
+tax-gstr3b,tab,tax payment,,MISSING
+tax-gstr3b,tab,return reconciliation,,MISSING
+tax-gstr3b,tab,analytics & graphs,,MISSING
+tax-gstr3b,tab,calendar & schedule,,MISSING
+tax-gstr3b,tab,documents,,MISSING
+tax-gstr3b,tab,approvals,,MISSING
+tax-gstr3b,tab,reports,,MISSING
+tax-gstr3b,tab,audit trail,,MISSING
+tax-tds,tab,tds register,,MISSING
+tax-tds,tab,section mapping,,MISSING
+tax-tds,tab,deduction entries,,MISSING
+tax-tds,tab,challan allocation,,MISSING
+tax-tds,tab,return preparation,,MISSING
+tax-tds,tab,tds compliance,,MISSING
+tax-tds,tab,analytics & graphs,,MISSING
+tax-tds,tab,documents,,MISSING
+tax-tds,tab,approvals,,MISSING
+tax-tds,tab,reports,,MISSING
+tax-tds,tab,audit trail,,MISSING
+tax-tcs,tab,tcs register,,MISSING
+tax-tcs,tab,section mapping,,MISSING
+tax-tcs,tab,collection entries,,MISSING
+tax-tcs,tab,challan allocation,,MISSING
+tax-tcs,tab,return preparation,,MISSING
+tax-tcs,tab,tcs compliance,,MISSING
+tax-tcs,tab,analytics & graphs,,MISSING
+tax-tcs,tab,calendar & schedule,,MISSING
+tax-tcs,tab,documents,,MISSING
+tax-tcs,tab,approvals,,MISSING
+tax-tcs,tab,reports,,MISSING
+tax-tcs,tab,audit trail,,MISSING
+tax-hsn,tab,hsn sac master,,MISSING
+tax-hsn,tab,rate mapping,,MISSING
+tax-hsn,tab,item service mapping,,MISSING
+tax-hsn,tab,usage validation,,MISSING
+tax-hsn,tab,hsn summary,,MISSING
+tax-hsn,tab,compliance checks,,MISSING
+tax-hsn,tab,analytics & graphs,,MISSING
+tax-hsn,tab,calendar & schedule,,MISSING
+tax-hsn,tab,documents,,MISSING
+tax-hsn,tab,approvals,,MISSING
+tax-hsn,tab,reports,,MISSING
+tax-hsn,tab,audit trail,,MISSING
+tax-einvoice,tab,e invoice queue,,MISSING
+tax-einvoice,tab,irn generation,,MISSING
+tax-einvoice,tab,qr code,,MISSING
+tax-einvoice,tab,cancellation,,MISSING
+tax-einvoice,tab,error queue,,MISSING
+tax-einvoice,tab,irp reconciliation,,MISSING
+tax-einvoice,tab,analytics & graphs,,MISSING
+tax-einvoice,tab,documents,,MISSING
+tax-einvoice,tab,approvals,,MISSING
+tax-einvoice,tab,reports,,MISSING
+tax-einvoice,tab,audit trail,,MISSING
+tax-eway,tab,e way bill queue,,MISSING
+tax-eway,tab,part a details,,MISSING
+tax-eway,tab,vehicle part b,,MISSING
+tax-eway,tab,validity & distance,,MISSING
+tax-eway,tab,extension cancellation,,MISSING
+tax-eway,tab,ewb exceptions,,MISSING
+tax-eway,tab,analytics & graphs,,MISSING
+tax-eway,tab,documents,,MISSING
+tax-eway,tab,approvals,,MISSING
+tax-eway,tab,reports,,MISSING
+tax-eway,tab,audit trail,,MISSING
+tax-salesreg,tab,sales register,,MISSING
+tax-salesreg,tab,invoice detail,,MISSING
+tax-salesreg,tab,tax summary,,MISSING
+tax-salesreg,tab,customer gstin,,MISSING
+tax-salesreg,tab,document type,,MISSING
+tax-salesreg,tab,gst reconciliation,,MISSING
+tax-salesreg,tab,analytics & graphs,,MISSING
+tax-salesreg,tab,documents,,MISSING
+tax-salesreg,tab,approvals,,MISSING
+tax-salesreg,tab,reports,,MISSING
+tax-salesreg,tab,audit trail,,MISSING
+tax-purchasereg,tab,purchase register,,MISSING
+tax-purchasereg,tab,vendor invoice detail,,MISSING
+tax-purchasereg,tab,itc eligibility,,MISSING
+tax-purchasereg,tab,vendor gstin,,MISSING
+tax-purchasereg,tab,2b match status,,MISSING
+tax-purchasereg,tab,gst reconciliation,,MISSING
+tax-purchasereg,tab,analytics & graphs,,MISSING
+tax-purchasereg,tab,documents,,MISSING
+tax-purchasereg,tab,approvals,,MISSING
+tax-purchasereg,tab,reports,,MISSING
+tax-purchasereg,tab,audit trail,,MISSING
+hr-employees,tab,employee directory,,MISSING
+hr-employees,tab,employment profile,,MISSING
+hr-employees,tab,personal & statutory,,MISSING
+hr-employees,tab,organization assignment,,MISSING
+hr-employees,tab,documents,,MISSING
+hr-employees,tab,employee lifecycle,,MISSING
+hr-employees,tab,analytics & graphs,,MISSING
+hr-employees,tab,approvals,,MISSING
+hr-employees,tab,reports,,MISSING
+hr-employees,tab,audit trail,,MISSING
+hr-recruitment,tab,job requisitions,,MISSING
+hr-recruitment,tab,candidate pipeline,,MISSING
+hr-recruitment,tab,interviews,,MISSING
+hr-recruitment,tab,offers,,MISSING
+hr-recruitment,tab,joining forecast,,MISSING
+hr-recruitment,tab,recruitment analytics,,MISSING
+hr-recruitment,tab,analytics & graphs,,MISSING
+hr-recruitment,tab,calendar & schedule,,MISSING
+hr-recruitment,tab,documents,,MISSING
+hr-recruitment,tab,approvals,,MISSING
+hr-recruitment,tab,reports,,MISSING
+hr-recruitment,tab,audit trail,,MISSING
+hr-onboarding,tab,onboarding queue,,MISSING
+hr-onboarding,tab,document collection,,MISSING
+hr-onboarding,tab,joining checklist,,MISSING
+hr-onboarding,tab,it asset allocation,,MISSING
+hr-onboarding,tab,induction,,MISSING
+hr-onboarding,tab,probation tracking,,MISSING
+hr-onboarding,tab,analytics & graphs,,MISSING
+hr-onboarding,tab,calendar & schedule,,MISSING
+hr-onboarding,tab,documents,,MISSING
+hr-onboarding,tab,approvals,,MISSING
+hr-onboarding,tab,reports,,MISSING
+hr-onboarding,tab,audit trail,,MISSING
+hr-attendance,tab,daily attendance,,MISSING
+hr-attendance,tab,monthly calendar,,MISSING
+hr-attendance,tab,late early & overtime,,MISSING
+hr-attendance,tab,geo device logs,,MISSING
+hr-attendance,tab,regularization,,MISSING
+hr-attendance,tab,attendance analytics,,MISSING
+hr-attendance,tab,analytics & graphs,,MISSING
+hr-attendance,tab,calendar & schedule,,MISSING
+hr-attendance,tab,documents,,MISSING
+hr-attendance,tab,approvals,,MISSING
+hr-attendance,tab,reports,,MISSING
+hr-attendance,tab,audit trail,,MISSING
+hr-leave,tab,leave requests,,MISSING
+hr-leave,tab,leave balances,,MISSING
+hr-leave,tab,approval queue,,MISSING
+hr-leave,tab,leave calendar,,MISSING
+hr-leave,tab,policy rules,,MISSING
+hr-leave,tab,leave analytics,,MISSING
+hr-leave,tab,analytics & graphs,,MISSING
+hr-leave,tab,calendar & schedule,,MISSING
+hr-leave,tab,documents,,MISSING
+hr-leave,tab,approvals,,MISSING
+hr-leave,tab,reports,,MISSING
+hr-leave,tab,audit trail,,MISSING
+hr-expense,tab,expense claims,,MISSING
+hr-expense,tab,receipts & categories,,MISSING
+hr-expense,tab,policy validation,,MISSING
+hr-expense,tab,approval queue,,MISSING
+hr-expense,tab,payment link,,MISSING
+hr-expense,tab,expense analytics,,MISSING
+hr-expense,tab,analytics & graphs,,MISSING
+hr-expense,tab,calendar & schedule,,MISSING
+hr-expense,tab,documents,,MISSING
+hr-expense,tab,approvals,,MISSING
+hr-expense,tab,reports,,MISSING
+hr-expense,tab,audit trail,,MISSING
+hr-performance,tab,performance cycles,,MISSING
+hr-performance,tab,goals & kras,,MISSING
+hr-performance,tab,check ins,,MISSING
+hr-performance,tab,ratings,,MISSING
+hr-performance,tab,calibration,,MISSING
+hr-performance,tab,performance analytics,,MISSING
+hr-performance,tab,analytics & graphs,,MISSING
+hr-performance,tab,documents,,MISSING
+hr-performance,tab,approvals,,MISSING
+hr-performance,tab,reports,,MISSING
+hr-performance,tab,audit trail,,MISSING
+hr-training,tab,training calendar,,MISSING
+hr-training,tab,programs,,MISSING
+hr-training,tab,participants,,MISSING
+hr-training,tab,assessments,,MISSING
+hr-training,tab,certificates,,MISSING
+hr-training,tab,training effectiveness,,MISSING
+hr-training,tab,analytics & graphs,,MISSING
+hr-training,tab,calendar & schedule,,MISSING
+hr-training,tab,documents,,MISSING
+hr-training,tab,approvals,,MISSING
+hr-training,tab,reports,,MISSING
+hr-training,tab,audit trail,,MISSING
+hr-documents,tab,employee documents,,MISSING
+hr-documents,tab,expiry tracker,,MISSING
+hr-documents,tab,verification,,MISSING
+hr-documents,tab,access control,,MISSING
+hr-documents,tab,acknowledgements,,MISSING
+hr-documents,tab,document compliance,,MISSING
+hr-documents,tab,analytics & graphs,,MISSING
+hr-documents,tab,calendar & schedule,,MISSING
+hr-documents,tab,documents,,MISSING
+hr-documents,tab,approvals,,MISSING
+hr-documents,tab,reports,,MISSING
+hr-documents,tab,audit trail,,MISSING
+hr-exit,tab,exit cases,,MISSING
+hr-exit,tab,resignation approval,,MISSING
+hr-exit,tab,clearance checklist,,MISSING
+hr-exit,tab,final settlement,,MISSING
+hr-exit,tab,exit interview,,MISSING
+hr-exit,tab,attrition analytics,,MISSING
+hr-exit,tab,analytics & graphs,,MISSING
+hr-exit,tab,calendar & schedule,,MISSING
+hr-exit,tab,documents,,MISSING
+hr-exit,tab,approvals,,MISSING
+hr-exit,tab,reports,,MISSING
+hr-exit,tab,audit trail,,MISSING
+hr-ess,tab,my profile,,MISSING
+hr-ess,tab,my attendance,,MISSING
+hr-ess,tab,my leave,,MISSING
+hr-ess,tab,my payslips,,MISSING
+hr-ess,tab,my expenses,,MISSING
+hr-ess,tab,hr requests,,MISSING
+hr-ess,tab,analytics & graphs,,MISSING
+hr-ess,tab,calendar & schedule,,MISSING
+hr-ess,tab,documents,,MISSING
+hr-ess,tab,approvals,,MISSING
+hr-ess,tab,reports,,MISSING
+hr-ess,tab,audit trail,,MISSING
+pay-structure,tab,salary structure master,,MISSING
+pay-structure,tab,earnings components,,MISSING
+pay-structure,tab,deduction components,,MISSING
+pay-structure,tab,statutory mapping,,MISSING
+pay-structure,tab,ctc simulation,,MISSING
+pay-structure,tab,structure revision,,MISSING
+pay-structure,tab,analytics & graphs,,MISSING
+pay-structure,tab,documents,,MISSING
+pay-structure,tab,approvals,,MISSING
+pay-structure,tab,reports,,MISSING
+pay-structure,tab,audit trail,,MISSING
+pay-processing,tab,payroll run,,MISSING
+pay-processing,tab,attendance inputs,,MISSING
+pay-processing,tab,earnings deductions,,MISSING
+pay-processing,tab,statutory calculation,,MISSING
+pay-processing,tab,validation & lock,,MISSING
+pay-processing,tab,payroll summary,,MISSING
+pay-processing,tab,analytics & graphs,,MISSING
+pay-processing,tab,calendar & schedule,,MISSING
+pay-processing,tab,documents,,MISSING
+pay-processing,tab,approvals,,MISSING
+pay-processing,tab,reports,,MISSING
+pay-processing,tab,audit trail,,MISSING
+pay-overtime,tab,overtime register,,MISSING
+pay-overtime,tab,eligible hours,,MISSING
+pay-overtime,tab,rate rules,,MISSING
+pay-overtime,tab,approval queue,,MISSING
+pay-overtime,tab,payroll transfer,,MISSING
+pay-overtime,tab,ot analytics,,MISSING
+pay-overtime,tab,analytics & graphs,,MISSING
+pay-overtime,tab,documents,,MISSING
+pay-overtime,tab,approvals,,MISSING
+pay-overtime,tab,reports,,MISSING
+pay-overtime,tab,audit trail,,MISSING
+pay-incentive,tab,incentive register,,MISSING
+pay-incentive,tab,scheme rules,,MISSING
+pay-incentive,tab,target achievement,,MISSING
+pay-incentive,tab,approval,,MISSING
+pay-incentive,tab,payroll transfer,,MISSING
+pay-incentive,tab,incentive analytics,,MISSING
+pay-incentive,tab,analytics & graphs,,MISSING
+pay-incentive,tab,documents,,MISSING
+pay-incentive,tab,approvals,,MISSING
+pay-incentive,tab,reports,,MISSING
+pay-incentive,tab,audit trail,,MISSING
+pay-loan,tab,loan register,,MISSING
+pay-loan,tab,disbursement,,MISSING
+pay-loan,tab,emi schedule,,MISSING
+pay-loan,tab,recovery,,MISSING
+pay-loan,tab,foreclosure,,MISSING
+pay-loan,tab,outstanding analysis,,MISSING
+pay-loan,tab,analytics & graphs,,MISSING
+pay-loan,tab,calendar & schedule,,MISSING
+pay-loan,tab,documents,,MISSING
+pay-loan,tab,approvals,,MISSING
+pay-loan,tab,reports,,MISSING
+pay-loan,tab,audit trail,,MISSING
+pay-pf,tab,pf workspace,,MISSING
+pay-pf,tab,uan mapping,,MISSING
+pay-pf,tab,employee contribution,,MISSING
+pay-pf,tab,employer contribution,,MISSING
+pay-pf,tab,ecr validation,,MISSING
+pay-pf,tab,pf compliance,,MISSING
+pay-pf,tab,analytics & graphs,,MISSING
+pay-pf,tab,documents,,MISSING
+pay-pf,tab,approvals,,MISSING
+pay-pf,tab,reports,,MISSING
+pay-pf,tab,audit trail,,MISSING
+pay-esic,tab,esic workspace,,MISSING
+pay-esic,tab,ip mapping,,MISSING
+pay-esic,tab,contribution calculation,,MISSING
+pay-esic,tab,eligibility,,MISSING
+pay-esic,tab,challan preparation,,MISSING
+pay-esic,tab,esic compliance,,MISSING
+pay-esic,tab,analytics & graphs,,MISSING
+pay-esic,tab,documents,,MISSING
+pay-esic,tab,approvals,,MISSING
+pay-esic,tab,reports,,MISSING
+pay-esic,tab,audit trail,,MISSING
+pay-pt,tab,professional tax,,MISSING
+pay-pt,tab,state slabs,,MISSING
+pay-pt,tab,employee liability,,MISSING
+pay-pt,tab,monthly summary,,MISSING
+pay-pt,tab,challan,,MISSING
+pay-pt,tab,pt compliance,,MISSING
+pay-pt,tab,analytics & graphs,,MISSING
+pay-pt,tab,documents,,MISSING
+pay-pt,tab,approvals,,MISSING
+pay-pt,tab,reports,,MISSING
+pay-pt,tab,audit trail,,MISSING
+pay-tds,tab,payroll tds,,MISSING
+pay-tds,tab,tax regime,,MISSING
+pay-tds,tab,declarations,,MISSING
+pay-tds,tab,taxable income,,MISSING
+pay-tds,tab,monthly deduction,,MISSING
+pay-tds,tab,form 16 summary,,MISSING
+pay-tds,tab,analytics & graphs,,MISSING
+pay-tds,tab,documents,,MISSING
+pay-tds,tab,approvals,,MISSING
+pay-tds,tab,reports,,MISSING
+pay-tds,tab,audit trail,,MISSING
+pay-payslip,tab,payslip register,,MISSING
+pay-payslip,tab,earnings breakdown,,MISSING
+pay-payslip,tab,deductions breakdown,,MISSING
+pay-payslip,tab,employer contribution,,MISSING
+pay-payslip,tab,payment & distribution,,MISSING
+pay-payslip,tab,payslip audit,,MISSING
+pay-payslip,tab,analytics & graphs,,MISSING
+pay-payslip,tab,calendar & schedule,,MISSING
+pay-payslip,tab,documents,,MISSING
+pay-payslip,tab,approvals,,MISSING
+pay-payslip,tab,reports,,MISSING
+pay-payslip,tab,audit trail,,MISSING
+pay-bank,tab,bank transfer batches,,MISSING
+pay-bank,tab,salary accounts,,MISSING
+pay-bank,tab,payment file,,MISSING
+pay-bank,tab,validation errors,,MISSING
+pay-bank,tab,bank acknowledgement,,MISSING
+pay-bank,tab,payment reconciliation,,MISSING
+pay-bank,tab,analytics & graphs,,MISSING
+pay-bank,tab,calendar & schedule,,MISSING
+pay-bank,tab,documents,,MISSING
+pay-bank,tab,approvals,,MISSING
+pay-bank,tab,reports,,MISSING
+pay-bank,tab,audit trail,,MISSING
+pay-register,tab,salary register,,MISSING
+pay-register,tab,department summary,,MISSING
+pay-register,tab,employee breakdown,,MISSING
+pay-register,tab,statutory deductions,,MISSING
+pay-register,tab,cost center split,,MISSING
+pay-register,tab,payroll trend,,MISSING
+pay-register,tab,analytics & graphs,,MISSING
+pay-register,tab,documents,,MISSING
+pay-register,tab,approvals,,MISSING
+pay-register,tab,reports,,MISSING
+pay-register,tab,audit trail,,MISSING
+proj-demo-control,tab,project cockpit,,MISSING
+proj-demo-control,tab,stage gates,,MISSING
+proj-demo-control,tab,department flow,,MISSING
+proj-demo-control,tab,dependencies,,MISSING
+proj-demo-control,tab,specifications,,MISSING
+proj-demo-control,tab,tests,,MISSING
+proj-demo-control,tab,documents,,MISSING
+proj-demo-control,tab,erp 360,,MISSING
+proj-stage-gates,tab,gate register,,MISSING
+proj-stage-gates,tab,department queue,,MISSING
+proj-stage-gates,tab,ready,,MISSING
+proj-stage-gates,tab,in progress,,MISSING
+proj-stage-gates,tab,blocked,,MISSING
+proj-stage-gates,tab,completed,,MISSING
+proj-stage-gates,tab,audit,,MISSING
+proj-stage-gates,tab,analytics & graphs,,MISSING
+proj-stage-gates,tab,documents,,MISSING
+proj-stage-gates,tab,approvals,,MISSING
+proj-stage-gates,tab,reports,,MISSING
+proj-stage-gates,tab,audit trail,,MISSING
+proj-dependencies,tab,dependency register,,MISSING
+proj-dependencies,tab,predecessors,,MISSING
+proj-dependencies,tab,successors,,MISSING
+proj-dependencies,tab,critical dependencies,,MISSING
+proj-dependencies,tab,released,,MISSING
+proj-dependencies,tab,exceptions,,MISSING
+proj-dependencies,tab,audit,,MISSING
+proj-dependencies,tab,analytics & graphs,,MISSING
+proj-dependencies,tab,documents,,MISSING
+proj-dependencies,tab,approvals,,MISSING
+proj-dependencies,tab,reports,,MISSING
+proj-dependencies,tab,audit trail,,MISSING
+proj-specifications,tab,specification register,,MISSING
+proj-specifications,tab,bldc requirements,,MISSING
+proj-specifications,tab,sppm requirements,,MISSING
+proj-specifications,tab,verification matrix,,MISSING
+proj-specifications,tab,deviations,,MISSING
+proj-specifications,tab,approval,,MISSING
+proj-specifications,tab,audit,,MISSING
+proj-specifications,tab,analytics & graphs,,MISSING
+proj-specifications,tab,documents,,MISSING
+proj-specifications,tab,approvals,,MISSING
+proj-specifications,tab,reports,,MISSING
+proj-specifications,tab,audit trail,,MISSING
+proj-test-records,tab,test register,,MISSING
+proj-test-records,tab,bldc validation,,MISSING
+proj-test-records,tab,sppm fat,,MISSING
+proj-test-records,tab,sppm sat,,MISSING
+proj-test-records,tab,failed retest,,MISSING
+proj-test-records,tab,certificates,,MISSING
+proj-test-records,tab,audit,,MISSING
+proj-test-records,tab,analytics & graphs,,MISSING
+proj-test-records,tab,documents,,MISSING
+proj-test-records,tab,approvals,,MISSING
+proj-test-records,tab,reports,,MISSING
+proj-test-records,tab,audit trail,,MISSING
+proj-documents,tab,document register,,MISSING
+proj-documents,tab,engineering,,MISSING
+proj-documents,tab,purchase,,MISSING
+proj-documents,tab,manufacturing,,MISSING
+proj-documents,tab,quality,,MISSING
+proj-documents,tab,customer,,MISSING
+proj-documents,tab,finance,,MISSING
+proj-documents,tab,audit,,MISSING
+proj-documents,tab,analytics & graphs,,MISSING
+proj-documents,tab,documents,,MISSING
+proj-documents,tab,approvals,,MISSING
+proj-documents,tab,reports,,MISSING
+proj-documents,tab,audit trail,,MISSING
+proj-projects,tab,project register,,MISSING
+proj-projects,tab,scope & milestones,,MISSING
+proj-projects,tab,team & roles,,MISSING
+proj-projects,tab,budget & cost,,MISSING
+proj-projects,tab,risks & issues,,MISSING
+proj-projects,tab,project health,,MISSING
+proj-projects,tab,analytics & graphs,,MISSING
+proj-projects,tab,calendar & schedule,,MISSING
+proj-projects,tab,documents,,MISSING
+proj-projects,tab,approvals,,MISSING
+proj-projects,tab,reports,,MISSING
+proj-projects,tab,audit trail,,MISSING
+proj-tasks,tab,task register,,MISSING
+proj-tasks,tab,priority board,,MISSING
+proj-tasks,tab,dependencies,,MISSING
+proj-tasks,tab,assignees,,MISSING
+proj-tasks,tab,time tracking,,MISSING
+proj-tasks,tab,task analytics,,MISSING
+proj-tasks,tab,analytics & graphs,,MISSING
+proj-tasks,tab,documents,,MISSING
+proj-tasks,tab,approvals,,MISSING
+proj-tasks,tab,reports,,MISSING
+proj-tasks,tab,audit trail,,MISSING
+proj-subtasks,tab,subtask register,,MISSING
+proj-subtasks,tab,parent task,,MISSING
+proj-subtasks,tab,dependencies,,MISSING
+proj-subtasks,tab,assignees,,MISSING
+proj-subtasks,tab,completion evidence,,MISSING
+proj-subtasks,tab,subtask progress,,MISSING
+proj-subtasks,tab,analytics & graphs,,MISSING
+proj-subtasks,tab,documents,,MISSING
+proj-subtasks,tab,approvals,,MISSING
+proj-subtasks,tab,reports,,MISSING
+proj-subtasks,tab,audit trail,,MISSING
+proj-milestones,tab,milestone plan,,MISSING
+proj-milestones,tab,deliverables,,MISSING
+proj-milestones,tab,acceptance criteria,,MISSING
+proj-milestones,tab,dependencies,,MISSING
+proj-milestones,tab,status review,,MISSING
+proj-milestones,tab,milestone variance,,MISSING
+proj-milestones,tab,analytics & graphs,,MISSING
+proj-milestones,tab,calendar & schedule,,MISSING
+proj-milestones,tab,documents,,MISSING
+proj-milestones,tab,approvals,,MISSING
+proj-milestones,tab,reports,,MISSING
+proj-milestones,tab,audit trail,,MISSING
+proj-team,tab,team allocation,,MISSING
+proj-team,tab,role matrix,,MISSING
+proj-team,tab,availability,,MISSING
+proj-team,tab,utilization,,MISSING
+proj-team,tab,skills,,MISSING
+proj-team,tab,resource forecast,,MISSING
+proj-team,tab,analytics & graphs,,MISSING
+proj-team,tab,documents,,MISSING
+proj-team,tab,approvals,,MISSING
+proj-team,tab,reports,,MISSING
+proj-team,tab,audit trail,,MISSING
+proj-timesheets,tab,timesheet register,,MISSING
+proj-timesheets,tab,daily entries,,MISSING
+proj-timesheets,tab,approval queue,,MISSING
+proj-timesheets,tab,billable hours,,MISSING
+proj-timesheets,tab,project allocation,,MISSING
+proj-timesheets,tab,utilization analytics,,MISSING
+proj-timesheets,tab,analytics & graphs,,MISSING
+proj-timesheets,tab,documents,,MISSING
+proj-timesheets,tab,approvals,,MISSING
+proj-timesheets,tab,reports,,MISSING
+proj-timesheets,tab,audit trail,,MISSING
+proj-expenses,tab,project expense register,,MISSING
+proj-expenses,tab,cost category,,MISSING
+proj-expenses,tab,budget check,,MISSING
+proj-expenses,tab,approval,,MISSING
+proj-expenses,tab,client billable,,MISSING
+proj-expenses,tab,expense variance,,MISSING
+proj-expenses,tab,analytics & graphs,,MISSING
+proj-expenses,tab,documents,,MISSING
+proj-expenses,tab,approvals,,MISSING
+proj-expenses,tab,reports,,MISSING
+proj-expenses,tab,audit trail,,MISSING
+proj-budget,tab,project budget,,MISSING
+proj-budget,tab,budget lines,,MISSING
+proj-budget,tab,committed cost,,MISSING
+proj-budget,tab,actual cost,,MISSING
+proj-budget,tab,estimate to complete,,MISSING
+proj-budget,tab,cost variance,,MISSING
+proj-budget,tab,analytics & graphs,,MISSING
+proj-budget,tab,documents,,MISSING
+proj-budget,tab,approvals,,MISSING
+proj-budget,tab,reports,,MISSING
+proj-budget,tab,audit trail,,MISSING
+proj-kanban,tab,kanban workspace,,MISSING
+proj-kanban,tab,kanban details,,MISSING
+proj-kanban,tab,kanban workflow,,MISSING
+proj-kanban,tab,kanban exceptions,,MISSING
+proj-kanban,tab,kanban performance,,MISSING
+proj-kanban,tab,kanban controls,,MISSING
+proj-gantt,tab,gantt plan,,MISSING
+proj-gantt,tab,task timeline,,MISSING
+proj-gantt,tab,dependencies,,MISSING
+proj-gantt,tab,critical path,,MISSING
+proj-gantt,tab,baseline variance,,MISSING
+proj-gantt,tab,schedule forecast,,MISSING
+proj-gantt,tab,analytics & graphs,,MISSING
+proj-gantt,tab,calendar & schedule,,MISSING
+proj-gantt,tab,documents,,MISSING
+proj-gantt,tab,approvals,,MISSING
+proj-gantt,tab,reports,,MISSING
+proj-gantt,tab,audit trail,,MISSING
+proj-profitability,tab,profitability summary,,MISSING
+proj-profitability,tab,revenue,,MISSING
+proj-profitability,tab,direct cost,,MISSING
+proj-profitability,tab,resource cost,,MISSING
+proj-profitability,tab,contribution margin,,MISSING
+proj-profitability,tab,project ranking,,MISSING
+proj-profitability,tab,analytics & graphs,,MISSING
+proj-profitability,tab,documents,,MISSING
+proj-profitability,tab,approvals,,MISSING
+proj-profitability,tab,reports,,MISSING
+proj-profitability,tab,audit trail,,MISSING
+asset-master,tab,asset register,,MISSING
+asset-master,tab,classification,,MISSING
+asset-master,tab,location & custodian,,MISSING
+asset-master,tab,financial details,,MISSING
+asset-master,tab,documents & qr,,MISSING
+asset-master,tab,lifecycle status,,MISSING
+asset-master,tab,analytics & graphs,,MISSING
+asset-master,tab,documents,,MISSING
+asset-master,tab,approvals,,MISSING
+asset-master,tab,reports,,MISSING
+asset-master,tab,audit trail,,MISSING
+asset-capitalization,tab,capitalization queue,,MISSING
+asset-capitalization,tab,purchase link,,MISSING
+asset-capitalization,tab,capitalization date,,MISSING
+asset-capitalization,tab,cost components,,MISSING
+asset-capitalization,tab,gl mapping,,MISSING
+asset-capitalization,tab,capitalization audit,,MISSING
+asset-capitalization,tab,analytics & graphs,,MISSING
+asset-capitalization,tab,documents,,MISSING
+asset-capitalization,tab,approvals,,MISSING
+asset-capitalization,tab,reports,,MISSING
+asset-capitalization,tab,audit trail,,MISSING
+asset-allocation,tab,allocation register,,MISSING
+asset-allocation,tab,employee assignment,,MISSING
+asset-allocation,tab,department location,,MISSING
+asset-allocation,tab,handover,,MISSING
+asset-allocation,tab,return,,MISSING
+asset-allocation,tab,allocation history,,MISSING
+asset-allocation,tab,analytics & graphs,,MISSING
+asset-allocation,tab,documents,,MISSING
+asset-allocation,tab,approvals,,MISSING
+asset-allocation,tab,reports,,MISSING
+asset-allocation,tab,audit trail,,MISSING
+asset-transfer,tab,transfer requests,,MISSING
+asset-transfer,tab,source custodian,,MISSING
+asset-transfer,tab,destination custodian,,MISSING
+asset-transfer,tab,approval,,MISSING
+asset-transfer,tab,physical verification,,MISSING
+asset-transfer,tab,transfer history,,MISSING
+asset-transfer,tab,analytics & graphs,,MISSING
+asset-transfer,tab,documents,,MISSING
+asset-transfer,tab,approvals,,MISSING
+asset-transfer,tab,reports,,MISSING
+asset-transfer,tab,audit trail,,MISSING
+asset-maintenance,tab,asset maintenance,,MISSING
+asset-maintenance,tab,service schedule,,MISSING
+asset-maintenance,tab,work history,,MISSING
+asset-maintenance,tab,service cost,,MISSING
+asset-maintenance,tab,warranty amc link,,MISSING
+asset-maintenance,tab,asset health,,MISSING
+asset-maintenance,tab,analytics & graphs,,MISSING
+asset-maintenance,tab,calendar & schedule,,MISSING
+asset-maintenance,tab,documents,,MISSING
+asset-maintenance,tab,approvals,,MISSING
+asset-maintenance,tab,reports,,MISSING
+asset-maintenance,tab,audit trail,,MISSING
+asset-depreciation,tab,depreciation run,,MISSING
+asset-depreciation,tab,book value,,MISSING
+asset-depreciation,tab,useful life,,MISSING
+asset-depreciation,tab,method & rate,,MISSING
+asset-depreciation,tab,monthly posting,,MISSING
+asset-depreciation,tab,depreciation forecast,,MISSING
+asset-depreciation,tab,analytics & graphs,,MISSING
+asset-depreciation,tab,documents,,MISSING
+asset-depreciation,tab,approvals,,MISSING
+asset-depreciation,tab,reports,,MISSING
+asset-depreciation,tab,audit trail,,MISSING
+asset-disposal,tab,disposal register,,MISSING
+asset-disposal,tab,approval,,MISSING
+asset-disposal,tab,sale scrap value,,MISSING
+asset-disposal,tab,gain loss,,MISSING
+asset-disposal,tab,asset derecognition,,MISSING
+asset-disposal,tab,disposal audit,,MISSING
+asset-disposal,tab,analytics & graphs,,MISSING
+asset-disposal,tab,documents,,MISSING
+asset-disposal,tab,approvals,,MISSING
+asset-disposal,tab,reports,,MISSING
+asset-disposal,tab,audit trail,,MISSING
+asset-qr,tab,qr registry,,MISSING
+asset-qr,tab,label generation,,MISSING
+asset-qr,tab,print queue,,MISSING
+asset-qr,tab,scan history,,MISSING
+asset-qr,tab,asset verification,,MISSING
+asset-qr,tab,invalid scans,,MISSING
+asset-qr,tab,analytics & graphs,,MISSING
+asset-qr,tab,documents,,MISSING
+asset-qr,tab,approvals,,MISSING
+asset-qr,tab,reports,,MISSING
+asset-qr,tab,audit trail,,MISSING
+service-tickets,tab,ticket queue,,MISSING
+service-tickets,tab,sla & priority,,MISSING
+service-tickets,tab,assignment,,MISSING
+service-tickets,tab,conversation timeline,,MISSING
+service-tickets,tab,resolution & closure,,MISSING
+service-tickets,tab,service analytics,,MISSING
+service-tickets,tab,analytics & graphs,,MISSING
+service-tickets,tab,calendar & schedule,,MISSING
+service-tickets,tab,documents,,MISSING
+service-tickets,tab,approvals,,MISSING
+service-tickets,tab,reports,,MISSING
+service-tickets,tab,audit trail,,MISSING
+service-requests,tab,request register,,MISSING
+service-requests,tab,request classification,,MISSING
+service-requests,tab,customer equipment,,MISSING
+service-requests,tab,approval & estimate,,MISSING
+service-requests,tab,execution,,MISSING
+service-requests,tab,request analytics,,MISSING
+service-requests,tab,analytics & graphs,,MISSING
+service-requests,tab,calendar & schedule,,MISSING
+service-requests,tab,documents,,MISSING
+service-requests,tab,approvals,,MISSING
+service-requests,tab,reports,,MISSING
+service-requests,tab,audit trail,,MISSING
+service-technicians,tab,technician board,,MISSING
+service-technicians,tab,skills & territory,,MISSING
+service-technicians,tab,availability,,MISSING
+service-technicians,tab,job assignment,,MISSING
+service-technicians,tab,travel load,,MISSING
+service-technicians,tab,technician productivity,,MISSING
+service-technicians,tab,analytics & graphs,,MISSING
+service-technicians,tab,calendar & schedule,,MISSING
+service-technicians,tab,documents,,MISSING
+service-technicians,tab,approvals,,MISSING
+service-technicians,tab,reports,,MISSING
+service-technicians,tab,audit trail,,MISSING
+service-visits,tab,visit schedule,,MISSING
+service-visits,tab,route plan,,MISSING
+service-visits,tab,visit checklist,,MISSING
+service-visits,tab,parts used,,MISSING
+service-visits,tab,customer signoff,,MISSING
+service-visits,tab,visit compliance,,MISSING
+service-visits,tab,analytics & graphs,,MISSING
+service-visits,tab,calendar & schedule,,MISSING
+service-visits,tab,documents,,MISSING
+service-visits,tab,approvals,,MISSING
+service-visits,tab,reports,,MISSING
+service-visits,tab,audit trail,,MISSING
+service-spares,tab,service spare register,,MISSING
+service-spares,tab,van stock,,MISSING
+service-spares,tab,issue to job,,MISSING
+service-spares,tab,return unused,,MISSING
+service-spares,tab,reorder,,MISSING
+service-spares,tab,spare consumption,,MISSING
+service-spares,tab,analytics & graphs,,MISSING
+service-spares,tab,calendar & schedule,,MISSING
+service-spares,tab,documents,,MISSING
+service-spares,tab,approvals,,MISSING
+service-spares,tab,reports,,MISSING
+service-spares,tab,audit trail,,MISSING
+service-history,tab,customer service history,,MISSING
+service-history,tab,equipment history,,MISSING
+service-history,tab,tickets,,MISSING
+service-history,tab,visits,,MISSING
+service-history,tab,parts replaced,,MISSING
+service-history,tab,failure trend,,MISSING
+service-history,tab,analytics & graphs,,MISSING
+service-history,tab,calendar & schedule,,MISSING
+service-history,tab,documents,,MISSING
+service-history,tab,approvals,,MISSING
+service-history,tab,reports,,MISSING
+service-history,tab,audit trail,,MISSING
+service-amc,tab,amc register,,MISSING
+service-amc,tab,coverage & sla,,MISSING
+service-amc,tab,visit schedule,,MISSING
+service-amc,tab,renewal pipeline,,MISSING
+service-amc,tab,billing status,,MISSING
+service-amc,tab,amc profitability,,MISSING
+service-amc,tab,analytics & graphs,,MISSING
+service-amc,tab,calendar & schedule,,MISSING
+service-amc,tab,documents,,MISSING
+service-amc,tab,approvals,,MISSING
+service-amc,tab,reports,,MISSING
+service-amc,tab,audit trail,,MISSING
+service-warranty,tab,warranty register,,MISSING
+service-warranty,tab,serial eligibility,,MISSING
+service-warranty,tab,coverage terms,,MISSING
+service-warranty,tab,claim history,,MISSING
+service-warranty,tab,expiry alerts,,MISSING
+service-warranty,tab,warranty cost,,MISSING
+service-warranty,tab,analytics & graphs,,MISSING
+service-warranty,tab,calendar & schedule,,MISSING
+service-warranty,tab,documents,,MISSING
+service-warranty,tab,approvals,,MISSING
+service-warranty,tab,reports,,MISSING
+service-warranty,tab,audit trail,,MISSING
+service-claims,tab,claim register,,MISSING
+service-claims,tab,eligibility check,,MISSING
+service-claims,tab,inspection,,MISSING
+service-claims,tab,approval,,MISSING
+service-claims,tab,replacement repair,,MISSING
+service-claims,tab,claim analytics,,MISSING
+service-claims,tab,analytics & graphs,,MISSING
+service-claims,tab,calendar & schedule,,MISSING
+service-claims,tab,documents,,MISSING
+service-claims,tab,approvals,,MISSING
+service-claims,tab,reports,,MISSING
+service-claims,tab,audit trail,,MISSING
+log-transporters,tab,transporter directory,,MISSING
+log-transporters,tab,lane capability,,MISSING
+log-transporters,tab,rate cards,,MISSING
+log-transporters,tab,compliance documents,,MISSING
+log-transporters,tab,performance score,,MISSING
+log-transporters,tab,transporter risk,,MISSING
+log-transporters,tab,analytics & graphs,,MISSING
+log-transporters,tab,documents,,MISSING
+log-transporters,tab,approvals,,MISSING
+log-transporters,tab,reports,,MISSING
+log-transporters,tab,audit trail,,MISSING
+log-routes,tab,route master,,MISSING
+log-routes,tab,stops & distance,,MISSING
+log-routes,tab,transit time,,MISSING
+log-routes,tab,toll & restriction,,MISSING
+log-routes,tab,route cost,,MISSING
+log-routes,tab,route performance,,MISSING
+log-routes,tab,analytics & graphs,,MISSING
+log-routes,tab,documents,,MISSING
+log-routes,tab,approvals,,MISSING
+log-routes,tab,reports,,MISSING
+log-routes,tab,audit trail,,MISSING
+log-freight,tab,freight calculator,,MISSING
+log-freight,tab,rate contracts,,MISSING
+log-freight,tab,weight volume slab,,MISSING
+log-freight,tab,fuel surcharge,,MISSING
+log-freight,tab,additional charges,,MISSING
+log-freight,tab,freight variance,,MISSING
+log-freight,tab,analytics & graphs,,MISSING
+log-freight,tab,documents,,MISSING
+log-freight,tab,approvals,,MISSING
+log-freight,tab,reports,,MISSING
+log-freight,tab,audit trail,,MISSING
+log-shipments,tab,shipment plan,,MISSING
+log-shipments,tab,order consolidation,,MISSING
+log-shipments,tab,carrier allocation,,MISSING
+log-shipments,tab,vehicle load,,MISSING
+log-shipments,tab,dispatch window,,MISSING
+log-shipments,tab,shipment sla,,MISSING
+log-shipments,tab,analytics & graphs,,MISSING
+log-shipments,tab,calendar & schedule,,MISSING
+log-shipments,tab,documents,,MISSING
+log-shipments,tab,approvals,,MISSING
+log-shipments,tab,reports,,MISSING
+log-shipments,tab,audit trail,,MISSING
+log-tracking,tab,live shipment board,,MISSING
+log-tracking,tab,milestones,,MISSING
+log-tracking,tab,current status,,MISSING
+log-tracking,tab,delay exceptions,,MISSING
+log-tracking,tab,customer eta,,MISSING
+log-tracking,tab,tracking performance,,MISSING
+log-tracking,tab,analytics & graphs,,MISSING
+log-tracking,tab,calendar & schedule,,MISSING
+log-tracking,tab,documents,,MISSING
+log-tracking,tab,approvals,,MISSING
+log-tracking,tab,reports,,MISSING
+log-tracking,tab,audit trail,,MISSING
+log-pod,tab,pod queue,,MISSING
+log-pod,tab,delivery evidence,,MISSING
+log-pod,tab,receiver details,,MISSING
+log-pod,tab,short damage,,MISSING
+log-pod,tab,billing release,,MISSING
+log-pod,tab,pod turnaround,,MISSING
+log-pod,tab,analytics & graphs,,MISSING
+log-pod,tab,calendar & schedule,,MISSING
+log-pod,tab,documents,,MISSING
+log-pod,tab,approvals,,MISSING
+log-pod,tab,reports,,MISSING
+log-pod,tab,audit trail,,MISSING
+customer-receipts,tab,receipt register,,MISSING
+customer-receipts,tab,pod,,MISSING
+customer-receipts,tab,quantity reconciliation,,MISSING
+customer-receipts,tab,disputes,,MISSING
+customer-receipts,tab,invoice eligibility,,MISSING
+customer-receipts,tab,audit,,MISSING
+customer-receipts,tab,analytics & graphs,,MISSING
+customer-receipts,tab,documents,,MISSING
+customer-receipts,tab,approvals,,MISSING
+customer-receipts,tab,reports,,MISSING
+customer-receipts,tab,audit trail,,MISSING
+fleet-vehicles,tab,vehicle register,,MISSING
+fleet-vehicles,tab,compliance documents,,MISSING
+fleet-vehicles,tab,odometer & usage,,MISSING
+fleet-vehicles,tab,fuel performance,,MISSING
+fleet-vehicles,tab,service schedule,,MISSING
+fleet-vehicles,tab,vehicle cost,,MISSING
+fleet-vehicles,tab,analytics & graphs,,MISSING
+fleet-vehicles,tab,calendar & schedule,,MISSING
+fleet-vehicles,tab,documents,,MISSING
+fleet-vehicles,tab,approvals,,MISSING
+fleet-vehicles,tab,reports,,MISSING
+fleet-vehicles,tab,audit trail,,MISSING
+fleet-drivers,tab,driver register,,MISSING
+fleet-drivers,tab,license & documents,,MISSING
+fleet-drivers,tab,vehicle assignment,,MISSING
+fleet-drivers,tab,trip history,,MISSING
+fleet-drivers,tab,safety incidents,,MISSING
+fleet-drivers,tab,driver score,,MISSING
+fleet-drivers,tab,analytics & graphs,,MISSING
+fleet-drivers,tab,documents,,MISSING
+fleet-drivers,tab,approvals,,MISSING
+fleet-drivers,tab,reports,,MISSING
+fleet-drivers,tab,audit trail,,MISSING
+fleet-fuel,tab,fuel register,,MISSING
+fleet-fuel,tab,fuel issues,,MISSING
+fleet-fuel,tab,mileage calculation,,MISSING
+fleet-fuel,tab,fuel variance,,MISSING
+fleet-fuel,tab,vendor bills,,MISSING
+fleet-fuel,tab,fuel trend,,MISSING
+fleet-fuel,tab,analytics & graphs,,MISSING
+fleet-fuel,tab,documents,,MISSING
+fleet-fuel,tab,approvals,,MISSING
+fleet-fuel,tab,reports,,MISSING
+fleet-fuel,tab,audit trail,,MISSING
+fleet-service,tab,vehicle service plan,,MISSING
+fleet-service,tab,due service,,MISSING
+fleet-service,tab,job card,,MISSING
+fleet-service,tab,parts & labor,,MISSING
+fleet-service,tab,downtime,,MISSING
+fleet-service,tab,service cost,,MISSING
+fleet-service,tab,analytics & graphs,,MISSING
+fleet-service,tab,calendar & schedule,,MISSING
+fleet-service,tab,documents,,MISSING
+fleet-service,tab,approvals,,MISSING
+fleet-service,tab,reports,,MISSING
+fleet-service,tab,audit trail,,MISSING
+fleet-documents,tab,vehicle documents,,MISSING
+fleet-documents,tab,insurance,,MISSING
+fleet-documents,tab,fitness,,MISSING
+fleet-documents,tab,permit,,MISSING
+fleet-documents,tab,pollution certificate,,MISSING
+fleet-documents,tab,expiry alerts,,MISSING
+fleet-documents,tab,analytics & graphs,,MISSING
+fleet-documents,tab,calendar & schedule,,MISSING
+fleet-documents,tab,documents,,MISSING
+fleet-documents,tab,approvals,,MISSING
+fleet-documents,tab,reports,,MISSING
+fleet-documents,tab,audit trail,,MISSING
+gate-in,tab,inward pass register,,MISSING
+gate-in,tab,vehicle entry,,MISSING
+gate-in,tab,material details,,MISSING
+gate-in,tab,security checks,,MISSING
+gate-in,tab,weighment,,MISSING
+gate-in,tab,exit closure,,MISSING
+gate-in,tab,analytics & graphs,,MISSING
+gate-in,tab,documents,,MISSING
+gate-in,tab,approvals,,MISSING
+gate-in,tab,reports,,MISSING
+gate-in,tab,audit trail,,MISSING
+gate-out,tab,outward pass register,,MISSING
+gate-out,tab,vehicle dispatch,,MISSING
+gate-out,tab,material details,,MISSING
+gate-out,tab,security checks,,MISSING
+gate-out,tab,document validation,,MISSING
+gate-out,tab,exit closure,,MISSING
+gate-out,tab,analytics & graphs,,MISSING
+gate-out,tab,calendar & schedule,,MISSING
+gate-out,tab,documents,,MISSING
+gate-out,tab,approvals,,MISSING
+gate-out,tab,reports,,MISSING
+gate-out,tab,audit trail,,MISSING
+gate-return,tab,returnable pass register,,MISSING
+gate-return,tab,material out,,MISSING
+gate-return,tab,expected return,,MISSING
+gate-return,tab,return receipt,,MISSING
+gate-return,tab,overdue items,,MISSING
+gate-return,tab,pass history,,MISSING
+gate-return,tab,analytics & graphs,,MISSING
+gate-return,tab,calendar & schedule,,MISSING
+gate-return,tab,documents,,MISSING
+gate-return,tab,approvals,,MISSING
+gate-return,tab,reports,,MISSING
+gate-return,tab,audit trail,,MISSING
+gate-nonreturn,tab,non returnable pass,,MISSING
+gate-nonreturn,tab,material out,,MISSING
+gate-nonreturn,tab,authorization,,MISSING
+gate-nonreturn,tab,value & reason,,MISSING
+gate-nonreturn,tab,security exit,,MISSING
+gate-nonreturn,tab,pass audit,,MISSING
+gate-nonreturn,tab,analytics & graphs,,MISSING
+gate-nonreturn,tab,documents,,MISSING
+gate-nonreturn,tab,approvals,,MISSING
+gate-nonreturn,tab,reports,,MISSING
+gate-nonreturn,tab,audit trail,,MISSING
+container-track,tab,container register,,MISSING
+container-track,tab,allocation,,MISSING
+container-track,tab,loading,,MISSING
+container-track,tab,transit,,MISSING
+container-track,tab,unloading & return,,MISSING
+container-track,tab,container turnaround,,MISSING
+container-track,tab,analytics & graphs,,MISSING
+container-track,tab,documents,,MISSING
+container-track,tab,approvals,,MISSING
+container-track,tab,reports,,MISSING
+container-track,tab,audit trail,,MISSING
+document-movement-center,tab,move document,,MISSING
+document-movement-center,tab,department queues,,MISSING
+document-movement-center,tab,document history,,MISSING
+document-movement-center,tab,pending receipt,,MISSING
+document-movement-center,tab,pending acceptance,,MISSING
+document-movement-center,tab,approvals,,MISSING
+document-movement-center,tab,audit,,MISSING
+document-movement-center,tab,,to receive,EXTRA
+document-movement-center,tab,,to accept,EXTRA
+document-movement-center,tab,,in work,EXTRA
+document-movement-center,tab,,returned,EXTRA
+document-movement-center,tab,,sent by us,EXTRA
+document-movement-center,tab,,all,EXTRA
+dms-folders,tab,folder tree,,MISSING
+dms-folders,tab,folder metadata,,MISSING
+dms-folders,tab,ownership,,MISSING
+dms-folders,tab,retention rules,,MISSING
+dms-folders,tab,access rights,,MISSING
+dms-folders,tab,folder activity,,MISSING
+dms-folders,tab,analytics & graphs,,MISSING
+dms-folders,tab,documents,,MISSING
+dms-folders,tab,approvals,,MISSING
+dms-folders,tab,reports,,MISSING
+dms-folders,tab,audit trail,,MISSING
+dms-docs,tab,document register,,MISSING
+dms-docs,tab,metadata & tags,,MISSING
+dms-docs,tab,preview & versions,,MISSING
+dms-docs,tab,access rights,,MISSING
+dms-docs,tab,workflow & approval,,MISSING
+dms-docs,tab,document activity,,MISSING
+dms-docs,tab,analytics & graphs,,MISSING
+dms-docs,tab,documents,,MISSING
+dms-docs,tab,approvals,,MISSING
+dms-docs,tab,reports,,MISSING
+dms-docs,tab,audit trail,,MISSING
+dms-versions,tab,version history,,MISSING
+dms-versions,tab,check in out,,MISSING
+dms-versions,tab,change notes,,MISSING
+dms-versions,tab,compare versions,,MISSING
+dms-versions,tab,rollback,,MISSING
+dms-versions,tab,version audit,,MISSING
+dms-versions,tab,analytics & graphs,,MISSING
+dms-versions,tab,documents,,MISSING
+dms-versions,tab,approvals,,MISSING
+dms-versions,tab,reports,,MISSING
+dms-versions,tab,audit trail,,MISSING
+dms-permissions,tab,access matrix,,MISSING
+dms-permissions,tab,users & roles,,MISSING
+dms-permissions,tab,folder rights,,MISSING
+dms-permissions,tab,document rights,,MISSING
+dms-permissions,tab,share links,,MISSING
+dms-permissions,tab,permission audit,,MISSING
+dms-permissions,tab,analytics & graphs,,MISSING
+dms-permissions,tab,documents,,MISSING
+dms-permissions,tab,approvals,,MISSING
+dms-permissions,tab,reports,,MISSING
+dms-permissions,tab,audit trail,,MISSING
+dms-tags,tab,tag master,,MISSING
+dms-tags,tab,tag groups,,MISSING
+dms-tags,tab,document usage,,MISSING
+dms-tags,tab,auto tag rules,,MISSING
+dms-tags,tab,duplicate tags,,MISSING
+dms-tags,tab,tag analytics,,MISSING
+dms-tags,tab,analytics & graphs,,MISSING
+dms-tags,tab,documents,,MISSING
+dms-tags,tab,approvals,,MISSING
+dms-tags,tab,reports,,MISSING
+dms-tags,tab,audit trail,,MISSING
+dms-search,tab,search workspace,,MISSING
+dms-search,tab,full text search,,MISSING
+dms-search,tab,metadata filters,,MISSING
+dms-search,tab,saved searches,,MISSING
+dms-search,tab,recent results,,MISSING
+dms-search,tab,search analytics,,MISSING
+dms-search,tab,analytics & graphs,,MISSING
+dms-search,tab,documents,,MISSING
+dms-search,tab,approvals,,MISSING
+dms-search,tab,reports,,MISSING
+dms-search,tab,audit trail,,MISSING
+bi-builder,tab,report designer,,MISSING
+bi-builder,tab,data sources,,MISSING
+bi-builder,tab,fields & measures,,MISSING
+bi-builder,tab,filters & groups,,MISSING
+bi-builder,tab,chart builder,,MISSING
+bi-builder,tab,preview & publish,,MISSING
+bi-builder,tab,analytics & graphs,,MISSING
+bi-builder,tab,documents,,MISSING
+bi-builder,tab,approvals,,MISSING
+bi-builder,tab,reports,,MISSING
+bi-builder,tab,audit trail,,MISSING
+bi-reports,tab,report library,,MISSING
+bi-reports,tab,favorites,,MISSING
+bi-reports,tab,permissions,,MISSING
+bi-reports,tab,run history,,MISSING
+bi-reports,tab,exports,,MISSING
+bi-reports,tab,usage analytics,,MISSING
+bi-reports,tab,analytics & graphs,,MISSING
+bi-reports,tab,documents,,MISSING
+bi-reports,tab,approvals,,MISSING
+bi-reports,tab,reports,,MISSING
+bi-reports,tab,audit trail,,MISSING
+bi-dashboards,tab,dashboard library,,MISSING
+bi-dashboards,tab,widget layout,,MISSING
+bi-dashboards,tab,filters,,MISSING
+bi-dashboards,tab,sharing,,MISSING
+bi-dashboards,tab,subscriptions,,MISSING
+bi-dashboards,tab,dashboard usage,,MISSING
+bi-dashboards,tab,analytics & graphs,,MISSING
+bi-dashboards,tab,documents,,MISSING
+bi-dashboards,tab,approvals,,MISSING
+bi-dashboards,tab,reports,,MISSING
+bi-dashboards,tab,audit trail,,MISSING
+bi-scheduler,tab,schedule register,,MISSING
+bi-scheduler,tab,report selection,,MISSING
+bi-scheduler,tab,frequency,,MISSING
+bi-scheduler,tab,recipients,,MISSING
+bi-scheduler,tab,delivery format,,MISSING
+bi-scheduler,tab,run history,,MISSING
+bi-scheduler,tab,analytics & graphs,,MISSING
+bi-scheduler,tab,calendar & schedule,,MISSING
+bi-scheduler,tab,documents,,MISSING
+bi-scheduler,tab,approvals,,MISSING
+bi-scheduler,tab,reports,,MISSING
+bi-scheduler,tab,audit trail,,MISSING
+bi-sales,tab,sales kpi summary,,MISSING
+bi-sales,tab,revenue trend,,MISSING
+bi-sales,tab,product mix,,MISSING
+bi-sales,tab,customer analysis,,MISSING
+bi-sales,tab,salesperson performance,,MISSING
+bi-sales,tab,forecast,,MISSING
+bi-sales,tab,analytics & graphs,,MISSING
+bi-sales,tab,documents,,MISSING
+bi-sales,tab,approvals,,MISSING
+bi-sales,tab,reports,,MISSING
+bi-sales,tab,audit trail,,MISSING
+bi-purchase,tab,purchase kpi summary,,MISSING
+bi-purchase,tab,spend trend,,MISSING
+bi-purchase,tab,supplier spend,,MISSING
+bi-purchase,tab,price variance,,MISSING
+bi-purchase,tab,lead time,,MISSING
+bi-purchase,tab,savings analysis,,MISSING
+bi-purchase,tab,analytics & graphs,,MISSING
+bi-purchase,tab,documents,,MISSING
+bi-purchase,tab,approvals,,MISSING
+bi-purchase,tab,reports,,MISSING
+bi-purchase,tab,audit trail,,MISSING
+bi-inventory,tab,inventory kpi summary,,MISSING
+bi-inventory,tab,stock value,,MISSING
+bi-inventory,tab,turnover,,MISSING
+bi-inventory,tab,ageing,,MISSING
+bi-inventory,tab,shortage & overstock,,MISSING
+bi-inventory,tab,forecast,,MISSING
+bi-inventory,tab,analytics & graphs,,MISSING
+bi-inventory,tab,documents,,MISSING
+bi-inventory,tab,approvals,,MISSING
+bi-inventory,tab,reports,,MISSING
+bi-inventory,tab,audit trail,,MISSING
+bi-finance,tab,finance kpi summary,,MISSING
+bi-finance,tab,revenue profit,,MISSING
+bi-finance,tab,working capital,,MISSING
+bi-finance,tab,cash flow,,MISSING
+bi-finance,tab,budget variance,,MISSING
+bi-finance,tab,financial ratios,,MISSING
+bi-finance,tab,analytics & graphs,,MISSING
+bi-finance,tab,documents,,MISSING
+bi-finance,tab,approvals,,MISSING
+bi-finance,tab,reports,,MISSING
+bi-finance,tab,audit trail,,MISSING
+bi-branch,tab,branch scorecard,,MISSING
+bi-branch,tab,revenue,,MISSING
+bi-branch,tab,profit,,MISSING
+bi-branch,tab,inventory,,MISSING
+bi-branch,tab,people,,MISSING
+bi-branch,tab,branch ranking,,MISSING
+bi-branch,tab,analytics & graphs,,MISSING
+bi-branch,tab,documents,,MISSING
+bi-branch,tab,approvals,,MISSING
+bi-branch,tab,reports,,MISSING
+bi-branch,tab,audit trail,,MISSING
+bi-profit,tab,profitability summary,,MISSING
+bi-profit,tab,product margin,,MISSING
+bi-profit,tab,customer margin,,MISSING
+bi-profit,tab,branch margin,,MISSING
+bi-profit,tab,project margin,,MISSING
+bi-profit,tab,contribution analysis,,MISSING
+bi-profit,tab,analytics & graphs,,MISSING
+bi-profit,tab,documents,,MISSING
+bi-profit,tab,approvals,,MISSING
+bi-profit,tab,reports,,MISSING
+bi-profit,tab,audit trail,,MISSING
+ai-copilot,tab,erp ai copilot workspace,,MISSING
+ai-copilot,tab,erp ai copilot details,,MISSING
+ai-copilot,tab,erp ai copilot workflow,,MISSING
+ai-copilot,tab,erp ai copilot exceptions,,MISSING
+ai-copilot,tab,erp ai copilot performance,,MISSING
+ai-copilot,tab,erp ai copilot controls,,MISSING
+ai-demand,tab,demand model,,MISSING
+ai-demand,tab,forecast horizon,,MISSING
+ai-demand,tab,seasonality drivers,,MISSING
+ai-demand,tab,forecast output,,MISSING
+ai-demand,tab,accuracy monitoring,,MISSING
+ai-demand,tab,replenishment recommendations,,MISSING
+ai-inventory,tab,inventory signals,,MISSING
+ai-inventory,tab,slow dead stock,,MISSING
+ai-inventory,tab,overstock risk,,MISSING
+ai-inventory,tab,shortage risk,,MISSING
+ai-inventory,tab,expiry risk,,MISSING
+ai-inventory,tab,recommended actions,,MISSING
+ai-sales,tab,lead opportunity scoring,,MISSING
+ai-sales,tab,win probability,,MISSING
+ai-sales,tab,next best action,,MISSING
+ai-sales,tab,churn risk,,MISSING
+ai-sales,tab,cross sell,,MISSING
+ai-sales,tab,sales forecast,,MISSING
+ai-vendor,tab,vendor risk signals,,MISSING
+ai-vendor,tab,delivery prediction,,MISSING
+ai-vendor,tab,quality risk,,MISSING
+ai-vendor,tab,price anomaly,,MISSING
+ai-vendor,tab,compliance risk,,MISSING
+ai-vendor,tab,sourcing recommendation,,MISSING
+ai-finance,tab,anomaly dashboard,,MISSING
+ai-finance,tab,expense anomalies,,MISSING
+ai-finance,tab,duplicate payments,,MISSING
+ai-finance,tab,revenue exceptions,,MISSING
+ai-finance,tab,journal risk,,MISSING
+ai-finance,tab,investigation queue,,MISSING
+ai-executive,tab,executive brief,,MISSING
+ai-executive,tab,revenue insights,,MISSING
+ai-executive,tab,working capital insights,,MISSING
+ai-executive,tab,operations insights,,MISSING
+ai-executive,tab,risk alerts,,MISSING
+ai-executive,tab,recommended actions,,MISSING
+auto-workflows,tab,workflow automation workspace,,MISSING
+auto-workflows,tab,workflow automation details,,MISSING
+auto-workflows,tab,workflow automation workflow,,MISSING
+auto-workflows,tab,workflow automation exceptions,,MISSING
+auto-workflows,tab,workflow automation performance,,MISSING
+auto-workflows,tab,workflow automation controls,,MISSING
+auto-workflows,tab,analytics & graphs,,MISSING
+auto-workflows,tab,documents,,MISSING
+auto-workflows,tab,approvals,,MISSING
+auto-workflows,tab,reports,,MISSING
+auto-workflows,tab,audit trail,,MISSING
+auto-rules,tab,rule library,,MISSING
+auto-rules,tab,triggers,,MISSING
+auto-rules,tab,conditions,,MISSING
+auto-rules,tab,actions,,MISSING
+auto-rules,tab,escalations,,MISSING
+auto-rules,tab,execution history,,MISSING
+auto-rules,tab,analytics & graphs,,MISSING
+auto-rules,tab,documents,,MISSING
+auto-rules,tab,approvals,,MISSING
+auto-rules,tab,reports,,MISSING
+auto-rules,tab,audit trail,,MISSING
+auto-jobs,tab,job queue,,MISSING
+auto-jobs,tab,scheduled jobs,,MISSING
+auto-jobs,tab,running jobs,,MISSING
+auto-jobs,tab,failed jobs,,MISSING
+auto-jobs,tab,retry policy,,MISSING
+auto-jobs,tab,job performance,,MISSING
+auto-jobs,tab,analytics & graphs,,MISSING
+auto-jobs,tab,calendar & schedule,,MISSING
+auto-jobs,tab,documents,,MISSING
+auto-jobs,tab,approvals,,MISSING
+auto-jobs,tab,reports,,MISSING
+auto-jobs,tab,audit trail,,MISSING
+auto-webhooks,tab,webhook registry,,MISSING
+auto-webhooks,tab,event subscriptions,,MISSING
+auto-webhooks,tab,endpoints & secrets,,MISSING
+auto-webhooks,tab,delivery log,,MISSING
+auto-webhooks,tab,retry queue,,MISSING
+auto-webhooks,tab,webhook health,,MISSING
+auto-webhooks,tab,analytics & graphs,,MISSING
+auto-webhooks,tab,calendar & schedule,,MISSING
+auto-webhooks,tab,documents,,MISSING
+auto-webhooks,tab,approvals,,MISSING
+auto-webhooks,tab,reports,,MISSING
+auto-webhooks,tab,audit trail,,MISSING
+comm-whatsapp,tab,whatsapp dashboard,,MISSING
+comm-whatsapp,tab,templates,,MISSING
+comm-whatsapp,tab,conversation log,,MISSING
+comm-whatsapp,tab,delivery status,,MISSING
+comm-whatsapp,tab,automation,,MISSING
+comm-whatsapp,tab,opt in compliance,,MISSING
+comm-whatsapp,tab,analytics & graphs,,MISSING
+comm-whatsapp,tab,calendar & schedule,,MISSING
+comm-whatsapp,tab,documents,,MISSING
+comm-whatsapp,tab,approvals,,MISSING
+comm-whatsapp,tab,reports,,MISSING
+comm-whatsapp,tab,audit trail,,MISSING
+comm-email,tab,email accounts,,MISSING
+comm-email,tab,templates,,MISSING
+comm-email,tab,outbox queue,,MISSING
+comm-email,tab,delivery status,,MISSING
+comm-email,tab,linked records,,MISSING
+comm-email,tab,email analytics,,MISSING
+comm-email,tab,analytics & graphs,,MISSING
+comm-email,tab,calendar & schedule,,MISSING
+comm-email,tab,documents,,MISSING
+comm-email,tab,approvals,,MISSING
+comm-email,tab,reports,,MISSING
+comm-email,tab,audit trail,,MISSING
+comm-sms,tab,sms accounts,,MISSING
+comm-sms,tab,templates,,MISSING
+comm-sms,tab,outbound queue,,MISSING
+comm-sms,tab,delivery reports,,MISSING
+comm-sms,tab,otp messages,,MISSING
+comm-sms,tab,sms analytics,,MISSING
+comm-sms,tab,analytics & graphs,,MISSING
+comm-sms,tab,calendar & schedule,,MISSING
+comm-sms,tab,documents,,MISSING
+comm-sms,tab,approvals,,MISSING
+comm-sms,tab,reports,,MISSING
+comm-sms,tab,audit trail,,MISSING
+comm-templates,tab,template library,,MISSING
+comm-templates,tab,variables,,MISSING
+comm-templates,tab,channel versions,,MISSING
+comm-templates,tab,approval status,,MISSING
+comm-templates,tab,test preview,,MISSING
+comm-templates,tab,template usage,,MISSING
+comm-templates,tab,analytics & graphs,,MISSING
+comm-templates,tab,documents,,MISSING
+comm-templates,tab,approvals,,MISSING
+comm-templates,tab,reports,,MISSING
+comm-templates,tab,audit trail,,MISSING
+comm-logs,tab,communication timeline,,MISSING
+comm-logs,tab,whatsapp logs,,MISSING
+comm-logs,tab,email logs,,MISSING
+comm-logs,tab,sms logs,,MISSING
+comm-logs,tab,failures,,MISSING
+comm-logs,tab,delivery analytics,,MISSING
+comm-logs,tab,analytics & graphs,,MISSING
+comm-logs,tab,calendar & schedule,,MISSING
+comm-logs,tab,documents,,MISSING
+comm-logs,tab,approvals,,MISSING
+comm-logs,tab,reports,,MISSING
+comm-logs,tab,audit trail,,MISSING
+comm-payment,tab,payment gateway setup,,MISSING
+comm-payment,tab,payment links,,MISSING
+comm-payment,tab,transactions,,MISSING
+comm-payment,tab,refunds,,MISSING
+comm-payment,tab,webhook events,,MISSING
+comm-payment,tab,settlement reconciliation,,MISSING
+comm-payment,tab,analytics & graphs,,MISSING
+comm-payment,tab,calendar & schedule,,MISSING
+comm-payment,tab,documents,,MISSING
+comm-payment,tab,approvals,,MISSING
+comm-payment,tab,reports,,MISSING
+comm-payment,tab,audit trail,,MISSING
+admin-company,tab,company master,,MISSING
+admin-company,tab,legal & tax details,,MISSING
+admin-company,tab,addresses,,MISSING
+admin-company,tab,bank accounts,,MISSING
+admin-company,tab,branding,,MISSING
+admin-company,tab,company controls,,MISSING
+admin-company,tab,analytics & graphs,,MISSING
+admin-company,tab,documents,,MISSING
+admin-company,tab,approvals,,MISSING
+admin-company,tab,reports,,MISSING
+admin-company,tab,audit trail,,MISSING
+admin-branches,tab,branch master,,MISSING
+admin-branches,tab,addresses,,MISSING
+admin-branches,tab,gst registration,,MISSING
+admin-branches,tab,warehouses,,MISSING
+admin-branches,tab,users,,MISSING
+admin-branches,tab,branch controls,,MISSING
+admin-branches,tab,analytics & graphs,,MISSING
+admin-branches,tab,documents,,MISSING
+admin-branches,tab,approvals,,MISSING
+admin-branches,tab,reports,,MISSING
+admin-branches,tab,audit trail,,MISSING
+admin-departments,tab,department master,,MISSING
+admin-departments,tab,hierarchy,,MISSING
+admin-departments,tab,managers,,MISSING
+admin-departments,tab,cost centers,,MISSING
+admin-departments,tab,employees,,MISSING
+admin-departments,tab,department controls,,MISSING
+admin-designations,tab,designation master,,MISSING
+admin-designations,tab,grades,,MISSING
+admin-designations,tab,reporting level,,MISSING
+admin-designations,tab,role mapping,,MISSING
+admin-designations,tab,employees,,MISSING
+admin-designations,tab,designation controls,,MISSING
+admin-designations,tab,analytics & graphs,,MISSING
+admin-designations,tab,documents,,MISSING
+admin-designations,tab,approvals,,MISSING
+admin-designations,tab,reports,,MISSING
+admin-designations,tab,audit trail,,MISSING
+admin-users,tab,user directory,,MISSING
+admin-users,tab,authentication,,MISSING
+admin-users,tab,role assignment,,MISSING
+admin-users,tab,company branch scope,,MISSING
+admin-users,tab,session history,,MISSING
+admin-users,tab,user audit,,MISSING
+admin-roles,tab,role master,,MISSING
+admin-roles,tab,module rights,,MISSING
+admin-roles,tab,action rights,,MISSING
+admin-roles,tab,data scope,,MISSING
+admin-roles,tab,approval limits,,MISSING
+admin-roles,tab,role audit,,MISSING
+admin-permissions,tab,permissions workspace,,MISSING
+admin-permissions,tab,permissions details,,MISSING
+admin-permissions,tab,permissions workflow,,MISSING
+admin-permissions,tab,permissions exceptions,,MISSING
+admin-permissions,tab,permissions performance,,MISSING
+admin-permissions,tab,permissions controls,,MISSING
+admin-fy,tab,financial year master,,MISSING
+admin-fy,tab,period calendar,,MISSING
+admin-fy,tab,open close periods,,MISSING
+admin-fy,tab,year end controls,,MISSING
+admin-fy,tab,carry forward,,MISSING
+admin-fy,tab,period audit,,MISSING
+admin-fy,tab,analytics & graphs,,MISSING
+admin-fy,tab,calendar & schedule,,MISSING
+admin-fy,tab,documents,,MISSING
+admin-fy,tab,approvals,,MISSING
+admin-fy,tab,reports,,MISSING
+admin-fy,tab,audit trail,,MISSING
+admin-currency,tab,currency master,,MISSING
+admin-currency,tab,exchange rates,,MISSING
+admin-currency,tab,rate sources,,MISSING
+admin-currency,tab,effective dates,,MISSING
+admin-currency,tab,revaluation,,MISSING
+admin-currency,tab,currency audit,,MISSING
+admin-currency,tab,analytics & graphs,,MISSING
+admin-currency,tab,documents,,MISSING
+admin-currency,tab,approvals,,MISSING
+admin-currency,tab,reports,,MISSING
+admin-currency,tab,audit trail,,MISSING
+admin-taxes,tab,tax master,,MISSING
+admin-taxes,tab,tax components,,MISSING
+admin-taxes,tab,rate rules,,MISSING
+admin-taxes,tab,jurisdiction,,MISSING
+admin-taxes,tab,effective dates,,MISSING
+admin-taxes,tab,tax validation,,MISSING
+admin-taxes,tab,analytics & graphs,,MISSING
+admin-taxes,tab,documents,,MISSING
+admin-taxes,tab,approvals,,MISSING
+admin-taxes,tab,reports,,MISSING
+admin-taxes,tab,audit trail,,MISSING
+admin-numbering,tab,number series,,MISSING
+admin-numbering,tab,company branch prefix,,MISSING
+admin-numbering,tab,financial year pattern,,MISSING
+admin-numbering,tab,sequence rules,,MISSING
+admin-numbering,tab,reset rules,,MISSING
+admin-numbering,tab,number audit,,MISSING
+admin-numbering,tab,analytics & graphs,,MISSING
+admin-numbering,tab,documents,,MISSING
+admin-numbering,tab,approvals,,MISSING
+admin-numbering,tab,reports,,MISSING
+admin-numbering,tab,audit trail,,MISSING
+admin-uom,tab,uom master,,MISSING
+admin-uom,tab,conversions,,MISSING
+admin-uom,tab,base units,,MISSING
+admin-uom,tab,precision,,MISSING
+admin-uom,tab,item mapping,,MISSING
+admin-uom,tab,uom validation,,MISSING
+admin-uom,tab,analytics & graphs,,MISSING
+admin-uom,tab,documents,,MISSING
+admin-uom,tab,approvals,,MISSING
+admin-uom,tab,reports,,MISSING
+admin-uom,tab,audit trail,,MISSING
+admin-customfields,tab,custom field library,,MISSING
+admin-customfields,tab,field types,,MISSING
+admin-customfields,tab,module mapping,,MISSING
+admin-customfields,tab,validation rules,,MISSING
+admin-customfields,tab,visibility,,MISSING
+admin-customfields,tab,field usage,,MISSING
+admin-customfields,tab,analytics & graphs,,MISSING
+admin-customfields,tab,documents,,MISSING
+admin-customfields,tab,approvals,,MISSING
+admin-customfields,tab,reports,,MISSING
+admin-customfields,tab,audit trail,,MISSING
+admin-formbuilder,tab,form designer,,MISSING
+admin-formbuilder,tab,sections,,MISSING
+admin-formbuilder,tab,field layout,,MISSING
+admin-formbuilder,tab,mandatory rules,,MISSING
+admin-formbuilder,tab,conditional visibility,,MISSING
+admin-formbuilder,tab,preview & publish,,MISSING
+admin-formbuilder,tab,analytics & graphs,,MISSING
+admin-formbuilder,tab,documents,,MISSING
+admin-formbuilder,tab,approvals,,MISSING
+admin-formbuilder,tab,reports,,MISSING
+admin-formbuilder,tab,audit trail,,MISSING
+admin-workflow,tab,workflow builder workspace,,MISSING
+admin-workflow,tab,workflow builder details,,MISSING
+admin-workflow,tab,workflow builder workflow,,MISSING
+admin-workflow,tab,workflow builder exceptions,,MISSING
+admin-workflow,tab,workflow builder performance,,MISSING
+admin-workflow,tab,workflow builder controls,,MISSING
+admin-import,tab,import export workspace,,MISSING
+admin-import,tab,import export details,,MISSING
+admin-import,tab,import export workflow,,MISSING
+admin-import,tab,import export exceptions,,MISSING
+admin-import,tab,import export performance,,MISSING
+admin-import,tab,import export controls,,MISSING
+admin-import,tab,analytics & graphs,,MISSING
+admin-import,tab,documents,,MISSING
+admin-import,tab,approvals,,MISSING
+admin-import,tab,reports,,MISSING
+admin-import,tab,audit trail,,MISSING
+admin-duplicates,tab,duplicate rules,,MISSING
+admin-duplicates,tab,matching fields,,MISSING
+admin-duplicates,tab,potential duplicates,,MISSING
+admin-duplicates,tab,merge review,,MISSING
+admin-duplicates,tab,prevention rules,,MISSING
+admin-duplicates,tab,duplicate audit,,MISSING
+admin-duplicates,tab,analytics & graphs,,MISSING
+admin-duplicates,tab,documents,,MISSING
+admin-duplicates,tab,approvals,,MISSING
+admin-duplicates,tab,reports,,MISSING
+admin-duplicates,tab,audit trail,,MISSING
+admin-audit,tab,audit explorer,,MISSING
+admin-audit,tab,user activity,,MISSING
+admin-audit,tab,data changes,,MISSING
+admin-audit,tab,login events,,MISSING
+admin-audit,tab,exports & downloads,,MISSING
+admin-audit,tab,audit retention,,MISSING
+admin-audit,tab,analytics & graphs,,MISSING
+admin-audit,tab,documents,,MISSING
+admin-audit,tab,approvals,,MISSING
+admin-audit,tab,reports,,MISSING
+admin-audit,tab,audit trail,,MISSING
+admin-security,tab,security center,,MISSING
+admin-security,tab,password policy,,MISSING
+admin-security,tab,mfa,,MISSING
+admin-security,tab,session controls,,MISSING
+admin-security,tab,ip restrictions,,MISSING
+admin-security,tab,security events,,MISSING
+admin-security,tab,analytics & graphs,,MISSING
+admin-security,tab,documents,,MISSING
+admin-security,tab,approvals,,MISSING
+admin-security,tab,reports,,MISSING
+admin-security,tab,audit trail,,MISSING
+admin-backup,tab,backup & restore workspace,,MISSING
+admin-backup,tab,backup and restore details,,MISSING
+admin-backup,tab,backup and restore workflow,,MISSING
+admin-backup,tab,backup and restore exceptions,,MISSING
+admin-backup,tab,backup and restore performance,,MISSING
+admin-backup,tab,backup and restore controls,,MISSING
+admin-backup,tab,analytics & graphs,,MISSING
+admin-backup,tab,documents,,MISSING
+admin-backup,tab,approvals,,MISSING
+admin-backup,tab,reports,,MISSING
+admin-backup,tab,audit trail,,MISSING
+admin-api,tab,api clients,,MISSING
+admin-api,tab,api keys,,MISSING
+admin-api,tab,scopes,,MISSING
+admin-api,tab,rate limits,,MISSING
+admin-api,tab,usage logs,,MISSING
+admin-api,tab,api health,,MISSING
+admin-api,tab,analytics & graphs,,MISSING
+admin-api,tab,documents,,MISSING
+admin-api,tab,approvals,,MISSING
+admin-api,tab,reports,,MISSING
+admin-api,tab,audit trail,,MISSING
+admin-integrations,tab,integration catalog,,MISSING
+admin-integrations,tab,connected apps,,MISSING
+admin-integrations,tab,credentials,,MISSING
+admin-integrations,tab,field mapping,,MISSING
+admin-integrations,tab,sync logs,,MISSING
+admin-integrations,tab,integration health,,MISSING
+admin-integrations,tab,analytics & graphs,,MISSING
+admin-integrations,tab,documents,,MISSING
+admin-integrations,tab,approvals,,MISSING
+admin-integrations,tab,reports,,MISSING
+admin-integrations,tab,audit trail,,MISSING
+admin-settings,tab,general settings,,MISSING
+admin-settings,tab,localization,,MISSING
+admin-settings,tab,notifications,,MISSING
+admin-settings,tab,storage,,MISSING
+admin-settings,tab,feature flags,,MISSING
+admin-settings,tab,system diagnostics,,MISSING
+cl-contractors,tab,contractor register,,MISSING
+cl-contractors,tab,prequalification,,MISSING
+cl-contractors,tab,agreement & licence,,MISSING
+cl-contractors,tab,statutory codes,,MISSING
+cl-contractors,tab,insurance & banking,,MISSING
+cl-contractors,tab,risk & approval,,MISSING
+cl-contractors,tab,analytics & graphs,,MISSING
+cl-contractors,tab,documents,,MISSING
+cl-contractors,tab,approvals,,MISSING
+cl-contractors,tab,reports,,MISSING
+cl-contractors,tab,audit trail,,MISSING
+cl-workorders,tab,work order register,,MISSING
+cl-workorders,tab,scope & headcount,,MISSING
+cl-workorders,tab,rate schedule,,MISSING
+cl-workorders,tab,plant deployment,,MISSING
+cl-workorders,tab,budget control,,MISSING
+cl-workorders,tab,approval & renewal,,MISSING
+cl-workorders,tab,analytics & graphs,,MISSING
+cl-workorders,tab,calendar & schedule,,MISSING
+cl-workorders,tab,documents,,MISSING
+cl-workorders,tab,approvals,,MISSING
+cl-workorders,tab,reports,,MISSING
+cl-workorders,tab,audit trail,,MISSING
+cl-workers,tab,worker register,,MISSING
+cl-workers,tab,kyc & aadhaar,,MISSING
+cl-workers,tab,skill & trade,,MISSING
+cl-workers,tab,statutory details,,MISSING
+cl-workers,tab,medical & safety,,MISSING
+cl-workers,tab,gate & id card,,MISSING
+cl-workers,tab,analytics & graphs,,MISSING
+cl-workers,tab,documents,,MISSING
+cl-workers,tab,approvals,,MISSING
+cl-workers,tab,reports,,MISSING
+cl-workers,tab,audit trail,,MISSING
+cl-onboarding,tab,onboarding queue,,MISSING
+cl-onboarding,tab,kyc verification,,MISSING
+cl-onboarding,tab,medical check,,MISSING
+cl-onboarding,tab,safety induction,,MISSING
+cl-onboarding,tab,ppe issue,,MISSING
+cl-onboarding,tab,final activation,,MISSING
+cl-onboarding,tab,analytics & graphs,,MISSING
+cl-onboarding,tab,documents,,MISSING
+cl-onboarding,tab,approvals,,MISSING
+cl-onboarding,tab,reports,,MISSING
+cl-onboarding,tab,audit trail,,MISSING
+cl-deployment,tab,deployment register,,MISSING
+cl-deployment,tab,plant & unit,,MISSING
+cl-deployment,tab,shift allocation,,MISSING
+cl-deployment,tab,job card allocation,,MISSING
+cl-deployment,tab,supervisor control,,MISSING
+cl-deployment,tab,transfer history,,MISSING
+cl-deployment,tab,analytics & graphs,,MISSING
+cl-deployment,tab,calendar & schedule,,MISSING
+cl-deployment,tab,documents,,MISSING
+cl-deployment,tab,approvals,,MISSING
+cl-deployment,tab,reports,,MISSING
+cl-deployment,tab,audit trail,,MISSING
+cl-attendance,tab,daily muster,,MISSING
+cl-attendance,tab,gate reconciliation,,MISSING
+cl-attendance,tab,shift attendance,,MISSING
+cl-attendance,tab,overtime,,MISSING
+cl-attendance,tab,absence & late,,MISSING
+cl-attendance,tab,monthly muster roll,,MISSING
+cl-attendance,tab,analytics & graphs,,MISSING
+cl-attendance,tab,calendar & schedule,,MISSING
+cl-attendance,tab,documents,,MISSING
+cl-attendance,tab,approvals,,MISSING
+cl-attendance,tab,reports,,MISSING
+cl-attendance,tab,audit trail,,MISSING
+cl-wages,tab,wage register,,MISSING
+cl-wages,tab,attendance input,,MISSING
+cl-wages,tab,earnings,,MISSING
+cl-wages,tab,statutory deductions,,MISSING
+cl-wages,tab,net pay,,MISSING
+cl-wages,tab,bank advice & wage slip,,MISSING
+cl-wages,tab,analytics & graphs,,MISSING
+cl-wages,tab,calendar & schedule,,MISSING
+cl-wages,tab,documents,,MISSING
+cl-wages,tab,approvals,,MISSING
+cl-wages,tab,reports,,MISSING
+cl-wages,tab,audit trail,,MISSING
+cl-invoices,tab,invoice register,,MISSING
+cl-invoices,tab,attendance reconciliation,,MISSING
+cl-invoices,tab,wage reconciliation,,MISSING
+cl-invoices,tab,gst & tds,,MISSING
+cl-invoices,tab,payment approval,,MISSING
+cl-invoices,tab,outstanding,,MISSING
+cl-invoices,tab,analytics & graphs,,MISSING
+cl-invoices,tab,calendar & schedule,,MISSING
+cl-invoices,tab,documents,,MISSING
+cl-invoices,tab,approvals,,MISSING
+cl-invoices,tab,reports,,MISSING
+cl-invoices,tab,audit trail,,MISSING
+cl-compliance,tab,compliance dashboard,,MISSING
+cl-compliance,tab,licence & agreement,,MISSING
+cl-compliance,tab,pf & esic,,MISSING
+cl-compliance,tab,muster & wage register,,MISSING
+cl-compliance,tab,returns & insurance,,MISSING
+cl-compliance,tab,exceptions & audit,,MISSING
+cl-compliance,tab,analytics & graphs,,MISSING
+cl-compliance,tab,documents,,MISSING
+cl-compliance,tab,approvals,,MISSING
+cl-compliance,tab,reports,,MISSING
+cl-compliance,tab,audit trail,,MISSING
+cl-safety,tab,safety register,,MISSING
+cl-safety,tab,induction,,MISSING
+cl-safety,tab,toolbox talk,,MISSING
+cl-safety,tab,permit & authorization,,MISSING
+cl-safety,tab,training matrix,,MISSING
+cl-safety,tab,expiry alerts,,MISSING
+cl-safety,tab,analytics & graphs,,MISSING
+cl-safety,tab,calendar & schedule,,MISSING
+cl-safety,tab,documents,,MISSING
+cl-safety,tab,approvals,,MISSING
+cl-safety,tab,reports,,MISSING
+cl-safety,tab,audit trail,,MISSING
+cl-ppe,tab,issue register,,MISSING
+cl-ppe,tab,ppe stock,,MISSING
+cl-ppe,tab,tool issue,,MISSING
+cl-ppe,tab,return & recovery,,MISSING
+cl-ppe,tab,damage & loss,,MISSING
+cl-ppe,tab,cost report,,MISSING
+cl-ppe,tab,analytics & graphs,,MISSING
+cl-ppe,tab,documents,,MISSING
+cl-ppe,tab,approvals,,MISSING
+cl-ppe,tab,reports,,MISSING
+cl-ppe,tab,audit trail,,MISSING
+cl-medical,tab,medical register,,MISSING
+cl-medical,tab,preemployment,,MISSING
+cl-medical,tab,periodic medical,,MISSING
+cl-medical,tab,restrictions,,MISSING
+cl-medical,tab,certificate,,MISSING
+cl-medical,tab,due alerts,,MISSING
+cl-medical,tab,analytics & graphs,,MISSING
+cl-medical,tab,calendar & schedule,,MISSING
+cl-medical,tab,documents,,MISSING
+cl-medical,tab,approvals,,MISSING
+cl-medical,tab,reports,,MISSING
+cl-medical,tab,audit trail,,MISSING
+cl-incidents,tab,incident register,,MISSING
+cl-incidents,tab,immediate action,,MISSING
+cl-incidents,tab,investigation,,MISSING
+cl-incidents,tab,root cause,,MISSING
+cl-incidents,tab,capa,,MISSING
+cl-incidents,tab,closure & cost,,MISSING
+cl-incidents,tab,analytics & graphs,,MISSING
+cl-incidents,tab,documents,,MISSING
+cl-incidents,tab,approvals,,MISSING
+cl-incidents,tab,reports,,MISSING
+cl-incidents,tab,audit trail,,MISSING
+cl-gatepass,tab,gate pass register,,MISSING
+cl-gatepass,tab,pass issue,,MISSING
+cl-gatepass,tab,zone access,,MISSING
+cl-gatepass,tab,shift access,,MISSING
+cl-gatepass,tab,block & blacklist,,MISSING
+cl-gatepass,tab,gate audit,,MISSING
+cl-gatepass,tab,analytics & graphs,,MISSING
+cl-gatepass,tab,calendar & schedule,,MISSING
+cl-gatepass,tab,documents,,MISSING
+cl-gatepass,tab,approvals,,MISSING
+cl-gatepass,tab,reports,,MISSING
+cl-gatepass,tab,audit trail,,MISSING
+cl-canteen,tab,meal register,,MISSING
+cl-canteen,tab,contractor consumption,,MISSING
+cl-canteen,tab,department cost,,MISSING
+cl-canteen,tab,subsidy & recovery,,MISSING
+cl-canteen,tab,vendor bill,,MISSING
+cl-canteen,tab,report,,MISSING
+cl-canteen,tab,analytics & graphs,,MISSING
+cl-canteen,tab,documents,,MISSING
+cl-canteen,tab,approvals,,MISSING
+cl-canteen,tab,reports,,MISSING
+cl-canteen,tab,audit trail,,MISSING
+cl-exit,tab,exit queue,,MISSING
+cl-exit,tab,contract expiry,,MISSING
+cl-exit,tab,clearance,,MISSING
+cl-exit,tab,final wage,,MISSING
+cl-exit,tab,gate block,,MISSING
+cl-exit,tab,relieving & archive,,MISSING
+cl-exit,tab,analytics & graphs,,MISSING
+cl-exit,tab,calendar & schedule,,MISSING
+cl-exit,tab,documents,,MISSING
+cl-exit,tab,approvals,,MISSING
+cl-exit,tab,reports,,MISSING
+cl-exit,tab,audit trail,,MISSING
+ops-tasks,tab,department board,department board,OK
+ops-tasks,tab,task register,task register,OK
+ops-tasks,tab,my tasks,my tasks,OK
+ops-tasks,tab,dependencies,,MISSING
+ops-tasks,tab,sla & escalation,,MISSING
+ops-tasks,tab,workload,workload,OK
+ops-tasks,tab,approval,,MISSING
+ops-tasks,tab,shift handover,,MISSING
+ops-tasks,tab,,due & overdue,EXTRA
+ops-tasks,tab,,task approval,EXTRA
+hr-shifts,tab,shift master,,MISSING
+hr-shifts,tab,timing rules,,MISSING
+hr-shifts,tab,rotation sequence,,MISSING
+hr-shifts,tab,weekly off,,MISSING
+hr-shifts,tab,overtime,,MISSING
+hr-shifts,tab,controls,,MISSING
+hr-shifts,tab,analytics & graphs,,MISSING
+hr-shifts,tab,calendar & schedule,,MISSING
+hr-shifts,tab,documents,,MISSING
+hr-shifts,tab,approvals,,MISSING
+hr-shifts,tab,reports,,MISSING
+hr-shifts,tab,audit trail,,MISSING
+ops-shift-roster,tab,weekly roster,,MISSING
+ops-shift-roster,tab,rotation planner,,MISSING
+ops-shift-roster,tab,department coverage,,MISSING
+ops-shift-roster,tab,handover,,MISSING
+ops-shift-roster,tab,attendance sync,,MISSING
+ops-shift-roster,tab,audit,,MISSING
+ops-visitors,tab,expected visitors,,MISSING
+ops-visitors,tab,approval queue,,MISSING
+ops-visitors,tab,gate checkin,,MISSING
+ops-visitors,tab,inside plant,inside plant,OK
+ops-visitors,tab,overstay alerts,,MISSING
+ops-visitors,tab,material gate pass,,MISSING
+ops-visitors,tab,checkout history,,MISSING
+ops-visitors,tab,visitor analytics,,MISSING
+ops-visitors,tab,,visitor register,EXTRA
+ops-canteen,tab,meal transactions,,MISSING
+ops-canteen,tab,live meal desk,,MISSING
+ops-canteen,tab,shift entitlement,,MISSING
+ops-canteen,tab,menu & rates,,MISSING
+ops-canteen,tab,department cost,,MISSING
+ops-canteen,tab,vendor billing,,MISSING
+ops-canteen,tab,wastage & feedback,,MISSING
+ops-canteen,tab,audit,,MISSING
+plant-flow-command,tab,command center,,MISSING
+plant-flow-command,tab,project forward flow,,MISSING
+plant-flow-command,tab,department handover,,MISSING
+plant-flow-command,tab,process movement,,MISSING
+plant-flow-command,tab,plant transfer,,MISSING
+plant-flow-command,tab,maintenance movement,,MISSING
+plant-flow-command,tab,audit,,MISSING
+plant-flow-command,tab,,to receive,EXTRA
+plant-flow-command,tab,,to accept,EXTRA
+plant-flow-command,tab,,in work,EXTRA
+plant-flow-command,tab,,returned,EXTRA
+plant-flow-command,tab,,sent by us,EXTRA
+plant-flow-command,tab,,all,EXTRA
+plant-project-forward,tab,live project flow,,MISSING
+plant-project-forward,tab,department queue,,MISSING
+plant-project-forward,tab,pending receipt,,MISSING
+plant-project-forward,tab,pending acceptance,,MISSING
+plant-project-forward,tab,completed gates,,MISSING
+plant-project-forward,tab,dependencies,,MISSING
+plant-project-forward,tab,audit,,MISSING
+plant-project-forward,tab,,to receive,EXTRA
+plant-project-forward,tab,,to accept,EXTRA
+plant-project-forward,tab,,in work,EXTRA
+plant-project-forward,tab,,returned,EXTRA
+plant-project-forward,tab,,sent by us,EXTRA
+plant-project-forward,tab,,all,EXTRA
+maint-part-movement,tab,movement register,,MISSING
+maint-part-movement,tab,issue to maintenance,,MISSING
+maint-part-movement,tab,machine installation,,MISSING
+maint-part-movement,tab,repair vendor,,MISSING
+maint-part-movement,tab,return to store,,MISSING
+maint-part-movement,tab,scrap & warranty,,MISSING
+maint-part-movement,tab,audit,,MISSING
+maint-part-movement,tab,,to receive,EXTRA
+maint-part-movement,tab,,to accept,EXTRA
+maint-part-movement,tab,,in work,EXTRA
+maint-part-movement,tab,,returned,EXTRA
+maint-part-movement,tab,,sent by us,EXTRA
+maint-part-movement,tab,,all,EXTRA
+plant-process-movement,tab,process movement,,MISSING
+plant-process-movement,tab,pending approval,,MISSING
+plant-process-movement,tab,in transit,,MISSING
+plant-process-movement,tab,pending receipt,,MISSING
+plant-process-movement,tab,received,,MISSING
+plant-process-movement,tab,variance,,MISSING
+plant-process-movement,tab,audit,,MISSING
+plant-process-movement,tab,,to receive,EXTRA
+plant-process-movement,tab,,to accept,EXTRA
+plant-process-movement,tab,,in work,EXTRA
+plant-process-movement,tab,,returned,EXTRA
+plant-process-movement,tab,,sent by us,EXTRA
+plant-process-movement,tab,,all,EXTRA
+plant-unit-routing,tab,route templates,,MISSING
+plant-unit-routing,tab,route builder,,MISSING
+plant-unit-routing,tab,active routes,,MISSING
+plant-unit-routing,tab,internal process moves,,MISSING
+plant-unit-routing,tab,department handover,,MISSING
+plant-unit-routing,tab,history,,MISSING
+plant-unit-routing,tab,,to receive,EXTRA
+plant-unit-routing,tab,,to accept,EXTRA
+plant-unit-routing,tab,,in work,EXTRA
+plant-unit-routing,tab,,returned,EXTRA
+plant-unit-routing,tab,,sent by us,EXTRA
+plant-unit-routing,tab,,all,EXTRA
+plant-department-movement,tab,department handover,,MISSING
+plant-department-movement,tab,my department queue,,MISSING
+plant-department-movement,tab,pending acceptance,,MISSING
+plant-department-movement,tab,accepted,,MISSING
+plant-department-movement,tab,returned,returned,OK
+plant-department-movement,tab,sla & escalation,,MISSING
+plant-department-movement,tab,audit,,MISSING
+plant-department-movement,tab,,to receive,EXTRA
+plant-department-movement,tab,,to accept,EXTRA
+plant-department-movement,tab,,in work,EXTRA
+plant-department-movement,tab,,sent by us,EXTRA
+plant-department-movement,tab,,all,EXTRA
+plant-interplant-movement,tab,transfer orders,,MISSING
+plant-interplant-movement,tab,dispatch planning,,MISSING
+plant-interplant-movement,tab,gate out,,MISSING
+plant-interplant-movement,tab,in transit,,MISSING
+plant-interplant-movement,tab,destination receipt,,MISSING
+plant-interplant-movement,tab,variance dispute,,MISSING
+plant-interplant-movement,tab,audit,,MISSING
+plant-interplant-movement,tab,,to receive,EXTRA
+plant-interplant-movement,tab,,to accept,EXTRA
+plant-interplant-movement,tab,,in work,EXTRA
+plant-interplant-movement,tab,,returned,EXTRA
+plant-interplant-movement,tab,,sent by us,EXTRA
+plant-interplant-movement,tab,,all,EXTRA
+flow-bom-approval,tab,bom selection,,MISSING
+flow-bom-approval,tab,sales approval,,MISSING
+flow-bom-approval,tab,stock verification,,MISSING
+flow-bom-approval,tab,purchase shortage,,MISSING
+flow-bom-approval,tab,manufacturing release,,MISSING
+flow-bom-approval,tab,traceability,,MISSING
+mfg-unit-route,tab,live routing,,MISSING
+mfg-unit-route,tab,unit 1,,MISSING
+mfg-unit-route,tab,unit 2,,MISSING
+mfg-unit-route,tab,unit 3,,MISSING
+mfg-unit-route,tab,unit 4,,MISSING
+mfg-unit-route,tab,wip,,MISSING
+mfg-unit-route,tab,transfers,,MISSING
+mfg-unit-route,tab,quality,,MISSING
+mfg-unit-route,tab,dispatch,,MISSING
+mfg-transfer-note,tab,transfer register,,MISSING
+mfg-transfer-note,tab,in transit,,MISSING
+mfg-transfer-note,tab,pending receipt,,MISSING
+mfg-transfer-note,tab,received,,MISSING
+mfg-transfer-note,tab,variance & disputes,,MISSING
+mfg-transfer-note,tab,audit,,MISSING
+dispatch-dc,tab,dc register,,MISSING
+dispatch-dc,tab,so quantity control,,MISSING
+dispatch-dc,tab,transport,,MISSING
+dispatch-dc,tab,customer receipt,,MISSING
+dispatch-dc,tab,billing eligibility,,MISSING
+dispatch-dc,tab,audit,,MISSING
+dispatch-dc,tab,analytics & graphs,,MISSING
+dispatch-dc,tab,calendar & schedule,,MISSING
+dispatch-dc,tab,documents,,MISSING
+dispatch-dc,tab,approvals,,MISSING
+dispatch-dc,tab,reports,,MISSING
+dispatch-dc,tab,audit trail,,MISSING
+quality-certificate,tab,certificate register,,MISSING
+quality-certificate,tab,inspection results,,MISSING
+quality-certificate,tab,ncr link,,MISSING
+quality-certificate,tab,release approval,,MISSING
+quality-certificate,tab,customer copy,,MISSING
+quality-certificate,tab,report,,MISSING
+quality-certificate,tab,analytics & graphs,,MISSING
+quality-certificate,tab,documents,,MISSING
+quality-certificate,tab,approvals,,MISSING
+quality-certificate,tab,reports,,MISSING
+quality-certificate,tab,audit trail,,MISSING
+accounts-gst-invoice,tab,invoice register,,MISSING
+accounts-gst-invoice,tab,so & dc link,,MISSING
+accounts-gst-invoice,tab,gst calculation,,MISSING
+accounts-gst-invoice,tab,receipt allocation,,MISSING
+accounts-gst-invoice,tab,ageing,,MISSING
+accounts-gst-invoice,tab,audit,,MISSING
+accounts-gst-invoice,tab,analytics & graphs,,MISSING
+accounts-gst-invoice,tab,documents,,MISSING
+accounts-gst-invoice,tab,approvals,,MISSING
+accounts-gst-invoice,tab,reports,,MISSING
+accounts-gst-invoice,tab,audit trail,,MISSING
+hr-offer-letter,tab,offer register,,MISSING
+hr-offer-letter,tab,compensation,,MISSING
+hr-offer-letter,tab,joining terms,,MISSING
+hr-offer-letter,tab,approval,,MISSING
+hr-offer-letter,tab,issued offers,,MISSING
+hr-offer-letter,tab,report,,MISSING
+hr-offer-letter,tab,analytics & graphs,,MISSING
+hr-offer-letter,tab,documents,,MISSING
+hr-offer-letter,tab,approvals,,MISSING
+hr-offer-letter,tab,reports,,MISSING
+hr-offer-letter,tab,audit trail,,MISSING
+hr-appointment-letter,tab,appointment register,,MISSING
+hr-appointment-letter,tab,employee terms,,MISSING
+hr-appointment-letter,tab,statutory details,,MISSING
+hr-appointment-letter,tab,approval,,MISSING
+hr-appointment-letter,tab,issued letters,,MISSING
+hr-appointment-letter,tab,report,,MISSING
+hr-appointment-letter,tab,analytics & graphs,,MISSING
+hr-appointment-letter,tab,documents,,MISSING
+hr-appointment-letter,tab,approvals,,MISSING
+hr-appointment-letter,tab,reports,,MISSING
+hr-appointment-letter,tab,audit trail,,MISSING
+admin-approval,tab,approval matrix workspace,,MISSING
+admin-approval,tab,approval matrix details,,MISSING
+admin-approval,tab,approval matrix workflow,,MISSING
+admin-approval,tab,approval matrix exceptions,,MISSING
+admin-approval,tab,approval matrix performance,,MISSING
+admin-approval,tab,approval matrix controls,,MISSING

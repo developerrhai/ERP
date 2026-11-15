@@ -30,6 +30,11 @@ import {
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
+import { useFrame } from '../frame/V40TabFrame';
+import { V40Register } from '../sales/V40Register';
+import { V40Body } from './V40Body';
+import { SPECS } from './v40Specs';
+import { SALES_V40_IDS } from '../sales/salesV40Api';
 
 type FieldType =
   | 'text'
@@ -59,6 +64,8 @@ export interface MoreExtra {
   body?: Record<string, unknown>;
 }
 export interface DocCfg {
+  /** Procurement pages: the page id of a V40 spec (v40Specs.ts); the register then shows the V40 tabs and columns */
+  pageId?: string;
   title: string;
   sub: string;
   path: string;
@@ -68,6 +75,8 @@ export interface DocCfg {
   lines?: FieldCfg[];
   post?: boolean;
   cancel?: boolean;
+  /** a sub-list of a sales page (customer RFQs) that has no V40 tab view of its own */
+  noV40?: boolean;
   /** show "Invite suppliers" on the detail dialog (RFQ) */
   invite?: boolean;
   /** show the "Delivery tracking" button (Purchase Orders, client requirement 1) */
@@ -98,10 +107,22 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
   const [viewing, setViewing] = useState<Doc | null>(null);
   const [error, setError] = useState('');
   const [tracking, setTracking] = useState(false);
+  const procV40 = Boolean(useFrame()) && Boolean(cfg.pageId && SPECS[cfg.pageId]);
+  const [procKey, setProcKey] = useState(0);
   const list = useLoad(
-    () => listDocs(cfg.path, { page, size: 20, status, q }),
-    [cfg.path, page, status, q],
+    () =>
+      procV40
+        ? Promise.resolve({ rows: [] as Doc[], meta: { page: 1, size: 20, total: 0 } })
+        : listDocs(cfg.path, { page, size: 20, status, q }),
+    [cfg.path, page, status, q, procV40],
   );
+  const reloadAll = (): void => {
+    list.reload();
+    setProcKey((k) => k + 1);
+  };
+  // CRM / Sales pages inside the V40 tab frame show the V40 columns of the open tab (sales/V40Register.tsx)
+  const { pageId: routePage = '' } = useParams();
+  const v40 = Boolean(useFrame()) && SALES_V40_IDS.has(routePage) && !cfg.noV40;
 
   async function open(row: Doc) {
     try {
@@ -121,71 +142,94 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
         ) : null}
         {actions.add ? (
           <button type="button" className="btn primary" onClick={() => setEditing('new')}>
-            {cfg.add}
+            {v40 ? '＋ Add New' : cfg.add}
           </button>
         ) : null}
       </PageHead>
       <ErrorBox message={error || list.error} />
-      <div className="toolbar">
-        <input
-          aria-label="Search by number"
-          placeholder="Search by number"
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setPage(1);
-          }}
+      {procV40 && cfg.pageId ? (
+        <V40Body
+          pageId={cfg.pageId}
+          actions={actions}
+          reloadKey={procKey}
+          onView={(id) => void open({ id } as Doc)}
+          onChanged={list.reload}
         />
-        <select
-          aria-label="Status"
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">All statuses</option>
-          {['Draft', 'Pending Approval', 'Approved', 'Rejected', 'Posted', 'Cancelled'].map((x) => (
-            <option key={x}>{x}</option>
-          ))}
-        </select>
-      </div>
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Number</th>
-              {cfg.columns.map((c) => (
-                <th key={c.key}>{c.label}</th>
-              ))}
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 && !list.loading ? (
-              <Empty cols={cfg.columns.length + 2}>
-                Nothing here yet. {actions.add ? `Click ${cfg.add}.` : ''}
-              </Empty>
-            ) : null}
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td>
-                  <button type="button" className="link" onClick={() => void open(r)}>
-                    {s(r.number)}
-                  </button>
-                </td>
-                {cfg.columns.map((c) => (
-                  <td key={c.key}>{show(r[c.key], c.fmt)}</td>
-                ))}
-                <td>
-                  <Pill>{r.status}</Pill>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} size={20} total={list.data?.meta.total ?? 0} onPage={setPage} />
+      ) : (
+        <V40Register
+          pageId={cfg.noV40 ? '' : routePage}
+          actions={actions}
+          onOpen={(id) => void open({ id } as Doc)}
+          reloadKey={list.data}
+          onChanged={list.reload}
+          fallback={
+            <>
+              <div className="toolbar">
+                <input
+                  aria-label="Search by number"
+                  placeholder="Search by number"
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value);
+                    setPage(1);
+                  }}
+                />
+                <select
+                  aria-label="Status"
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All statuses</option>
+                  {['Draft', 'Pending Approval', 'Approved', 'Rejected', 'Posted', 'Cancelled'].map(
+                    (x) => (
+                      <option key={x}>{x}</option>
+                    ),
+                  )}
+                </select>
+              </div>
+              <div className="card table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Number</th>
+                      {cfg.columns.map((c) => (
+                        <th key={c.key}>{c.label}</th>
+                      ))}
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.length === 0 && !list.loading ? (
+                      <Empty cols={cfg.columns.length + 2}>
+                        Nothing here yet. {actions.add ? `Click ${cfg.add}.` : ''}
+                      </Empty>
+                    ) : null}
+                    {rows.map((r) => (
+                      <tr key={r.id}>
+                        <td>
+                          <button type="button" className="link" onClick={() => void open(r)}>
+                            {s(r.number)}
+                          </button>
+                        </td>
+                        {cfg.columns.map((c) => (
+                          <td key={c.key}>{show(r[c.key], c.fmt)}</td>
+                        ))}
+                        <td>
+                          <Pill>{r.status}</Pill>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pager page={page} size={20} total={list.data?.meta.total ?? 0} onPage={setPage} />
+            </>
+          }
+        />
+      )}
       {tracking ? <DeliveryTracking onClose={() => setTracking(false)} /> : null}
       {editing ? (
         <DocForm
@@ -195,7 +239,7 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
           onSaved={(d) => {
             setEditing(null);
             toast(`Saved ${s(d.number)}`);
-            list.reload();
+            reloadAll();
           }}
         />
       ) : null}
@@ -212,11 +256,11 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
           onChanged={(d, msg) => {
             setViewing(d);
             toast(msg);
-            list.reload();
+            reloadAll();
           }}
           onDeleted={() => {
             setViewing(null);
-            list.reload();
+            reloadAll();
           }}
         />
       ) : null}

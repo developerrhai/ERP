@@ -2,7 +2,7 @@
 import { prisma } from '../../core/db/prisma';
 import { Errors } from '../../core/http/errors';
 import { NumberingService } from '../../core/numbering';
-import { norm, query, exec, insertRow, fyOfCaller } from '../procurement/core';
+import { audit, norm, query, exec, insertRow, fyOfCaller } from '../procurement/core';
 import type { Row } from '../procurement/core';
 import type { Caller } from '../records/service';
 import { computeWarrantyEndDate, evaluateWarranty } from './service-calc';
@@ -15,7 +15,7 @@ export class WarrantyService {
     // 1. Find serial and check sales invoice reference
     const sRows = await query(
       prisma,
-      `SELECT sn.*, i.name AS item_name, i.item_code
+      `SELECT sn.*, i.name AS item_name, i.code AS item_code
        FROM serial_numbers sn
        JOIN items i ON i.id = sn.item_id
        WHERE sn.serial_no = $1`,
@@ -35,7 +35,7 @@ export class WarrantyService {
       prisma,
       `SELECT sil.id, si.customer_id, c.name AS customer_name
        FROM sales_invoice_lines sil
-       JOIN sales_invoices si ON si.id = sil.sales_invoice_id
+       JOIN sales_invoices si ON si.id = sil.invoice_id
        JOIN customers c ON c.id = si.customer_id
        WHERE sil.item_id = $1::uuid
        LIMIT 1`,
@@ -102,6 +102,48 @@ export class WarrantyService {
       result: evalResult.result,
       reasons: evalResult.reasons,
     };
+  }
+
+  async listTerms(): Promise<Row[]> {
+    const rows = await query(
+      prisma,
+      `SELECT wt.*, i.name AS item_name FROM warranty_terms wt LEFT JOIN items i ON i.id = wt.item_id WHERE wt.active = true ORDER BY wt.code`,
+    );
+    return rows.map(norm);
+  }
+
+  async createTerm(
+    caller: Caller,
+    b: {
+      code: string;
+      name: string;
+      months: number;
+      itemId?: string | undefined;
+      itemCategory?: string | undefined;
+      startBasis?: string | undefined;
+      coverage?: string | undefined;
+      exclusions?: string | undefined;
+    },
+  ): Promise<Row> {
+    if ((await query(prisma, `SELECT 1 FROM warranty_terms WHERE code = $1`, b.code)).length)
+      throw Errors.conflict(`A warranty term with code ${b.code} already exists.`);
+    if (b.itemId && !(await query(prisma, `SELECT 1 FROM items WHERE id = $1::uuid`, b.itemId)).length)
+      throw Errors.validation({ itemId: 'Item not found.' });
+    const id = await prisma.$transaction(async (tx) => {
+      const tid = await insertRow(tx, 'warranty_terms', {
+        code: b.code,
+        name: b.name,
+        months: b.months,
+        itemId: b.itemId ?? null,
+        itemCategory: b.itemCategory ?? null,
+        startBasis: b.startBasis ?? 'DELIVERY',
+        coverage: b.coverage ?? 'PARTS_AND_LABOUR',
+        exclusions: b.exclusions ?? null,
+      });
+      await audit(tx, caller, caller.auth.userId, 'WARRANTY_TERM_CREATED', 'warranty_term', { id: tid, code: b.code }, 'service-warranty', {});
+      return tid;
+    });
+    return norm((await query(prisma, `SELECT * FROM warranty_terms WHERE id = $1::uuid`, id))[0]!);
   }
 
   async listWarranties(

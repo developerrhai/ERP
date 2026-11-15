@@ -420,8 +420,12 @@ export const SCREENS: Record<string, ScreenConfig> = {
     columns: [
       { key: 'code', label: 'Price List Code', sql: 't.code' },
       { key: 'name', label: 'Price List Name', sql: 't.name' },
-      { key: 'customer', label: 'Customer Segment', sql: 'cu.name' },
+      { key: 'customer', label: 'Customer Segment', sql: `COALESCE(cu.name, (SELECT g.name FROM party_groups g WHERE g.id = t.customer_group_id), t.kind)` },
+      { key: 'category', label: 'Item Category', sql: `(SELECT string_agg(DISTINCT i.category, ', ') FROM price_list_items pi JOIN items i ON i.id = pi.item_id WHERE pi.price_list_id = t.id)` },
       { key: 'currency', label: 'Currency', sql: 't.currency_code' },
+      { key: 'basePrice', label: 'Base Price', sql: `(SELECT min(pi.rate) FROM price_list_items pi WHERE pi.price_list_id = t.id)`, type: 'money' },
+      { key: 'minQty', label: 'Min Qty', sql: `(SELECT min(pi.min_qty) FROM price_list_items pi WHERE pi.price_list_id = t.id)`, type: 'num' },
+      { key: 'margin', label: 'Margin %', sql: `(SELECT round(avg((pi.rate - i.standard_cost) / NULLIF(pi.rate, 0) * 100), 2) FROM price_list_items pi JOIN items i ON i.id = pi.item_id WHERE pi.price_list_id = t.id AND i.standard_cost > 0)`, type: 'pct' },
       { key: 'from', label: 'Effective From', sql: 't.valid_from', type: 'date' },
       { key: 'to', label: 'Effective To', sql: 't.valid_to', type: 'date' },
       { key: 'status', label: 'Status', sql: 't.status', type: 'status' },

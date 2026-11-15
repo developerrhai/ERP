@@ -5,30 +5,31 @@ import { mget, mlist, mpost } from '../../lib/mfgApi';
 import type { Row } from '../../lib/mfgApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
-import { dmy, ErrorBox, PageHead, Pill } from '../finance/shared';
+import { dmy, ErrorBox, Pill } from '../finance/shared';
 import { Tabs } from '../qms/Shared';
 import { JobCardPanel } from './JobCard';
 import { ORDER_TONE, OptionSelect, s, useWorkCentres } from './Kit';
+import { OpsHead } from '../dashboards/OpsParts';
 import { Act, Dialog, Grid, num } from './Ui';
 
 export function ShopFloorPage({ actions }: { actions: ActionSet }) {
-  const [tab, setTab] = useState<'tablet' | 'board'>('tablet');
+  const [tab, setTab] = useState<'board' | 'tablet'>('board');
   return (
-    <>
-      <PageHead
-        title="Shop Floor"
-        sub="For the machine tablet: pick the work center, tap a job card, and use the big buttons. Supervisors see the day's numbers on the second tab."
+    <div className="ops-page">
+      <OpsHead
+        title="Shop Floor Dashboard"
+        sub="Production, OEE, target, actual, rejection and downtime. The machine tablet (work center, job cards, big buttons) is on the second tab."
       />
       <Tabs
         value={tab}
         onChange={setTab}
         tabs={[
+          ['board', 'Dashboard'],
           ['tablet', 'Tablet'],
-          ['board', 'Supervisor dashboard'],
         ]}
       />
       {tab === 'tablet' ? <Tablet actions={{ ...actions, post: true }} /> : <Dashboard />}
-    </>
+    </div>
   );
 }
 
@@ -139,82 +140,98 @@ function Dashboard() {
   const hourly = (data?.hourly as Row[] | undefined) ?? [];
   const orders = (data?.orders ?? {}) as Record<string, number>;
   const max = Math.max(1, ...hourly.map((h) => Number(h.good)));
+  const orderText = Object.entries(orders)
+    .map(([k, v]) => `${k} ${v}`)
+    .join(' · ');
   return (
     <>
       <ErrorBox message={d.error} />
+      {d.loading && !data ? <p className="ops-empty">Loading the shop floor figures…</p> : null}
       {data?.empty === true ? (
-        <p>No data yet. Figures appear once job cards are logged today.</p>
+        <p className="ops-empty">No data yet. Figures appear once job cards are logged today.</p>
       ) : null}
       {data ? (
         <>
-          <p>
-            Good pieces today <b>{num(data.goodPieces)}</b> · rejection{' '}
-            <b>{data.rejectionPct ? `${s(data.rejectionPct)}%` : '—'}</b> · downtime{' '}
-            <b>{num(data.downtimeMinutes)} min</b>
-          </p>
-          <p>
-            Orders:{' '}
-            {Object.entries(orders)
-              .map(([k, v]) => `${k} ${v}`)
-              .join(' · ') || 'none open'}
-          </p>
-          <h4>OEE by work center (availability × performance × quality)</h4>
-          <Grid
-            rows={oee}
-            rowKey={(r) => s(r.workCentreId)}
-            empty="No data yet."
-            cols={[
-              { h: 'Work center', r: (r) => `${s(r.code)} · ${s(r.name)}` },
-              { h: 'Availability', r: (r) => (r.noData === true ? '—' : pct(r.availability)) },
-              { h: 'Performance', r: (r) => (r.noData === true ? '—' : pct(r.performance)) },
-              { h: 'Quality', r: (r) => (r.noData === true ? '—' : pct(r.quality)) },
-              {
-                h: 'OEE',
-                r: (r) =>
-                  r.noData === true ? (
-                    'No data yet'
-                  ) : (
-                    <b style={{ color: below(r) ? '#b42318' : undefined }}>{pct(r.oee)}</b>
-                  ),
-              },
-              { h: 'Target', r: (r) => (r.target ? `${s(r.target)}%` : '—') },
-            ]}
-          />
-          <h4>Good pieces by hour</h4>
-          {hourly.length === 0 ? (
-            <p>No data yet.</p>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 120 }}>
-              {hourly.map((h) => (
-                <div
-                  key={s(h.hour)}
-                  title={`${s(h.hour)}:00 — ${s(h.good)}`}
-                  style={{ textAlign: 'center' }}
-                >
-                  <div
-                    style={{
-                      height: (Number(h.good) / max) * 90,
-                      width: 22,
-                      background: '#2563eb',
-                    }}
-                  />
-                  <small>{s(h.hour)}</small>
-                </div>
-              ))}
+          <section className="ops-card" aria-label="Hourly Production">
+            <h2>Hourly Production</h2>
+            {hourly.length === 0 ? (
+              <p className="ops-empty">No data yet.</p>
+            ) : (
+              <div className="ops-bars" role="img" aria-label="Good pieces by hour">
+                {hourly.map((h) => (
+                  <div key={s(h.hour)} className="ops-bar-col" title={`${s(h.hour)}:00 - ${s(h.good)} good pieces`}>
+                    <b>{num(h.good)}</b>
+                    <div className="ops-bar" style={{ height: `${(Number(h.good) / max) * 140}px` }} />
+                    <small>{s(h.hour).padStart(2, '0')}</small>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+          <div className="ops-summary">
+            <div className="ops-stat">
+              <small>Good pieces today</small>
+              <b>{num(data.goodPieces)}</b>
+              <span>Actual</span>
             </div>
-          )}
-          <h4>Overdue orders</h4>
-          <Grid
-            rows={(data.overdue as Row[] | undefined) ?? []}
-            rowKey={(r) => s(r.id)}
-            empty="Nothing is overdue."
-            cols={[
-              { h: 'Order', r: (r) => s(r.number) },
-              { h: 'Item', r: (r) => s(r.itemName) },
-              { h: 'Due', r: (r) => dmy(s(r.dueDate).slice(0, 10)) },
-              { h: 'Status', r: (r) => s(r.status) },
-            ]}
-          />
+            <div className="ops-stat">
+              <small>Rejection</small>
+              <b>{data.rejectionPct ? `${s(data.rejectionPct)}%` : '—'}</b>
+              <span>Of pieces made today</span>
+            </div>
+            <div className="ops-stat">
+              <small>Downtime</small>
+              <b>{num(data.downtimeMinutes)} min</b>
+              <span>Machines stopped today</span>
+            </div>
+            <div className="ops-stat">
+              <small>Orders</small>
+              <b>{Object.values(orders).reduce((a, v) => a + Number(v), 0)}</b>
+              <span>{orderText || 'none open'}</span>
+            </div>
+          </div>
+          <section className="ops-card" aria-label="OEE by work center">
+            <h3>OEE by work center (availability × performance × quality)</h3>
+            <div className="ops-scroll">
+              <Grid
+                rows={oee}
+                rowKey={(r) => s(r.workCentreId)}
+                empty="No data yet."
+                cols={[
+                  { h: 'Work center', r: (r) => `${s(r.code)} · ${s(r.name)}` },
+                  { h: 'Availability', r: (r) => (r.noData === true ? '—' : pct(r.availability)) },
+                  { h: 'Performance', r: (r) => (r.noData === true ? '—' : pct(r.performance)) },
+                  { h: 'Quality', r: (r) => (r.noData === true ? '—' : pct(r.quality)) },
+                  {
+                    h: 'OEE',
+                    r: (r) =>
+                      r.noData === true ? (
+                        'No data yet'
+                      ) : (
+                        <b style={{ color: below(r) ? 'var(--danger)' : undefined }}>{pct(r.oee)}</b>
+                      ),
+                  },
+                  { h: 'Target', r: (r) => (r.target ? `${s(r.target)}%` : '—') },
+                ]}
+              />
+            </div>
+          </section>
+          <section className="ops-card" aria-label="Overdue orders">
+            <h3>Overdue orders</h3>
+            <div className="ops-scroll">
+              <Grid
+                rows={(data.overdue as Row[] | undefined) ?? []}
+                rowKey={(r) => s(r.id)}
+                empty="Nothing is overdue."
+                cols={[
+                  { h: 'Order', r: (r) => s(r.number) },
+                  { h: 'Item', r: (r) => s(r.itemName) },
+                  { h: 'Due', r: (r) => dmy(s(r.dueDate).slice(0, 10)) },
+                  { h: 'Status', r: (r) => s(r.status) },
+                ]}
+              />
+            </div>
+          </section>
         </>
       ) : null}
     </>

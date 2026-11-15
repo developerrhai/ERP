@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import { PageHead, Pill, inr, dmy } from '../finance/shared';
 import { serviceApi, type WarrantyCheck } from '../../lib/serviceApi';
+import { FormModal } from '../mfg/Kit';
+import { useToast } from '../../components/Toast';
 
 export function WarrantyClaimsPage() {
   const [serialQuery, setSerialQuery] = useState('SN-2026-001');
@@ -9,6 +11,8 @@ export function WarrantyClaimsPage() {
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const toast = useToast();
+  const [addingTerm, setAddingTerm] = useState(false);
 
   const loadClaims = async () => {
     try {
@@ -54,6 +58,12 @@ export function WarrantyClaimsPage() {
         title="Warranty Entitlement & Back-to-Back Claims"
         sub="Instant serial warranty check with anniversary end-date rules, failure inspection, and back-to-back supplier settlements."
       />
+
+      <div style={{ marginBottom: '0.75rem' }}>
+        <button type="button" className="btn" onClick={() => setAddingTerm(true)}>
+          + New warranty term
+        </button>
+      </div>
 
       {error && <div className="notice error">{error}</div>}
 
@@ -172,6 +182,27 @@ export function WarrantyClaimsPage() {
           </table>
         )}
       </div>
+      {addingTerm ? (
+        <FormModal
+          title="New warranty term"
+          sub="A term says how many months a product is covered and from when."
+          fields={[
+            { key: 'code', label: 'Code', required: true },
+            { key: 'name', label: 'Name', required: true },
+            { key: 'months', label: 'Months covered', required: true, type: 'number' },
+            { key: 'startBasis', label: 'Starts from', type: 'select', options: ['DELIVERY', 'INVOICE', 'INSTALLATION'] },
+            { key: 'coverage', label: 'Covers', type: 'select', options: ['PARTS_AND_LABOUR', 'PARTS', 'LABOUR'] },
+            { key: 'exclusions', label: 'Exclusions', type: 'textarea' },
+          ]}
+          initial={{ startBasis: 'DELIVERY', coverage: 'PARTS_AND_LABOUR' }}
+          onClose={() => setAddingTerm(false)}
+          onSubmit={async (v) => {
+            await serviceApi.createWarrantyTerm({ ...v, months: Number(v.months) });
+            toast('Warranty term saved');
+            setAddingTerm(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

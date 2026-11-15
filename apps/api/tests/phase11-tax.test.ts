@@ -509,6 +509,17 @@ describe('GSTR-2B, e-invoice, e-way bill, TDS', () => {
         ).status,
       ).toBe(409); // already has one
 
+      // the same e-way bill number on another invoice is a clear 409, never a 500
+      const si2 = await sell(cust.id, sitem.id, 3, 50000);
+      const dup = await v.call(
+        'post',
+        '/tax/eway',
+        { invoiceId: si2.id, ewbNo: '123456789012', ewbDate: when, distanceKm: 10 },
+        { 'Idempotency-Key': `w4-${tag()}` },
+      );
+      expect(dup.status, JSON.stringify(dup.body)).toBe(409);
+      expect(JSON.stringify(dup.body)).toMatch(/already recorded/);
+
       // ---- TDS return: an entry with a deposit challan and one without
       const fy =
         Number(todayIst().slice(5, 7)) >= 4

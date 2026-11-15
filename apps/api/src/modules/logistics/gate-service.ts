@@ -10,6 +10,7 @@ import type { Row } from '../procurement/core';
 import type { Caller } from '../records/service';
 import { StockService } from '../inventory/stock/stock-service';
 import { D } from '../inventory/money';
+import { istDate } from '../approvals/errors';
 import { fleetService } from './fleet-service';
 import {
   computeStatutoryDueDate,
@@ -166,7 +167,7 @@ export class GateService {
   }
 
   async getOverdueReturnables(caller: Caller): Promise<Row[]> {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = istDate();
     const rows = await query(
       prisma,
       `SELECT gp.id AS pass_id, gp.pass_no, gp.expected_return_date, gp.supplier_id, s.name AS supplier_name,
@@ -311,7 +312,7 @@ export class GateService {
       );
       const gp = norm(gpRows[0]!);
 
-      const dispatchDate = new Date().toISOString().slice(0, 10);
+      const dispatchDate = istDate();
       for (const l of input.lines) {
         const jwCat: JobWorkCategory = l.jobworkCategory ?? 'NONE';
         const statDue =
@@ -577,7 +578,7 @@ export class GateService {
         );
       }
 
-      const postingDate = new Date().toISOString().slice(0, 10);
+      const postingDate = istDate();
 
       // 4. Side effects on stock & shipments
       if (gp.pass_type === 'OUTWARD_DISPATCH' && gp.shipment_id) {
@@ -595,6 +596,7 @@ export class GateService {
           caller.auth.userId,
         );
       } else if (gp.pass_type === 'RETURNABLE') {
+        // (no lineId: stock_ledger.line_id references stock_voucher_lines, not gate_pass_lines)
         // Transfer stock from source_warehouse to out_warehouse (Returnable warehouse)
         for (const l of lines) {
           if (l.item_id && l.source_warehouse_id && l.out_warehouse_id) {
@@ -608,7 +610,6 @@ export class GateService {
                 voucherType: 'TRANSFER_OUT',
                 voucherId: String(gp.id),
                 voucherNo: String(gp.pass_no),
-                lineId: String(l.id),
                 createdById: caller.auth.userId,
               },
               {
@@ -620,7 +621,6 @@ export class GateService {
                 voucherType: 'TRANSFER_IN',
                 voucherId: String(gp.id),
                 voucherNo: String(gp.pass_no),
-                lineId: String(l.id),
                 rate: D(Number(l.unit_rate ?? 0)),
                 createdById: caller.auth.userId,
               },
@@ -639,7 +639,6 @@ export class GateService {
               voucherType: 'ISSUE',
               voucherId: String(gp.id),
               voucherNo: String(gp.pass_no),
-              lineId: String(l.id),
               createdById: caller.auth.userId,
             });
           }
@@ -679,7 +678,7 @@ export class GateService {
       const inPassRows = await query(tx, `SELECT * FROM gate_passes WHERE id = $1::uuid FOR UPDATE`, inPassId);
       if (!inPassRows[0]) throw Errors.notFound(`Inward return pass not found: ${inPassId}`);
 
-      const postingDate = new Date().toISOString().slice(0, 10);
+      const postingDate = istDate();
       const createdReceipts: Row[] = [];
 
       for (const r of returns) {
@@ -729,7 +728,6 @@ export class GateService {
               voucherType: 'TRANSFER_OUT',
               voucherId: inPassId,
               voucherNo: String(inPassRows[0].pass_no),
-              lineId: String(outLine.id),
               createdById: caller.auth.userId,
             },
             {
@@ -741,7 +739,6 @@ export class GateService {
               voucherType: 'TRANSFER_IN',
               voucherId: inPassId,
               voucherNo: String(inPassRows[0].pass_no),
-              lineId: String(outLine.id),
               rate: D(Number(outLine.unit_rate ?? 0)),
               createdById: caller.auth.userId,
             },
@@ -817,7 +814,7 @@ export class GateService {
    * Updates deemed_supply_risk on expired s.143 statutory dates and counts overdue alerts.
    */
   async runOverdueJob(asOfDate?: string): Promise<{ overdueCount: number; statutoryDeemedSupply: number }> {
-    const today = asOfDate || new Date().toISOString().slice(0, 10);
+    const today = asOfDate || istDate();
     const lines = await query(
       prisma,
       `SELECT gpl.id, gpl.balance_qty, gpl.statutory_due_date, gpl.deemed_supply_risk, gp.expected_return_date

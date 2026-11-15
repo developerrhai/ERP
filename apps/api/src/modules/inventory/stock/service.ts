@@ -8,6 +8,8 @@ import type { Caller } from '../../records/service';
 import { D, num, round2 } from '../money';
 import { unitFilter } from '../typed';
 import type { ListResult, TypedHandler, TypedListQuery, TypedRecordDto } from '../typed';
+import { pairStats } from '../v40/stats';
+import type { PairStat } from '../v40/stats';
 import { readBalance } from './posting';
 import { balanceOrder, ledgerOrder, stockRepository } from './repository';
 import type { BalanceRow, LedgerRow } from './repository';
@@ -17,7 +19,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const rowId = (b: Pick<BalanceRow, 'itemId' | 'warehouseId'>) => `${b.itemId}_${b.warehouseId}`;
 
-function balanceDto(b: BalanceRow): TypedRecordDto {
+function balanceDto(b: BalanceRow, st?: PairStat): TypedRecordDto {
   const status = b.belowReorder ? 'Below Reorder' : 'OK';
   return {
     id: rowId(b),
@@ -37,6 +39,22 @@ function balanceDto(b: BalanceRow): TypedRecordDto {
       stockValue: num(D(b.stockValue)),
       reorderLevel: b.reorderLevel === null ? null : num(D(b.reorderLevel)),
       status,
+      // computed columns of the V40 stock tabs (read-only, from slices / reservations / holds / ledger)
+      itemType: b.itemType,
+      ...(st
+        ? {
+            batch: st.batches,
+            reserved: st.reserved,
+            blocked: st.blocked,
+            held: st.held,
+            available: st.available,
+            demand: st.demand,
+            allocated: st.allocated,
+            short: st.short,
+            location: st.bins ? `${b.warehouseCode} / ${st.bins}` : b.warehouseCode,
+            lastTransaction: st.lastMovement,
+          }
+        : {}),
     },
     version: 1,
     amount: num(D(b.stockValue)),
@@ -117,8 +135,9 @@ export const stockHandler: TypedHandler = {
       order,
       { offset: (query.page - 1) * query.size, limit: query.size },
     );
+    const stats = await pairStats(rows);
     return {
-      rows: rows.map(balanceDto),
+      rows: rows.map((b) => balanceDto(b, stats.get(rowId(b)))),
       total,
       totals: { onHand: num(D(onHand)) ?? 0, stockValue: num(D(stockValue)) ?? 0 },
     };
@@ -131,7 +150,7 @@ export const stockHandler: TypedHandler = {
     }
     const row = await stockRepository.balance(unitFilter(caller), itemId, warehouseId);
     if (!row) throw Errors.notFound('Record not found.');
-    return balanceDto(row);
+    return balanceDto(row, (await pairStats([row])).get(rowId(row)));
   },
 
   async exportRows(caller, query) {

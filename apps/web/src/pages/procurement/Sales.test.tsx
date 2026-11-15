@@ -74,6 +74,35 @@ describe('Lead Management', () => {
           ],
           meta: { page: 1, size: 20, total: 1 },
         }),
+      'GET /api/v1/sales/v40/crm-leads': () =>
+        json(200, {
+          data: [
+            {
+              id: 'l1',
+              number: 'LD/TAL/26-27/0001',
+              status: 'New',
+              version: '1',
+              c0: 'LD/TAL/26-27/0001',
+              c1: 'Ravi',
+              c2: 'New',
+              c3: null,
+            },
+          ],
+          meta: {
+            page: 1,
+            size: 20,
+            total: 1,
+            columns: [
+              { key: 'c0', label: 'Lead No', type: 'text', source: true },
+              { key: 'c1', label: 'Lead Name', type: 'text', source: true },
+              { key: 'c2', label: 'Status', type: 'pill', source: true },
+              { key: 'c3', label: 'Actions', type: 'actions', source: true },
+            ],
+            panel: null,
+            audit: false,
+            noSource: [],
+          },
+        }),
       'GET /api/v1/crm/leads/l1': () =>
         json(200, {
           data: {
@@ -87,7 +116,7 @@ describe('Lead Management', () => {
         }),
     });
     renderApp('/m/crm-leads');
-    await userEvent.setup().click(await screen.findByRole('button', { name: 'LD/TAL/26-27/0001' }));
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'View' }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByRole('button', { name: 'Mark Qualified' })).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Not qualified' })).toBeInTheDocument();
@@ -117,48 +146,82 @@ describe('Collections and Credit Limits', () => {
             customers: [],
           },
         }),
-      'GET /api/v1/sales/credit/overview': () =>
+      'GET /api/v1/sales/v40/sales-collections': () =>
         json(200, {
           data: [
             {
-              id: 'c1',
-              name: 'Acme',
-              creditLimit: '100000.00',
-              receivable: '90000.00',
-              openOrders: '20000.00',
-              exposure: '110000.00',
-              available: '-10000.00',
-              onHold: true,
+              id: 'i1',
+              number: '',
+              status: 'Posted',
+              version: '1',
+              c0: 'INV/TAL/26-27/0001',
+              c1: 'Acme',
+              c2: 'Overdue 38 d',
             },
           ],
+          meta: {
+            page: 1,
+            size: 20,
+            total: 1,
+            columns: [
+              { key: 'c0', label: 'Invoice Number', type: 'text', source: true },
+              { key: 'c1', label: 'Customer', type: 'text', source: true },
+              { key: 'c2', label: 'Status', type: 'pill', source: true },
+            ],
+            panel: {
+              title: 'Invoices waiting for a receipt',
+              columns: [
+                { key: 'p0', label: 'Reference', type: 'text', source: true },
+                { key: 'p1', label: 'Due', type: 'date', source: true },
+              ],
+              rows: [{ id: 'i1', p0: 'INV/TAL/26-27/0001', p1: '2026-10-01' }],
+            },
+            audit: false,
+            noSource: [],
+          },
         }),
     });
-    renderApp('/m/sales-collections');
-    expect(await screen.findByText('INV/TAL/26-27/0001')).toBeInTheDocument();
-    expect(screen.getByText('38')).toBeInTheDocument();
+    renderApp('/m/sales-collections?tab=3');
+    expect((await screen.findAllByText('INV/TAL/26-27/0001')).length).toBe(2);
+    expect(screen.getByText('Overdue 38 d')).toBeInTheDocument();
     expect(screen.getByText('01-10-2026')).toBeInTheDocument();
   });
 
   it('credit limits flag the customer who is over', async () => {
     signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/sales/credit/overview': () =>
+      'GET /api/v1/sales/v40/sales-credit': () =>
         json(200, {
           data: [
             {
               id: 'c1',
-              name: 'Acme',
-              creditLimit: '100000.00',
-              receivable: '90000.00',
-              openOrders: '20000.00',
-              exposure: '110000.00',
-              available: '-10000.00',
-              onHold: true,
+              number: 'C1',
+              status: 'ACTIVE',
+              version: '1',
+              c0: 'Acme',
+              c1: '100000',
+              c2: '110000',
+              c3: 'Over limit',
             },
           ],
+          meta: {
+            page: 1,
+            size: 20,
+            total: 1,
+            columns: [
+              { key: 'c0', label: 'Customer', type: 'text', source: true },
+              { key: 'c1', label: 'Credit Limit', type: 'inr', source: true },
+              { key: 'c2', label: 'Used Limit', type: 'inr', source: true },
+              { key: 'c3', label: 'Status', type: 'pill', source: true },
+            ],
+            panel: null,
+            audit: false,
+            noSource: [],
+          },
         }),
     });
     renderApp('/m/sales-credit');
     expect(await screen.findByText('Over limit')).toBeInTheDocument();
+    expect(screen.getByText('Acme')).toBeInTheDocument();
   });
 });

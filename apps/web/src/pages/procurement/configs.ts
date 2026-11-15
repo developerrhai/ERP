@@ -7,6 +7,7 @@ const supplierType: [string, string][] = [
 ];
 
 export const PR_CFG: DocCfg = {
+  pageId: 'scm-pr',
   title: 'Purchase Requisition',
   sub: 'Ask Purchase to buy what you need. After approval it becomes an RFQ or a purchase order.',
   path: '/scm/pr',
@@ -32,6 +33,7 @@ export const PR_CFG: DocCfg = {
 };
 
 export const RFQ_CFG: DocCfg = {
+  pageId: 'scm-rfq',
   title: 'RFQ Management',
   sub: 'Ask suppliers for quotes. Invite at least one supplier, then issue the RFQ.',
   path: '/scm/rfq',
@@ -55,6 +57,7 @@ export const RFQ_CFG: DocCfg = {
 };
 
 export const VQ_CFG: DocCfg = {
+  pageId: 'scm-vendorquote',
   title: 'Vendor Quotations',
   sub: 'What each supplier offered. Negotiate again to start a new round.',
   path: '/scm/vendorquote',
@@ -84,6 +87,7 @@ export const VQ_CFG: DocCfg = {
 };
 
 export const PO_CFG: DocCfg = {
+  pageId: 'scm-po',
   title: 'Purchase Orders',
   sub: 'Orders placed with suppliers. Approved orders can be received against.',
   path: '/scm/po',
@@ -136,6 +140,7 @@ export const PO_CFG: DocCfg = {
 };
 
 export const CON_CFG: DocCfg = {
+  pageId: 'scm-contracts',
   title: 'Rate / Blanket Contracts',
   sub: 'Agreed rates with a supplier. Purchase orders release against the contract up to its limits.',
   path: '/scm/contracts',

@@ -1,0 +1,29 @@
+/* Movement registers (maint-part-movement, plant-process-movement, plant-department-movement, plant-interplant-movement) */
+.mv-page .mv-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.mv-page .mv-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.mv-page .mv-recon {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+  font-size: 12px;
+}
+.mv-page .mv-recon span {
+  padding: 2px 6px;
+  background: var(--surface-2, #f1f5f9);
+  border-radius: 4px;
+}
+.mv-line {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+}

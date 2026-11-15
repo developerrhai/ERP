@@ -1,0 +1,123 @@
+{
+ "id": "plant-unit-routing",
+ "role": "super",
+ "at": "2026-11-14T15:08:44.535Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [
+     "#",
+     "Plant",
+     "Unit",
+     "Process",
+     "Department",
+     "Movement Type",
+     "Control",
+     "Action",
+     "Movement",
+     "Route",
+     "Plant / Unit / Process",
+     "Selected Scope",
+     "Status"
+    ],
+    "fields": [
+     "Route ID",
+     "Route Name",
+     "Product / Family",
+     "Approval"
+    ],
+    "buttons": [
+     "← Return",
+     "Process Movements",
+     "Plant-to-Plant",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Project History",
+     "New Route",
+     "Duplicate",
+     "Reset Sketch Template",
+     "Delete",
+     "+ Add Step",
+     "Save Route"
+    ],
+    "cards": [
+     "Route Builder"
+    ],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 9,
+    "textLen": 3224,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [
+     "#",
+     "Plant",
+     "Process",
+     "Department",
+     "Work Centre",
+     "Std Hours",
+     "Movement Type",
+     "QC",
+     "Approval",
+     "Action"
+    ],
+    "fields": [
+     "Route ID",
+     "Route Name",
+     "Product / Family",
+     "Status",
+     "Department Filter"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "Process Movements",
+     "Plant-to-Plant",
+     "New Route",
+     "Duplicate",
+     "Reset Sketch Template",
+     "+ Add Step",
+     "Save Route",
+     "Delete Route",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [
+     "Route template",
+     "Assigned on save",
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 1,
+    "textLen": 999,
+    "sideways": false
+   }
+  }
+ }
+}

@@ -1,0 +1,100 @@
+{
+ "id": "dept-work-sales",
+ "role": "super",
+ "at": "2026-11-14T13:28:43.543Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [
+     "Movement",
+     "Document / Record",
+     "Route",
+     "Status",
+     "Approval",
+     "Actions"
+    ],
+    "fields": [],
+    "buttons": [
+     "← Return",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Open Sales Inbox",
+     "New Message / Attach Document",
+     "Approvals",
+     "Plant Flow",
+     "Workflow Matrix"
+    ],
+    "cards": [
+     "Workflow Rules Affecting Sales"
+    ],
+    "filters": [],
+    "badges": [
+     "Sales"
+    ],
+    "rows": 1,
+    "textLen": 1971,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [
+     "Movement",
+     "Document / Record",
+     "Route",
+     "Status",
+     "Approval",
+     "Actions"
+    ],
+    "fields": [],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "Open Sales Inbox",
+     "New Message / Attach Document",
+     "Plant Flow",
+     "Workflow Matrix",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [
+     "Pending Receipt0Pending Acceptance0Work / Rework0Approval0Re",
+     "Pending Receipt0",
+     "Pending Acceptance0",
+     "Work / Rework0",
+     "Approval0",
+     "Ready to Move0",
+     "Sent / Waiting3",
+     "Workflow Rules Affecting Sales"
+    ],
+    "filters": [],
+    "badges": [
+     "Sales"
+    ],
+    "rows": 1,
+    "textLen": 1148,
+    "sideways": false
+   }
+  }
+ }
+}

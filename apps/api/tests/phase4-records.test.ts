@@ -9,6 +9,7 @@ import { invalidateAccessCache } from '../src/core/rbac/access';
 import {
   API,
   auditRows,
+  cleanGenericRecordsAndSeries,
   errorOf,
   makeUser,
   newApp,
@@ -65,9 +66,8 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
-  await prisma.genericRecord.deleteMany({});
+  await cleanGenericRecordsAndSeries();
   await prisma.idempotencyKey.deleteMany({});
-  await prisma.numberSeries.deleteMany({ where: { NOT: { pageId: { startsWith: 'inv-' } } } });
 });
 
 async function create(s: Signed, extra: Record<string, unknown> = {}, h = {}) {

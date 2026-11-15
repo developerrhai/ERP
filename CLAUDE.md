@@ -23,14 +23,18 @@ These rules come from the owner (2026-11-02). They override any default behaviou
 * Local only: `rhai_erp` (dev), `rhai_erp_test` (API tests, reset freely), `rhai_erp_e2e` (e2e, reset freely).
 * Never touch the old database `erp` or any production database.
 
+## Source of truth & scope
+* **Source of truth = `docs/phases/`**. `docs/phases/STANDARDS.md` and the active `docs/phases/PHASE-XX.md` override any other doc. Anything in `docs/archive/` is reference only.
+* **Build only the phase named by the owner.** Do not start the next phase. Do not design or add out-of-scope features.
+
 ## How work is done here
 * Spec first:
-  * `PLAN.md`;
-  * the per-phase `docs/phaseN/CONTRACT.md`.
+  * `docs/phases/STANDARDS.md`;
+  * the per-phase `docs/phases/PHASE-XX.md`.
 * Then:
   * build;
   * run `npm run verify` and `npm run e2e` **three times from a clean DB**;
   * an independent review;
   * fix.
-* Record the reason for every added or removed file in `docs/phaseN/CHANGES.md`.
 * `index.html` (the prototype) is read-only.
+

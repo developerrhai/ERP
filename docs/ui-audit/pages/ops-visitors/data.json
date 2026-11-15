@@ -1,0 +1,212 @@
+{
+ "id": "ops-visitors",
+ "role": "super",
+ "at": "2026-11-14T14:28:32.046Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [
+     "Pass / Appointment",
+     "Visitor",
+     "Host",
+     "Schedule",
+     "Identity / Risk",
+     "Safety / PPE",
+     "Entry / Exit",
+     "Approvals",
+     "Actions"
+    ],
+    "fields": [],
+    "buttons": [
+     "← Return",
+     "Send Email",
+     "Word",
+     "Excel",
+     "PDF",
+     "+ New Visitor",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Project History",
+     "Expected",
+     "Approvals",
+     "Gate Check-In",
+     "Inside Plant",
+     "Overstay Alerts",
+     "Material Gate Pass",
+     "Check-Out History",
+     "Host Approve",
+     "Material Pass",
+     "Edit",
+     "Email",
+     "PDF Pass",
+     "Move Forward"
+    ],
+    "cards": [],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 8,
+    "textLen": 4233,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [
+     "Visitor Register",
+     "Inside Plant"
+    ],
+    "columns": [
+     "Pass",
+     "Visitor",
+     "Host",
+     "Date",
+     "Planned out",
+     "Status"
+    ],
+    "fields": [],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "＋ Pre-register",
+     "Visitor Register",
+     "Inside Plant",
+     "Check in",
+     "QR",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [],
+    "badges": [],
+    "rows": 3,
+    "textLen": 815,
+    "sideways": false
+   }
+  },
+  "erp-only: Visitor Register": {
+   "erp": {
+    "tabs": [
+     "Visitor Register",
+     "Inside Plant"
+    ],
+    "columns": [
+     "Pass",
+     "Visitor",
+     "Host",
+     "Date",
+     "Planned out",
+     "Status"
+    ],
+    "fields": [],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "＋ Pre-register",
+     "Visitor Register",
+     "Inside Plant",
+     "Check in",
+     "QR",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [],
+    "badges": [],
+    "rows": 3,
+    "textLen": 815,
+    "sideways": false
+   }
+  },
+  "erp-only: Inside Plant": {
+   "erp": {
+    "tabs": [
+     "Visitor Register",
+     "Inside Plant"
+    ],
+    "columns": [
+     "Pass",
+     "Visitor",
+     "Host",
+     "Date",
+     "Planned out",
+     "Status"
+    ],
+    "fields": [],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "＋ Pre-register",
+     "Visitor Register",
+     "Inside Plant",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [],
+    "badges": [],
+    "rows": 1,
+    "textLen": 498,
+    "sideways": false
+   }
+  }
+ }
+}

@@ -22,6 +22,7 @@ import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
 import { DocPage } from './DocPage';
+import { V40Register } from '../sales/V40Register';
 import { CRFQ_CFG, SQ_CFG } from './salesConfigs';
 
 const s = (v: unknown): string =>
@@ -180,28 +181,36 @@ export function SourcesPage({ actions }: { actions: ActionSet }) {
           </button>
         </div>
       ) : null}
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Name</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data ?? []).map((r) => (
-              <tr key={s(r.id)}>
-                <td>{s(r.code)}</td>
-                <td>{s(r.name)}</td>
-                <td>
-                  <Pill>{s(r.status)}</Pill>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <V40Register
+        pageId="crm-sources"
+        actions={actions}
+        reloadKey={list.data}
+        onChanged={list.reload}
+        fallback={
+          <div className="card table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(list.data ?? []).map((r) => (
+                  <tr key={s(r.id)}>
+                    <td>{s(r.code)}</td>
+                    <td>{s(r.name)}</td>
+                    <td>
+                      <Pill>{s(r.status)}</Pill>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        }
+      />
     </>
   );
 }
@@ -280,45 +289,54 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       <ErrorBox message={msg || list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Challan</th>
-              <th>Customer</th>
-              <th>Date</th>
-              <th>Vehicle</th>
-              <th>Cost</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows ?? []).length === 0 && !list.loading ? (
-              <Empty cols={6}>No dispatches yet. Click ＋ New Dispatch.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((d) => (
-              <tr key={d.id}>
-                <td>
-                  <button
-                    type="button"
-                    className="link"
-                    onClick={() => void getDoc('/sales/dispatch', d.id).then(setOpen)}
-                  >
-                    {s(d.number)}
-                  </button>
-                </td>
-                <td>{s(d.customerName)}</td>
-                <td>{dmy(s(d.dispatchDate))}</td>
-                <td>{s(d.vehicleNo) || '—'}</td>
-                <td>{inr(s(d.costTotal))}</td>
-                <td>
-                  <Pill>{d.status}</Pill>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <V40Register
+        pageId="sales-dispatch"
+        actions={actions}
+        onOpen={(id) => void getDoc('/sales/dispatch', id).then(setOpen)}
+        reloadKey={list.data}
+        onChanged={list.reload}
+        fallback={
+          <div className="card table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Challan</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Vehicle</th>
+                  <th>Cost</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(list.data?.rows ?? []).length === 0 && !list.loading ? (
+                  <Empty cols={6}>No dispatches yet. Click ＋ New Dispatch.</Empty>
+                ) : null}
+                {(list.data?.rows ?? []).map((d) => (
+                  <tr key={d.id}>
+                    <td>
+                      <button
+                        type="button"
+                        className="link"
+                        onClick={() => void getDoc('/sales/dispatch', d.id).then(setOpen)}
+                      >
+                        {s(d.number)}
+                      </button>
+                    </td>
+                    <td>{s(d.customerName)}</td>
+                    <td>{dmy(s(d.dispatchDate))}</td>
+                    <td>{s(d.vehicleNo) || '—'}</td>
+                    <td>{inr(s(d.costTotal))}</td>
+                    <td>
+                      <Pill>{d.status}</Pill>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        }
+      />
       {creating ? (
         <DispatchForm
           onClose={() => setCreating(false)}
@@ -648,47 +666,56 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       <ErrorBox message={msg || list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Invoice</th>
-              <th>Customer</th>
-              <th>Date</th>
-              <th>Due</th>
-              <th>Total</th>
-              <th>Received</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows ?? []).length === 0 && !list.loading ? (
-              <Empty cols={7}>No invoices yet.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((i) => (
-              <tr key={i.id}>
-                <td>
-                  <button
-                    type="button"
-                    className="link"
-                    onClick={() => void getDoc('/sales/invoices', i.id).then(setOpen)}
-                  >
-                    {s(i.number)}
-                  </button>
-                </td>
-                <td>{s(i.customerName)}</td>
-                <td>{dmy(s(i.invoiceDate))}</td>
-                <td>{dmy(s(i.dueDate))}</td>
-                <td>{inr(s(i.grandTotal))}</td>
-                <td>{inr(s(i.receivedAmount))}</td>
-                <td>
-                  <Pill>{i.status}</Pill>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <V40Register
+        pageId="sales-invoices"
+        actions={actions}
+        onOpen={(id) => void getDoc('/sales/invoices', id).then(setOpen)}
+        reloadKey={list.data}
+        onChanged={list.reload}
+        fallback={
+          <div className="card table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Due</th>
+                  <th>Total</th>
+                  <th>Received</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(list.data?.rows ?? []).length === 0 && !list.loading ? (
+                  <Empty cols={7}>No invoices yet.</Empty>
+                ) : null}
+                {(list.data?.rows ?? []).map((i) => (
+                  <tr key={i.id}>
+                    <td>
+                      <button
+                        type="button"
+                        className="link"
+                        onClick={() => void getDoc('/sales/invoices', i.id).then(setOpen)}
+                      >
+                        {s(i.number)}
+                      </button>
+                    </td>
+                    <td>{s(i.customerName)}</td>
+                    <td>{dmy(s(i.invoiceDate))}</td>
+                    <td>{dmy(s(i.dueDate))}</td>
+                    <td>{inr(s(i.grandTotal))}</td>
+                    <td>{inr(s(i.receivedAmount))}</td>
+                    <td>
+                      <Pill>{i.status}</Pill>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        }
+      />
       {open ? (
         <Modal
           title={`Invoice ${s(open.number)}`}
@@ -895,74 +922,82 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
           </button>
         </div>
       ) : null}
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Return</th>
-              <th>Customer</th>
-              <th>Date</th>
-              <th>Credit note</th>
-              <th>Credit</th>
-              <th>Status</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows ?? []).length === 0 && !list.loading ? (
-              <Empty cols={7}>No returns yet.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((r) => (
-              <tr key={r.id}>
-                <td>{s(r.number)}</td>
-                <td>{s(r.customerName)}</td>
-                <td>{dmy(s(r.returnDate))}</td>
-                <td>{s(r.creditNoteNo)}</td>
-                <td>{inr(s(r.grandTotal))}</td>
-                <td>
-                  <Pill>{r.status}</Pill>
-                </td>
-                <td>
-                  {r.status === 'Draft' && actions.submit ? (
-                    <button
-                      type="button"
-                      className="btn sm primary"
-                      onClick={() => {
-                        setMsg('');
-                        verb('/sales/returns', r.id, 'submit', {}, r.version)
-                          .then(() => {
-                            toast('Return submitted');
-                            list.reload();
-                          })
-                          .catch((e: unknown) => setMsg(toUiError(e).message));
-                      }}
-                    >
-                      Submit
-                    </button>
-                  ) : null}
-                  {r.status === 'Approved' && actions.post ? (
-                    <button
-                      type="button"
-                      className="btn sm primary"
-                      onClick={() => {
-                        setMsg('');
-                        verb('/sales/returns', r.id, 'post')
-                          .then(() => {
-                            toast('Return posted');
-                            list.reload();
-                          })
-                          .catch((e: unknown) => setMsg(toUiError(e).message));
-                      }}
-                    >
-                      Post
-                    </button>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <V40Register
+        pageId="sales-returns"
+        actions={actions}
+        reloadKey={list.data}
+        onChanged={list.reload}
+        fallback={
+          <div className="card table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Return</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Credit note</th>
+                  <th>Credit</th>
+                  <th>Status</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {(list.data?.rows ?? []).length === 0 && !list.loading ? (
+                  <Empty cols={7}>No returns yet.</Empty>
+                ) : null}
+                {(list.data?.rows ?? []).map((r) => (
+                  <tr key={r.id}>
+                    <td>{s(r.number)}</td>
+                    <td>{s(r.customerName)}</td>
+                    <td>{dmy(s(r.returnDate))}</td>
+                    <td>{s(r.creditNoteNo)}</td>
+                    <td>{inr(s(r.grandTotal))}</td>
+                    <td>
+                      <Pill>{r.status}</Pill>
+                    </td>
+                    <td>
+                      {r.status === 'Draft' && actions.submit ? (
+                        <button
+                          type="button"
+                          className="btn sm primary"
+                          onClick={() => {
+                            setMsg('');
+                            verb('/sales/returns', r.id, 'submit', {}, r.version)
+                              .then(() => {
+                                toast('Return submitted');
+                                list.reload();
+                              })
+                              .catch((e: unknown) => setMsg(toUiError(e).message));
+                          }}
+                        >
+                          Submit
+                        </button>
+                      ) : null}
+                      {r.status === 'Approved' && actions.post ? (
+                        <button
+                          type="button"
+                          className="btn sm primary"
+                          onClick={() => {
+                            setMsg('');
+                            verb('/sales/returns', r.id, 'post')
+                              .then(() => {
+                                toast('Return posted');
+                                list.reload();
+                              })
+                              .catch((e: unknown) => setMsg(toUiError(e).message));
+                          }}
+                        >
+                          Post
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        }
+      />
     </>
   );
 }
@@ -982,41 +1017,54 @@ export function CollectionsPage({ actions }: { actions: ActionSet }) {
         sub="Unpaid invoices by customer, oldest first. Record a receipt against an invoice."
       />
       <ErrorBox message={out.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Customer</th>
-              <th>Invoice</th>
-              <th>Due</th>
-              <th>Days late</th>
-              <th>Outstanding</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {(out.data?.rows ?? []).length === 0 && !out.loading ? (
-              <Empty cols={6}>Nothing is waiting to be collected.</Empty>
-            ) : null}
-            {(out.data?.rows ?? []).map((r) => (
-              <tr key={s(r.id)} className={Number(r.daysOverdue) > 0 ? 'row-red' : undefined}>
-                <td>{s(r.customerName)}</td>
-                <td>{s(r.number)}</td>
-                <td>{dmy(s(r.dueDate))}</td>
-                <td>{s(r.daysOverdue)}</td>
-                <td>{inr(s(r.outstanding))}</td>
-                <td>
-                  {actions.post ? (
-                    <button type="button" className="btn sm primary" onClick={() => setPaying(r)}>
-                      Receive payment
-                    </button>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <V40Register
+        pageId="sales-collections"
+        actions={actions}
+        onAllocate={(id) => setPaying(out.data?.rows.find((x) => x.id === id) ?? null)}
+        reloadKey={out.data}
+        onChanged={out.reload}
+        fallback={
+          <div className="card table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Invoice</th>
+                  <th>Due</th>
+                  <th>Days late</th>
+                  <th>Outstanding</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {(out.data?.rows ?? []).length === 0 && !out.loading ? (
+                  <Empty cols={6}>Nothing is waiting to be collected.</Empty>
+                ) : null}
+                {(out.data?.rows ?? []).map((r) => (
+                  <tr key={s(r.id)} className={Number(r.daysOverdue) > 0 ? 'row-red' : undefined}>
+                    <td>{s(r.customerName)}</td>
+                    <td>{s(r.number)}</td>
+                    <td>{dmy(s(r.dueDate))}</td>
+                    <td>{s(r.daysOverdue)}</td>
+                    <td>{inr(s(r.outstanding))}</td>
+                    <td>
+                      {actions.post ? (
+                        <button
+                          type="button"
+                          className="btn sm primary"
+                          onClick={() => setPaying(r)}
+                        >
+                          Receive payment
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        }
+      />
       {paying ? (
         <ReceiptDialog
           row={paying}
@@ -1122,35 +1170,42 @@ export function DeliveryPlanPage() {
         sub="What still has to be delivered, by month: confirmed order balance plus forecasts. This feeds production planning."
       />
       <ErrorBox message={plan.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th>Item</th>
-              <th>Confirmed orders</th>
-              <th>Forecast</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(plan.data ?? []).length === 0 && !plan.loading ? (
-              <Empty cols={5}>No open orders or forecasts.</Empty>
-            ) : null}
-            {(plan.data ?? []).map((r) => (
-              <tr key={`${s(r.itemId)}-${s(r.month)}`}>
-                <td>{s(r.month)}</td>
-                <td>
-                  {s(r.itemCode)} {s(r.itemName)}
-                </td>
-                <td>{s(r.confirmed)}</td>
-                <td>{s(r.forecast)}</td>
-                <td>{s(r.total)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <V40Register
+        pageId="sales-delivery"
+        reloadKey={plan.data}
+        onChanged={plan.reload}
+        fallback={
+          <div className="card table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Item</th>
+                  <th>Confirmed orders</th>
+                  <th>Forecast</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(plan.data ?? []).length === 0 && !plan.loading ? (
+                  <Empty cols={5}>No open orders or forecasts.</Empty>
+                ) : null}
+                {(plan.data ?? []).map((r) => (
+                  <tr key={`${s(r.itemId)}-${s(r.month)}`}>
+                    <td>{s(r.month)}</td>
+                    <td>
+                      {s(r.itemCode)} {s(r.itemName)}
+                    </td>
+                    <td>{s(r.confirmed)}</td>
+                    <td>{s(r.forecast)}</td>
+                    <td>{s(r.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        }
+      />
     </>
   );
 }
@@ -1165,43 +1220,52 @@ export function CreditPage() {
         sub="What each customer owes and has on order against their limit. A new order that goes over the limit needs a manager override."
       />
       <ErrorBox message={list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Customer</th>
-              <th>Limit</th>
-              <th>Unpaid invoices</th>
-              <th>On order</th>
-              <th>Exposure</th>
-              <th>Available</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data ?? []).length === 0 && !list.loading ? (
-              <Empty cols={7}>No customer has a credit limit yet. Set one in Customer 360.</Empty>
-            ) : null}
-            {(list.data ?? []).map((r) => (
-              <tr key={s(r.id)} className={r.onHold === true ? 'row-red' : undefined}>
-                <td>{s(r.name)}</td>
-                <td>{inr(s(r.creditLimit))}</td>
-                <td>{inr(s(r.receivable))}</td>
-                <td>{inr(s(r.openOrders))}</td>
-                <td>{inr(s(r.exposure))}</td>
-                <td>{inr(s(r.available))}</td>
-                <td>
-                  {r.onHold === true ? (
-                    <Pill tone="rejected">Over limit</Pill>
-                  ) : (
-                    <Pill tone="approved">Within limit</Pill>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <V40Register
+        pageId="sales-credit"
+        reloadKey={list.data}
+        onChanged={list.reload}
+        fallback={
+          <div className="card table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Limit</th>
+                  <th>Unpaid invoices</th>
+                  <th>On order</th>
+                  <th>Exposure</th>
+                  <th>Available</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(list.data ?? []).length === 0 && !list.loading ? (
+                  <Empty cols={7}>
+                    No customer has a credit limit yet. Set one in Customer 360.
+                  </Empty>
+                ) : null}
+                {(list.data ?? []).map((r) => (
+                  <tr key={s(r.id)} className={r.onHold === true ? 'row-red' : undefined}>
+                    <td>{s(r.name)}</td>
+                    <td>{inr(s(r.creditLimit))}</td>
+                    <td>{inr(s(r.receivable))}</td>
+                    <td>{inr(s(r.openOrders))}</td>
+                    <td>{inr(s(r.exposure))}</td>
+                    <td>{inr(s(r.available))}</td>
+                    <td>
+                      {r.onHold === true ? (
+                        <Pill tone="rejected">Over limit</Pill>
+                      ) : (
+                        <Pill tone="approved">Within limit</Pill>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        }
+      />
     </>
   );
 }

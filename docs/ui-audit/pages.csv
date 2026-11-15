@@ -1,0 +1,328 @@
+id,title,family,renderer,opens,load_ms,data_verdict,v40_buttons,buttons_present,buttons_placeholder,buttons_missing,buttons_extra,v40_tabs,erp_tabs,tabs_missing,overflow_1440,overflow_1024,overflow_390,console_errors,bad_text,inline_styles,score
+dashboard,Executive Dashboard,Executive,own page,YES,2334,OK-NONTABLE,13,0,0,13,7,0,0,0,false,false,false,0,,2,17
+project-global-history,Global Project History,Executive,own page,YES,2341,OK,11,0,0,11,4,0,0,0,false,false,false,0,Arrives in Phase,2,20
+ops-mfg-dashboard,Manufacturing Dashboard,ERP Process Control,generic fallback,NOT-FOUND,2327,NOT-FOUND,8,0,0,8,1,7,0,7,false,false,false,0,,2,17
+my-approvals,Approval Inbox,Executive,generic fallback,NOT-FOUND,2297,NOT-FOUND,13,0,0,13,1,5,0,5,false,false,false,0,,2,12
+process-exceptions,Process Exceptions,ERP Process Control,own page,YES,2213,OK-NONTABLE,32,3,2,27,1,11,0,11,false,false,false,0,Arrives in Phase,2,10
+command-center,Command Center,Executive,own page,YES,2539,OK-NONTABLE,9,1,0,8,8,0,0,0,false,false,false,0,Arrives in Phase,2,12
+ai-insights,Executive AI Insights,Executive,own page,YES,2349,OK-NONTABLE,7,0,0,7,8,6,0,6,false,false,false,0,Arrives in Phase,2,13
+notifications,Notification Center,Executive,own page,YES,2286,EMPTY-OK,9,0,1,8,12,0,2,0,false,false,false,0,Arrives in Phase,3,20
+global-search,Global Search,Executive,own page,YES,2327,OK-NONTABLE,6,0,0,6,10,0,0,0,false,false,false,0,Arrives in Phase,2,20
+dept-inbox-administration,Administration Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2568,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-sales,Sales Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2336,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-projects,Projects Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2322,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-engineering,Engineering Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2274,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-purchase,Purchase Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2277,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-warehouse,Warehouse Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2331,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-production,Production Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2783,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-quality,Quality Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2516,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-finance,Finance Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2421,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-service,Service Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2353,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-maintenance,Maintenance Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2346,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+dept-inbox-hr,HR Inbox (0),Department Inbox,generic fallback,NOT-FOUND,2439,NOT-FOUND,23,0,0,23,1,0,0,0,false,false,false,0,,2,12
+crm-leads,Lead Management,CRM,own page,YES,2299,OK,37,5,2,30,2,12,0,12,false,false,false,0,Arrives in Phase,2,17
+crm-opportunities,Opportunity Management,CRM,own page,YES,2260,OK,36,5,2,29,2,11,0,11,false,false,false,0,Arrives in Phase,2,17
+crm-pipeline,Sales Pipeline / Kanban,CRM,own page,YES,2228,OK-NONTABLE,10,0,0,10,4,6,0,6,false,false,false,0,,3,20
+crm-followups,Follow-ups & Tasks,CRM,own page,YES,2344,OK,34,4,3,27,2,12,0,12,false,false,false,0,,2,19
+crm-meetings,Meetings & Calls,CRM,own page,YES,2265,OK,34,4,3,27,2,12,0,12,false,false,false,0,,2,19
+crm-customer360,Customer 360°,CRM,own page,YES,2254,OK,34,4,3,27,22,11,0,11,false,false,false,0,,2,19
+master-customers,Customer Master,ERP Process Control,generic fallback,NOT-FOUND,2556,NOT-FOUND,37,0,0,37,1,12,0,12,false,false,false,0,,2,9
+crm-feedback,Customer Feedback,CRM,own page,YES,2604,OK,33,4,3,26,2,11,0,11,false,false,false,0,,2,19
+crm-sources,Lead Sources,CRM,own page,YES,2589,OK,33,4,3,26,0,11,0,11,false,false,false,0,,2,18
+dept-work-sales,⚙ Sales Work Center,Department Work,generic fallback,NOT-FOUND,2603,NOT-FOUND,9,0,0,9,1,0,0,0,false,false,false,0,,2,12
+sales-quotations,Sales Quotations,Sales,own page,YES,2352,OK,43,5,3,35,3,11,2,10,false,false,false,0,,2,19
+sales-orders,Sales Orders,Sales,own page,YES,2454,OK,44,5,2,37,2,12,0,12,false,false,false,0,Arrives in Phase,2,17
+ops-order-360,360° Order Tracking,ERP Process Control,own page,YES,2354,OK-NONTABLE,15,1,1,13,2,6,0,6,false,false,false,0,,2,15
+sales-reservations,Stock Reservations,Sales,own page,YES,2545,OK,35,4,3,28,5,12,2,12,false,false,false,0,,4,17
+sales-delivery,Delivery Scheduling,Sales,own page,YES,2374,OK,34,2,3,29,0,12,0,12,false,false,false,0,,2,16
+sales-dispatch,Dispatch,Sales,own page,YES,2437,OK,34,4,3,27,0,12,0,12,false,false,false,0,,2,18
+sales-invoices,Sales Invoices,Sales,own page,YES,2306,OK,38,4,3,31,0,11,0,11,false,false,false,0,,2,16
+sales-collections,Collections,Sales,own page,YES,2278,OK,38,2,3,33,0,12,0,12,false,false,false,0,,2,16
+sales-pricelist,Price Lists,Sales,generic fallback,YES,2331,OK,33,7,7,19,3,11,0,11,false,false,true,0,,2,20
+sales-credit,Credit Limits,Sales,own page,YES,2526,OK,35,2,3,30,0,12,0,12,false,false,false,0,,2,16
+sales-returns,Sales Returns,Sales,own page,YES,2565,OK,36,4,3,29,0,11,0,11,false,false,false,0,,2,16
+sales-enquiries,Sales Enquiries,ERP Process Control,own page,YES,2514,OK,40,4,3,33,40,12,0,12,false,false,false,0,,2,17
+dept-work-purchase,⚙ Purchase Work Center,Department Work,generic fallback,NOT-FOUND,2405,NOT-FOUND,9,0,0,9,1,0,0,0,false,false,false,0,,2,12
+scm-pr,Purchase Requisition,Procurement / SCM,own page,YES,2314,OK,42,4,3,35,2,11,0,11,false,false,false,0,,2,19
+scm-rfq,RFQ Management,Procurement / SCM,own page,YES,2614,OK,38,4,3,31,2,11,0,11,false,false,false,0,,2,19
+scm-vendorquote,Vendor Quotations,Procurement / SCM,own page,YES,2469,OK,38,4,3,31,2,11,0,11,false,false,false,0,,2,19
+scm-comparison,Vendor Comparison,Procurement / SCM,own page,YES,2273,OK,32,4,3,25,0,11,0,11,false,false,false,0,,2,16
+scm-po,Purchase Orders,Procurement / SCM,own page,YES,2409,OK,42,4,3,35,3,11,0,11,false,false,false,0,,2,19
+scm-grn,Goods Receipt / GRN,Procurement / SCM,own page,YES,2500,OK,42,4,3,35,0,11,0,11,false,false,false,0,,2,16
+scm-purchaseinvoice,Purchase Invoice,Procurement / SCM,own page,YES,2430,OK,39,4,3,32,0,12,0,12,false,false,false,0,,2,18
+scm-approval,Purchase Approval,Procurement / SCM,generic fallback,YES,2836,OK,35,6,8,21,3,11,0,11,false,false,true,0,,2,19
+scm-suppliers,Supplier Master,Procurement / SCM,own page,YES,3127,OK,36,5,2,29,42,11,0,11,false,false,false,0,Arrives in Phase,2,17
+scm-evaluation,Supplier Evaluation,Procurement / SCM,own page,YES,2536,OK,34,2,3,29,1,12,0,12,false,false,false,0,,2,15
+scm-contracts,Rate / Blanket Contracts,Procurement / SCM,own page,YES,2542,OK,37,4,3,30,2,12,0,12,false,false,false,0,,2,19
+inv-items,Item / SKU Master,Inventory,generic fallback,YES,2361,OK,33,14,2,17,5,11,10,6,false,false,false,0,Arrives in Phase,2,19
+master-products,Finished Product Master,ERP Process Control,generic fallback,NOT-FOUND,2360,NOT-FOUND,36,0,0,36,1,11,0,11,false,false,false,0,,2,9
+master-materials,Raw Material Master,ERP Process Control,generic fallback,NOT-FOUND,2344,NOT-FOUND,36,0,0,36,1,11,0,11,false,false,false,0,,2,9
+inv-stock,Stock Balance,Inventory,generic fallback,YES,2604,OK,38,10,3,25,5,11,10,6,false,false,false,0,,2,17
+inv-transactions,Inventory Transactions,Inventory,own page,YES,2584,OK,39,2,3,34,6,12,3,12,false,false,false,0,,6,14
+inv-opening,Opening Stock,Inventory,own page,YES,2581,OK,34,4,3,27,4,11,0,11,false,false,false,0,,3,19
+inv-adjustment,Stock Adjustment,Inventory,own page,YES,2623,OK,36,4,3,29,4,11,0,11,false,false,false,0,,3,19
+inv-transfer,Stock Transfer,Inventory,own page,YES,2708,OK,34,4,3,27,4,11,0,11,false,false,false,0,,3,19
+inv-reservation,Stock Reservation,Inventory,own page,YES,2419,OK,34,4,3,27,5,11,2,11,false,false,false,0,,4,17
+inv-reconciliation,Stock Reconciliation,Inventory,own page,YES,2412,OK,34,2,3,29,3,11,0,11,false,false,false,0,,2,15
+inv-ageing,Stock Ageing,Inventory,own page,YES,3983,OK,33,2,3,28,3,11,0,11,false,false,false,0,,8,14
+inv-valuation,Stock Valuation,Inventory,own page,YES,2365,OK,33,2,3,28,6,11,0,11,false,false,false,0,,11,14
+inv-reorder,Smart Reorder,Inventory,own page,YES,2476,OK,33,4,3,26,6,11,2,11,false,false,false,0,,5,17
+inv-batch,Batch / Lot Tracking,Inventory,own page,YES,2465,OK,35,2,3,30,3,12,0,12,false,false,false,0,,3,17
+inv-serial,Serial Number Tracking,Inventory,own page,YES,2479,OK,35,2,3,30,3,12,0,12,false,false,false,0,,2,17
+inv-expiry,Expiry Tracking,Inventory,own page,YES,2457,OK,34,2,3,29,3,12,0,12,false,false,false,0,,5,15
+dept-work-warehouse,⚙ Warehouse Work Center,Department Work,generic fallback,YES,3107,EMPTY-OK,9,0,0,9,4,0,0,0,false,false,false,0,,2,17
+wms-warehouses,Warehouse Master,Warehouse / WMS,generic fallback,YES,2448,OK,37,13,3,21,5,12,10,7,false,false,false,0,,2,21
+wms-zones,Zone Management,Warehouse / WMS,generic fallback,YES,2466,OK,34,7,7,20,3,11,0,11,false,false,true,0,,2,20
+wms-racks,Rack Management,Warehouse / WMS,generic fallback,YES,2430,OK,34,7,7,20,3,11,0,11,false,false,true,0,,2,20
+wms-shelves,Shelf Management,Warehouse / WMS,generic fallback,YES,2458,OK,34,7,7,20,3,11,0,11,false,false,true,0,,2,20
+wms-bins,Bin Management,Warehouse / WMS,own page,YES,2552,OK,34,4,3,27,3,11,0,11,false,false,false,0,,4,17
+wms-putaway,Put Away,Warehouse / WMS,own page,YES,3163,OK-NONTABLE,36,2,3,31,0,11,0,11,false,false,false,0,,2,13
+wms-pick,Pick List,Warehouse / WMS,generic fallback,YES,2406,OK,34,7,7,20,3,11,0,11,false,false,true,0,,2,20
+wms-packing,Packing,Warehouse / WMS,generic fallback,YES,2455,OK,34,7,7,20,3,11,0,11,false,false,true,0,,2,20
+wms-cycle,Cycle Count,Warehouse / WMS,own page,YES,2434,OK,34,4,3,27,5,11,2,11,false,false,false,0,,2,17
+wms-physical,Physical Verification,Warehouse / WMS,own page,YES,2376,OK,34,4,3,27,3,11,0,11,false,false,false,0,,2,17
+wms-transfer,Warehouse Transfers,Warehouse / WMS,generic fallback,YES,2562,OK,35,6,8,21,3,12,0,12,false,false,true,0,,2,19
+wms-barcode,Barcode / QR,Warehouse / WMS,own page,YES,2691,OK-NONTABLE,34,2,3,29,2,11,0,11,false,false,false,0,,2,12
+wms-rfid,RFID Support,Warehouse / WMS,generic fallback,YES,2516,OK,34,7,7,20,3,11,0,11,false,false,true,0,,2,20
+dept-work-production,⚙ Production Work Center,Department Work,generic fallback,YES,2463,EMPTY-OK,9,0,0,9,4,0,0,0,false,false,false,0,,2,17
+mfg-bom,Bill of Materials,Manufacturing,own page,YES,2530,OK,38,5,3,30,1,11,0,11,false,false,false,0,,2,19
+mfg-routing,Routing,Manufacturing,own page,YES,2634,OK,33,4,3,26,1,11,0,11,false,false,false,0,,2,17
+mfg-workcenters,Work Centers,Manufacturing,own page,YES,2453,OK,34,4,3,27,4,12,4,12,false,false,false,0,,2,17
+mfg-plan,Production Planning,Manufacturing,own page,YES,2434,OK,39,6,3,30,1,12,3,10,false,false,false,0,,2,17
+mfg-orders,Production Orders,Manufacturing,own page,YES,2407,OK,39,5,3,31,2,12,2,11,false,false,false,0,,2,19
+mfg-mrp,Material Requirement Planning,Manufacturing,own page,YES,2307,OK,37,2,3,32,1,11,0,11,false,false,false,0,,2,15
+mfg-material-issue,Material Issue,ERP Process Control,generic fallback,NOT-FOUND,2523,NOT-FOUND,37,0,0,37,1,11,0,11,false,false,false,0,,2,9
+mfg-workorders,Work Orders,Manufacturing,own page,YES,2582,OK,33,2,3,28,0,11,0,11,false,false,false,0,,2,16
+mfg-shopfloor,Shop Floor Dashboard,Manufacturing,own page,YES,3448,OK-NONTABLE,5,0,0,5,6,6,2,6,false,false,false,0,,3,20
+mfg-wip,WIP Tracking,Manufacturing,own page,YES,2685,OK,37,2,3,32,1,11,0,11,false,false,false,0,,2,15
+mfg-fg,Finished Goods Receipt,Manufacturing,own page,YES,2780,OK,38,2,3,33,0,12,0,12,false,false,false,0,,2,16
+mfg-scrap,Scrap Management,Manufacturing,own page,YES,2489,OK,33,2,3,28,2,11,0,11,false,false,false,0,,2,15
+mfg-rework,Rework Management,Manufacturing,own page,YES,2389,OK,33,2,3,28,3,11,2,11,false,false,false,0,,2,15
+mfg-costing,Production Costing,Manufacturing,own page,YES,2382,OK,33,2,3,28,4,11,3,11,false,false,false,0,,2,17
+dept-work-quality,⚙ Quality Work Center,Department Work,generic fallback,YES,2470,EMPTY-OK,9,0,0,9,4,0,0,0,false,false,false,0,,2,17
+qms-plans,Inspection Plans,Quality / QMS,own page,YES,2481,OK,35,4,3,28,3,11,3,11,false,false,false,0,,2,17
+qms-incoming,Incoming Quality,Quality / QMS,own page,YES,2312,OK,40,4,3,33,0,11,0,11,false,false,false,0,,2,18
+qms-process,In-Process Quality,Quality / QMS,own page,YES,2387,OK,35,4,3,28,0,11,0,11,false,false,false,0,,2,18
+qms-final,Final Quality,Quality / QMS,own page,YES,2338,OK,40,4,3,33,3,11,3,11,false,false,false,0,,2,17
+qms-supplier,Supplier Quality,Quality / QMS,own page,YES,2369,OK,35,4,3,28,0,11,0,11,false,false,false,0,,2,18
+qms-inspections,Quality Inspections,Quality / QMS,own page,YES,2288,OK,35,2,3,30,0,11,0,11,false,false,false,0,,2,16
+qms-ncr,Non-Conformance / NCR,Quality / QMS,own page,YES,2262,OK,36,2,3,31,5,12,4,12,false,false,false,0,,3,15
+qms-capa,CAPA,Quality / QMS,own page,YES,2244,OK,36,4,3,29,3,12,3,12,false,false,false,0,,2,17
+qms-5why,5 Why Analysis,Quality / QMS,generic fallback,YES,2366,OK,35,7,7,21,3,11,0,11,false,false,true,0,,2,19
+qms-calibration,Calibration,Quality / QMS,own page,YES,2394,OK,36,4,3,29,0,12,0,12,false,false,false,0,,2,18
+dept-work-maintenance,⚙ Maintenance Work Center,Department Work,generic fallback,YES,2504,EMPTY-OK,9,0,0,9,4,0,0,0,false,false,false,0,,2,17
+maint-machines,Machine Master,Maintenance,own page,YES,2388,OK,33,4,3,26,0,11,0,11,false,false,false,0,,2,20
+maint-equipment,Equipment Master,Maintenance,own page,YES,2416,OK,34,4,3,27,0,12,0,12,false,false,false,0,,2,20
+maint-preventive,Preventive Maintenance,Maintenance,own page,YES,2394,OK,34,4,3,27,2,12,2,12,false,false,false,0,,2,17
+maint-breakdown,Breakdown Maintenance,Maintenance,own page,YES,2292,OK,34,2,3,29,1,12,0,12,false,false,false,0,,2,15
+maint-workorders,Maintenance Work Orders,Maintenance,own page,YES,2257,OK,34,4,3,27,0,12,0,12,false,false,false,0,,2,18
+maint-spares,Spare Parts,Maintenance,own page,YES,2275,OK,33,2,3,28,0,11,0,11,false,false,false,0,,2,18
+maint-schedule,Maintenance Schedule,Maintenance,own page,YES,2342,OK,34,2,3,29,1,12,0,12,false,false,false,0,,2,15
+maint-downtime,Downtime,Maintenance,own page,YES,2395,OK,33,2,3,28,1,11,0,11,false,false,false,0,,2,15
+maint-mtbf,MTBF / MTTR,Maintenance,own page,YES,3262,OK,33,2,3,28,0,11,0,11,false,false,false,0,,2,16
+maint-alerts,Maintenance Alerts,Maintenance,own page,YES,2394,OK,34,2,3,29,1,12,0,12,false,false,false,0,,2,15
+dept-work-finance,⚙ Finance Work Center,Department Work,generic fallback,YES,2376,EMPTY-OK,9,0,0,9,4,0,0,0,false,false,false,0,,2,17
+fin-coa,Chart of Accounts,Finance & Accounts,own page,YES,2461,OK,33,5,3,25,0,11,0,11,false,false,false,0,,227,21
+fin-gl,General Ledger,Finance & Accounts,own page,YES,2377,OK-NONTABLE,33,2,3,28,0,11,0,11,false,false,false,0,,2,13
+fin-journal,Journal Entries,Finance & Accounts,own page,YES,2384,OK,33,4,3,26,4,11,0,11,false,false,false,0,,4,19
+fin-cashbook,Cash Book,Finance & Accounts,own page,YES,2376,EMPTY-OK,34,2,3,29,1,12,0,12,false,false,false,0,,2,12
+fin-bankbook,Bank Book,Finance & Accounts,own page,YES,2391,EMPTY-OK,34,2,3,29,1,12,0,12,false,false,false,0,,2,12
+fin-ap,Accounts Payable,Finance & Accounts,own page,YES,2320,OK,34,4,3,27,4,12,4,12,false,false,false,0,,2,15
+fin-ar,Accounts Receivable,Finance & Accounts,own page,YES,2260,OK,34,2,3,29,0,12,0,12,false,false,false,0,,14,15
+fin-creditnote,Credit Notes,Finance & Accounts,own page,YES,2348,OK,34,4,3,27,2,11,0,11,false,false,false,0,,3,17
+fin-debitnote,Debit Notes,Finance & Accounts,own page,YES,2372,OK,34,4,3,27,2,11,0,11,false,false,false,0,,3,17
+fin-bankreco,Bank Reconciliation,Finance & Accounts,own page,YES,2460,OK,33,4,3,26,0,11,0,11,false,false,false,0,,4,16
+fin-costcenter,Cost Centers,Finance & Accounts,own page,YES,2331,OK,33,6,3,24,0,11,0,11,false,false,false,0,,2,20
+fin-profitcenter,Profit Centers,Finance & Accounts,own page,YES,2269,OK,33,6,3,24,0,11,0,11,false,false,false,0,,2,20
+fin-expenses,Expense Management,Finance & Accounts,own page,YES,2266,OK,36,4,3,29,5,12,2,12,false,false,false,0,,3,17
+fin-budget,Budgeting,Finance & Accounts,own page,YES,2309,OK,33,4,3,26,0,11,0,11,false,false,false,0,,3,18
+fin-trial,Trial Balance,Finance & Accounts,own page,YES,2342,OK,33,2,3,28,0,11,0,11,false,false,false,0,,6,15
+fin-pnl,Profit & Loss,Finance & Accounts,own page,YES,2267,OK,33,2,3,28,0,11,0,11,false,false,false,0,,4,16
+fin-bs,Balance Sheet,Finance & Accounts,own page,YES,2231,OK,33,2,3,28,0,11,0,11,false,false,false,0,,8,15
+fin-cashflow,Cash Flow,Finance & Accounts,own page,YES,2499,OK,33,2,3,28,0,11,0,11,false,false,false,0,,12,15
+fin-ageing,AR/AP Ageing,Finance & Accounts,own page,YES,3242,OK,34,2,3,29,0,12,0,12,false,false,false,0,,14,15
+tax-gst,GST Setup,Indian Taxation,generic fallback,YES,2377,OK,34,7,7,20,3,11,0,11,false,false,true,0,,2,20
+tax-gstr1,GSTR-1,Indian Taxation,own page,YES,2398,OK,34,2,3,29,2,11,0,11,false,false,false,0,,2,15
+tax-gstr3b,GSTR-3B,Indian Taxation,own page,YES,2320,OK,35,3,3,29,2,12,3,12,false,false,false,0,,2,15
+tax-tds,TDS,Indian Taxation,own page,YES,2294,OK,34,4,3,27,3,11,0,11,false,false,false,0,,5,17
+tax-tcs,TCS,Indian Taxation,own page,YES,2304,OK,35,2,3,30,3,12,0,12,false,false,false,0,,5,15
+tax-hsn,HSN / SAC,Indian Taxation,generic fallback,YES,2237,OK,35,7,7,21,3,12,0,12,false,false,true,0,,2,19
+tax-einvoice,E-Invoice,Indian Taxation,own page,YES,2230,OK,36,2,3,31,2,11,2,11,false,false,false,0,,2,15
+tax-eway,E-Way Bill,Indian Taxation,own page,YES,2283,OK,35,2,3,30,2,11,2,11,false,false,false,0,,2,15
+tax-salesreg,Sales Register,Indian Taxation,own page,YES,2345,OK,36,2,3,31,1,11,0,11,false,false,false,0,,6,14
+tax-purchasereg,Purchase Register,Indian Taxation,own page,YES,2443,OK,36,2,3,31,1,11,0,11,false,false,false,0,,6,14
+dept-work-hr,⚙ HR Work Center,Department Work,generic fallback,YES,2389,EMPTY-OK,9,0,0,9,4,0,0,0,false,false,false,0,,2,17
+hr-employees,Employee Master,HRMS,own page,YES,2322,OK,33,2,3,28,2,10,0,10,false,false,false,0,,6,16
+hr-recruitment,Recruitment,HRMS,generic fallback,YES,2231,OK,35,7,7,21,3,12,0,12,false,false,true,0,,2,19
+hr-onboarding,Onboarding,HRMS,generic fallback,YES,2271,OK,35,7,7,21,3,12,0,12,false,false,true,0,,2,19
+hr-attendance,Attendance,HRMS,own page,YES,2267,API-ERROR,35,2,3,30,3,12,0,12,false,false,true,2,,2,12
+hr-leave,Leave Management,HRMS,own page,YES,2236,OK-NONTABLE,34,2,3,29,1,12,0,12,false,false,false,0,,2,12
+hr-expense,Employee Expenses,HRMS,own page,YES,2318,OK,34,2,3,29,1,12,0,12,false,false,true,0,,2,13
+hr-performance,Performance,HRMS,generic fallback,YES,2323,OK,34,7,7,20,3,11,0,11,false,false,true,0,,2,20
+hr-training,Training,HRMS,generic fallback,YES,2331,OK,35,7,7,21,3,12,0,12,false,false,true,0,,2,19
+hr-documents,Employee Documents,HRMS,own page,YES,2546,OK,35,2,3,30,2,12,0,12,false,false,false,0,,6,16
+hr-exit,Exit Management,HRMS,generic fallback,YES,3177,OK,35,7,7,21,3,12,0,12,false,false,true,0,,2,19
+hr-ess,Employee Self Service,HRMS,own page,YES,2440,API-ERROR,35,2,3,30,0,12,0,12,false,false,false,2,,2,12
+pay-structure,Salary Structure,Payroll,own page,YES,2331,OK,33,4,3,26,0,11,0,11,false,true,true,0,,2,16
+pay-processing,Payroll Processing,Payroll,own page,YES,2295,OK-NONTABLE,34,2,3,29,1,12,0,12,false,false,false,0,,2,12
+pay-overtime,Overtime,Payroll,generic fallback,YES,2343,OK,32,6,8,18,3,11,0,11,false,false,true,0,,2,19
+pay-incentive,Incentives / Bonus,Payroll,generic fallback,YES,2292,OK,33,6,8,19,3,11,0,11,false,false,true,0,,2,19
+pay-loan,Loans / Advances,Payroll,generic fallback,YES,2249,OK,34,7,7,20,3,12,0,12,false,false,true,0,,2,20
+pay-pf,PF,Payroll,own page,YES,2276,OK,33,2,3,28,13,11,0,11,false,false,true,0,,2,13
+pay-esic,ESIC,Payroll,own page,YES,2414,OK,33,2,3,28,13,11,0,11,false,false,true,0,,2,13
+pay-pt,Professional Tax,Payroll,own page,YES,2489,OK,34,2,3,29,13,11,0,11,false,false,true,0,,2,13
+pay-tds,Payroll TDS,Payroll,own page,YES,2358,OK,34,2,3,29,13,11,0,11,false,false,true,0,,2,13
+pay-payslip,Payslips,Payroll,own page,YES,2360,OK-NONTABLE,33,1,3,29,0,12,0,12,false,false,false,0,,2,13
+pay-bank,Bank Transfer File,Payroll,own page,YES,2334,OK,35,2,3,30,1,12,0,12,false,false,true,0,,2,13
+pay-register,Salary Register,Payroll,own page,YES,2265,OK-NONTABLE,33,2,3,28,1,11,0,11,false,false,false,0,,2,12
+dept-work-projects,⚙ Projects Work Center,Department Work,generic fallback,YES,2296,EMPTY-OK,9,0,0,9,4,0,0,0,false,false,false,0,,2,17
+proj-demo-control,Project Automation Control,Projects,generic fallback,NOT-FOUND,2373,NOT-FOUND,11,0,0,11,1,8,0,8,false,false,false,0,,2,12
+proj-stage-gates,Project Stage Gates,Projects,own page,YES,2359,OK-NONTABLE,36,4,3,29,3,12,4,11,false,false,false,0,,2,14
+proj-dependencies,Project Dependencies,Projects,generic fallback,NOT-FOUND,2339,NOT-FOUND,36,0,0,36,1,12,0,12,false,false,false,0,,2,9
+proj-specifications,Engineering Specifications,Projects,own page,YES,2225,OK-NONTABLE,36,4,3,29,3,12,4,11,false,false,false,0,,2,14
+proj-test-records,Project Test Records,Projects,own page,YES,2330,OK-NONTABLE,36,4,3,29,3,12,4,11,false,false,false,0,,2,14
+proj-documents,Project Documents & PDFs,Projects,own page,YES,2300,OK-NONTABLE,38,4,3,31,3,13,4,12,false,false,false,0,,2,14
+proj-projects,Projects,Projects,own page,YES,2415,OK,36,4,3,29,0,12,0,12,false,false,true,0,,9,15
+proj-tasks,Tasks,Projects,own page,YES,2435,OK-NONTABLE,32,2,3,27,0,11,0,11,false,false,false,0,,5,13
+proj-subtasks,Subtasks,Projects,generic fallback,YES,2330,OK,32,7,7,18,3,11,0,11,false,false,true,0,,2,20
+proj-milestones,Milestones,Projects,generic fallback,YES,2315,OK,33,7,7,19,3,12,0,12,false,false,true,0,,2,20
+proj-team,Team Assignment,Projects,generic fallback,YES,2398,OK,34,7,7,20,3,11,0,11,false,false,true,0,,2,20
+proj-timesheets,Timesheets,Projects,own page,YES,2323,OK,31,2,3,26,2,11,0,11,false,false,true,0,,8,12
+proj-expenses,Project Expenses,Projects,generic fallback,YES,2332,OK,32,7,7,18,3,11,0,11,false,false,true,0,,2,20
+proj-budget,Project Budget,Projects,generic fallback,YES,2397,OK,33,7,7,19,3,11,0,11,false,false,true,0,,2,20
+proj-kanban,Kanban,Projects,own page,YES,2234,OK-NONTABLE,5,0,0,5,4,6,0,6,false,false,false,0,,23,19
+proj-gantt,Gantt / Timeline,Projects,own page,YES,2355,OK-NONTABLE,33,2,3,28,0,12,0,12,false,false,false,0,,5,13
+proj-profitability,Project Profitability,Projects,own page,YES,2398,OK-NONTABLE,33,2,3,28,0,11,0,11,false,false,false,0,,4,13
+asset-master,Asset Master,Assets,own page,YES,2292,OK,35,5,3,27,1,11,2,10,false,false,false,0,,2,19
+asset-capitalization,Capitalization,Assets,own page,YES,2251,OK,35,4,3,28,0,11,0,11,false,false,false,0,,2,18
+asset-allocation,Allocation,Assets,own page,YES,2259,OK,34,2,3,29,1,11,0,11,false,false,false,0,,2,15
+asset-transfer,Asset Transfer,Assets,own page,YES,2379,OK,34,4,3,27,0,11,0,11,false,false,false,0,,2,18
+asset-maintenance,Asset Maintenance,Assets,own page,YES,2290,OK,34,4,3,27,0,12,0,12,false,false,false,0,,2,18
+asset-depreciation,Depreciation,Assets,own page,YES,2318,OK,35,4,3,28,4,11,4,11,false,false,false,0,,2,17
+asset-disposal,Asset Disposal,Assets,own page,YES,2379,OK,35,4,3,28,0,11,0,11,false,false,false,0,,2,18
+asset-qr,Asset QR Codes,Assets,own page,YES,2322,OK,35,2,3,30,4,11,3,11,false,false,false,0,,2,15
+dept-work-service,⚙ Service Work Center,Department Work,generic fallback,YES,2377,EMPTY-OK,9,0,0,9,4,0,0,0,false,false,false,0,,2,17
+service-tickets,Service Tickets,Service / Support,own page,YES,2402,OK,34,4,3,27,0,12,0,12,false,false,true,0,,7,15
+service-requests,Service Requests,Service / Support,generic fallback,YES,2433,OK,34,7,7,20,3,12,0,12,false,false,true,0,,2,20
+service-technicians,Technician Allocation,Service / Support,own page,YES,2311,OK-NONTABLE,34,2,3,29,0,12,0,12,false,false,false,0,,8,12
+service-visits,Site Visits,Service / Support,own page,YES,2366,OK-NONTABLE,34,2,3,29,0,12,0,12,false,false,false,0,,4,13
+service-spares,Service Spare Parts,Service / Support,generic fallback,YES,2556,OK,34,13,8,13,3,12,0,12,false,true,true,0,,2,21
+service-history,Service History,Service / Support,generic fallback,YES,2617,OK,34,12,9,13,3,12,0,12,false,true,true,0,,2,21
+service-amc,AMC Management,Service / Support,own page,YES,2613,OK,34,6,11,17,0,12,0,12,false,false,true,0,,8,15
+service-warranty,Warranty Tracking,Service / Support,own page,YES,2455,OK,34,4,11,19,1,12,0,12,false,false,true,0,,8,12
+service-claims,Warranty Claims,Service / Support,own page,YES,2532,OK,34,4,11,19,1,12,0,12,false,false,true,0,,8,12
+log-transporters,Transporter Master,Logistics / Fleet,own page,YES,2721,OK-NONTABLE,33,4,11,18,6,11,0,11,false,false,true,0,,2,10
+log-routes,Route Management,Logistics / Fleet,own page,YES,2418,OK-NONTABLE,33,4,11,18,6,11,0,11,false,false,true,0,,2,10
+log-freight,Freight Calculation,Logistics / Fleet,own page,YES,2442,OK-NONTABLE,33,4,11,18,7,11,0,11,false,false,true,0,,2,10
+log-shipments,Shipment Scheduling,Logistics / Fleet,own page,YES,2340,OK-NONTABLE,34,4,11,19,6,12,0,12,false,false,true,0,,2,10
+log-tracking,Shipment Tracking,Logistics / Fleet,own page,YES,2266,OK-NONTABLE,34,4,11,19,6,12,0,12,false,false,true,0,,2,10
+log-pod,POD Tracking,Logistics / Fleet,own page,YES,2425,OK-NONTABLE,34,9,6,19,6,12,0,12,false,false,true,0,,2,11
+customer-receipts,Customer Material Receipt,ERP Process Control,generic fallback,NOT-FOUND,3881,NOT-FOUND,37,0,0,37,1,11,0,11,false,false,false,0,,2,9
+fleet-vehicles,Fleet Vehicles,Logistics / Fleet,own page,YES,2559,OK-NONTABLE,34,11,6,17,4,12,0,12,false,false,false,0,,2,15
+fleet-drivers,Drivers,Logistics / Fleet,own page,YES,2457,OK-NONTABLE,33,9,6,18,4,11,0,11,false,false,true,0,,2,11
+fleet-fuel,Fuel Management,Logistics / Fleet,own page,YES,2481,OK-NONTABLE,36,10,6,20,5,11,0,11,false,false,true,0,,2,11
+fleet-service,Vehicle Service,Logistics / Fleet,own page,YES,2491,OK-NONTABLE,34,9,6,19,4,12,0,12,false,false,true,0,,2,11
+fleet-documents,Vehicle Documents,Logistics / Fleet,own page,YES,2595,OK-NONTABLE,34,11,6,17,4,12,0,12,false,false,false,0,,2,15
+gate-in,Inward Gate Pass,Logistics / Fleet,own page,YES,2529,OK-NONTABLE,38,11,6,21,7,11,0,11,false,false,false,0,,2,13
+gate-out,Outward Gate Pass,Logistics / Fleet,own page,YES,2473,OK-NONTABLE,39,11,6,22,7,12,0,12,false,false,false,0,,2,13
+gate-return,Returnable Gate Pass,Logistics / Fleet,own page,YES,2645,OK-NONTABLE,39,11,6,22,7,12,0,12,false,false,false,0,,2,13
+gate-nonreturn,Non-Returnable Gate Pass,Logistics / Fleet,own page,YES,2485,OK-NONTABLE,34,9,6,19,7,11,0,11,false,false,false,0,,2,13
+container-track,Container Tracking,Logistics / Fleet,own page,YES,2519,OK-NONTABLE,36,10,6,20,7,11,0,11,false,false,true,0,,2,11
+document-movement-center,Document Movement Center,Business Documents,generic fallback,NOT-FOUND,2583,NOT-FOUND,21,0,0,21,1,7,0,7,false,false,false,0,,2,14
+dms-folders,Folders,Document Management,own page,YES,2274,OK-NONTABLE,32,11,5,16,3,11,0,11,false,false,false,0,,2,18
+dms-docs,Documents,Document Management,own page,YES,2275,OK-NONTABLE,34,11,5,18,3,11,0,11,false,false,false,0,,2,17
+dms-versions,Version Control,Document Management,own page,YES,2362,OK-NONTABLE,33,11,5,17,3,11,0,11,false,false,false,0,,2,18
+dms-permissions,Document Permissions,Document Management,own page,YES,2311,OK-NONTABLE,33,11,5,17,3,11,0,11,false,false,false,0,,2,18
+dms-tags,Tags,Document Management,own page,YES,2362,OK-NONTABLE,32,11,5,16,3,11,0,11,false,false,false,0,,2,18
+dms-search,Document Search,Document Management,own page,YES,2478,OK-NONTABLE,33,11,5,17,3,11,0,11,false,false,false,0,,2,18
+bi-builder,Report Builder,Business Intelligence,own page,YES,2253,OK-NONTABLE,31,9,5,17,8,11,0,11,false,false,false,0,,2,13
+bi-reports,Saved Reports,Business Intelligence,own page,YES,2442,OK-NONTABLE,33,9,5,19,6,11,0,11,false,false,true,0,,2,11
+bi-dashboards,Custom Dashboards,Business Intelligence,own page,YES,2337,OK-NONTABLE,33,9,5,19,8,11,0,11,false,false,false,0,,2,13
+bi-scheduler,Report Scheduler,Business Intelligence,own page,YES,2317,OK-NONTABLE,33,9,5,19,6,12,0,12,false,false,true,0,,2,11
+bi-sales,Sales Analytics,Business Intelligence,own page,YES,2499,OK-NONTABLE,31,9,5,17,6,11,0,11,false,false,true,0,,2,11
+bi-purchase,Purchase Analytics,Business Intelligence,own page,YES,2373,OK-NONTABLE,31,9,5,17,6,11,0,11,false,false,true,0,,2,11
+bi-inventory,Inventory Analytics,Business Intelligence,own page,YES,2384,OK-NONTABLE,31,9,5,17,6,11,0,11,false,false,true,0,,2,11
+bi-finance,Financial Analytics,Business Intelligence,own page,YES,2465,OK-NONTABLE,31,9,5,17,6,11,0,11,false,true,true,0,,2,11
+bi-branch,Branch Performance,Business Intelligence,own page,YES,2523,OK-NONTABLE,32,9,5,18,6,11,0,11,false,true,true,0,,2,11
+bi-profit,Profitability Analysis,Business Intelligence,own page,YES,2342,OK-NONTABLE,32,9,5,18,6,11,0,11,false,true,true,0,,2,11
+ai-copilot,ERP AI Copilot,AI & Automation,own page,YES,2340,OK-NONTABLE,7,5,0,2,12,6,0,6,false,false,true,0,,2,16
+ai-demand,Demand Forecasting,AI & Automation,own page,YES,2409,OK-NONTABLE,7,5,0,2,12,6,0,6,false,false,true,0,,2,16
+ai-inventory,Inventory Intelligence,AI & Automation,own page,YES,2341,OK-NONTABLE,7,5,0,2,12,6,0,6,false,false,true,0,,2,16
+ai-sales,Sales Intelligence,AI & Automation,own page,YES,2346,OK-NONTABLE,7,5,0,2,7,6,0,6,false,false,true,0,,2,16
+ai-vendor,Vendor Intelligence,AI & Automation,own page,YES,2360,OK-NONTABLE,7,5,0,2,7,6,0,6,false,false,true,0,,2,16
+ai-finance,Finance Anomaly Detection,AI & Automation,own page,YES,2455,OK-NONTABLE,7,5,0,2,12,6,0,6,false,false,true,0,,2,16
+ai-executive,Executive Insights,AI & Automation,own page,YES,2398,OK-NONTABLE,7,5,0,2,12,6,0,6,false,false,true,0,,2,16
+auto-workflows,Workflow Automation,AI & Automation,own page,YES,2265,OK-NONTABLE,31,9,5,17,5,11,0,11,false,true,true,0,,2,11
+auto-rules,Automation Rules,AI & Automation,own page,YES,2274,OK-NONTABLE,33,9,5,19,5,11,0,11,false,true,true,0,,2,11
+auto-jobs,Background Jobs,AI & Automation,own page,YES,2304,OK,34,9,5,20,5,12,0,12,false,true,true,0,,2,14
+auto-webhooks,Webhooks,AI & Automation,own page,YES,2391,OK-NONTABLE,33,9,5,19,6,12,0,12,false,true,true,0,,2,11
+comm-whatsapp,WhatsApp Business API,Communication,own page,YES,2424,OK-NONTABLE,34,9,6,19,4,12,0,12,false,true,true,0,,2,11
+comm-email,Email Integration,Communication,own page,YES,2318,OK-NONTABLE,34,9,6,19,4,12,0,12,false,true,true,0,,2,11
+comm-sms,SMS Integration,Communication,own page,YES,2423,OK-NONTABLE,34,9,6,19,4,12,0,12,false,true,true,0,,2,11
+comm-templates,Message Templates,Communication,own page,YES,2345,OK,34,9,6,19,4,11,0,11,false,true,true,0,,2,14
+comm-logs,Communication Logs,Communication,own page,YES,2299,OK-NONTABLE,34,9,6,19,4,12,0,12,false,true,true,0,,2,11
+comm-payment,Payment Gateway,Communication,own page,YES,2306,OK-NONTABLE,34,10,6,18,4,12,0,12,false,true,true,0,,2,11
+dept-work-engineering,⚙ Engineering Work Center,Department Work,generic fallback,YES,2339,EMPTY-OK,9,4,0,5,8,0,0,0,false,false,true,0,,2,16
+dept-work-administration,⚙ Administration Work Center,Department Work,generic fallback,YES,2345,EMPTY-OK,9,4,0,5,8,0,0,0,false,false,true,0,,2,16
+admin-company,Companies,Administration,own page,YES,2307,OK-NONTABLE,32,9,5,18,3,11,0,11,false,false,true,0,,2,11
+admin-branches,Branches,Administration,own page,YES,2272,OK,32,13,5,14,5,11,0,11,false,false,true,0,,2,19
+admin-departments,Departments,Administration,own page,YES,2561,OK,10,7,0,3,18,6,0,6,false,false,true,0,,2,20
+admin-designations,Designations,Administration,own page,YES,2246,OK,32,13,5,14,2,11,0,11,false,false,true,0,,3,21
+admin-users,Users,Administration,own page,YES,2362,OK,8,7,0,1,69,6,0,6,false,false,true,0,,2,23
+admin-roles,Roles,Administration,own page,YES,2362,OK,7,5,0,2,15,6,0,6,false,false,true,0,,2,16
+admin-permissions,Permissions,Administration,own page,YES,2449,OK,6,5,1,0,18,6,3,6,false,false,true,0,,2,20
+admin-fy,Financial Years,Administration,own page,YES,2464,OK,33,11,5,17,6,12,0,12,false,false,true,0,,2,17
+admin-currency,Currencies,Administration,own page,YES,2318,OK,32,12,5,15,2,11,0,11,false,false,true,0,,5,21
+admin-taxes,Taxes,Administration,generic fallback,YES,2381,OK,33,23,5,5,6,11,16,0,false,false,true,0,,2,20
+admin-numbering,Document Numbering,Administration,own page,YES,2275,OK,32,9,5,18,2,11,0,11,false,true,true,0,,2,14
+admin-uom,UOM,Administration,own page,YES,2273,OK,32,11,5,16,2,11,0,11,false,false,true,0,,3,19
+admin-customfields,Custom Fields,Administration,own page,YES,2243,OK,33,11,5,17,1,11,0,11,false,true,true,0,,2,17
+admin-formbuilder,Form Builder,Administration,own page,YES,2352,OK,32,11,5,16,1,11,0,11,false,true,true,0,,2,17
+admin-workflow,Workflow Builder,Administration,own page,YES,2382,OK,7,4,0,3,8,6,0,6,false,false,true,0,,10,18
+admin-import,Import / Export,Administration,generic fallback,YES,2395,OK-NONTABLE,33,9,5,19,1,11,0,11,false,false,true,0,,2,11
+admin-duplicates,Duplicate Detection,Administration,generic fallback,YES,2282,OK-NONTABLE,33,9,5,19,1,11,0,11,false,false,true,0,,2,11
+admin-audit,Audit Trail,Administration,own page,YES,2276,OK,33,10,5,18,29,11,0,11,false,false,true,0,,3,16
+admin-security,Security,Administration,own page,YES,2426,OK-NONTABLE,32,13,5,14,3,11,5,7,false,false,true,0,,37,11
+admin-backup,Backup & Restore,Administration,own page,YES,2335,OK-NONTABLE,33,9,5,19,5,11,0,11,false,false,true,0,,11,10
+admin-api,API Management,Administration,own page,YES,2355,OK-NONTABLE,32,9,5,18,2,11,0,11,false,true,true,0,,2,11
+admin-integrations,Integrations,Administration,own page,YES,2295,OK,32,9,5,18,11,11,0,11,false,true,true,0,,2,14
+admin-settings,System Settings,Administration,own page,YES,2276,OK-NONTABLE,5,5,0,0,17,6,0,6,false,false,true,0,,2,23
+cl-command-center,Contract Labour Command Center,Contract Labour Management,own page,YES,2581,OK,16,5,0,11,7,0,0,0,false,true,true,0,,8,17
+cl-contractors,Contractor Master,Contract Labour Management,own page,YES,2395,OK,36,12,6,18,0,11,0,11,false,true,true,0,,2,18
+cl-workorders,Labour Work Orders,Contract Labour Management,own page,YES,2358,OK,34,11,6,17,0,12,0,12,false,true,true,0,,2,17
+cl-workers,Contract Worker Master,Contract Labour Management,own page,YES,2591,OK,36,12,6,18,0,11,0,11,false,true,true,0,,2,18
+cl-onboarding,Worker Onboarding,Contract Labour Management,own page,YES,2352,OK,34,11,6,17,0,11,0,11,false,true,true,0,,2,17
+cl-deployment,Labour Deployment,Contract Labour Management,own page,YES,2383,OK,37,12,6,19,0,12,0,12,false,true,true,0,,2,17
+cl-attendance,Attendance & Muster,Contract Labour Management,own page,YES,2291,OK,35,9,6,20,1,12,0,12,false,true,true,0,,2,14
+cl-wages,Wages & Wage Slips,Contract Labour Management,own page,YES,2254,OK,37,10,6,21,1,12,0,12,false,true,true,0,,2,14
+cl-invoices,Contractor Invoice & Billing,Contract Labour Management,own page,YES,2256,OK,37,12,6,19,0,12,0,12,false,true,true,0,,2,17
+cl-compliance,Compliance Control,Contract Labour Management,own page,YES,2422,OK-NONTABLE,34,9,6,19,0,11,0,11,false,false,true,0,,2,12
+cl-safety,Safety & Training,Contract Labour Management,generic fallback,NOT-FOUND,2331,NOT-FOUND,37,0,0,37,1,12,0,12,false,false,false,0,,2,9
+cl-ppe,PPE & Tools,Contract Labour Management,generic fallback,NOT-FOUND,2267,NOT-FOUND,33,0,0,33,1,11,0,11,false,false,false,0,,2,9
+cl-medical,Medical & Fitness,Contract Labour Management,generic fallback,NOT-FOUND,2328,NOT-FOUND,37,0,0,37,1,12,0,12,false,false,false,0,,2,9
+cl-incidents,Incident & CAPA,Contract Labour Management,own page,YES,2286,OK,36,12,6,18,0,11,0,11,false,true,true,0,,2,18
+cl-gatepass,Gate Pass & Access,Contract Labour Management,generic fallback,NOT-FOUND,2443,NOT-FOUND,34,0,0,34,1,12,0,12,false,false,false,0,,2,9
+cl-canteen,Labour Canteen,Contract Labour Management,generic fallback,NOT-FOUND,2459,NOT-FOUND,36,0,0,36,1,11,0,11,false,false,false,0,,2,9
+cl-exit,Exit & Settlement,Contract Labour Management,generic fallback,NOT-FOUND,2386,NOT-FOUND,35,0,0,35,1,12,0,12,false,false,false,0,,2,9
+ops-tasks,Advanced Task Management,Work Management,own page,YES,2275,OK,20,11,2,7,6,8,6,4,false,true,true,0,,2,21
+hr-shifts,Shift Master,HRMS,own page,YES,2359,API-ERROR,35,9,6,20,3,12,0,12,false,true,true,2,,2,13
+ops-shift-roster,Shift Rotation & Roster,Work Management,own page,YES,2224,OK,18,7,2,9,4,6,0,6,false,true,true,0,,2,17
+ops-visitors,Advanced Visitor Management,Workplace Management,own page,YES,2416,OK,23,8,3,12,5,8,2,7,false,true,true,0,,2,18
+ops-canteen,Advanced Canteen Management,Workplace Management,own page,YES,2455,OK-NONTABLE,21,8,3,10,7,8,4,8,false,false,true,0,,3,12
+plant-flow-command,Plant Flow Command Center,Integrated Plant Flow,generic fallback,NOT-FOUND,2435,NOT-FOUND,23,0,0,23,1,7,0,7,false,false,false,0,,2,17
+plant-project-forward,Project Department Forward Flow,Integrated Plant Flow,generic fallback,NOT-FOUND,2359,NOT-FOUND,23,0,0,23,1,7,0,7,false,false,false,0,,2,17
+maint-part-movement,Maintenance Part Movement,Integrated Plant Flow,generic fallback,NOT-FOUND,2487,NOT-FOUND,22,0,0,22,1,7,0,7,false,false,false,0,,2,9
+plant-process-movement,Process Movement,Integrated Plant Flow,generic fallback,NOT-FOUND,2594,NOT-FOUND,23,0,0,23,1,7,0,7,false,false,false,0,,2,9
+plant-unit-routing,Plant / Unit Routing,Integrated Plant Flow,generic fallback,NOT-FOUND,2552,NOT-FOUND,13,0,0,13,1,6,0,6,false,false,false,0,,2,9
+plant-department-movement,Department Movement,Integrated Plant Flow,generic fallback,NOT-FOUND,2431,NOT-FOUND,23,0,0,23,1,7,0,7,false,false,false,0,,2,9
+plant-interplant-movement,Plant-to-Plant Movement,Integrated Plant Flow,generic fallback,NOT-FOUND,2286,NOT-FOUND,23,0,0,23,1,7,0,7,false,false,false,0,,2,9
+flow-bom-approval,BOM & Material Approval,Integrated Plant Flow,generic fallback,NOT-FOUND,2249,NOT-FOUND,19,0,0,19,1,6,0,6,false,false,false,0,,2,12
+mfg-unit-route,Multi-Unit Part Routing,Integrated Plant Flow,generic fallback,NOT-FOUND,2260,NOT-FOUND,24,0,0,24,1,9,0,9,false,false,false,0,,2,12
+mfg-transfer-note,Material Transfer Note,Integrated Plant Flow,generic fallback,NOT-FOUND,2367,NOT-FOUND,24,0,0,24,1,6,0,6,false,false,false,0,,2,12
+business-documents,PDF Document Center,Business Documents,own page,YES,2452,OK-NONTABLE,7,5,0,2,29,0,0,0,false,false,true,0,,2,23
+dispatch-dc,Delivery Challan,Business Documents,generic fallback,NOT-FOUND,2290,NOT-FOUND,43,0,0,43,1,12,0,12,false,false,false,0,,2,9
+quality-certificate,Quality Certificate,Business Documents,own page,YES,2299,OK,36,11,6,19,0,11,0,11,false,true,true,0,,2,17
+accounts-gst-invoice,GST Tax Invoice,Business Documents,generic fallback,NOT-FOUND,2372,NOT-FOUND,42,0,0,42,1,11,0,11,false,false,false,0,,2,9
+hr-offer-letter,Offer Letters,Business Documents,own page,YES,2396,OK,38,13,6,19,0,11,0,11,false,true,true,0,,2,18
+hr-appointment-letter,Appointment Letters,Business Documents,generic fallback,NOT-FOUND,2359,NOT-FOUND,38,0,0,38,1,11,0,11,false,false,false,0,,2,9
+admin-approval,Approval Matrix,Administration,own page,YES,2249,OK,5,5,0,0,20,6,0,6,false,false,true,0,,2,22

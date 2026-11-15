@@ -263,6 +263,8 @@ export interface PaymentInput {
   bankAccountId: string;
   supplierId?: string;
   counterAccountId?: string;
+  /** Cost centre of the other side (needed when that account requires one). */
+  costCentreId?: string;
   toBankAccountId?: string;
   amount: string;
   mode: string;

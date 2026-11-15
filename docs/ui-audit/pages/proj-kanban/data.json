@@ -1,0 +1,67 @@
+{
+ "id": "proj-kanban",
+ "role": "super",
+ "at": "2026-11-14T14:05:11.735Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [],
+    "fields": [],
+    "buttons": [
+     "← Return",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Project History"
+    ],
+    "cards": [],
+    "filters": [],
+    "badges": [],
+    "rows": 0,
+    "textLen": 318,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [],
+    "fields": [
+     "Select Project:"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 0,
+    "textLen": 518,
+    "sideways": false
+   }
+  }
+ }
+}

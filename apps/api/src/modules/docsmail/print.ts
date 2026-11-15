@@ -64,7 +64,7 @@ export const CATALOG: readonly CatalogDoc[] = [
 
 const HIDE = /(^id$|_id$|^version$|^deleted_at$|^created_at$|^updated_at$|^fy_id$|^password|^json|_json$|^body_html$)/;
 
-function catalogOf(pageId: string): CatalogDoc | undefined {
+export function catalogOf(pageId: string): CatalogDoc | undefined {
   return CATALOG.find((c) => c.pageId === pageId);
 }
 

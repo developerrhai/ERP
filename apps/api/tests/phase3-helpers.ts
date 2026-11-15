@@ -50,7 +50,7 @@ export async function restorePhase3(snap: Phase3Snapshot): Promise<void> {
       await tx.financialYear.update({ where: { id: f.id }, data: f });
     }
     for (const c of snap.company) await tx.company.update({ where: { id: c.id }, data: c });
-  });
+  }, { timeout: 120_000, maxWait: 60_000 });
   invalidateAccessCache();
 }
 

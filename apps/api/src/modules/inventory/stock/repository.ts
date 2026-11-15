@@ -16,6 +16,7 @@ export interface BalanceRow {
   warehouseId: string;
   itemCode: string;
   itemName: string;
+  itemType: string;
   uom: string;
   reorderLevel: string | null;
   warehouseCode: string;
@@ -102,7 +103,7 @@ export function balanceOrder(sort: string): Prisma.Sql | null {
 
 const BALANCE_COLUMNS = Prisma.sql`
   b.item_id AS "itemId", b.warehouse_id AS "warehouseId", i.code AS "itemCode", i.name AS "itemName",
-  i.base_uom AS uom, i.reorder_level::text AS "reorderLevel", w.code AS "warehouseCode",
+  i.item_type AS "itemType", i.base_uom AS uom, i.reorder_level::text AS "reorderLevel", w.code AS "warehouseCode",
   w.name AS "warehouseName", w.unit_id AS "unitId", un.code AS "unitCode", b.on_hand::text AS "onHand",
   b.avg_rate::text AS "avgRate", b.value::text AS "stockValue", b.updated_at AS "updatedAt",
   (i.reorder_level IS NOT NULL AND b.on_hand < i.reorder_level) AS "belowReorder"`;

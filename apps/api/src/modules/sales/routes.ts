@@ -45,6 +45,8 @@ import {
   rfqActions,
   rfqCrud,
 } from './docs-service';
+import { pageInfo } from '../../core/registry';
+import { SALES_V40_PAGES, noSourceColumns, salesV40View } from './v40-views';
 import {
   DISP_DEF,
   INV_DEF,
@@ -56,6 +58,8 @@ import {
   receiptService,
   returnService,
 } from './fulfilment-service';
+
+const V40_GUARD: Record<string, string> = { 'master-customers': 'crm-customer360' };
 
 const dec = z
   .union([z.number(), z.string().regex(/^-?\d+(\.\d+)?$/, 'Enter a number.')])
@@ -448,6 +452,57 @@ export function createSalesRouter(): Router {
     h(async (req, res) =>
       res.json({ data: await customer360(callerOf(req), String(req.params.id)) }),
     ),
+  );
+
+  // ------------------------------------------------------------------ V40 tab views (page-by-page build)
+  const v40Q = z
+    .object({
+      tab: z.string().trim().max(60).default(''),
+      first: z.enum(['0', '1']).default('0'),
+      q: z.string().trim().max(100).optional(),
+      status: z.string().max(24).optional(),
+      ...pageQuery,
+    })
+    .strict();
+  router.get(
+    '/sales/v40/:pageId',
+    (req, res, next) => {
+      const pageId = String(req.params.pageId ?? '');
+      // Customer Master is an alias of Customer 360 in the API registry: it is guarded by that page's permission
+      const guard = pageInfo(pageId) ? pageId : (V40_GUARD[pageId] ?? '');
+      if (!SALES_V40_PAGES[pageId] || !guard) {
+        res
+          .status(404)
+          .json({ error: { code: 'NOT_FOUND', message: 'No V40 views for this page.' } });
+        return;
+      }
+      g(guard, 'view')(req, res, next);
+    },
+    validate({ query: v40Q }),
+    h(async (req, res) => {
+      const pageId = String(req.params.pageId);
+      const q = validated(res, 'query', v40Q);
+      const r = await salesV40View(callerOf(req), pageId, {
+        tab: q.tab,
+        first: q.first === '1',
+        q: q.q,
+        status: q.status,
+        page: q.page,
+        size: q.size,
+      });
+      res.json({
+        data: r.rows,
+        meta: {
+          page: q.page,
+          size: q.size,
+          total: r.total,
+          columns: r.columns,
+          panel: r.panel ?? null,
+          audit: r.audit,
+          noSource: noSourceColumns(pageId),
+        },
+      });
+    }),
   );
 
   // ------------------------------------------------------------------ pre-sales: customer RFQ + quotation

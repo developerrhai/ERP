@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vitest *)",
+      "Bash(node /tmp/fixtests.js)",
+      "Bash(node /tmp/fx2.js)",
+      "Bash(node /tmp/fx3.js)",
+      "Bash(node /tmp/fx4.js)",
+      "Bash(awk -F' > ' '{print $1}')",
+      "Bash(sed -i \"s/^  exportXlsx,\\\\n  getSchema,//\" pages/generic/GenericModulePage.tsx)",
+      "Bash(node -e ' *)",
+      "Bash(npx eslint *)",
+      "Bash(grep -vE \"^\\\\s*$\")",
+      "Bash(node /tmp/lint.js)",
+      "Bash(npx prettier *)",
+      "Bash(git reset *)",
+      "Bash(grep -c \"\\\\.md$\")",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(grep -nE '^\\\\s\\*\\\\$KEY\\\\s\\*=' deploy_to_ec2.ps1)",
+      "Bash(grep -iE \"^docs/|\\\\.md$|^PLAN|^CLAUDE|^\\\\.claude\")",
+      "Bash(git add *)",
+      "Bash(unzip -p \"ERP FLow.docx\" word/document.xml)",
+      "Bash(grep -v '^\\\\s*$')",
+      "Bash(unzip -p \"Continuous improvement ideas  Implementations.pptx\" 'ppt/slides/slide*.xml')",
+      "Bash(tasklist)",
+      "Bash(sed -i 's/must\\(\"export const itemService\"\\);/must\\(\"export const itemHandler\"\\);/' \"C:/Users/admin/AppData/Local/Temp/claude/795443a7c2e8e1e6/6e3a195c-1203-454d-95e8-64d1654d935e/scratchpad/patch-items.cjs\")",
+      "Bash(node \"C:/Users/admin/AppData/Local/Temp/claude/795443a7c2e8e1e6/6e3a195c-1203-454d-95e8-64d1654d935e/scratchpad/patch-items.cjs\")",
+      "Bash(npm run *)"
+    ]
+  }
+}

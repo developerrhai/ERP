@@ -300,6 +300,14 @@ export function createAssetsRouter(): Router {
         );
       }),
     );
+    router.delete(
+      `${v.base}/:id`,
+      g(v.page, 'delete'),
+      validate({ params: idp }),
+      h(async (req, res) =>
+        send(res, await assetService.remove(C(req), v.page, String(req.params.id), ver(req))),
+      ),
+    );
     router.patch(
       `${v.base}/:id`,
       g(v.page, 'edit'),

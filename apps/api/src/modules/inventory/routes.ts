@@ -19,6 +19,7 @@ import { mountMastersRoutes } from './routes-masters';
 import { mountCountsRoutes } from './routes-counts';
 import { mountReportsRoutes } from './routes-reports';
 import { mountCustomerMaterialRoutes } from './routes-customer-material';
+import { mountV40Routes } from './v40/routes';
 
 import { callerOf, idemOf, isoDate, pageQuery, qtyNum, uuid } from './routes-shared';
 
@@ -221,5 +222,6 @@ export function createInventoryRouter(): Router {
   mountCountsRoutes(r);
   mountReportsRoutes(r);
   mountCustomerMaterialRoutes(r);
+  mountV40Routes(r);
   return router;
 }

@@ -153,6 +153,7 @@ export const FB_CFG: DocCfg = {
 };
 
 export const CRFQ_CFG: DocCfg = {
+  noV40: true,
   title: 'Customer RFQs',
   sub: 'Enquiries from customers. Engineering says if it can be made, Finance checks the margin, then you quote.',
   path: '/sales/rfq',

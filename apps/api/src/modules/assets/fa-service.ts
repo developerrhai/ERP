@@ -49,6 +49,25 @@ const NO = {
 const nextNo = (tx: Db, unitId: string, fyId: string, k: keyof typeof NO) =>
   NumberingService.allocate(tx, { pageId: NO[k], unitId, fyId, prefix: k });
 
+/** Person pickers send a login id; HR screens send an employee id. Accept both and store the login id (the FK target). */
+export async function resolvePerson(
+  id: string | undefined,
+  field: string,
+): Promise<string | null> {
+  if (!id) return null;
+  if ((await query(prisma, `SELECT 1 FROM users WHERE id=$1::uuid`, id)).length) return id;
+  const e = (
+    await query(prisma, `SELECT user_id::text AS user_id FROM employees WHERE id=$1::uuid`, id)
+  )[0];
+  if (!e) throw Errors.validation({ [field]: 'Person not found.' });
+  if (!e.user_id)
+    throw Errors.validation({
+      [field]:
+        'This employee has no login, so an asset cannot be handed to them here. Give them a login first, or use the department or location.',
+    });
+  return S(e.user_id);
+}
+
 async function accountOk(code: string, field: string): Promise<void> {
   if (
     !(
@@ -538,6 +557,7 @@ export const faService = {
       throw Errors.validation({ assetId: 'Only an asset in service can be handed over.' });
     if (!b.employeeId && !b.department && !b.location)
       throw Errors.validation({ employeeId: 'Choose who or where the asset is handed to.' });
+    const personId = await resolvePerson(b.employeeId, 'employeeId');
     if (
       (
         await query(
@@ -554,7 +574,7 @@ export const faService = {
         unitId,
         allocNo: no,
         assetId: b.assetId,
-        employeeId: b.employeeId ?? null,
+        employeeId: personId,
         department: b.department ?? null,
         location: b.location ?? null,
         allocatedOn: b.allocatedOn ?? todayIst(),
@@ -705,7 +725,7 @@ export const faService = {
         fromUnitId: unitId,
         toUnitId: to,
         toLocation: b.toLocation ?? null,
-        toEmployeeId: b.toEmployeeId ?? null,
+        toEmployeeId: await resolvePerson(b.toEmployeeId, 'toEmployeeId'),
         toCostCentreId: b.toCostCentreId ?? null,
         condition: b.condition ?? null,
         createdById: caller.auth.userId,

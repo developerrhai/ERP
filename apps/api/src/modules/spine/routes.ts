@@ -41,7 +41,8 @@ export function createSpineRouter(): Router {
   r.get('/sales/enquiries/:id', requirePageAction('sales-enquiries', 'view'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.enquiry(callerOf(req), validated(res, 'params', id).id))));
   r.post('/sales/enquiries/:id/qualify', requirePageAction('sales-enquiries', 'edit'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.setEnquiryStatus(callerOf(req), validated(res, 'params', id).id, 'Qualified'))));
   r.post('/sales/enquiries/:id/won', requirePageAction('sales-enquiries', 'edit'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.setEnquiryStatus(callerOf(req), validated(res, 'params', id).id, 'Won'))));
-  r.post('/sales/enquiries/:id/to-quotation', requirePageAction('sales-enquiries', 'edit'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.toQuotation(callerOf(req), validated(res, 'params', id).id))));
+  const toQuo = z.object({ gstPct: z.coerce.number({ invalid_type_error: 'Enter the GST % as a number.' }).min(0, 'GST % cannot be below 0.').max(28, 'GST % cannot be above 28.').optional() }).strict();
+  r.post('/sales/enquiries/:id/to-quotation', requirePageAction('sales-enquiries', 'edit'), validate({ params: id, body: toQuo }), h(async (req, res) => ok(res, await spineService.toQuotation(callerOf(req), validated(res, 'params', id).id, validated(res, 'body', toQuo)))));
   const toProj = z.object({ template: z.enum(['BLDC', 'SPPM', 'CUSTOM']).optional(), projectManagerId: z.string().uuid().optional() }).strict();
   r.post('/sales/enquiries/:id/to-project', requirePageAction('sales-enquiries', 'edit'), validate({ params: id, body: toProj }), h(async (req, res) => ok(res, await spineService.toProject(callerOf(req), validated(res, 'params', id).id, validated(res, 'body', toProj)), 201)));
   const lost = z.object({ lostReason: z.string().max(300).default('') }).strict();
@@ -58,6 +59,7 @@ export function createSpineRouter(): Router {
     const out = await spineService.history(callerOf(req), validated(res, 'params', id).id, validated(res, 'query', hq));
     res.json({ data: out.rows, meta: { next: out.next } });
   }));
+  r.get('/projects/:id/summary', requirePageAction('project-global-history', 'view'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.projectSummary(callerOf(req), validated(res, 'params', id).id))));
   r.get('/projects/:id/history/export.xlsx', requirePageAction('project-global-history', 'view'), validate({ params: id }), h(async (req, res) => {
     const out = await spineService.history(callerOf(req), validated(res, 'params', id).id, { limit: 200 });
     const buf = await historyWorkbook(out.rows);

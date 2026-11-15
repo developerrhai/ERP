@@ -56,20 +56,38 @@ export interface FormInput {
 }
 
 export const formsService = {
+  /** One kind (pageId = its page), or every kind the caller may view (kinds = those kinds; each page applies its own scope). */
   async list(
     caller: Caller,
     pageId: string,
     q: {
-      kind: FormKind;
+      kind?: FormKind | undefined;
+      kinds?: FormKind[] | undefined;
       status?: string | undefined;
       q?: string | undefined;
       page: number;
       size: number;
     },
   ) {
-    const sc = await scopeSql(caller, pageId);
-    const args = [...sc.args, q.kind];
-    const where = [sc.sql, `t.kind=$${args.length}`];
+    const kinds = q.kind ? [q.kind] : (q.kinds ?? FORM_KINDS);
+    const args: unknown[] = [];
+    const groups: string[] = [];
+    for (const page of new Set(kinds.map((k) => PAGE_OF_FORM[k]))) {
+      if (q.kind && page !== pageId) continue;
+      const sc = await scopeSql(caller, page);
+      const base = args.length;
+      const shifted = sc.sql.replace(/\$(\d+)/g, (_m, n: string) => `$${Number(n) + base}`);
+      args.push(...sc.args);
+      const kp = kinds
+        .filter((k) => PAGE_OF_FORM[k] === page)
+        .map((k) => {
+          args.push(k);
+          return `$${args.length}`;
+        });
+      groups.push(`(${shifted} AND t.kind IN (${kp.join(',')}))`);
+    }
+    if (!groups.length) return { rows: [], total: 0 };
+    const where = [`(${groups.join(' OR ')})`];
     if (q.status) {
       args.push(q.status);
       where.push(`t.status=$${args.length}`);

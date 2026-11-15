@@ -172,12 +172,13 @@ describe('opening, adjustment', () => {
       lines: [{ itemId: a.id, qty: 50, unitCost: 10 }],
     });
     expect(await gl(fx.unitId, '3009')).toBeLessThan(0);
-    const c2 = await v.create('opening', {
+    // refused early (at create), not only at post
+    const c2 = await v.call('post', '/inventory/vouchers/opening', {
       warehouseId: fx.warehouseId,
       lines: [{ itemId: a.id, qty: 5, unitCost: 10 }],
     });
-    await v.submit('opening', c2.id, c2.version);
-    expect((await v.act('opening', c2.id, 'post')).status).toBe(409);
+    expect(c2.status).toBe(409);
+    expect(errorOf(c2).message).toMatch(/Opening stock of .* is allowed only when the item has no other stock movement/);
 
     const adj = await v.post('adjustment', {
       warehouseId: fx.warehouseId,
@@ -189,6 +190,48 @@ describe('opening, adjustment', () => {
       adj as unknown as { lines: { systemQty: number; varianceQty: number; value: number }[] }
     ).lines[0]!;
     expect(line).toMatchObject({ systemQty: 50, varianceQty: -3, value: -30 });
+  });
+});
+
+describe('opening voucher: early validation and two batches of one item', () => {
+  it('create and submit refuse an item that already moved; a draft made earlier is refused at submit', async () => {
+    const a = await mkItem();
+    const b = await mkItem();
+    // draft made while the item is still clean
+    const draft = await v.create('opening', {
+      warehouseId: fx.warehouseId,
+      lines: [{ itemId: a.id, qty: 5, unitCost: 10 }],
+    });
+    // meanwhile another movement happens
+    await v.post('transactions', {
+      warehouseId: fx.warehouseId,
+      txType: 'Receipt',
+      lines: [{ itemId: a.id, qty: 1, unitCost: 10 }],
+    });
+    const sub = await v.call('post', `/inventory/vouchers/opening/${draft.id}/submit`, undefined, {
+      'If-Match': `"${draft.version}"`,
+    });
+    expect(sub.status).toBe(409);
+    expect(errorOf(sub).message).toContain('no other stock movement');
+    // a clean item is still fine
+    const ok = await v.post('opening', {
+      warehouseId: fx.warehouseId,
+      lines: [{ itemId: b.id, qty: 5, unitCost: 10 }],
+    });
+    expect(ok.status).toBe('Posted');
+  });
+
+  it('two batches of one batch-tracked item in one opening voucher post correctly', async () => {
+    const a = await mkItem({ batchTracked: true });
+    const p = await v.post('opening', {
+      warehouseId: fx.warehouseId,
+      lines: [
+        { itemId: a.id, qty: 4, unitCost: 10, batchNo: 'B-1' },
+        { itemId: a.id, qty: 6, unitCost: 10, batchNo: 'B-2' },
+      ],
+    });
+    expect(p.status).toBe('Posted');
+    expect(await balance(a.id, fx.warehouseId)).toMatchObject({ onHand: 10, value: 100 });
   });
 });
 

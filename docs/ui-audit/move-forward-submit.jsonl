@@ -1,0 +1,18 @@
+{"id":"crm-leads","docs":8,"result":"SENT (document 1) to Finance"}
+{"id":"sales-quotations","docs":22,"result":"SENT (document 1) to Finance"}
+{"id":"scm-pr","docs":16,"result":"SENT (document 1) to Finance"}
+{"id":"inv-batch","docs":3,"result":"SENT (document 1) to Finance"}
+{"id":"mfg-orders","docs":13,"result":"SENT (document 2) to Finance"}
+{"id":"qms-ncr","docs":16,"result":"SENT (document 1) to Finance"}
+{"id":"maint-breakdown","docs":8,"result":"SENT (document 1) to Finance"}
+{"id":"fin-expenses","docs":6,"result":"NOT SENT doc 1 -> Finance: Please fix the highlighted fields. || doc 2 -> Finance: Please fix the highlighted fields. || doc 3 -> Finance: Please fix the highlighted fields. || doc 4 -> Finance: Please fix the highlighted fields."}
+{"id":"hr-recruitment","docs":5,"result":"SENT (document 1) to Finance"}
+{"id":"proj-projects","docs":7,"result":"SENT (document 2) to Finance"}
+{"id":"service-tickets","docs":8,"result":"SENT (document 1) to Finance"}
+{"id":"log-shipments","docs":7,"result":"SENT (document 1) to Finance"}
+{"id":"dms-docs","docs":13,"result":"SENT (document 1) to Finance"}
+{"id":"asset-capitalization","docs":17,"result":"SENT (document 1) to Finance"}
+{"id":"cl-workers","docs":16,"result":"SENT (document 1) to Finance"}
+{"id":"pay-loan","docs":5,"result":"SENT (document 1) to Finance"}
+{"id":"scm-suppliers","docs":24,"result":"SENT (document 1) to Finance"}
+{"id":"wms-zones","docs":9,"result":"SENT (document 1) to Finance"}

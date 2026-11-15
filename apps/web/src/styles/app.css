@@ -2730,3 +2730,47 @@ textarea:focus-visible,
   a[href]::after { content: ""; }
   @page { margin: 12mm; }
 }
+
+/* V40 my-approvals: workflow bar + movement-rule note */
+.work-flowbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.work-note { margin: 8px 0; background: #eff6ff; border-color: #bfdbfe; }
+/* V40 department mailbox: six cards in one row, hero banner */
+.kpis-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+@media (max-width: 900px) { .kpis-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.mailbox-hero h1 { margin: 6px 0; }
+
+/* V40 Work Center: workflow rule cards */
+.rule-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.rule-grid .card { display: flex; flex-direction: column; gap: 2px; padding: 10px; }
+@media (max-width: 1100px) { .rule-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .rule-grid { grid-template-columns: 1fr; } }
+
+/* V40 Document Movement Center: compose form + department tiles */
+.doc-move-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.inbox-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.inbox-tile { display: flex; flex-direction: column; padding: 8px 10px; text-decoration: none; color: inherit; }
+@media (max-width: 1000px) { .doc-move-grid { grid-template-columns: 1fr; } }
+.doc-move-grid .inline-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.doc-move-grid .inline-form label { display: flex; flex-direction: column; gap: 4px; }
+.doc-move-grid .inline-form select, .doc-move-grid .inline-form input, .doc-move-grid .inline-form textarea { width: 100%; box-sizing: border-box; }
+.doc-move-grid .inline-form label:nth-child(5), .doc-move-grid .inline-form label:nth-child(6) { grid-column: 1 / -1; }
+@media (max-width: 600px) { .doc-move-grid .inline-form { grid-template-columns: 1fr; } }
+
+/* V40 360 order tracking */
+.order-identity { background: #0f2a5c; color: #fff; }
+.order-identity h2, .order-identity .muted { color: #fff; }
+.trace-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.trace-grid .card { display: flex; flex-direction: column; padding: 8px 10px; color: #172033; }
+.order360-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 14px; align-items: start; margin: 14px 0; }
+.control-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+progress { width: 100%; }
+@media (max-width: 1100px) { .trace-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .order360-grid, .control-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .trace-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* V36 tab strip around V40 pages */
+.v40-tabbar { display: flex; align-items: center; gap: 6px; margin: 8px 0; }
+.v40-tabbar .tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; flex: 1; }
+.v40-tabbar .tab { white-space: nowrap; }
+
+/* register: table-level export group under the list */
+.register-exports { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }

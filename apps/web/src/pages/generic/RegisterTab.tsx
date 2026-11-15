@@ -2,7 +2,14 @@
 // search, status filter, page size, sortable headers, checkbox selection that survives paging,
 // Export Selected / Delete Selected (typed confirmation above 10) and View / Edit / Delete rows.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { tableToCsv } from '../../components/ActionBar';
+import { EmailDocDialog } from '../../components/EmailDocDialog';
 import { ErrorMessage } from '../../components/ErrorMessage';
+import { MoveForwardDialog } from '../../components/MoveForward';
+import { useToast } from '../../components/Toast';
+import { docsMailApi, saveFile } from '../../lib/docsMailApi';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
 import { ApiError } from '../../lib/api';
@@ -74,6 +81,8 @@ interface Props {
   /** Reports the loaded rows so the page's record bar can offer them. */
   onRows?: (rows: RecordRow[]) => void;
   onOpenWorkspace?: (row: RecordRow) => void;
+  /** Optional: draws the cell of a column itself (return undefined for the normal text). Used by pages whose V40 tabs add computed columns. */
+  cellRender?: (row: RecordRow, field: FieldMeta) => ReactNode | undefined;
 }
 
 export const statusClass = (s: string): string => s.toLowerCase().replace(/\s+/g, '-');
@@ -107,6 +116,7 @@ export function RegisterTab({
   onNotify,
   onRows,
   onOpenWorkspace,
+  cellRender,
 }: Props) {
   const fields = useMemo(() => listFields(schema), [schema]);
   // Phase 23: with 2+ plants chosen the list mixes plants, so a Plant column appears automatically.
@@ -150,6 +160,9 @@ export function RegisterTab({
   }, [search, onQuery]);
 
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const tableBox = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const toastTop = useToast();
   const [bulkOpen, setBulkOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [exportError, setExportError] = useState('');
@@ -359,7 +372,7 @@ export function RegisterTab({
       </div>
       {exportError ? <ErrorMessage>{exportError}</ErrorMessage> : null}
       {error ? <ErrorMessage>{error}</ErrorMessage> : null}
-      <div className="table-wrap">
+      <div className="table-wrap" ref={tableBox}>
         <table className="register-table">
           <thead>
             <tr>
@@ -421,6 +434,7 @@ export function RegisterTab({
                 onDelete={onDelete}
                 onAction={onAction}
                 onOpenWorkspace={onOpenWorkspace}
+                {...(cellRender ? { cellRender } : {})}
               />
             ))}
             {loading && !data ? (
@@ -439,6 +453,23 @@ export function RegisterTab({
             ) : null}
           </tbody>
         </table>
+      </div>
+      <div className="register-exports" role="group" aria-label={`${schema.title} detailed table actions`}>
+        <b>{`${schema.title} – Detailed Table`}</b>
+        <small className="muted">Table-level actions for the rows shown above.</small>
+        <span className="v8-spacer" />
+        <button type="button" className="btn sm" onClick={() => navigate('/m/dept-mail')}>
+          Send Email
+        </button>
+        <button type="button" className="btn sm" onClick={() => exportTable(tableBox.current, schema.title, 'word', toastTop)}>
+          Word
+        </button>
+        <button type="button" className="btn sm" onClick={() => exportTable(tableBox.current, schema.title, 'excel', toastTop)}>
+          Excel
+        </button>
+        <button type="button" className="btn sm" onClick={() => exportTable(tableBox.current, schema.title, 'pdf', toastTop)}>
+          PDF
+        </button>
       </div>
       {schema.totals?.length && data?.meta.totals ? (
         <div className="totals-bar" aria-label="Totals">
@@ -489,6 +520,29 @@ export function RegisterTab({
   );
 }
 
+/** Table-level export of the rows on screen: Excel = CSV, Word = an HTML .doc Word opens, PDF = the browser's Save as PDF. */
+function exportTable(box: HTMLElement | null, title: string, kind: 'word' | 'excel' | 'pdf', say: (m: string) => void): void {
+  const table = box?.querySelector('table');
+  if (!table) return say('There is no table to export yet.');
+  const clean = table.cloneNode(true) as HTMLTableElement;
+  clean.querySelectorAll('input, button, .sticky-actions, th:last-child, td:last-child').forEach((n) => n.remove());
+  const save = (data: string, type: string, ext: string): void => {
+    const url = URL.createObjectURL(new Blob([data], { type }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9]+/gi, '_')}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  if (kind === 'excel') return save('﻿' + tableToCsv(clean), 'text/csv;charset=utf-8', 'csv');
+  if (kind === 'word') return save(`<html><head><meta charset="utf-8"></head><body><h2>${title}</h2>${clean.outerHTML}</body></html>`, 'application/msword', 'doc');
+  const w = window.open('', '_blank');
+  if (!w) return say('Allow pop-ups to save this table as PDF.');
+  w.document.write(`<html><head><meta charset="utf-8"><title>${title}</title></head><body><h2>${title}</h2>${clean.outerHTML}</body></html>`);
+  w.document.close();
+  w.print();
+}
+
 function RegisterRow({
   showPlant,
   schema,
@@ -502,6 +556,7 @@ function RegisterRow({
   onDelete,
   onAction,
   onOpenWorkspace,
+  cellRender,
 }: {
   showPlant: boolean;
   schema: PageSchema;
@@ -515,10 +570,22 @@ function RegisterRow({
   onDelete: (row: RecordRow) => void;
   onAction: (row: RecordRow, action: PageAction) => void;
   onOpenWorkspace?: (row: RecordRow) => void;
+  cellRender?: (row: RecordRow, field: FieldMeta) => ReactNode | undefined;
 }) {
   const editable = canEditRecord(schema, row);
   const removable = canRemoveRecord(schema, row);
   const hasRecordPanels = schema.tabPanels?.some((tp) => tp.scope === 'record');
+  const toast = useToast();
+  const [emailing, setEmailing] = useState(false);
+  const [moving, setMoving] = useState(false);
+  // V40 row buttons (Docs / Email / Word / PDF / Move Forward): each one runs on this row
+  async function print(kind: 'word' | 'standard'): Promise<void> {
+    try {
+      saveFile(await docsMailApi.print(schema.pageId, row.id, kind), `${row.code}.${kind === 'word' ? 'docx' : 'pdf'}`);
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'That did not work.');
+    }
+  }
   return (
     <tr className={isLowRow(row) ? 'row-low' : undefined}>
       <td>
@@ -533,7 +600,9 @@ function RegisterRow({
       {showPlant ? <td>{row.unitCode ?? '—'}</td> : null}
       {fields.map((f) => (
         <td key={f.key}>
-          {f.type === 'status' ? (
+          {cellRender && cellRender(row, f) !== undefined ? (
+            cellRender(row, f)
+          ) : f.type === 'status' ? (
             <span className={`status ${statusClass(row.status)}`}>{row.status}</span>
           ) : isPillField(f, row) ? (
             <span className={`status ${statusClass(displayValue(row, f))}`}>
@@ -564,7 +633,19 @@ function RegisterRow({
             title="View"
             onClick={() => onView(row)}
           >
-            <span aria-hidden="true">👁</span>
+            <span aria-hidden="true">👁</span> View
+          </button>
+          <button type="button" className="btn sm" aria-label={`Docs ${row.code}`} title="Documents of this record" onClick={() => onView(row)}>
+            Docs
+          </button>
+          <button type="button" className="btn sm" aria-label={`Email ${row.code}`} title="Email this record" onClick={() => setEmailing(true)}>
+            Email
+          </button>
+          <button type="button" className="btn sm" aria-label={`Word ${row.code}`} title="Download as Word" onClick={() => void print('word')}>
+            Word
+          </button>
+          <button type="button" className="btn sm" aria-label={`PDF ${row.code}`} title="Download as PDF" onClick={() => void print('standard')}>
+            PDF
           </button>
           <ActionButtons schema={schema} row={row} small perms={perms} onAction={onAction} />
           {perms.edit && editable ? (
@@ -575,7 +656,7 @@ function RegisterRow({
               title="Edit"
               onClick={() => onEdit(row)}
             >
-              <span aria-hidden="true">✎</span>
+              <span aria-hidden="true">✎</span> Edit
             </button>
           ) : perms.edit && row.status === 'Pending Approval' ? (
             <button
@@ -596,7 +677,7 @@ function RegisterRow({
               title="Delete"
               onClick={() => onDelete(row)}
             >
-              <span aria-hidden="true">🗑</span>
+              <span aria-hidden="true">🗑</span> Delete
             </button>
           ) : perms.delete && row.status === 'Pending Approval' ? (
             <button
@@ -609,7 +690,12 @@ function RegisterRow({
               <span aria-hidden="true">🗑</span>
             </button>
           ) : null}
+          <button type="button" className="btn sm primary" aria-label={`Move Forward ${row.code}`} title="Move this record to the next department" onClick={() => setMoving(true)}>
+            Move Forward
+          </button>
         </div>
+        {emailing ? <EmailDocDialog docType={schema.pageId} docId={row.id} onClose={() => setEmailing(false)} /> : null}
+        {moving ? <MoveForwardDialog docType={schema.pageId} docId={row.id} docNo={row.code} onClose={() => setMoving(false)} onMoved={() => setMoving(false)} /> : null}
       </td>
     </tr>
   );

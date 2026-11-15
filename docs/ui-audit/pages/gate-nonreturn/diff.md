@@ -1,0 +1,109 @@
+# Non-Returnable Gate Pass (gate-nonreturn) - V40 vs ERP
+
+Family: Logistics / Fleet - role: super - 2026-11-14T14:13:03.689Z
+
+## Tabs
+V40: Non Returnable Pass | Material Out | Authorization | Value & Reason | Security Exit | Pass Audit | Analytics & Graphs | Documents | Approvals | Reports | Audit Trail
+ERP: Non Returnable Pass | Material Out | Authorization | Value & Reason | Security Exit | Pass Audit | Analytics & Graphs | Documents | Approvals | Reports | Audit Trail
+Missing in ERP: -
+Extra in ERP: -
+
+## Tab: Non Returnable Pass
+- columns: V40 9, ERP 0; **missing:** Pass No, Date, Party, Material, Quantity, Value, Reason, Status, Actions; extra: -
+- fields: V40 0, ERP 5; **missing:** -; extra: Vehicle Registration No, Driver Name, Driver Mobile, E-Way Bill No (12 digits), E-Way Part B Vehicle
+- buttons: V40 37, ERP 38; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, Update, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Tablet Kiosk, Gate Register, Overdue Returnables (0), ↙️ Vehicle IN, ↗️ Vehicle OUT, ↩️ Material RETURN, ✅Allow & Print, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 4; **missing:** SELECT; extra: MH12AB1234, Driver Name, 98XXXXXXXX, 12-digit number
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Material Out
+- columns: V40 9, ERP 0; **missing:** Pass No, Date, Party, Material, Quantity, Value, Reason, Status, Actions; extra: -
+- fields: V40 0, ERP 5; **missing:** -; extra: Vehicle Registration No, Driver Name, Driver Mobile, E-Way Bill No (12 digits), E-Way Part B Vehicle
+- buttons: V40 37, ERP 38; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, Update, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Tablet Kiosk, Gate Register, Overdue Returnables (0), ↙️ Vehicle IN, ↗️ Vehicle OUT, ↩️ Material RETURN, ✅Allow & Print, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 4; **missing:** SELECT; extra: MH12AB1234, Driver Name, 98XXXXXXXX, 12-digit number
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Authorization
+- columns: V40 9, ERP 0; **missing:** Pass No, Date, Party, Material, Quantity, Value, Reason, Status, Actions; extra: -
+- fields: V40 1, ERP 5; **missing:** Revision Reason; extra: Vehicle Registration No, Driver Name, Driver Mobile, E-Way Bill No (12 digits), E-Way Part B Vehicle
+- buttons: V40 39, ERP 38; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, Approve, Reject, Create New Revision, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Tablet Kiosk, Gate Register, Overdue Returnables (0), ↙️ Vehicle IN, ↗️ Vehicle OUT, ↩️ Material RETURN, ✅Allow & Print, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 4; **missing:** SELECT; extra: MH12AB1234, Driver Name, 98XXXXXXXX, 12-digit number
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Value & Reason
+- columns: V40 9, ERP 0; **missing:** Value, Pass No, Date, Party, Material, Quantity, Reason, Status, Actions; extra: -
+- fields: V40 0, ERP 5; **missing:** -; extra: Vehicle Registration No, Driver Name, Driver Mobile, E-Way Bill No (12 digits), E-Way Part B Vehicle
+- buttons: V40 37, ERP 38; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, Update, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Tablet Kiosk, Gate Register, Overdue Returnables (0), ↙️ Vehicle IN, ↗️ Vehicle OUT, ↩️ Material RETURN, ✅Allow & Print, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 4; **missing:** SELECT; extra: MH12AB1234, Driver Name, 98XXXXXXXX, 12-digit number
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Security Exit
+- columns: V40 9, ERP 0; **missing:** Pass No, Date, Party, Material, Quantity, Value, Reason, Status, Actions; extra: -
+- fields: V40 0, ERP 5; **missing:** -; extra: Vehicle Registration No, Driver Name, Driver Mobile, E-Way Bill No (12 digits), E-Way Part B Vehicle
+- buttons: V40 38, ERP 38; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, Profile, Create HR Follow-up, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Tablet Kiosk, Gate Register, Overdue Returnables (0), ↙️ Vehicle IN, ↗️ Vehicle OUT, ↩️ Material RETURN, ✅Allow & Print, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 4; **missing:** SELECT; extra: MH12AB1234, Driver Name, 98XXXXXXXX, 12-digit number
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Pass Audit
+- columns: V40 9, ERP 0; **missing:** Pass No, Date, Party, Material, Quantity, Value, Reason, Status, Actions; extra: -
+- fields: V40 1, ERP 5; **missing:** Internal Note; extra: Vehicle Registration No, Driver Name, Driver Mobile, E-Way Bill No (12 digits), E-Way Part B Vehicle
+- buttons: V40 38, ERP 38; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, Add Note, Export Source Data, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Tablet Kiosk, Gate Register, Overdue Returnables (0), ↙️ Vehicle IN, ↗️ Vehicle OUT, ↩️ Material RETURN, ✅Allow & Print, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 4; **missing:** SELECT; extra: MH12AB1234, Driver Name, 98XXXXXXXX, 12-digit number
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Analytics & Graphs
+- columns: V40 9, ERP 0; **missing:** Pass No, Date, Party, Material, Quantity, Value, Reason, Status, Actions; extra: -
+- fields: V40 0, ERP 5; **missing:** -; extra: Vehicle Registration No, Driver Name, Driver Mobile, E-Way Bill No (12 digits), E-Way Part B Vehicle
+- buttons: V40 36, ERP 38; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Tablet Kiosk, Gate Register, Overdue Returnables (0), ↙️ Vehicle IN, ↗️ Vehicle OUT, ↩️ Material RETURN, ✅Allow & Print, Privacy Notice (DPDP)
+- cards: V40 8, ERP 0; **missing:** Records8Data pointsAverage54QuantityAI Risk14/100ControlledD, Records8Data points, Average54Quantity, AI Risk14/100Controlled, Data Quality100%Completeness, Analytics & Graphs • 20-Point Trend & Forecast, Status / Business Distribution, Analysis Summary; extra: -
+- filters: V40 1, ERP 4; **missing:** SELECT; extra: MH12AB1234, Driver Name, 98XXXXXXXX, 12-digit number
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Documents
+- columns: V40 9, ERP 0; **missing:** Pass No, Date, Party, Material, Quantity, Value, Reason, Status, Actions; extra: -
+- fields: V40 5, ERP 5; **missing:** File, Category, Document No., Issue Date, Expiry Date; extra: Vehicle Registration No, Driver Name, Driver Mobile, E-Way Bill No (12 digits), E-Way Part B Vehicle
+- buttons: V40 37, ERP 38; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, ＋ Add Document, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Tablet Kiosk, Gate Register, Overdue Returnables (0), ↙️ Vehicle IN, ↗️ Vehicle OUT, ↩️ Material RETURN, ✅Allow & Print, Privacy Notice (DPDP)
+- cards: V40 1, ERP 0; **missing:** Document Addition; extra: -
+- filters: V40 1, ERP 4; **missing:** SELECT; extra: MH12AB1234, Driver Name, 98XXXXXXXX, 12-digit number
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Approvals
+- columns: V40 14, ERP 6; **missing:** Request, Record, Current Role, Actions, Pass No, Date, Party, Material, Quantity, Value, Reason; extra: Document, Level, Waiting on
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 36, ERP 31; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Privacy Notice (DPDP)
+- cards: V40 0, ERP 0; **missing:** -; extra: -
+- filters: V40 1, ERP 0; **missing:** SELECT; extra: -
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 1; sideways scroll ERP: false
+
+## Tab: Reports
+- columns: V40 9, ERP 0; **missing:** Pass No, Date, Party, Material, Quantity, Value, Reason, Status, Actions; extra: -
+- fields: V40 0, ERP 5; **missing:** -; extra: Vehicle Registration No, Driver Name, Driver Mobile, E-Way Bill No (12 digits), E-Way Part B Vehicle
+- buttons: V40 39, ERP 38; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, Download Excel, Download Letterhead PDF, Restore 25 Demo Rows, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Tablet Kiosk, Gate Register, Overdue Returnables (0), ↙️ Vehicle IN, ↗️ Vehicle OUT, ↩️ Material RETURN, ✅Allow & Print, Privacy Notice (DPDP)
+- cards: V40 8, ERP 0; **missing:** Records8CurrentExcelReadyAll rowsLetterhead PDFReadyA4 compa, Records8Current, ExcelReadyAll rows, Letterhead PDFReadyA4 company format, Data Quality100%Validated, Report Trend Preview • 20 Points, Report Distribution, Reports & Downloads; extra: -
+- filters: V40 1, ERP 4; **missing:** SELECT; extra: MH12AB1234, Driver Name, 98XXXXXXXX, 12-digit number
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 0 **(empty data)**; sideways scroll ERP: false
+
+## Tab: Audit Trail
+- columns: V40 9, ERP 4; **missing:** Pass No, Date, Party, Material, Quantity, Value, Reason, Status, Actions; extra: When, Person, Action, Record
+- fields: V40 0, ERP 0; **missing:** -; extra: -
+- buttons: V40 36, ERP 33; **missing:** ＋ Add New, Load Selected, ＋ Add, Move Document, PDF, View, Docs, Email; extra: ⚙ Settings, 360° Tracking, Previous, Next, Privacy Notice (DPDP)
+- cards: V40 1, ERP 0; **missing:** Audit Trail; extra: -
+- filters: V40 1, ERP 0; **missing:** SELECT; extra: -
+- badges: V40 10, ERP 0; **missing:** Department: Administration, Role: Super User, Owner: Warehouse, Approval: Required, Completed, Active, Approved, In Progress, Pending, Ready; extra: -
+- rows: V40 8, ERP 1; sideways scroll ERP: false
+

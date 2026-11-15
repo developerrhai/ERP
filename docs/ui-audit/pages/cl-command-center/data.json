@@ -1,0 +1,85 @@
+{
+ "id": "cl-command-center",
+ "role": "super",
+ "at": "2026-11-14T14:24:26.890Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [],
+    "fields": [],
+    "buttons": [
+     "← Return",
+     "Compliance",
+     "Wage Run",
+     "＋ Add Worker",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Project History",
+     "Deployment",
+     "Attendance",
+     "Gate Access",
+     "Safety",
+     "Open",
+     "Worker Master",
+     "Billing Control",
+     "Compliance Score"
+    ],
+    "cards": [
+     "Contract Labour Lifecycle",
+     "Plant / Unit Headcount",
+     "Control Alerts",
+     "Workforce Control",
+     "Payroll & Billing",
+     "Compliance Dossier"
+    ],
+    "filters": [],
+    "badges": [],
+    "rows": 0,
+    "textLen": 1144,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [
+     "Plant",
+     "Contractor",
+     "Workers"
+    ],
+    "fields": [],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [],
+    "badges": [],
+    "rows": 1,
+    "textLen": 625,
+    "sideways": false
+   }
+  }
+ }
+}

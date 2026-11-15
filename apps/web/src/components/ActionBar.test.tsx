@@ -21,10 +21,10 @@ describe('ActionBar', () => {
     expect(screen.getByRole('button', { name: 'Documents' })).toBeTruthy();
   });
 
-  it('greys record buttons until a record is selected, and says why', () => {
+  it('record buttons stay clickable with no row picked (client QA) and the hint says to pick one', () => {
     render(<ActionBar actions={can('view', 'edit')} />);
     const edit = screen.getByRole('button', { name: 'Edit' }) as HTMLButtonElement;
-    expect(edit.disabled).toBe(true);
+    expect(edit.disabled).toBe(false);
     expect(edit.parentElement?.getAttribute('title')).toBe('Select a record first.');
   });
 
@@ -48,10 +48,10 @@ describe('ActionBar', () => {
     );
   });
 
-  it('greys Word and Move Forward until a record is selected, with a reason and no "Arrives in Phase"', () => {
+  it('Word stays clickable until a record is selected, with the hint and no "Arrives in Phase"', () => {
     render(<ActionBar actions={can('view', 'print')} pageId="sales-orders" />);
     const word = screen.getByRole('button', { name: 'Word' }) as HTMLButtonElement;
-    expect(word.disabled).toBe(true);
+    expect(word.disabled).toBe(false);
     expect(word.parentElement?.getAttribute('title')).toBe('Select a record first.');
     expect(document.body.textContent).not.toMatch(/Arrives in Phase/);
   });
@@ -83,7 +83,7 @@ describe('ActionBar', () => {
     );
     for (const n of [
       '← Return',
-      'Email',
+      'Send Email',
       'Industry PDF',
       'Word',
       '⇧ Import',
@@ -97,8 +97,8 @@ describe('ActionBar', () => {
     ]) {
       expect(screen.getByRole('button', { name: n }), n).toBeTruthy();
     }
-    expect((screen.getByRole('button', { name: 'Email' }) as HTMLButtonElement).disabled).toBe(
-      true,
+    expect((screen.getByRole('button', { name: 'Send Email' }) as HTMLButtonElement).disabled).toBe(
+      false,
     );
     expect((screen.getByRole('button', { name: '⇧ Import' }) as HTMLButtonElement).disabled).toBe(
       false,

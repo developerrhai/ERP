@@ -33,7 +33,32 @@ describe('Purchase Orders', () => {
   it('lists orders with ₹ and DD-MM-YYYY and opens delivery tracking', async () => {
     signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/scm/po': () => json(200, { data: [po], meta: { page: 1, size: 20, total: 1 } }),
+      'GET /api/v1/scm/v40/po': () =>
+        json(200, {
+          data: [
+            {
+              id: 'po1',
+              lineId: 'l1',
+              number: po.number,
+              status: 'Approved',
+              version: 3,
+              prNumber: 'PR/TAL/26-27/0001',
+              vendorId: 'SUP-1',
+              vendor: 'Steel Traders',
+              materialCode: 'SHAFT',
+              material: 'Steel shaft',
+              orderedQuantity: '100',
+              uom: 'Kg',
+              rate: '1059.32',
+              gstPct: '18',
+              totalAmount: '125000.00',
+              poDate: '2026-11-05',
+              receivedQuantity: '40',
+              pendingQuantity: '60',
+            },
+          ],
+          meta: { page: 1, size: 20, total: 1 },
+        }),
       'GET /api/v1/scm/po-delivery': () =>
         json(200, {
           data: [
@@ -60,6 +85,11 @@ describe('Purchase Orders', () => {
     expect(await screen.findByText(po.number)).toBeInTheDocument();
     expect(screen.getByText('₹ 1,25,000.00')).toBeInTheDocument();
     expect(screen.getByText('05-11-2026')).toBeInTheDocument();
+    // V40 columns: the PO line shows its PR, vendor id, material code and ordered quantity
+    for (const h of ['PO Number', 'PR Number', 'Vendor ID', 'Material Code', 'Ordered Quantity', 'GST %'])
+      expect(screen.getByRole('columnheader', { name: h })).toBeInTheDocument();
+    expect(screen.getByText('PR/TAL/26-27/0001')).toBeInTheDocument();
+    expect(screen.getByText('SHAFT')).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole('button', { name: 'Delivery tracking' }));
     const dialog = await screen.findByRole('dialog', { name: /Delivery tracking/ });
     expect(await within(dialog).findByText('P-77')).toBeInTheDocument();
@@ -70,10 +100,10 @@ describe('Purchase Orders', () => {
   it('shows a plain empty state when there is nothing yet', async () => {
     signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/scm/po': () => json(200, { data: [], meta: { page: 1, size: 20, total: 0 } }),
+      'GET /api/v1/scm/v40/po': () => json(200, { data: [], meta: { page: 1, size: 20, total: 0 } }),
     });
     renderApp('/m/scm-po');
-    expect(await screen.findByText(/Nothing here yet/)).toBeInTheDocument();
+    expect(await screen.findByText(/No records match the filter/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /New Purchase Order/ })).toBeInTheDocument();
   });
 });
@@ -105,6 +135,11 @@ describe('Purchase Invoice matching', () => {
     };
     signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
+      'GET /api/v1/scm/v40/invoice': () =>
+        json(200, {
+          data: [{ id: 'i1', number: inv.number, status: 'Draft', version: 1, vendor: 'Steel Traders', vendorInvoiceRef: 'S-1', invoiceDate: '2026-11-07', taxableValue: '5000', gst: '900', invoiceTotal: '5900', matchedAmount: '4900', paymentStatus: 'UNPAID' }],
+          meta: { page: 1, size: 20, total: 1 },
+        }),
       'GET /api/v1/scm/purchaseinvoice': () =>
         json(200, { data: [inv], meta: { page: 1, size: 50, total: 1 } }),
       'GET /api/v1/scm/purchaseinvoice/i1': () => json(200, { data: inv }),
@@ -112,6 +147,6 @@ describe('Purchase Invoice matching', () => {
     renderApp('/m/scm-purchaseinvoice');
     await userEvent.setup().click(await screen.findByRole('button', { name: inv.number }));
     expect(await screen.findByText('Billed 100, received 98')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Payment Readiness' })).toBeInTheDocument();
+    expect(screen.getAllByRole('tab', { name: 'Payment Readiness' })[0]).toBeInTheDocument();
   });
 });

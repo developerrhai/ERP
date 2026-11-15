@@ -584,6 +584,30 @@ export const jobCardService = {
           `Good + rejected + scrap + rework (${total.toFixed(3)}) exceeds input ${D(c.qtyIn).toFixed(3)}.`,
         );
       }
+      // Same rule as Start (see start()): a card that books pieces needs its MANUAL material issued. Only the lines of
+      // this operation (or order-level lines on the first operation) count; an operation with no such lines, and
+      // BACKFLUSH / customer-supplied lines, never block (they are drawn at completion / not valued stock).
+      if (good.plus(rej).plus(scrap).plus(rework).gt(0)) {
+        const need = (
+          await query(
+            tx,
+            `SELECT m.issued_qty, m.returned_qty, i.code FROM mfg_order_materials m JOIN items i ON i.id=m.item_id
+              WHERE m.order_id=$1::uuid AND m.issue_method='MANUAL' AND NOT m.customer_supplied
+                AND (m.operation_seq = $2 ${c.idx === 0 ? 'OR m.operation_seq IS NULL' : ''})`,
+            S(c.order.id),
+            Number(c.op.seq),
+          )
+        );
+        if (need.length && need.every((m) => D(S(m.issued_qty)).minus(S(m.returned_qty)).lte(0)))
+          throw mfgError(
+            'JC_MATERIAL_NOT_ISSUED',
+            `Issue material to the order before completing operation ${S(c.op.seq)} (${need
+              .map((m) => S(m.code))
+              .join(', ')} not issued).`,
+            undefined,
+            409,
+          );
+      }
       const open = await openLog(tx, opId);
       if (open) await closeLog(tx, open, opId, { good: good.toFixed(3), rejected: rej.toFixed(3) });
       else if (good.gt(0) || rej.gt(0))

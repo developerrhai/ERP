@@ -722,6 +722,16 @@ export class PayrollService {
   // Post Payroll Run to GL
   // -------------------------------------------------------------
   static async postRun(db: Db, runId: string, caller: Caller) {
+    // The journal's debit = credit check runs when the transaction ends, so the journal and the run status
+    // must be written inside one transaction (posting each GL row on its own failed with JOURNAL_UNBALANCED).
+    const root = db as Db & { $transaction?: <T>(fn: (tx: Db) => Promise<T>) => Promise<T> };
+    if (typeof root.$transaction === 'function') {
+      return root.$transaction((tx) => PayrollService.postRunIn(tx, runId, caller));
+    }
+    return PayrollService.postRunIn(db, runId, caller);
+  }
+
+  private static async postRunIn(db: Db, runId: string, caller: Caller) {
     // unpaginated: whole-run/period build: a payroll run, bank file or statutory export needs every row of that run
     const runs = await db.$queryRaw<any[]>`
       SELECT r.*, p."start_date", p."end_date"
@@ -827,7 +837,8 @@ export class PayrollService {
         runId: run.id,
         runNo: run.run_no,
         unitId,
-        periodDate: run.end_date,
+        // a raw date column comes back as a JS Date; the journal needs yyyy-mm-dd text
+        periodDate: run.end_date instanceof Date ? run.end_date.toISOString().slice(0, 10) : String(run.end_date).slice(0, 10),
         totals: {
           gross: totalGross,
           net: totalNet,

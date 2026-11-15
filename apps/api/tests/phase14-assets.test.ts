@@ -318,6 +318,37 @@ describe('allocation, transfer, disposal', () => {
     expect(body(back).status).toBe('RETURNED');
   });
 
+  it('accepts an HR employee id for the person, and rejects one with no login with a 422', async () => {
+    const u = await prisma.user.findFirstOrThrow({ orderBy: { createdAt: 'asc' } });
+    const mk = async (code: string, userId: string | null) => {
+      const r: any[] = await prisma.$queryRawUnsafe(
+        `INSERT INTO employees (emp_code, first_name, last_name, gender, dob, mobile, joining_date, status, user_id) VALUES ($1, 'ALC', $1, 'M', '1990-01-01', $2, '2020-01-01', 'ACTIVE', $3::uuid) RETURNING id::text AS id`,
+        code,
+        `5${code.replace(/\D/g, '').padStart(9, '0')}`.slice(0, 10),
+        userId,
+      );
+      return r[0].id as string;
+    };
+    const tag2 = String(Date.now()).slice(-6);
+    const withLogin = await mk(`ALC-L${tag2}`, null);
+    const noLogin = withLogin;
+    // an employee without a login is a clear 422, never a 500
+    const bad = await call('post', '/assets/allocations', { assetId: s.machine.id, employeeId: noLogin });
+    expect(bad.status, JSON.stringify(bad.body)).toBe(422);
+    expect(JSON.stringify(bad.body)).toContain('no login');
+    await prisma.$executeRawUnsafe(`UPDATE employees SET user_id=$1::uuid WHERE id=$2::uuid`, u.id, withLogin);
+    const ok = await call('post', '/assets/allocations', { assetId: s.machine.id, employeeId: withLogin });
+    expect(ok.status, JSON.stringify(ok.body)).toBe(201);
+    expect(body(ok).employeeId).toBe(u.id);
+    await call('post', `/assets/allocations/${body(ok).id}/return`, {});
+    await prisma.$executeRawUnsafe(`UPDATE employees SET user_id=NULL WHERE id=$1::uuid`, withLogin);
+    const unknown = await call('post', '/assets/allocations', {
+      assetId: s.machine.id,
+      employeeId: '00000000-0000-4000-8000-000000000001',
+    });
+    expect(unknown.status).toBe(422);
+  });
+
   it('moves an asset inside the unit and between units (both sides post)', async () => {
     const t = body(
       await call('post', '/assets/transfers', { assetId: s.machine.id, toLocation: 'Shop 2' }),

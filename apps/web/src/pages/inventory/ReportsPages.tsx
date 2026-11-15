@@ -1,193 +1,75 @@
 // Stock Ageing, Expiry Tracking, Stock Valuation (with the books check, integrity and the GL cut-over) and Barcode scan.
 import { useState } from 'react';
-import { Pager } from '../../components/Pager';
+import { INV_HEADS } from './v40/heads';
+import { InvTabView } from './v40/InvTabView';
+import { useInvTab } from './v40/useInvTab';
 import { useToast } from '../../components/Toast';
 import { toUiError } from '../../lib/errors';
 import {
-  ageingReport,
   cutoverPlan,
   cutoverRun,
-  expiryReport,
   glCompare,
   integrity,
   preflight,
   scanCode,
-  valuationReport,
   type ScanResult,
 } from '../../lib/inventoryApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import {
   dmy,
-  Empty,
   ErrorBox,
   inr,
   PageHead,
   Pill,
-  qty,
   todayIso,
   WarehouseSelect,
 } from './shared';
 import { DateField } from '../../ui/components';
 
 export function StockAgeingPage() {
-  const [page, setPage] = useState(1);
-  const list = useLoad(() => ageingReport({ page }), [page]);
+  const tab = useInvTab('inv-ageing', undefined, INV_HEADS['inv-ageing']);
+  return tab ?? <StockAgeingPageBody />;
+}
+
+function StockAgeingPageBody() {
   return (
     <>
       <PageHead
         title="Stock Ageing"
         sub="How long the stock you hold has been lying in the store, and which items are slow or dead."
       />
-      <ErrorBox message={list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Item</th>
-              <th scope="col">Warehouse</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                On hand
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                0–30 d
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                31–90 d
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                91–180 d
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                180+ d
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Avg age
-              </th>
-              <th scope="col">Movement</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows.length ?? 0) === 0 && !list.loading ? (
-              <Empty cols={9}>No stock yet. Post a receipt or opening stock first.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((r, i) => (
-              <tr key={i}>
-                <td>
-                  {r.itemCode} · {r.itemName}
-                </td>
-                <td>{r.warehouse}</td>
-                <td style={{ textAlign: 'right' }}>{qty(r.onHand)}</td>
-                <td style={{ textAlign: 'right' }}>{qty(r.f030)}</td>
-                <td style={{ textAlign: 'right' }}>{qty(r.f3190)}</td>
-                <td style={{ textAlign: 'right' }}>{qty(r.f91180)}</td>
-                <td style={{ textAlign: 'right' }}>{qty(r.f180Plus)}</td>
-                <td style={{ textAlign: 'right' }}>{r.ageDays} d</td>
-                <td>
-                  <Pill>{r.movement}</Pill>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} size={20} total={list.data?.meta.total ?? 0} onPage={setPage} />
+      <InvTabView pageId="inv-ageing" tab="Ageing Summary" />
     </>
   );
 }
 
 export function ExpiryPage() {
-  const [page, setPage] = useState(1);
-  const [band, setBand] = useState('');
-  const list = useLoad(() => expiryReport({ band, page }), [band, page]);
-  const loss = list.data?.meta.expiredValue;
+  const tab = useInvTab('inv-expiry', undefined, INV_HEADS['inv-expiry']);
+  return tab ?? <ExpiryPageBody />;
+}
+
+function ExpiryPageBody() {
   return (
     <>
       <PageHead
         title="Expiry Tracking"
         sub="Batches that have expired or will soon. Expired stock cannot be issued."
       />
-      <div className="filters">
-        <select
-          aria-label="Band"
-          value={band}
-          onChange={(e) => {
-            setBand(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">All</option>
-          {[
-            ['Expired', 'Expired'],
-            ['Critical', 'Within 30 days'],
-            ['High', '31–60 days'],
-            ['Medium', '61–90 days'],
-            ['Low', 'Over 90 days'],
-          ].map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
-            </option>
-          ))}
-        </select>
-        {typeof loss === 'number' && loss > 0 ? (
-          <span className="notice">Expired stock value: {inr(loss)}</span>
-        ) : null}
-      </div>
-      <ErrorBox message={list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Item</th>
-              <th scope="col">Batch</th>
-              <th scope="col">Warehouse</th>
-              <th scope="col">Expiry</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Days left
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Qty
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Value
-              </th>
-              <th scope="col">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows.length ?? 0) === 0 && !list.loading ? (
-              <Empty cols={8}>No batches with an expiry date in stock.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((r) => (
-              <tr key={`${r.batchId}${r.warehouse}`}>
-                <td>
-                  {r.itemCode} · {r.itemName}
-                </td>
-                <td>{r.batchNo}</td>
-                <td>{r.warehouse}</td>
-                <td>{dmy(r.expiryDate)}</td>
-                <td style={{ textAlign: 'right' }}>{r.daysToExpiry}</td>
-                <td style={{ textAlign: 'right' }}>{qty(r.qty)}</td>
-                <td style={{ textAlign: 'right' }}>{inr(r.value)}</td>
-                <td>
-                  <Pill>{r.band === 'Expired' ? 'Expired' : r.status}</Pill>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} size={20} total={list.data?.meta.total ?? 0} onPage={setPage} />
+      <InvTabView pageId="inv-expiry" tab="Expiry Dashboard" />
     </>
   );
 }
 
 export function ValuationPage({ actions }: { actions: ActionSet }) {
+  const tab = useInvTab('inv-valuation', actions, INV_HEADS['inv-valuation']);
+  return tab ?? <ValuationPageBody actions={actions} />;
+}
+
+function ValuationPageBody({ actions }: { actions: ActionSet }) {
   const toast = useToast();
   const [from, setFrom] = useState(`${todayIso().slice(0, 8)}01`);
   const [to, setTo] = useState(todayIso());
-  const [page, setPage] = useState(1);
-  const list = useLoad(() => valuationReport({ from, to, page }), [from, to, page]);
   const books = useLoad(glCompare, []);
   const [admin, setAdmin] = useState<'pre' | 'int' | 'cut' | null>(null);
   const pre = useLoad(() => (admin === 'pre' ? preflight() : Promise.resolve(null)), [admin]);
@@ -211,7 +93,7 @@ export function ValuationPage({ actions }: { actions: ActionSet }) {
           To <DateField value={to} onChange={(e) => setTo(e.target.value)} />
         </label>
       </div>
-      <ErrorBox message={list.error || err} />
+      <ErrorBox message={err} />
       <div className="card">
         <h3>Stock value vs the books</h3>
         {books.data ? (
@@ -263,56 +145,7 @@ export function ValuationPage({ actions }: { actions: ActionSet }) {
           <p>Loading…</p>
         )}
       </div>
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Item</th>
-              <th scope="col">Warehouse</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Opening
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Receipts
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Issues
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Adjustments
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Closing
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Qty
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows.length ?? 0) === 0 && !list.loading ? (
-              <Empty cols={8}>No stock movement in this period.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((r, i) => (
-              <tr key={i}>
-                <td>
-                  {r.itemCode} · {r.itemName}
-                </td>
-                <td>{r.warehouse}</td>
-                <td style={{ textAlign: 'right' }}>{inr(r.opening)}</td>
-                <td style={{ textAlign: 'right' }}>{inr(r.receipts)}</td>
-                <td style={{ textAlign: 'right' }}>{inr(r.issues)}</td>
-                <td style={{ textAlign: 'right' }}>{inr(r.adjustments)}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <strong>{inr(r.closing)}</strong>
-                </td>
-                <td style={{ textAlign: 'right' }}>{qty(r.closingQty)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} size={20} total={list.data?.meta.total ?? 0} onPage={setPage} />
+      <InvTabView pageId="inv-valuation" tab="Valuation Summary" period={{ from, to }} />
       {actions.controls ? (
         <div className="card">
           <h3>Checks for the administrator</h3>

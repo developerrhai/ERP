@@ -4,6 +4,10 @@
 // must be ticked to continue past a warning. A new supplier is "Pending approval" until it is submitted and
 // approved; a credit-limit increase goes to approval, a decrease applies at once.
 import { useState, type FormEvent } from 'react';
+import { useParams } from 'react-router-dom';
+import { V40Register } from '../sales/V40Register';
+import { useFrame } from '../frame/V40TabFrame';
+import { V40Body } from '../procurement/V40Body';
 import { ErrorMessage } from '../../components/ErrorMessage';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
@@ -48,12 +52,15 @@ const approvalLabel: Record<string, string> = {
 
 export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: ActionSet }) {
   const toast = useToast();
+  const { pageId: routePage = '' } = useParams();
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [dialog, setDialog] = useState<'add' | { credit: Customer } | { bank: Supplier } | null>(
     null,
   );
   const isCustomer = kind === 'CUSTOMER';
+  // Supplier Master inside the V40 tab frame: the V40 tabs and columns (procurement/V40Body.tsx)
+  const v40Suppliers = Boolean(useFrame()) && !isCustomer;
   const load = useLoad<Paged<Customer | Supplier>>(
     () => (isCustomer ? listCustomers({ q, page }) : listSuppliers({ q, page })),
     [kind, q, page],
@@ -93,111 +100,164 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
         />
       </div>
       {load.error ? <ErrorMessage onReload={load.reload}>{load.error}</ErrorMessage> : null}
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Code</th>
-              <th scope="col">Name</th>
-              <th scope="col">GSTIN</th>
-              <th scope="col">Type</th>
-              {isCustomer ? <th scope="col">Credit limit</th> : <th scope="col">Kind</th>}
-              <th scope="col">Approval</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td>
-                  <strong>{r.code}</strong>
-                </td>
-                <td>{r.name}</td>
-                <td>{r.gstin ?? '—'}</td>
-                <td>{REG_TYPES.find((t) => t.value === r.gstRegistrationType)?.label}</td>
-                <td>
-                  {isCustomer
-                    ? (r as Customer).creditLimit === null
-                      ? 'No limit'
-                      : inr((r as Customer).creditLimit)
-                    : (r as Supplier).supplierType === 'CONTRACTOR'
-                      ? 'Contractor'
-                      : 'Material'}
-                </td>
-                <td>
-                  <span
-                    className={`status ${r.approvalStatus === 'APPROVED' ? 'approved' : r.approvalStatus === 'REJECTED' ? 'rejected' : 'pending'}`}
-                  >
-                    {approvalLabel[r.approvalStatus]}
-                  </span>
-                </td>
-                <td>
-                  <div className="actions">
-                    {isCustomer && actions.edit ? (
-                      <button
-                        type="button"
-                        className="btn sm"
-                        aria-label={`Change credit of ${r.code}`}
-                        onClick={() => setDialog({ credit: r as Customer })}
-                      >
-                        Credit
-                      </button>
-                    ) : null}
-                    {!isCustomer && actions.edit ? (
-                      <button
-                        type="button"
-                        className="btn sm"
-                        aria-label={`Bank accounts of ${r.code}`}
-                        onClick={() => setDialog({ bank: r as Supplier })}
-                      >
-                        Bank
-                      </button>
-                    ) : null}
-                    {!isCustomer && actions.submit && r.approvalStatus !== 'APPROVED' ? (
-                      <button
-                        type="button"
-                        className="btn sm primary"
-                        aria-label={`Submit ${r.code} for approval`}
-                        onClick={() => {
-                          submitSupplier(r.id)
-                            .then(() => {
-                              toast(`${r.code} sent for approval.`);
-                              load.reload();
-                            })
-                            .catch((err: unknown) => toast(toUiError(err).message));
-                        }}
-                      >
-                        Submit for Approval
-                      </button>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {load.loading && !load.data ? (
-              <tr className="empty-row">
-                <td colSpan={7}>Loading…</td>
-              </tr>
-            ) : null}
-            {load.data && rows.length === 0 ? (
-              <tr className="empty-row">
-                <td colSpan={7}>
-                  No {isCustomer ? 'customers' : 'suppliers'} yet. Click ＋ Add to create the first
-                  one.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
-      {load.data ? (
-        <Pager
-          page={load.data.meta.page}
-          size={load.data.meta.size}
-          total={load.data.meta.total}
-          onPage={setPage}
+      {v40Suppliers ? (
+        <V40Body
+          pageId="scm-suppliers"
+          actions={actions}
+          reloadKey={load.data}
+          onChanged={load.reload}
+          extraActions={(r) =>
+            actions.edit ? (
+              <button
+                type="button"
+                className="btn sm"
+                aria-label={`Bank accounts of ${String(r.vendorId)}`}
+                onClick={() =>
+                  setDialog({
+                    bank: {
+                      id: String(r.id),
+                      code: String(r.vendorId),
+                      name: String(r.vendorName),
+                    } as Supplier,
+                  })
+                }
+              >
+                Bank
+              </button>
+            ) : null
+          }
         />
-      ) : null}
+      ) : (
+      <V40Register
+        pageId={isCustomer ? routePage : ''}
+        actions={actions}
+        reloadKey={load.data}
+        onChanged={load.reload}
+        rowExtra={(r) =>
+          isCustomer && actions.edit ? (
+            <button
+              type="button"
+              className="btn sm"
+              onClick={() => {
+                const c = rows.find((x) => x.id === r.id);
+                if (c) setDialog({ credit: c as Customer });
+              }}
+            >
+              Credit
+            </button>
+          ) : null
+        }
+        fallback={
+          <>
+            <div className="card table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Code</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">GSTIN</th>
+                    <th scope="col">Type</th>
+                    {isCustomer ? <th scope="col">Credit limit</th> : <th scope="col">Kind</th>}
+                    <th scope="col">Approval</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.id}>
+                      <td>
+                        <strong>{r.code}</strong>
+                      </td>
+                      <td>{r.name}</td>
+                      <td>{r.gstin ?? '—'}</td>
+                      <td>{REG_TYPES.find((t) => t.value === r.gstRegistrationType)?.label}</td>
+                      <td>
+                        {isCustomer
+                          ? (r as Customer).creditLimit === null
+                            ? 'No limit'
+                            : inr((r as Customer).creditLimit)
+                          : (r as Supplier).supplierType === 'CONTRACTOR'
+                            ? 'Contractor'
+                            : 'Material'}
+                      </td>
+                      <td>
+                        <span
+                          className={`status ${r.approvalStatus === 'APPROVED' ? 'approved' : r.approvalStatus === 'REJECTED' ? 'rejected' : 'pending'}`}
+                        >
+                          {approvalLabel[r.approvalStatus]}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="actions">
+                          {isCustomer && actions.edit ? (
+                            <button
+                              type="button"
+                              className="btn sm"
+                              aria-label={`Change credit of ${r.code}`}
+                              onClick={() => setDialog({ credit: r as Customer })}
+                            >
+                              Credit
+                            </button>
+                          ) : null}
+                          {!isCustomer && actions.edit ? (
+                            <button
+                              type="button"
+                              className="btn sm"
+                              aria-label={`Bank accounts of ${r.code}`}
+                              onClick={() => setDialog({ bank: r as Supplier })}
+                            >
+                              Bank
+                            </button>
+                          ) : null}
+                          {!isCustomer && actions.submit && r.approvalStatus !== 'APPROVED' ? (
+                            <button
+                              type="button"
+                              className="btn sm primary"
+                              aria-label={`Submit ${r.code} for approval`}
+                              onClick={() => {
+                                submitSupplier(r.id)
+                                  .then(() => {
+                                    toast(`${r.code} sent for approval.`);
+                                    load.reload();
+                                  })
+                                  .catch((err: unknown) => toast(toUiError(err).message));
+                              }}
+                            >
+                              Submit for Approval
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {load.loading && !load.data ? (
+                    <tr className="empty-row">
+                      <td colSpan={7}>Loading…</td>
+                    </tr>
+                  ) : null}
+                  {load.data && rows.length === 0 ? (
+                    <tr className="empty-row">
+                      <td colSpan={7}>
+                        No {isCustomer ? 'customers' : 'suppliers'} yet. Click ＋ Add to create the
+                        first one.
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+            {load.data ? (
+              <Pager
+                page={load.data.meta.page}
+                size={load.data.meta.size}
+                total={load.data.meta.total}
+                onPage={setPage}
+              />
+            ) : null}
+          </>
+        }
+      />
+      )}
       {dialog === 'add' ? (
         <PartyForm
           kind={kind}

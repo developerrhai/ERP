@@ -252,7 +252,39 @@ describe('Shop Floor', () => {
     });
     renderApp('/m/mfg-shopfloor');
     const ue = userEvent.setup();
-    await ue.click(await screen.findByRole('tab', { name: 'Supervisor dashboard' }));
+    await ue.click(await screen.findByRole('tab', { name: 'Dashboard' }));
     expect((await screen.findAllByText(/No data yet/)).length).toBeGreaterThan(0);
+  });
+
+  it("opens on the V40 dashboard with the Hourly Production bars from real data", async () => {
+    signedIn(owner, {
+      "GET /api/v1/me/permissions": ALL,
+      "GET /api/v1/mfg/work-centers": () => page([]),
+      "GET /api/v1/mfg/downtime-reasons": () => json(200, { data: [] }),
+      "GET /api/v1/mfg/shopfloor/summary": () =>
+        json(200, {
+          data: {
+            date: "2026-11-09",
+            empty: false,
+            oee: [],
+            rejectionPct: "2.5",
+            downtimeMinutes: "30",
+            goodPieces: "120",
+            hourly: [
+              { hour: "8", good: "40" },
+              { hour: "9", good: "80" },
+            ],
+            orders: { Released: 2 },
+            overdue: [],
+          },
+        }),
+    });
+    renderApp("/m/mfg-shopfloor");
+    expect(await screen.findByRole("heading", { name: "Shop Floor Dashboard" })).toBeInTheDocument();
+    const card = await screen.findByRole("region", { name: "Hourly Production" });
+    expect(within(card).getByText("08")).toBeInTheDocument();
+    expect(within(card).getByText("80")).toBeInTheDocument();
+    expect(screen.getByText("2.5%")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Tablet" })).toBeInTheDocument();
   });
 });

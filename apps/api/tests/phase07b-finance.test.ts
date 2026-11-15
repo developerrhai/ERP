@@ -772,7 +772,8 @@ describe('recurring journals and auto-reversal', () => {
         unitId: unit.id,
         name: 'Accrued electricity',
         frequency: 'MONTHLY',
-        nextRun: '2026-10-15',
+        // five days ago: exactly one monthly run is due as of today, whatever today is
+        nextRun: new Date(Date.now() - 5 * 86_400_000).toISOString().slice(0, 10),
         autoPost: true,
         reverseNextDay: true,
         voucherType: 'Provision',
@@ -1451,5 +1452,55 @@ describe('tax registers (checked, never computed)', () => {
     );
     expect(cancel.status).toBe(409);
     expect(errorOf(cancel).code).toBe('TDS_ALREADY_DEPOSITED');
+  });
+});
+
+// ===========================================================================================================
+describe('payment to a P&L account that needs a cost centre', () => {
+  it('takes an optional validated costCentreId and posts it on the expense line', async () => {
+    const { unit } = await freshUnit();
+    const { bankId } = await funded(unit.id, '50000.00');
+    const base5111 = await prisma.account.findUniqueOrThrow({ where: { code: '5111' } });
+    const exp = await prisma.account.create({
+      data: {
+        code: String(40000 + (seq += 1)),
+        name: `CC expense ${rid()}`,
+        parentId: base5111.parentId,
+        rootType: base5111.rootType,
+        normalBalance: base5111.normalBalance,
+        costCenterRequired: true,
+      },
+    });
+    const cc = await prisma.costCenter.create({
+      data: { code: `CC${rid()}`.slice(0, 20), name: 'Plant overhead', unitId: unit.id },
+    });
+    const body = {
+      kind: 'PAYMENT',
+      docDate: today,
+      bankAccountId: bankId,
+      counterAccountId: exp.id,
+      amount: '1200.00',
+      mode: 'NEFT',
+    };
+    // without a cost centre: refused with a field the form can show
+    const missing = await call(owner, 'post', '/finance/payments', body, U(unit.id));
+    expect(missing.status).toBe(422);
+    expect(errorOf(missing).code).toBe('COST_CENTER_REQUIRED');
+    // a made-up id is refused
+    const bad = await call(
+      owner,
+      'post',
+      '/finance/payments',
+      { ...body, costCentreId: '00000000-0000-4000-8000-000000000000' },
+      U(unit.id),
+    );
+    expect(bad.status).toBe(422);
+    // with a valid one it posts and the expense line carries the cost centre
+    const ok = await call(owner, 'post', '/finance/payments', { ...body, costCentreId: cc.id }, U(unit.id));
+    expect(ok.status, JSON.stringify(ok.body)).toBe(200);
+    const lineRow = await prisma.glEntry.findFirstOrThrow({
+      where: { unitId: unit.id, accountId: exp.id },
+    });
+    expect(lineRow.costCenterId).toBe(cc.id);
   });
 });

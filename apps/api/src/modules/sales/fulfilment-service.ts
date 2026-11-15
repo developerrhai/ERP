@@ -15,7 +15,7 @@ import { openItemService } from '../finance/open-items-service';
 import type { Caller } from '../records/service';
 import { D, ZERO, round2, str } from '../inventory/money';
 import type { Dec } from '../inventory/money';
-import { StockService } from '../inventory/stock/stock-service';
+import { StockService, lastMovementDate } from '../inventory/stock/stock-service';
 import { UomService } from '../inventory/uom/uom-service';
 import { concreteUnit } from '../inventory/typed';
 import { makeCrud } from '../procurement/crud';
@@ -324,6 +324,16 @@ export async function postDispatch(tx: Db, id: string, actor: Actor): Promise<vo
   if (so.status !== 'Approved') throw Errors.conflict('The sales order is not approved.');
   const km = await keyMap(tx);
   const lines = await loadLines(tx, DISP_DEF, id);
+  // Say the real reason up front instead of the stock engine's generic backdating message.
+  for (const l of lines) {
+    const last = await lastMovementDate(tx, S(l.item_id), S(d.warehouse_id));
+    if (last && date < last) {
+      const it = await tx.item.findUnique({ where: { id: S(l.item_id) }, select: { code: true } });
+      throw Errors.backdatedPosting(
+        `The dispatch date ${date} is earlier than the last stock movement of ${it?.code ?? 'the item'} in this warehouse (${last}). Change the dispatch date to ${last} or later.`,
+      );
+    }
+  }
   const invByKey = new Map<string, Dec>();
   let total = ZERO;
   for (const l of lines) {

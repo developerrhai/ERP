@@ -104,6 +104,8 @@ approvalService.register(GATE_DOC_TYPE, {
 });
 
 // ------------------------------------------------------------------------------------------ service
+const randomUuidNil = '00000000-0000-0000-0000-000000000000';
+
 export const spineService = {
   // ---------------------------------------------------------------- gate templates / gates
   async templates() {
@@ -301,6 +303,42 @@ export const spineService = {
     return { rows: out, next: rows.length > limit ? new Date(S(page[page.length - 1]!.at)).toISOString() : null };
   },
 
+  /** V40 Global Project History header: project master details + one row per department (documents, events, open work, latest activity). */
+  async projectSummary(caller: Caller, projectId: string): Promise<Record<string, unknown>> {
+    const pr = (
+      await query(
+        prisma,
+        `SELECT p.id, p.code, p.name, p.unit_id, p.status, p.start_date::text AS start_date, p.end_date::text AS end_date, c.name AS customer, trim(e.first_name || ' ' || e.last_name) AS manager,
+                (SELECT count(*)::int FROM project_gates g WHERE g.project_id = p.id) AS gates,
+                (SELECT count(*)::int FROM project_gates g WHERE g.project_id = p.id AND g.state = 'APPROVED') AS gates_done,
+                (SELECT g.name FROM project_gates g WHERE g.project_id = p.id AND g.state <> 'APPROVED' ORDER BY g.seq LIMIT 1) AS phase
+           FROM projects p LEFT JOIN customers c ON c.id = p.customer_id LEFT JOIN employees e ON e.id = p.project_manager_id WHERE p.id = $1::uuid`,
+        projectId,
+      )
+    )[0];
+    if (!pr) throw Errors.notFound('Project not found.');
+    assertPlant(caller, pr.unit_id);
+    const deps = await query(
+      prisma,
+      `WITH ev AS (
+         SELECT e.department_id, e.doc_id, e.doc_no, e.at, e.text FROM project_events e WHERE e.project_id = $1::uuid AND e.unit_id = ANY($2::uuid[]) AND e.department_id IS NOT NULL
+         UNION ALL
+         SELECT me.department_id, me.doc_id, m.doc_no, me.at, coalesce(me.note, me.event) FROM movement_events me JOIN work_movements m ON m.id = me.movement_id
+          WHERE m.project_id = $1::uuid AND m.unit_id = ANY($2::uuid[]) AND me.department_id IS NOT NULL)
+       SELECT d.id::text AS id, d.name AS department, count(DISTINCT ev.doc_id)::int AS documents, count(*)::int AS events,
+              (SELECT count(*)::int FROM work_movements w WHERE w.project_id = $1::uuid AND w.to_department_id = d.id AND w.state IN ('SENT','RECEIVED','ACCEPTED','IN_WORK','WAITING_APPROVAL')) AS open_work,
+              max(ev.at) AS latest_at, (array_agg(ev.text ORDER BY ev.at DESC))[1] AS latest_text
+         FROM ev JOIN departments d ON d.id = ev.department_id GROUP BY d.id, d.name ORDER BY d.name`,
+      projectId,
+      caller.ctx.unitIds,
+    );
+    const done = Number(pr.gates_done), total = Number(pr.gates);
+    return {
+      project: { id: pr.id, code: pr.code, name: pr.name, customer: pr.customer, manager: pr.manager, startDate: pr.start_date, endDate: pr.end_date, status: pr.status, phase: pr.phase ?? (total > 0 ? 'All gates approved' : 'No stage gates yet'), progressPct: total > 0 ? Math.round((done / total) * 100) : null },
+      departments: deps.map((d) => ({ id: d.id, department: d.department, documents: d.documents, events: d.events, open: d.open_work, latestAt: d.latest_at, latestText: d.latest_text })),
+    };
+  },
+
   async options(caller: Caller, q: string): Promise<Row[]> {
     return query(prisma, `SELECT id, code, name, status FROM projects WHERE unit_id = ANY($1::uuid[]) AND ($2 = '' OR code ILIKE $3 OR name ILIKE $3) ORDER BY code LIMIT 20`, caller.ctx.unitIds, q, `%${q}%`);
   },
@@ -311,7 +349,7 @@ export const spineService = {
         FROM sales_orders so JOIN customers c ON c.id = so.customer_id LEFT JOIN projects p ON p.id = so.project_id JOIN units u ON u.id = so.unit_id
        WHERE so.id = $1::uuid AND so.deleted_at IS NULL`, soId))[0];
     if (!so || !caller.ctx.unitIds.includes(S(so.unit_id))) throw Errors.notFound('Order not found.');
-    const lines = await query(prisma, `SELECT l.id, l.line_no, l.item_id, i.name AS item, l.qty, l.dispatched_qty, l.invoiced_qty FROM sales_order_lines l LEFT JOIN items i ON i.id = l.item_id WHERE l.order_id = $1::uuid ORDER BY l.line_no`, soId);
+    const lines = await query(prisma, `SELECT l.id, l.line_no, l.item_id, i.name AS item, i.code AS item_code, l.part_no, l.uom, l.rate, l.discount_pct, l.gst_pct, l.taxable, l.qty, l.dispatched_qty, l.invoiced_qty FROM sales_order_lines l LEFT JOIN items i ON i.id = l.item_id WHERE l.order_id = $1::uuid ORDER BY l.line_no`, soId);
     const lineIds = lines.map((l) => S(l.id));
     const mos = lineIds.length ? await query(prisma, `SELECT m.id, m.number, m.status, m.qty, m.qty_completed, m.qty_received, m.so_line_id FROM mfg_orders m WHERE m.so_line_id = ANY($1::uuid[]) AND m.deleted_at IS NULL`, lineIds) : [];
     const moIds = mos.map((m) => S(m.id));
@@ -325,6 +363,20 @@ export const spineService = {
     const dcs = await query(prisma, `SELECT id, number, status FROM sales_dispatches WHERE order_id = $1::uuid AND deleted_at IS NULL`, soId);
     const invs = await query(prisma, `SELECT id, number, status, grand_total, received_amount FROM sales_invoices WHERE order_id = $1::uuid AND deleted_at IS NULL AND status <> 'Cancelled'`, soId);
     const holders = await query(prisma, `SELECT m.doc_type, m.doc_no, m.state, d.name AS department, m.sent_at FROM work_movements m JOIN departments d ON d.id = m.to_department_id WHERE m.doc_id = $1::uuid AND m.state IN ('SENT','RECEIVED','ACCEPTED','IN_WORK')`, soId);
+    // V40 MRP table: required vs issued (reserved to the order) vs stock in the plant vs on purchase order, per material
+    const mrp = moIds.length
+      ? await query(prisma, `SELECT i.code, i.name AS material, sum(mm.required_qty) AS required, sum(LEAST(mm.issued_qty, mm.required_qty)) AS reserved,
+            coalesce((SELECT sum(b.on_hand) FROM stock_balances b JOIN warehouses w ON w.id = b.warehouse_id WHERE b.item_id = mm.item_id AND w.unit_id = $2::uuid), 0) AS on_hand,
+            coalesce((SELECT sum(pl.qty) FROM purchase_order_lines pl JOIN purchase_orders po ON po.id = pl.po_id WHERE pl.item_id = mm.item_id AND po.project_id = $3::uuid AND po.deleted_at IS NULL), 0) AS purchased,
+            (SELECT string_agg(DISTINCT pr.number, ', ') FROM purchase_requisition_lines rl JOIN purchase_requisitions pr ON pr.id = rl.pr_id WHERE rl.item_id = mm.item_id AND pr.project_id = $3::uuid AND pr.deleted_at IS NULL) AS pr_numbers
+          FROM mfg_order_materials mm JOIN items i ON i.id = mm.item_id WHERE mm.order_id = ANY($1::uuid[]) GROUP BY mm.item_id, i.code, i.name ORDER BY i.name`, moIds, so.unit_id, so.project_id ?? randomUuidNil)
+          .catch(() => [] as Row[])
+      : [];
+    // V40 360 page: every handover of this order (not only the open one) for the Department Movement Journey
+    const journey = await query(prisma, `SELECT m.number, m.state, m.sent_at, m.received_at, m.accepted_at, fd.name AS from_department, td.name AS to_department
+        FROM work_movements m JOIN departments fd ON fd.id = m.from_department_id JOIN departments td ON td.id = m.to_department_id
+       WHERE m.doc_id = $1::uuid ORDER BY m.sent_at, m.id LIMIT 100`, soId);
+    const pendingApprovals = (await query(prisma, `SELECT count(*)::int AS n FROM approval_requests WHERE doc_id = $1::uuid AND status = 'PENDING'`, soId).catch(() => [{ n: 0 }]))[0]?.n ?? 0;
     const ordered = lines.reduce((a, l) => a + N(l.qty), 0);
     const dispatched = lines.reduce((a, l) => a + N(l.dispatched_qty), 0);
     const billed = lines.reduce((a, l) => a + N(l.invoiced_qty), 0);
@@ -362,9 +414,25 @@ export const spineService = {
       stage('invoice', 'Invoice', invs, billed, ordered || null),
       stage('collection', 'Collection', [], invReceived, invTotal || null),
     ];
-    const lineRows = lines.map((l) => ({ lineNo: l.line_no, item: l.item, ordered: N(l.qty), dispatched: N(l.dispatched_qty), invoiced: N(l.invoiced_qty), progressPct: N(l.qty) > 0 ? Math.round((N(l.dispatched_qty) / N(l.qty)) * 1000) / 10 : 0 }));
+    const lineRows = lines.map((l) => ({ lineNo: l.line_no, item: l.item, itemCode: l.item_code, partNo: l.part_no, uom: l.uom, rate: N(l.rate), discountPct: N(l.discount_pct), gstPct: N(l.gst_pct), lineTotal: Math.round(N(l.taxable) * (1 + N(l.gst_pct) / 100) * 100) / 100, ordered: N(l.qty), dispatched: N(l.dispatched_qty), invoiced: N(l.invoiced_qty), progressPct: N(l.qty) > 0 ? Math.round((N(l.dispatched_qty) / N(l.qty)) * 1000) / 10 : 0 }));
     return {
       order: { id: so.id, number: so.number, status: so.status, customer: so.customer_name, customerPo: so.customer_po_no, value: so.grand_total, project: so.project_code ?? null, plant: so.unit_code },
+      identity: {
+        customerPo: so.customer_po_no ?? null,
+        salesOrder: so.number,
+        project: so.project_code ?? null,
+        purchaseOrder: pos.map((x) => S(x.number)).join(', ') || null,
+        manufacturingOrder: mos.map((x) => S(x.number)).join(', ') || null,
+        dcInvoice: [...dcs, ...invs].map((x) => S(x.number)).join(', ') || null,
+      },
+      journey: journey.map((j) => ({ number: j.number, state: j.state, from: j.from_department, to: j.to_department, sentAt: j.sent_at, receivedAt: j.received_at, acceptedAt: j.accepted_at })),
+      mrp: mrp.map((m, i) => {
+        const required = N(m.required), reserved = N(m.reserved), onHand = N(m.on_hand), purchased = N(m.purchased);
+        const shortage = Math.max(0, Math.round((required - reserved - onHand) * 1000) / 1000);
+        return { line: i + 1, code: m.code, material: m.material, required, initial: onHand, reserved, purchased, shortage, pr: m.pr_numbers ?? null, status: shortage === 0 ? 'Covered' : purchased >= shortage ? 'On order' : 'Short' };
+      }),
+      approvalsPending: Number(pendingApprovals),
+      financial: { orderValue: N(so.grand_total), invoiced: invTotal, received: invReceived },
       progressPct: progressPct(parts),
       parts,
       stages,
@@ -492,16 +560,19 @@ export const spineService = {
     return r[0];
   },
   /** Create a Phase 10 draft quotation from the enquiry; the enquiry becomes Quoted. */
-  async toQuotation(caller: Caller, id: string): Promise<Row> {
+  async toQuotation(caller: Caller, id: string, b: { gstPct?: number | string | undefined } = {}): Promise<Row> {
     const e = await spineService.enquiry(caller, id);
     if (!e.customer_id) throw Errors.validation({ customerId: 'Create the customer first, then pick it on the enquiry.' });
     if (!['New', 'Qualified'].includes(S(e.status))) throw Errors.conflict('A quotation was already made, or the enquiry is closed.');
+    // An enquiry line is free text (no item, so no HSN): the GST rate cannot be looked up and must be given.
+    if (b.gstPct === undefined || b.gstPct === null || String(b.gstPct).trim() === '')
+      throw Errors.validation({ gstPct: `No GST rate is known for "${S(e.product)}" (it has no HSN). Enter the GST % (0 to 28) for this item.` });
     const claimed = await query(prisma, `UPDATE sales_enquiries SET status = 'Quoted', version = version + 1 WHERE id = $1::uuid AND status IN ('New','Qualified') RETURNING id`, id);
     if (!claimed[0]) throw Errors.conflict('A quotation is already being made from this enquiry.');
     try {
       const q = await quotationCrud.create(caller, {
         header: { customerId: e.customer_id, notes: `From enquiry ${S(e.number)}` },
-        lines: [{ itemId: null, description: S(e.product), qty: N(e.qty) || 1, uom: 'Nos', rate: 0 }],
+        lines: [{ itemId: null, description: S(e.product), qty: N(e.qty) || 1, uom: 'Nos', rate: 0, gstPct: String(b.gstPct) }],
       } as never);
       const qid = S((q as { id?: string }).id);
       await query(prisma, `UPDATE sales_enquiries SET quotation_id = $2::uuid WHERE id = $1::uuid`, id, qid);

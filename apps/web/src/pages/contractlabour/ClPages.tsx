@@ -6,6 +6,7 @@ import { clApi } from '../../lib/clApi';
 import { saveFile } from '../../lib/docsMailApi';
 import { useLoad } from '../../lib/useLoad';
 import { DateField } from '../../ui/components';
+export { ClCommandPage } from './ClCommandCenter';
 
 const errText = (e: unknown): string => {
   if (e instanceof ApiError) {
@@ -15,7 +16,6 @@ const errText = (e: unknown): string => {
   return 'That did not work.';
 };
 const d = (v: unknown): string => (v ? String(v).slice(0, 10) : '—');
-const TILES: [string, string][] = [['workersOnSite', 'Workers on site'], ['contractorsActive', 'Contractors active'], ['licencesExpiring30', 'Licences expiring (30 days)'], ['wageSheetsPending', 'Wage sheets pending'], ['billsBlocked', 'Bills blocked'], ['incidentsThisMonth', 'Incidents this month']];
 
 function useRun(reloads: (() => void)[]) {
   const toast = useToast();
@@ -28,29 +28,6 @@ function useRun(reloads: (() => void)[]) {
       toast(errText(e));
     }
   };
-}
-
-export function ClCommandPage() {
-  const cc = useLoad(() => clApi.command(), []);
-  const t = cc.data?.tiles ?? {};
-  return (
-    <div className="dash-page">
-      <div className="page-head"><div><h1>Contract Labour Command Center</h1><p className="muted">For the plants you chose.</p></div></div>
-      {cc.error ? <p role="alert">{cc.error}</p> : null}
-      <div className="gate-rail">{TILES.map(([k, l]) => <article key={k} className="panel gate-card"><p className="muted">{l}</p><p style={{ fontSize: '1.8rem' }}><strong>{t[k] ?? 0}</strong></p></article>)}</div>
-      <section className="panel"><h2>Blockers</h2>
-        {(cc.data?.blockers ?? []).map((b) => <p key={b.invoice_no} className="rag rag-red" style={{ display: 'block' }}>{b.invoice_no} · {b.contractor}: {b.block_reason}</p>)}
-        {(cc.data?.blockers ?? []).length === 0 ? <p className="muted">No bill is blocked.</p> : null}</section>
-      <section className="panel"><h2>Headcount by contractor and plant</h2>
-        <table className="register-table"><thead><tr><th>Plant</th><th>Contractor</th><th>Workers</th></tr></thead><tbody>
-          {(cc.data?.headcount ?? []).map((h) => <tr key={`${h.unit_code}${h.contractor}`}><td>{h.unit_code}</td><td>{h.contractor}</td><td>{h.headcount}</td></tr>)}
-          {(cc.data?.headcount ?? []).length === 0 ? <tr><td colSpan={3}>Nobody deployed.</td></tr> : null}
-        </tbody></table></section>
-      <section className="panel"><h2>Expiries in 30 days</h2>
-        {(cc.data?.expiries ?? []).map((e) => <p key={`${e.name}${e.what}`}>{e.name}: {e.what} on {d(e.on_date)}</p>)}
-        {(cc.data?.expiries ?? []).length === 0 ? <p className="muted">Nothing expires soon.</p> : null}</section>
-    </div>
-  );
 }
 
 export function ContractorsPage() {

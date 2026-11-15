@@ -144,37 +144,40 @@ describe('Inventory Transactions (vouchers with lines)', () => {
 });
 
 describe('Batches', () => {
-  it('shows expiry, days left and the quantity still in Quality Inspection', async () => {
+  it('shows the V40 Batch Register columns with the real quantities of the batch', async () => {
     signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/inventory/batches': () =>
+      // the Batch Register tab: V40 columns, real quantities of the batch
+      'GET /api/v1/inventory/v40/inv-batch': () =>
         json(200, {
-          data: [
-            {
-              id: 'b1',
-              itemId: 'i1',
-              itemCode: 'PWD-RED',
-              itemName: 'Red powder',
-              batchNo: 'B-9',
-              mfgDate: '2026-10-01',
-              expiryDate: '2027-10-01',
-              daysToExpiry: 329,
-              qcStatus: 'Released',
-              recalled: false,
-              disposition: null,
-              onHand: 25,
-              qualityInspection: 10,
-              version: 1,
-            },
-          ],
-          meta: { page: 1, size: 20, total: 1 },
+          data: {
+            columns: [
+              { key: 'batchNo', label: 'Batch No', format: 'text' },
+              { key: 'expiryDate', label: 'Expiry Date', format: 'date' },
+              { key: 'batchAvailableQty', label: 'Available Qty', format: 'qty' },
+              { key: 'blockedQty', label: 'Blocked Qty', format: 'qty' },
+              { key: 'qcStatus', label: 'QC Status', format: 'text' },
+              { key: 'actions', label: 'Actions', format: 'open' },
+            ],
+            statuses: [],
+            rows: [
+              {
+                id: 'b1',
+                version: 1,
+                alloc: null,
+                cells: { batchNo: 'B-9', expiryDate: '2027-10-01', batchAvailableQty: 15, blockedQty: 10, qcStatus: 'Released' },
+              },
+            ],
+          },
+          meta: { page: 1, size: 10, total: 1, totals: [] },
         }),
     });
     renderApp('/m/inv-batch');
     await screen.findByRole('heading', { name: 'Batch / Lot Tracking' });
     expect(await screen.findByText('B-9')).toBeInTheDocument();
-    expect(screen.getByText('01-10-2027')).toBeInTheDocument();
-    expect(screen.getByText(/10 in inspection/)).toBeInTheDocument();
+    expect(screen.getByText('01 Oct 2027')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Blocked Qty' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open' })).toBeInTheDocument();
   });
 });
 
@@ -200,26 +203,21 @@ describe('Ledger | Vouchers toggle', () => {
   it('opens on the ledger and the Vouchers tab shows the document list', async () => {
     signedIn(owner, {
       'GET /api/v1/me/permissions': ALL,
-      'GET /api/v1/pages/inv-transactions/records': () =>
+      // the Movement Ledger: V40 columns of the tab, filled from the stock ledger
+      'GET /api/v1/inventory/v40/inv-transactions': () =>
         json(200, {
-          data: [
-            {
-              id: 'l1',
-              code: 'TXN/TAL/26-27/0001',
-              data: {
-                postingDate: '2026-11-06',
-                voucherNo: 'TXN/TAL/26-27/0001',
-                voucherType: 'RECEIPT',
-                item: 'PWD-RED',
-                warehouse: 'TAL-MAIN',
-                qtyIn: 25,
-                qtyOut: 0,
-                value: 3000,
-                balanceQty: 25,
-              },
-            },
-          ],
-          meta: { page: 1, size: 20, total: 1 },
+          data: {
+            columns: [
+              { key: 'txnId', label: 'Transaction ID', format: 'text' },
+              { key: 'txnType', label: 'Transaction Type', format: 'text' },
+              { key: 'itemCode', label: 'Item Code', format: 'text' },
+            ],
+            statuses: [],
+            rows: [
+              { id: null, alloc: null, cells: { txnId: 'TXN/TAL/26-27/0001', txnType: 'RECEIPT', itemCode: 'PWD-RED' } },
+            ],
+          },
+          meta: { page: 1, size: 10, total: 1, totals: [] },
         }),
       'GET /api/v1/inventory/vouchers/transactions': () =>
         json(200, {

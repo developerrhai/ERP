@@ -494,6 +494,15 @@ export const ewayService = {
         )[0]
       )
         throw Errors.conflict('This invoice already has an active e-way bill.');
+      if (
+        (
+          await tx.$queryRawUnsafe<Row[]>(
+            `SELECT 1 FROM eway_bills WHERE ewb_no=$1 AND status='Active' LIMIT 1`,
+            b.ewbNo.trim(),
+          )
+        )[0]
+      )
+        throw Errors.conflict('This e-way bill number is already recorded on another invoice.');
       try {
         const rows = await tx.$queryRawUnsafe<Row[]>(
           `INSERT INTO eway_bills (unit_id, invoice_id, ewb_no, ewb_date, distance_km, valid_until, vehicle_no, transporter, transporter_id, created_by_id)
@@ -526,7 +535,9 @@ export const ewayService = {
         );
         return { id: S(rows[0]?.id), validUntil: valid.toISOString() };
       } catch (e) {
-        if (String((e as Error).message).includes('eway_no_uq'))
+        // Prisma raw queries report a unique violation as P2010 / 23505 without always naming the index
+        const msg = String((e as Error).message);
+        if (msg.includes('eway_no_uq') || msg.includes('23505') || /unique constraint/i.test(msg))
           throw Errors.conflict('This e-way bill number is already recorded.');
         throw e;
       }

@@ -11,6 +11,10 @@ const registryPath = fileURLToPath(
   new URL('../../packages/registry/registry.json', import.meta.url),
 );
 
+const registryV2Path = fileURLToPath(
+  new URL('../../packages/registry/registry.v2.json', import.meta.url),
+);
+
 const port = Number(process.env.VITE_PORT ?? 5173);
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error(`VITE_PORT must be a port number, got "${process.env.VITE_PORT ?? ''}"`);
@@ -21,7 +25,7 @@ const proxy = { '/api': { target: apiTarget, changeOrigin: false } };
 export default defineConfig({
   plugins: [react(), ...(process.env.VITEST ? [] : [VitePWA(pwaPluginOptions)])],
   resolve: {
-    alias: { '@registry': registryPath },
+    alias: { '@registry-v2': registryV2Path, '@registry': registryPath },
   },
   server: {
     port,

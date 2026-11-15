@@ -856,6 +856,7 @@ export function createFinanceRouter(): Router {
       bankAccountId: uuid,
       supplierId: uuid.optional(),
       counterAccountId: uuid.optional(),
+      costCentreId: uuid.optional(),
       toBankAccountId: uuid.optional(),
       amount: moneyStr,
       mode: z.enum(['NEFT', 'RTGS', 'IMPS', 'UPI', 'Cheque', 'Cash']),

@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { achievementPct, alertCrossed, dailyDue, isAdditive, parseDailyCron, ragOf } from '../src/modules/dashboards/calc';
 import { addWorkingDays, isOpen, lateLevel, nextState } from '../src/modules/work/calc';
 import { API, XRW, makeUser, newApp, prisma, signIn, signInOwner, unitIds } from './helpers';
+import { makeDepartment } from './phase2-helpers';
 
 describe('dashboard rules (pure)', () => {
   it('green at 90 %, amber at 75 %, red below', () => {
@@ -79,6 +80,7 @@ describe('plants, menu, home, dashboards and movements (API)', () => {
   let saw = '';
   let van = '';
   const made: string[] = [];
+  const madeDepts: string[] = [];
   const get = (token: string, path: string, h: Record<string, string> = {}) =>
     request(app).get(`${API}${path}`).set('Authorization', `Bearer ${token}`).set(XRW).set(h);
   const send = (method: 'post' | 'put' | 'patch' | 'delete', token: string, path: string, body?: unknown, h: Record<string, string> = {}) =>
@@ -93,6 +95,7 @@ describe('plants, menu, home, dashboards and movements (API)', () => {
     await prisma.$executeRaw`DELETE FROM kpi_targets WHERE kpi_code = 'sales_invoiced_mtd'`;
     await prisma.$executeRaw`DELETE FROM dashboard_tv_tokens`;
     await prisma.$executeRaw`DELETE FROM work_movements WHERE doc_type = 'p2325-test'`;
+    for (const id of madeDepts) await prisma.department.delete({ where: { id } }).catch(() => undefined);
     for (const id of made) {
       await prisma.$executeRaw`DELETE FROM user_preferences WHERE user_id = ${id}::uuid`;
     }
@@ -197,12 +200,15 @@ describe('plants, menu, home, dashboards and movements (API)', () => {
     const depts = (await get(ownerToken, '/work/departments')).body.data as { id: string; name: string }[];
     const production = depts.find((d) => d.name === 'Production')?.id ?? '';
     const salesDept = depts.find((d) => d.name === 'Sales')?.id ?? '';
-    const warehouse = depts.find((d) => d.name === 'Warehouse')?.id ?? '';
+    // a department of its own that no user belongs to (the real Warehouse gets users from other test files)
+    const emptyDept = await makeDepartment();
+    madeDepts.push(emptyDept.id);
+    const warehouse = emptyDept.id;
     expect(production).not.toBe('');
     const doc = randomUUID();
     const h = { 'X-Unit-Id': tal };
 
-    // no user in the target department for a plant: the Warehouse has nobody in this test database -> refused
+    // no user in the target department for a plant: the new department has nobody -> refused
     const empty = await send('post', ownerToken, '/work/movements', { docType: 'p2325-test', docId: randomUUID(), fromDepartmentId: salesDept, toDepartmentId: warehouse }, h);
     expect(empty.status).toBe(422);
     expect(JSON.stringify(empty.body)).toMatch(/no active user/);
@@ -220,6 +226,21 @@ describe('plants, menu, home, dashboards and movements (API)', () => {
     // it shows under Production's "To Receive", not under Sales
     const inbox = await get(prodTok, '/work/inbox?tab=receive', h);
     expect(inbox.body.data.rows.map((r: { id: string }) => r.id)).toContain(id);
+    // V40 Approval Inbox views: Pending (not yet accepted) for the target, open for the sender under "sent"
+    const pending = await get(prodTok, '/work/inbox?tab=pending', h);
+    expect(pending.body.data.rows.map((r: { id: string }) => r.id)).toContain(id);
+    expect((await get(salesTok, '/work/inbox?tab=pending', h)).body.data.rows.map((r: { id: string }) => r.id)).not.toContain(id);
+    expect((await get(salesTok, '/work/inbox?tab=sent', h)).body.data.rows.map((r: { id: string }) => r.id)).toContain(id);
+    // "all" departments: Owner sees every movement, a department user only their own
+    expect((await get(ownerToken, '/work/inbox?tab=pending&dept=all', h)).body.data.rows.map((r: { id: string }) => r.id)).toContain(id);
+    expect((await get(salesTok, '/work/inbox?tab=pending&dept=all', h)).body.data.rows.map((r: { id: string }) => r.id)).not.toContain(id);
+    // counters for the department mailbox cards: one pending receipt for Production, none for Sales
+    const cProd = await get(prodTok, '/work/inbox/counts', h);
+    expect(cProd.body.data.pendingReceipt).toBeGreaterThanOrEqual(1);
+    expect(cProd.body.data.needsAction).toBeGreaterThanOrEqual(1);
+    expect((await get(salesTok, '/work/inbox/counts', h)).body.data.pendingReceipt).toBe(0);
+    expect((await get(salesTok, '/work/inbox/counts', h)).body.data.sentWaiting).toBeGreaterThanOrEqual(1);
+    expect((await get(prodTok, '/work/inbox?tab=open', h)).body.data.rows.map((r: { id: string }) => r.id)).toContain(id);
     // Sales cannot receive it
     const wrong = await send('post', salesTok, `/work/movements/${id}/receive`, {}, h);
     expect(wrong.status).toBe(403);
@@ -233,6 +254,10 @@ describe('plants, menu, home, dashboards and movements (API)', () => {
     const dup = await send('post', prodTok, `/work/movements/${id}/receive`, {}, h);
     expect(dup.status).toBe(409);
     expect(JSON.stringify(dup.body)).toMatch(/Already received by/);
+    // the Audit view lists the events of the department's movements
+    const audit = await get(prodTok, '/work/audit', h);
+    expect(audit.status).toBe(200);
+    expect((audit.body.data as { event: string; number: string }[]).some((e) => e.event === 'RECEIVE')).toBe(true);
     // return needs a real reason
     const shortReason = await send('post', prodTok, `/work/movements/${id}/return`, { reason: 'no' }, h);
     expect(shortReason.status).toBe(422);
@@ -249,6 +274,7 @@ describe('plants, menu, home, dashboards and movements (API)', () => {
     const ret = await send('post', prodTok, `/work/movements/${id}/return`, { reason: 'Drawing is missing the revision' }, h);
     expect(ret.status, JSON.stringify(ret.body)).toBe(200);
     expect(ret.body.data.state).toBe('RETURNED');
+    expect((await get(prodTok, '/work/inbox?tab=completed', h)).body.data.rows.map((r: { id: string }) => r.id)).toContain(id);
     const after = await get(ownerToken, '/work/docs/p2325-test/' + doc + '/movement', h);
     const open = (after.body.data.movements as { state: string; to_department: string }[]).filter((m) => m.state === 'SENT');
     expect(open).toHaveLength(1);

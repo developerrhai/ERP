@@ -1,6 +1,9 @@
 // Batch / Lot, Serial Number and Bin masters (Phase 8). Batches and serials are created by stock postings; here they are
 // found, quality-controlled (Pending QC / Released / On Hold / Rejected), extended, recalled and traced.
 import { useState } from 'react';
+import { INV_HEADS } from './v40/heads';
+import { InvTabView } from './v40/InvTabView';
+import { useInvTab } from './v40/useInvTab';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
 import { useToast } from '../../components/Toast';
@@ -13,9 +16,7 @@ import {
   createBin,
   deleteBin,
   getBatch,
-  listBatches,
   listBins,
-  listSerials,
   serialHistory,
   updateBin,
   type BatchDetail,
@@ -36,121 +37,37 @@ const DISPOSITIONS = [
 ];
 
 export function BatchesPage({ actions }: { actions: ActionSet }) {
-  const [page, setPage] = useState(1);
-  const [q, setQ] = useState('');
-  const [qc, setQc] = useState('');
-  const [stockOnly, setStockOnly] = useState(true);
-  const list = useLoad(
-    () => listBatches({ page, q, qcStatus: qc, withStockOnly: stockOnly }),
-    [page, q, qc, stockOnly],
-  );
+  const tab = useInvTab('inv-batch', actions, INV_HEADS['inv-batch']);
+  return tab ?? <BatchesPageBody actions={actions} />;
+}
+
+function BatchesPageBody({ actions }: { actions: ActionSet }) {
   const [open, setOpen] = useState<string | null>(null);
+  const [refresh, setRefresh] = useState(0);
   return (
     <>
       <PageHead
         title="Batch / Lot Tracking"
         sub="Every batch with its dates, quality status and stock. Batches are created when stock is received."
       />
-      <div className="filters">
-        <input
-          aria-label="Search"
-          placeholder="Search batch or item"
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setPage(1);
-          }}
-        />
-        <select
-          aria-label="Quality status"
-          value={qc}
-          onChange={(e) => {
-            setQc(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">All quality statuses</option>
-          {['Pending QC', 'Released', 'On Hold', 'Rejected'].map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={stockOnly}
-            onChange={(e) => {
-              setStockOnly(e.target.checked);
-              setPage(1);
-            }}
-          />{' '}
-          Only batches in stock
-        </label>
-      </div>
-      <ErrorBox message={list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Batch</th>
-              <th scope="col">Item</th>
-              <th scope="col">Made</th>
-              <th scope="col">Expiry</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                In stock
-              </th>
-              <th scope="col">Quality</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows.length ?? 0) === 0 && !list.loading ? (
-              <Empty cols={7}>
-                No batches yet. They appear when batch-tracked stock is received.
-              </Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((b) => (
-              <tr key={b.id}>
-                <td>
-                  <strong>{b.batchNo}</strong>
-                  {b.recalled ? <span className="status cancelled"> Recalled</span> : null}
-                </td>
-                <td>
-                  {b.itemCode} · {b.itemName}
-                </td>
-                <td>{dmy(b.mfgDate)}</td>
-                <td>
-                  {dmy(b.expiryDate)}
-                  {b.daysToExpiry !== null ? (
-                    <small> ({b.daysToExpiry <= 0 ? 'expired' : `${b.daysToExpiry} days`})</small>
-                  ) : null}
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  {qty(b.onHand)}
-                  {b.qualityInspection > 0 ? (
-                    <small> ({qty(b.qualityInspection)} in inspection)</small>
-                  ) : null}
-                </td>
-                <td>
-                  <Pill>{b.qcStatus}</Pill>
-                </td>
-                <td>
-                  <button type="button" className="btn sm" onClick={() => setOpen(b.id)}>
-                    Open
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} size={20} total={list.data?.meta.total ?? 0} onPage={setPage} />
+      <InvTabView
+        pageId="inv-batch"
+        tab="Batch Register"
+        perms={actions}
+        refresh={refresh}
+        rowAction={(row) => (
+          <button type="button" className="btn sm" onClick={() => row.id && setOpen(row.id)}>
+            Open
+          </button>
+        )}
+      />
       {open ? (
         <BatchDialog
           id={open}
           actions={actions}
           onClose={() => {
             setOpen(null);
-            list.reload();
+            setRefresh((n) => n + 1);
           }}
         />
       ) : null}
@@ -340,10 +257,11 @@ function BatchDialog({
 }
 
 export function SerialsPage() {
-  const [page, setPage] = useState(1);
-  const [q, setQ] = useState('');
-  const [status, setStatus] = useState('');
-  const list = useLoad(() => listSerials({ page, q, status }), [page, q, status]);
+  const tab = useInvTab('inv-serial', undefined, INV_HEADS['inv-serial']);
+  return tab ?? <SerialsPageBody />;
+}
+
+function SerialsPageBody() {
   const [open, setOpen] = useState<string | null>(null);
   const hist = useLoad(() => (open ? serialHistory(open) : Promise.resolve(null)), [open]);
   return (
@@ -352,71 +270,15 @@ export function SerialsPage() {
         title="Serial Number Tracking"
         sub="Where every serial-numbered unit is, and everything that happened to it."
       />
-      <div className="filters">
-        <input
-          aria-label="Search"
-          placeholder="Search serial or item"
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setPage(1);
-          }}
-        />
-        <select
-          aria-label="Status"
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">All statuses</option>
-          {['In Stock', 'Reserved', 'In Transit', 'Issued', 'Returned', 'Scrapped'].map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
-      </div>
-      <ErrorBox message={list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Serial</th>
-              <th scope="col">Item</th>
-              <th scope="col">Warehouse</th>
-              <th scope="col">Status</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows.length ?? 0) === 0 && !list.loading ? (
-              <Empty cols={5}>
-                No serial numbers yet. They appear when serial-tracked stock is received.
-              </Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((s) => (
-              <tr key={s.id}>
-                <td>
-                  <strong>{s.serialNo}</strong>
-                </td>
-                <td>
-                  {s.itemCode} · {s.itemName}
-                </td>
-                <td>{s.warehouse ?? '—'}</td>
-                <td>
-                  <Pill>{s.status}</Pill>
-                </td>
-                <td>
-                  <button type="button" className="btn sm" onClick={() => setOpen(s.id)}>
-                    History
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} size={20} total={list.data?.meta.total ?? 0} onPage={setPage} />
+      <InvTabView
+        pageId="inv-serial"
+        tab="Serial Register"
+        rowAction={(row) => (
+          <button type="button" className="btn sm" onClick={() => row.id && setOpen(row.id)}>
+            History
+          </button>
+        )}
+      />
       {open ? (
         <Modal
           title={hist.data ? `Serial ${hist.data.serialNo}` : 'Serial'}

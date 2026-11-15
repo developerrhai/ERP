@@ -340,6 +340,15 @@
         "max": 99999999999999
       },
       {
+        "key": "usedCapacity",
+        "label": "Used Capacity",
+        "type": "qty",
+        "required": false,
+        "readOnly": true,
+        "min": 0,
+        "max": 99999999999999
+      },
+      {
         "key": "dockDoors",
         "label": "Dock Doors",
         "type": "qty",
@@ -389,6 +398,7 @@
       "address",
       "manager",
       "totalCapacity",
+      "usedCapacity",
       "dockDoors",
       "operatingHours",
       "temperatureZone",

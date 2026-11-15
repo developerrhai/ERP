@@ -6,6 +6,7 @@ import { Drawer } from '../../components/Drawer';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { ScreenFormModal } from './ScreenFormModal';
+import { MoveForwardDialog } from '../../components/MoveForward';
 import { ShelfBinsPanel } from './ShelfBinsPanel';
 import { DetailSections } from './DetailSections';
 import { ApiError } from '../../lib/api';
@@ -87,6 +88,7 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
   const [open, setOpen] = useState<OpenState | null>(null);
+  const [movingRow, setMovingRow] = useState<ScreenRow | null>(null);
   const [formMode, setFormMode] = useState<{ editId?: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const toast = useToast();
@@ -223,16 +225,17 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
               {cols.map((c) => (
                 <th key={c.key}>{c.label}</th>
               ))}
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading && !data ? (
               <tr className="empty-row">
-                <td colSpan={Math.max(cols.length, 1)}>Loading…</td>
+                <td colSpan={cols.length + 1}>Loading…</td>
               </tr>
             ) : rows.length === 0 ? (
               <tr className="empty-row">
-                <td colSpan={Math.max(cols.length, 1)}>
+                <td colSpan={cols.length + 1}>
                   {query
                     ? `No ${meta?.things ?? 'records'} match your search.`
                     : `No ${meta?.things ?? 'records'} yet. Press ＋ Add to create the first one.`}
@@ -246,12 +249,27 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
                       <Cell v={r[c.key]} col={c} />
                     </td>
                   ))}
+                  <td>
+                    <button
+                      type="button"
+                      className="btn sm primary"
+                      aria-label={`Move Forward ${docNoOf(r) ?? ''}`.trim()}
+                      title="Move this record to the next department"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMovingRow(r);
+                      }}
+                    >
+                      Move Forward
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+      {movingRow ? <MoveForwardDialog docType={pageId} docId={movingRow.id} docNo={docNoOf(movingRow)} onClose={() => setMovingRow(null)} onMoved={() => setMovingRow(null)} /> : null}
       <nav className="v8-pager" aria-label="Pagination">
         <span>
           Showing {from}–{to} of {meta ? totalLabel(meta.total, meta.totalIsEstimate) : '…'}

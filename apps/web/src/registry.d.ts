@@ -27,3 +27,9 @@ declare module '@registry' {
   const registry: Registry;
   export default registry;
 }
+
+// The V40 page list (packages/registry/registry.v2.json, extracted from the approved V40 file): tab names per page.
+declare module '@registry-v2' {
+  const data: { pages: { id: string; title: string; family: string; tabs: string[]; fields: string[]; buttons: string[] }[] };
+  export default data;
+}

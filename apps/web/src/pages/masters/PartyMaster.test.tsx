@@ -28,6 +28,19 @@ describe('Customer Master', () => {
     let saved: unknown = null;
     signedIn(owner, {
       'GET /api/v1/me/permissions': perms,
+      'GET /api/v1/sales/v40/crm-customer360': () =>
+        json(200, {
+          data: [],
+          meta: {
+            page: 1,
+            size: 20,
+            total: 0,
+            columns: [{ key: 'c0', label: 'Customer Company', type: 'text', source: true }],
+            panel: null,
+            audit: false,
+            noSource: [],
+          },
+        }),
       'GET /api/v1/customers': empty,
       'GET /api/v1/statutory/gstin/27AAPFU0939F1ZV': () =>
         json(200, {
@@ -50,7 +63,7 @@ describe('Customer Master', () => {
     renderApp('/m/crm-customer360');
     const ue = userEvent.setup();
     await screen.findByRole('heading', { name: 'Customer Master' });
-    expect(await screen.findByText(/No customers yet/)).toBeInTheDocument();
+    expect(await screen.findByText(/Nothing here yet for this view/)).toBeInTheDocument();
     await ue.click(screen.getByRole('button', { name: /Add Customer/ }));
     const dialog = screen.getByRole('dialog');
     await ue.type(within(dialog).getByLabelText('Name *'), 'Sawant Engineering');
@@ -74,6 +87,19 @@ describe('Customer Master', () => {
   it('shows the checksum message for a typing mistake and a blocking duplicate disables Save', async () => {
     signedIn(owner, {
       'GET /api/v1/me/permissions': perms,
+      'GET /api/v1/sales/v40/crm-customer360': () =>
+        json(200, {
+          data: [],
+          meta: {
+            page: 1,
+            size: 20,
+            total: 0,
+            columns: [{ key: 'c0', label: 'Customer Company', type: 'text', source: true }],
+            panel: null,
+            audit: false,
+            noSource: [],
+          },
+        }),
       'GET /api/v1/customers': empty,
       'GET /api/v1/statutory/gstin/27AAPFU0939F1ZO': () =>
         json(200, {
@@ -120,29 +146,22 @@ describe('Supplier Master', () => {
     let submitted = false;
     signedIn(owner, {
       'GET /api/v1/me/permissions': perms,
-      'GET /api/v1/suppliers': () =>
+      // inside the V40 tab frame the Supplier Master reads the V40 register (procurement/v40-view.ts)
+      'GET /api/v1/scm/v40/supplier': () =>
         json(200, {
           data: [
             {
               id: 's1',
-              code: 'SUP/00001',
-              name: 'Shivam Test',
-              legalName: null,
-              gstRegistrationType: 'REGULAR',
-              gstin: '27AAPFU0939F1ZV',
-              pan: 'AAPFU0939F',
-              stateCode: '27',
-              currencyCode: 'INR',
+              vendorId: 'SUP/00001',
+              vendorName: 'Shivam Test',
+              gstNumber: '27AAPFU0939F1ZV',
               approvalStatus: 'PENDING',
               status: 'ACTIVE',
               version: 1,
               supplierType: 'CONTRACTOR',
-              msmeUdyamNo: null,
-              msmeCategory: null,
-              msmeActivity: null,
-              msmeAgreedDays: null,
-              msme45dayApplies: null,
-              purchaseHold: false,
+              contactPerson: 'Asha',
+              mobile: '9876543210',
+              qualityRating: '82',
             },
           ],
           meta: { page: 1, size: 20, total: 1 },
@@ -155,10 +174,11 @@ describe('Supplier Master', () => {
     renderApp('/m/scm-suppliers');
     const ue = userEvent.setup();
     expect(await screen.findByText('SUP/00001')).toBeInTheDocument();
-    expect(screen.getByText('Pending approval')).toBeInTheDocument();
-    expect(screen.getByText('Contractor')).toBeInTheDocument();
-    await ue.click(screen.getByRole('button', { name: 'Submit SUP/00001 for approval' }));
-    expect(await screen.findByText('SUP/00001 sent for approval.')).toBeInTheDocument();
+    expect(screen.getByText('Pending Approval')).toBeInTheDocument();
+    expect(screen.getByText('Asha')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Quality Rating' })).toBeInTheDocument();
+    await ue.click(screen.getByRole('button', { name: 'Submit SUP/00001' }));
+    expect(await screen.findByText('Submitted SUP/00001')).toBeInTheDocument();
     expect(submitted).toBe(true);
   });
 });

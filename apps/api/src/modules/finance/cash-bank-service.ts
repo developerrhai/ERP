@@ -37,6 +37,8 @@ export interface PaymentInput {
   employeeId?: string;
   /** RECEIPT / PAYMENT of another kind (refund, interest, loan, bank charge ...): the other side's ledger account */
   counterAccountId?: string;
+  /** Cost centre of the other side's line (a P&L account that requires one). Validated; not used for supplier payments or transfers. */
+  costCentreId?: string;
   toBankAccountId?: string;
   amount: string;
   mode: Mode;
@@ -327,6 +329,21 @@ export const cashBankService = {
           if (counter.id === bank.accountId)
             throw Errors.validation({ counterAccountId: 'Choose a different account.' });
           purpose = 'OTHER';
+          let costCenterId: string | undefined;
+          if (input.costCentreId) {
+            const cc = await tx.costCenter.findFirst({
+              where: { id: input.costCentreId, deletedAt: null, status: 'Active' },
+            });
+            if (!cc || cc.isGroup)
+              throw Errors.validation({ costCentreId: 'Choose an active, non-group cost centre.' });
+            if (cc.unitId && cc.unitId !== unitId)
+              throw Errors.validation({ costCentreId: 'This cost centre belongs to another unit.' });
+            costCenterId = cc.id;
+          } else if (counter.costCenterRequired) {
+            throw FinErrors.costCenterRequired(`Account ${counter.code} needs a cost centre.`, {
+              costCentreId: 'Choose a cost centre.',
+            });
+          }
           if (input.kind === 'RECEIPT') {
             voucherType = 'Receipt';
             if (input.mode === 'Cash') {
@@ -358,6 +375,7 @@ export const cashBankService = {
               accountId: counter.id,
               debit: '0.00',
               credit: amount.toFixed(2),
+              ...(costCenterId ? { costCenterId } : {}),
               narration: input.narration ?? 'Receipt',
             });
           } else {
@@ -366,6 +384,7 @@ export const cashBankService = {
               accountId: counter.id,
               debit: amount.toFixed(2),
               credit: '0.00',
+              ...(costCenterId ? { costCenterId } : {}),
               narration: input.narration ?? 'Payment',
             });
             lines.push({

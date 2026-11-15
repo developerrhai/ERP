@@ -1,0 +1,102 @@
+{
+ "id": "dept-work-warehouse",
+ "role": "super",
+ "at": "2026-11-14T13:38:11.037Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [
+     "Movement",
+     "Document / Record",
+     "Route",
+     "Status",
+     "Approval",
+     "Actions"
+    ],
+    "fields": [],
+    "buttons": [
+     "← Return",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Open Warehouse Inbox",
+     "New Message / Attach Document",
+     "Approvals",
+     "Plant Flow",
+     "Workflow Matrix"
+    ],
+    "cards": [
+     "Workflow Rules Affecting Warehouse"
+    ],
+    "filters": [],
+    "badges": [
+     "Warehouse"
+    ],
+    "rows": 1,
+    "textLen": 2043,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [
+     "Movement",
+     "Document / Record",
+     "Route",
+     "Status",
+     "Approval",
+     "Actions"
+    ],
+    "fields": [],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "Open Warehouse Inbox",
+     "New Message / Attach Document",
+     "Plant Flow",
+     "Workflow Matrix",
+     "Complete",
+     "History",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [
+     "Pending Receipt0Pending Acceptance0Work / Rework1Approval0Re",
+     "Pending Receipt0",
+     "Pending Acceptance0",
+     "Work / Rework1",
+     "Approval0",
+     "Ready to Move1",
+     "Sent / Waiting0",
+     "Workflow Rules Affecting Warehouse"
+    ],
+    "filters": [],
+    "badges": [
+     "Warehouse"
+    ],
+    "rows": 1,
+    "textLen": 1603,
+    "sideways": false
+   }
+  }
+ }
+}

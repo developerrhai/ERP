@@ -1,0 +1,18 @@
+/* V40 tab content of the CRM and Sales pages (V40Register.tsx). */
+.sv40 { display: flex; flex-direction: column; gap: 10px; }
+.sv40-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sv40-toolbar input[type='text'], .sv40-toolbar input:not([type]) { min-width: 220px; }
+.sv40-count { margin-left: auto; font-size: 12px; color: var(--muted, #667); }
+.sv40-bulk { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 10px; border: 1px solid var(--line, #dde); border-radius: 8px; background: var(--soft, #f6f7fb); }
+.sv40-bulk span { font-size: 12px; margin-right: 6px; }
+.sv40-table th, .sv40-table td { white-space: nowrap; }
+.sv40-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.sv40-table .row-actions { display: flex; gap: 4px; flex-wrap: nowrap; }
+.sv40-table tr.selected td { background: var(--row-selected, #eef3ff); }
+.sv40-pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+.sv40-panel h3 { margin: 12px 0 6px; font-size: 14px; }
+.sv40-nosource { font-size: 12px; }
+@media (max-width: 480px) {
+  .sv40-toolbar > * { flex: 1 1 100%; }
+  .sv40-count { margin-left: 0; }
+}

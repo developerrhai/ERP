@@ -1,0 +1,557 @@
+{
+ "id": "maint-part-movement",
+ "role": "super",
+ "at": "2026-11-14T15:08:14.528Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [
+     "Movement / Work Order",
+     "Machine / Part",
+     "Custody Route",
+     "Type / Condition",
+     "Quantity",
+     "Approval / Receipt",
+     "Dates",
+     "Actions"
+    ],
+    "fields": [],
+    "buttons": [
+     "Dashboard",
+     "Full 360°",
+     "Move Next Controlled Step",
+     "← Return",
+     "Send Email",
+     "Word",
+     "Excel",
+     "PDF",
+     "My Approvals",
+     "+ Add Movement",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Project History",
+     "Maintenance Parts (8)",
+     "Process Movement (8)",
+     "Department Movement (8)",
+     "Plant-to-Plant (8)",
+     "Send for Approval",
+     "Edit",
+     "Email",
+     "Move Forward"
+    ],
+    "cards": [],
+    "filters": [
+     "Select Sales Order",
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 8,
+    "textLen": 4848,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit"
+    ],
+    "columns": [
+     "Movement / Work Order",
+     "Machine / Part",
+     "Custody Route",
+     "Type / Condition",
+     "Quantity",
+     "Approval / Receipt",
+     "Dates",
+     "Actions"
+    ],
+    "fields": [
+     "Department Filter",
+     "Search movement or document number"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "PDF",
+     "My Approvals",
+     "+ Add Movement",
+     "Maintenance Parts (0)",
+     "Process Movement (0)",
+     "Department Movement (3)",
+     "Plant-to-Plant (0)",
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 1,
+    "textLen": 1061,
+    "sideways": false
+   }
+  },
+  "erp-only: Movement Register": {
+   "erp": {
+    "tabs": [
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit"
+    ],
+    "columns": [
+     "Movement / Work Order",
+     "Machine / Part",
+     "Custody Route",
+     "Type / Condition",
+     "Quantity",
+     "Approval / Receipt",
+     "Dates",
+     "Actions"
+    ],
+    "fields": [
+     "Department Filter",
+     "Search movement or document number"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "PDF",
+     "My Approvals",
+     "+ Add Movement",
+     "Maintenance Parts (0)",
+     "Process Movement (0)",
+     "Department Movement (3)",
+     "Plant-to-Plant (0)",
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 1,
+    "textLen": 1061,
+    "sideways": false
+   }
+  },
+  "erp-only: Pending Receipt": {
+   "erp": {
+    "tabs": [
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit"
+    ],
+    "columns": [
+     "Movement / Work Order",
+     "Machine / Part",
+     "Custody Route",
+     "Type / Condition",
+     "Quantity",
+     "Approval / Receipt",
+     "Dates",
+     "Actions"
+    ],
+    "fields": [
+     "Department Filter",
+     "Search movement or document number"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "PDF",
+     "My Approvals",
+     "+ Add Movement",
+     "Maintenance Parts (0)",
+     "Process Movement (0)",
+     "Department Movement (3)",
+     "Plant-to-Plant (0)",
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 1,
+    "textLen": 1061,
+    "sideways": false
+   }
+  },
+  "erp-only: In Custody": {
+   "erp": {
+    "tabs": [
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit"
+    ],
+    "columns": [
+     "Movement / Work Order",
+     "Machine / Part",
+     "Custody Route",
+     "Type / Condition",
+     "Quantity",
+     "Approval / Receipt",
+     "Dates",
+     "Actions"
+    ],
+    "fields": [
+     "Department Filter",
+     "Search movement or document number"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "PDF",
+     "My Approvals",
+     "+ Add Movement",
+     "Maintenance Parts (0)",
+     "Process Movement (0)",
+     "Department Movement (3)",
+     "Plant-to-Plant (0)",
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 1,
+    "textLen": 1061,
+    "sideways": false
+   }
+  },
+  "erp-only: Returned": {
+   "erp": {
+    "tabs": [
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit"
+    ],
+    "columns": [
+     "Movement / Work Order",
+     "Machine / Part",
+     "Custody Route",
+     "Type / Condition",
+     "Quantity",
+     "Approval / Receipt",
+     "Dates",
+     "Actions"
+    ],
+    "fields": [
+     "Department Filter",
+     "Search movement or document number"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "PDF",
+     "My Approvals",
+     "+ Add Movement",
+     "Maintenance Parts (0)",
+     "Process Movement (0)",
+     "Department Movement (3)",
+     "Plant-to-Plant (0)",
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 1,
+    "textLen": 1061,
+    "sideways": false
+   }
+  },
+  "erp-only: Completed": {
+   "erp": {
+    "tabs": [
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit"
+    ],
+    "columns": [
+     "Movement / Work Order",
+     "Machine / Part",
+     "Custody Route",
+     "Type / Condition",
+     "Quantity",
+     "Approval / Receipt",
+     "Dates",
+     "Actions"
+    ],
+    "fields": [
+     "Department Filter",
+     "Search movement or document number"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "PDF",
+     "My Approvals",
+     "+ Add Movement",
+     "Maintenance Parts (0)",
+     "Process Movement (0)",
+     "Department Movement (3)",
+     "Plant-to-Plant (0)",
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 1,
+    "textLen": 1061,
+    "sideways": false
+   }
+  },
+  "erp-only: Audit": {
+   "erp": {
+    "tabs": [
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit"
+    ],
+    "columns": [
+     "When",
+     "Movement",
+     "Document",
+     "Event",
+     "Department",
+     "By",
+     "Note"
+    ],
+    "fields": [
+     "Department Filter",
+     "Search movement or document number"
+    ],
+    "buttons": [
+     "⚙ Settings",
+     "← Return",
+     "Send Email",
+     "Excel",
+     "Industry PDF",
+     "Word",
+     "Print",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Edit",
+     "Delete",
+     "Documents",
+     "Submit Approval",
+     "Approval Queue",
+     "Move Forward",
+     "Project History",
+     "Approvals",
+     "Reports",
+     "Analytics & Graphs",
+     "Audit Trail",
+     "360° Tracking",
+     "PDF",
+     "My Approvals",
+     "+ Add Movement",
+     "Maintenance Parts (0)",
+     "Process Movement (0)",
+     "Department Movement (3)",
+     "Plant-to-Plant (0)",
+     "Movement Register",
+     "Pending Receipt",
+     "In Custody",
+     "Returned",
+     "Completed",
+     "Audit",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 1,
+    "textLen": 1009,
+    "sideways": false
+   }
+  }
+ }
+}

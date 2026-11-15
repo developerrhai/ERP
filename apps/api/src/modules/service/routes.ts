@@ -13,6 +13,10 @@ import { ticketService } from './ticket-service';
 import { visitService } from './visit-service';
 import { amcService } from './amc-service';
 import { warrantyService } from './warranty-service';
+import { technicianService } from './technician-service';
+import { z } from 'zod';
+import { validate, validated } from '../../core/http/validate';
+import { requirePageAction } from '../../core/rbac/access';
 
 export const serviceRouter = Router();
 
@@ -194,6 +198,60 @@ serviceRouter.get(
       unassignedTickets: tickets.filter((t) => !t.assigned_technician_id).map(norm),
       lanes,
     });
+  }),
+);
+
+
+const techBody = z
+  .object({
+    employeeId: z.string().uuid('Choose the employee.').optional(),
+    territoryIds: z.array(z.string().uuid()).max(50).optional(),
+    maxOpenJobs: z.number().int().min(1).max(50).optional(),
+    vanWarehouseId: z.string().uuid().nullable().optional(),
+    homeLat: z.number().min(-90).max(90).nullable().optional(),
+    homeLng: z.number().min(-180).max(180).nullable().optional(),
+    skills: z
+      .array(z.object({ skillCode: z.string().trim().min(1).max(50), level: z.number().int().min(1).max(5) }).strict())
+      .max(50)
+      .optional(),
+  })
+  .strict();
+const idParams = z.object({ id: z.string().uuid('Invalid id.') }).strict();
+
+serviceRouter.get(
+  '/technicians/employee-options',
+  requirePageAction('service-technicians', 'add'),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.json(await technicianService.employeeOptions(callerOf(req)));
+  }),
+);
+
+serviceRouter.post(
+  '/technicians',
+  requirePageAction('service-technicians', 'add'),
+  validate({ body: techBody }),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.status(201).json(await technicianService.create(callerOf(req), validated(res, 'body', techBody)));
+  }),
+);
+
+serviceRouter.patch(
+  '/technicians/:id',
+  requirePageAction('service-technicians', 'edit'),
+  validate({ params: idParams, body: techBody }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = validated(res, 'params', idParams);
+    res.json(await technicianService.update(callerOf(req), id, validated(res, 'body', techBody)));
+  }),
+);
+
+serviceRouter.delete(
+  '/technicians/:id',
+  requirePageAction('service-technicians', 'delete'),
+  validate({ params: idParams }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = validated(res, 'params', idParams);
+    res.json(await technicianService.deactivate(callerOf(req), id));
   }),
 );
 
@@ -401,6 +459,37 @@ serviceRouter.post(
     const caller = callerOf(req);
     const result = await warrantyService.registerWarranty(caller, req.body);
     res.status(201).json(result);
+  }),
+);
+
+
+const termBody = z
+  .object({
+    code: z.string().trim().min(1).max(50),
+    name: z.string().trim().min(1).max(100),
+    months: z.number().int().min(1).max(240),
+    itemId: z.string().uuid().optional(),
+    itemCategory: z.string().trim().max(50).optional(),
+    startBasis: z.enum(['INVOICE', 'DELIVERY', 'INSTALLATION']).optional(),
+    coverage: z.enum(['PARTS', 'LABOUR', 'PARTS_AND_LABOUR']).optional(),
+    exclusions: z.string().trim().max(2000).optional(),
+  })
+  .strict();
+
+serviceRouter.get(
+  '/warranty-terms',
+  requirePageAction('service-warranty', 'view'),
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.json(await warrantyService.listTerms());
+  }),
+);
+
+serviceRouter.post(
+  '/warranty-terms',
+  requirePageAction('service-warranty', 'add'),
+  validate({ body: termBody }),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.status(201).json(await warrantyService.createTerm(callerOf(req), validated(res, 'body', termBody)));
   }),
 );
 

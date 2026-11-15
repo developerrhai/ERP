@@ -63,6 +63,31 @@ export interface HistoryEvent {
   number: string;
 }
 
+export interface InboxCounts {
+  pendingReceipt: number;
+  pendingAcceptance: number;
+  work: number;
+  approval: number;
+  ready: number;
+  open: number;
+  returned: number;
+  sentWaiting: number;
+  needsAction: number;
+}
+
+export interface AuditRow {
+  event: string;
+  from_state: string | null;
+  to_state: string | null;
+  at: string;
+  note: string | null;
+  department: string | null;
+  actor: string | null;
+  number: string;
+  doc_type: string;
+  doc_no: string | null;
+}
+
 export interface DocMovement {
   holder: { id: string; state: MovementState; department: string; department_id: string; sent_at: string } | null;
   events: HistoryEvent[];
@@ -138,11 +163,17 @@ const qs = (o: Record<string, string | undefined>): string => {
   return s ? `?${s}` : '';
 };
 
+export interface PickRow { id: string; number: string; status: string | null; date: string | null }
+
 export const workApi = {
+  /** The records of any page that can be moved forward (newest first, caller's plants). */
+  docPicker: (pageId: string, q: string) => api<PickRow[]>(`/work/doc-picker/${encodeURIComponent(pageId)}${q ? `?q=${encodeURIComponent(q)}` : ''}`),
   departments: () => api<Dept[]>('/work/departments'),
   managers: (dept: string) => api<{ id: string; name: string }[]>(`/work/managers?dept=${dept}`),
   inbox: (p: { dept?: string; tab?: string; docType?: string; late?: boolean; q?: string; cursor?: string }) =>
     api<InboxPage>(`/work/inbox${qs({ dept: p.dept, tab: p.tab, docType: p.docType, late: p.late ? 'true' : undefined, q: p.q, cursor: p.cursor })}`),
+  counts: (dept?: string) => api<InboxCounts>(`/work/inbox/counts${qs({ dept })}`),
+  audit: (dept?: string) => api<AuditRow[]>(`/work/audit${qs({ dept })}`),
   workCenter: (dept?: string) => api<{ groups: { docType: string; items: Movement[] }[] }>(`/work/work-center${qs({ dept })}`),
   forward: (body: ForwardBody) => api<Movement>('/work/movements', { method: 'POST', body }),
   act: (id: string, action: 'receive' | 'accept' | 'return' | 'recall' | 'complete', body: Record<string, unknown> = {}) =>

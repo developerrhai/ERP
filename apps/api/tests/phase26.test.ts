@@ -105,6 +105,26 @@ describe('Phase 26 (API)', () => {
     expect(JSON.stringify(q.body)).toMatch(/customer/i);
   });
 
+  it('enquiry -> quotation: a free-text product has no HSN, so the GST % must be given (0-28), else a 422 that names the product', async () => {
+    await prisma.$executeRawUnsafe(`UPDATE units SET state_code = '27' WHERE id = $1::uuid AND state_code IS NULL`, tal);
+    const e = await send('post', ownerToken, '/sales/enquiries', { customerId, product: 'TEST26 No-HSN Widget', unitId: tal });
+    expect(e.status, JSON.stringify(e.body)).toBe(201);
+    const path = `/sales/enquiries/${e.body.data.id}/to-quotation`;
+    const none = await send('post', ownerToken, path, {});
+    expect(none.status, JSON.stringify(none.body)).toBe(422);
+    expect(JSON.stringify(none.body)).toContain('TEST26 No-HSN Widget');
+    expect(JSON.stringify(none.body)).toContain('gstPct');
+    expect((await send('post', ownerToken, path, { gstPct: 29 })).status).toBe(422);
+    expect((await send('post', ownerToken, path, { gstPct: -1 })).status).toBe(422);
+    // the failed attempts did not close the enquiry
+    const ok = await send('post', ownerToken, path, { gstPct: 18 });
+    expect(ok.status, JSON.stringify(ok.body)).toBe(200);
+    expect(ok.body.data.status).toBe('Quoted');
+    expect(JSON.stringify(ok.body.data.quotation)).toContain('18');
+    await prisma.$executeRawUnsafe(`UPDATE sales_enquiries SET quotation_id = NULL WHERE id = $1::uuid`, e.body.data.id);
+    await prisma.$executeRawUnsafe(`DELETE FROM sales_quotations WHERE id = $1::uuid`, ok.body.data.quotation.id).catch(() => 0);
+  });
+
   it('enquiry -> project with the BLDC template: 15 gates, G01 open, the rest locked; gate rules, approval and opening', async () => {
     const e = await send('post', ownerToken, '/sales/enquiries', { customerId, product: 'TEST26 24V BLDC', unitId: tal, projectTemplate: 'BLDC' });
     expect(e.status, JSON.stringify(e.body)).toBe(201);
@@ -159,6 +179,13 @@ describe('Phase 26 (API)', () => {
     const kinds = (hist.body.data as { kind: string }[]).map((x) => x.kind);
     expect(kinds).toContain('GATE_APPROVED');
     expect(kinds).toContain('GATE_OPENED');
+    // V40 header: master details, phase = the first gate not yet approved, progress = approved gates / all gates
+    const sum = await get(ownerToken, `/projects/${pid}/summary`);
+    expect(sum.status, JSON.stringify(sum.body)).toBe(200);
+    expect(sum.body.data.project.id).toBe(pid);
+    expect(sum.body.data.project.progressPct).toBeGreaterThan(0);
+    expect(typeof sum.body.data.project.phase).toBe('string');
+    expect(Array.isArray(sum.body.data.departments)).toBe(true);
     // dossier PDF and history workbook
     const pdf = await request(app).get(`${API}/projects/${pid}/dossier.pdf`).set('Authorization', `Bearer ${ownerToken}`).set(XRW).buffer(true).parse((res, cb) => {
       const chunks: Buffer[] = [];
@@ -196,7 +223,7 @@ describe('Phase 26 (API)', () => {
     const pid = p.body.data.project.id as string;
     projects.push(pid);
     await prisma.$executeRawUnsafe(`INSERT INTO project_events (project_id, unit_id, kind, doc_no, text, source_event_id) VALUES ($1::uuid, $2::uuid, 'NOTE', 'T26-X', 'secret saw text', $3)`, pid, saw, `t26:${randomUUID()}`);
-    const u = await makeUser({ department: 'Projects', unitCodes: ['TAL'], defaultUnitCode: 'TAL', roleCode: 'SUPER_ADMIN' }).catch(() => makeUser({ department: 'Projects', unitCodes: ['TAL'], defaultUnitCode: 'TAL' }));
+    const u = await makeUser({ department: 'Projects', unitCodes: ['TAL'], defaultUnitCode: 'TAL' });
     const { token } = await signIn(app, u);
     const hist = await get(token, `/projects/${pid}/history`);
     if (hist.status === 200) {
@@ -226,6 +253,11 @@ describe('Phase 26 (API)', () => {
     expect(r.body.data.progressPct).toBe(5); // order confirmed only
     expect(r.body.data.stages.map((s: { key: string }) => s.key)).toEqual(['enquiry', 'quotation', 'so', 'project', 'material', 'pr', 'po', 'grn', 'mo', 'quality', 'dc', 'invoice', 'collection']);
     expect(r.body.data.order.customer).toContain('TEST26');
+    // V40 360 page: trace identity, journey and approvals counter come from the database
+    expect(r.body.data.identity.salesOrder).toBe(r.body.data.order.number);
+    expect(Array.isArray(r.body.data.journey)).toBe(true);
+    expect(typeof r.body.data.approvalsPending).toBe('number');
+    expect(Array.isArray(r.body.data.mrp)).toBe(true);
     const missing = await get(ownerToken, `/orders/${randomUUID()}/360`);
     expect(missing.status).toBe(404);
   });

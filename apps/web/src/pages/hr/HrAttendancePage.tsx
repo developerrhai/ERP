@@ -1,11 +1,25 @@
 // apps/web/src/pages/hr/HrAttendancePage.tsx
 import { useEffect, useState } from 'react';
 import { PageHead, Pill, ErrorBox } from '../finance/shared';
-import { getAttendanceDays } from '../../lib/hrApi';
+import { getAttendanceDays, getShifts, type HrShift } from '../../lib/hrApi';
+
+/** A clock time as the plant sees it (India time), whatever the browser's own time zone is. */
+const clock = (iso: string) =>
+  new Date(iso).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false });
+const hours = (min: number) => `${(min / 60).toFixed(1)} hrs`;
+const DAY_STATUS: Record<string, { label: string; tone: string }> = {
+  P: { label: 'Present', tone: 'good' },
+  A: { label: 'Absent', tone: 'bad' },
+  HD: { label: 'Half day', tone: 'warn' },
+  WO: { label: 'Weekly off', tone: 'warn' },
+  H: { label: 'Holiday', tone: 'warn' },
+  MIS: { label: 'Missed punch', tone: 'warn' },
+};
 
 export function HrAttendancePage() {
   const [month, setMonth] = useState('2027-02');
   const [days, setDays] = useState<any[]>([]);
+  const [shifts, setShifts] = useState<HrShift[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -25,6 +39,12 @@ export function HrAttendancePage() {
   useEffect(() => {
     loadAttendance();
   }, [month]);
+
+  useEffect(() => {
+    getShifts()
+      .then(setShifts)
+      .catch((e: any) => setError(e.message || 'Failed to load shifts'));
+  }, []);
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -62,6 +82,39 @@ export function HrAttendancePage() {
         </div>
       </div>
 
+      {/* Shifts */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+        <div className="px-4 py-3 font-medium text-gray-800 border-b border-gray-200">Shifts</div>
+        <table className="min-w-full divide-y divide-gray-200 text-sm" aria-label="Shifts">
+          <thead className="bg-gray-50 text-gray-600 font-medium">
+            <tr>
+              <th className="px-4 py-3 text-left">Code</th>
+              <th className="px-4 py-3 text-left">Name</th>
+              <th className="px-4 py-3 text-left">Start</th>
+              <th className="px-4 py-3 text-left">End</th>
+              <th className="px-4 py-3 text-left">Break</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {shifts.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-gray-500">No shifts are set up.</td>
+              </tr>
+            ) : (
+              shifts.map((s) => (
+                <tr key={s.id}>
+                  <td className="px-4 py-3 font-mono text-gray-900">{s.code}</td>
+                  <td className="px-4 py-3 text-gray-700">{s.name}{s.isNight ? ' (night)' : ''}</td>
+                  <td className="px-4 py-3 font-mono text-gray-700">{s.startTime}</td>
+                  <td className="px-4 py-3 font-mono text-gray-700">{s.endTime}{s.endTime <= s.startTime ? ' (next day)' : ''}</td>
+                  <td className="px-4 py-3 text-gray-600">{s.breakMinutes} min</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
       {/* Days Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
@@ -87,19 +140,19 @@ export function HrAttendancePage() {
                 </tr>
               ) : (
                 days.map((d) => (
-                  <tr key={d.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-gray-900">{d.work_date}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{d.emp_code} - {d.full_name}</td>
-                    <td className="px-4 py-3 text-gray-600">{d.shift_code || 'General'}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{d.first_in ? new Date(d.first_in).toLocaleTimeString() : '—'}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{d.last_out ? new Date(d.last_out).toLocaleTimeString() : '—'}</td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{d.work_minutes ? (d.work_minutes / 60).toFixed(1) + ' hrs' : '0 hrs'}</td>
+                  <tr key={d.id ?? `${d.employeeId}-${d.attendanceDate}`} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono text-gray-900">{d.attendanceDate}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{d.empCode} - {d.employeeName}</td>
+                    <td className="px-4 py-3 text-gray-600">{d.shiftCode || 'General'}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{d.firstIn ? clock(d.firstIn) : '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{d.lastOut ? clock(d.lastOut) : '—'}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800">{hours(Number(d.workedMinutes) || 0)}</td>
                     <td className="px-4 py-3 text-xs text-amber-600">
-                      {d.late_in_minutes ? `${d.late_in_minutes}m Late` : ''} {d.early_out_minutes ? `${d.early_out_minutes}m Early` : ''}
+                      {d.lateMinutes ? `${d.lateMinutes}m Late` : ''} {d.earlyMinutes ? `${d.earlyMinutes}m Early` : ''}
                     </td>
                     <td className="px-4 py-3">
-                      <Pill tone={d.status === 'PRESENT' ? 'good' : d.status === 'ABSENT' ? 'bad' : 'warn'}>
-                        {d.status}
+                      <Pill tone={(DAY_STATUS[d.status] ?? { tone: 'warn' }).tone}>
+                        {(DAY_STATUS[d.status] ?? { label: d.status }).label}
                       </Pill>
                     </td>
                   </tr>

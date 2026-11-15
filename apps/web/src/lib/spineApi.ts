@@ -19,14 +19,23 @@ export interface Gate {
 export interface Spec { id: string; spec_no: string; parameter: string; target: string | null; tol_minus: string | null; tol_plus: string | null; unit: string | null; revision: number; status: string }
 export interface TestRow { id: string; test_name: string; gate_code: string | null; spec_no: string | null; value: string | null; result: 'OK' | 'NG' | null; tested_at: string | null }
 export interface ProjectDoc { id: string; doc_type: string; title: string; revision: number; status: string; gate_code: string | null }
-export interface HistoryRow { id: string; at: string; kind: string | null; department: string | null; actor: string | null; doc_no: string | null; text: string | null; masked: boolean }
+export interface HistoryRow { id: string; at: string; kind: string | null; department: string | null; actor: string | null; doc_no: string | null; doc_type?: string | null; text: string | null; masked: boolean }
 export interface Stage { key: string; label: string; docs: { id: string; number: string; status: string }[]; done: number; total: number | null; state: 'NOT_STARTED' | 'ACTIVE' | 'DONE' }
 export interface Order360 {
   order: { id: string; number: string; status: string; customer: string; customerPo: string | null; value: string | null; project: string | null; plant: string };
   progressPct: number;
   stages: Stage[];
-  lines: { lineNo: number; item: string | null; ordered: number; dispatched: number; invoiced: number; progressPct: number }[];
+  lines: { lineNo: number; item: string | null; itemCode: string | null; partNo: string | null; uom: string; rate: number; discountPct: number; gstPct: number; lineTotal: number; ordered: number; dispatched: number; invoiced: number; progressPct: number }[];
+  identity: { customerPo: string | null; salesOrder: string; project: string | null; purchaseOrder: string | null; manufacturingOrder: string | null; dcInvoice: string | null };
+  journey: { number: string; state: string; from: string; to: string; sentAt: string; receivedAt: string | null; acceptedAt: string | null }[];
+  mrp: { line: number; code: string; material: string; required: number; initial: number; reserved: number; purchased: number; shortage: number; pr: string | null; status: string }[];
+  approvalsPending: number;
+  financial: { orderValue: number; invoiced: number; received: number };
   heldBy: { docType: string; docNo: string | null; department: string; since: string }[];
+}
+export interface ProjectSummary {
+  project: { id: string; code: string; name: string; customer: string | null; manager: string | null; startDate: string; endDate: string; status: string; phase: string; progressPct: number | null };
+  departments: { id: string; department: string; documents: number; events: number; open: number; latestAt: string | null; latestText: string | null }[];
 }
 export interface ExceptionRow {
   id: string; rule_code: string; rule_name: string; severity: 'Low' | 'Medium' | 'High'; owner_department: string; doc_type: string; doc_id: string;
@@ -53,9 +62,10 @@ export const spineApi = {
   docs: (pid: string) => api<ProjectDoc[]>(`/projects/${pid}/documents`),
   addDoc: (pid: string, b: Row) => api<ProjectDoc>(`/projects/${pid}/documents`, { method: 'POST', body: b }),
   approveDoc: (pid: string, id: string) => api<ProjectDoc>(`/projects/${pid}/documents/${id}/approve`, { method: 'POST', body: {} }),
-  history: (pid: string, p: { kind?: string; cursor?: string }) => api<HistoryRow[]>(`/projects/${pid}/history${qs({ kind: p.kind, cursor: p.cursor, limit: 50 })}`),
+  history: (pid: string, p: { kind?: string; cursor?: string; dept?: string }) => api<HistoryRow[]>(`/projects/${pid}/history${qs({ kind: p.kind, dept: p.dept, cursor: p.cursor, limit: 100 })}`),
   dossier: (pid: string) => download(`/projects/${pid}/dossier.pdf`),
   historyXlsx: (pid: string) => download(`/projects/${pid}/history/export.xlsx`),
+  summary: (pid: string) => api<ProjectSummary>(`/projects/${pid}/summary`),
   order360: (soId: string) => api<Order360>(`/orders/${soId}/360`),
   orders: (q: string) => api<{ id: string; number: string; status: string }[]>(`/sales/orders${qs({ q, size: 20 })}`),
   exceptions: (p: { dept?: string; severity?: string; state?: string }) => api<ExceptionRow[]>(`/exceptions${qs(p)}`),
@@ -65,7 +75,7 @@ export const spineApi = {
   addEnquiry: (b: Row) => api<Enquiry>('/sales/enquiries', { method: 'POST', body: b }),
   qualify: (id: string) => api<Enquiry>(`/sales/enquiries/${id}/qualify`, { method: 'POST', body: {} }),
   won: (id: string) => api<Enquiry>(`/sales/enquiries/${id}/won`, { method: 'POST', body: {} }),
-  toQuotation: (id: string) => api<Row>(`/sales/enquiries/${id}/to-quotation`, { method: 'POST', body: {} }),
+  toQuotation: (id: string, gstPct?: number) => api<Row>(`/sales/enquiries/${id}/to-quotation`, { method: 'POST', body: gstPct === undefined ? {} : { gstPct } }),
   toProject: (id: string, template?: string) => api<Row>(`/sales/enquiries/${id}/to-project`, { method: 'POST', body: template ? { template } : {} }),
   markLost: (id: string, lostReason: string) => api<Enquiry>(`/sales/enquiries/${id}/mark-lost`, { method: 'POST', body: { lostReason } }),
 };

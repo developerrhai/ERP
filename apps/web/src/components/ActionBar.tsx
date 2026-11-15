@@ -13,6 +13,9 @@ import { docsMailApi, saveFile, type PrintKind } from '../lib/docsMailApi';
 import { useToast } from './Toast';
 import { EmailDocDialog } from './EmailDocDialog';
 import { MoveForwardDialog } from './MoveForward';
+import { PickDocumentDialog } from './PickDocument';
+
+const PICK_FIRST = 'Select a record first.';
 
 interface Btn {
   label: string;
@@ -31,12 +34,14 @@ interface Btn {
 
 export const BAR: readonly Btn[] = [
   { label: '← Return', need: 'view' },
-  { label: 'Email', need: 'view', needsRecord: true },
+  { label: 'Send Email', need: 'view', needsRecord: true },
   { label: 'Excel', need: 'export', where: 'full', ifAbsent: true },
   { label: 'Industry PDF', need: 'print', needsRecord: true },
   { label: 'Word', need: 'print', needsRecord: true },
   { label: 'Print', need: 'print', where: 'full', ifAbsent: true },
-  { label: '＋ Add', need: 'add', primary: true, where: 'full' },
+  { label: '＋ Add New', need: 'add', primary: true, where: 'full' },
+  { label: 'Load Selected', need: 'view', needsRecord: true, where: 'full' },
+  { label: '＋ Add', need: 'add', where: 'full' },
   { label: '⇧ Import', need: 'add' },
   { label: '⇩ Export', need: 'export' },
   { label: 'Duplicates', need: 'view' },
@@ -57,7 +62,7 @@ export const BAR: readonly Btn[] = [
 /** Page buttons the bar can run by itself (everything else needs the page's own onAction). */
 const DEFAULTS = new Set([
   '← Return',
-  'Email',
+  'Send Email',
   'Excel',
   '⇩ Export',
   '⇧ Import',
@@ -138,6 +143,8 @@ function Bar({
 }: Props & { go?: (to: string | number) => void }) {
   const toast = useToast();
   const [moving, setMoving] = useState(false);
+  const [picking, setPicking] = useState(false);
+  const [picked, setPicked] = useState<{ id: string; number: string } | null>(null);
   const [emailing, setEmailing] = useState(false);
   // Page mode: only what an older page does not already draw itself (they keep their own Excel / Print / Add).
   // Excel / Print / Edit / Delete: V40 shows them on every page. Older pages draw some themselves, so the shell
@@ -170,7 +177,7 @@ function Bar({
       else if (label === '← Return') go?.(-1);
       else if (target) go?.(target);
       else if (label === 'Move Forward') setMoving(true);
-      else if (label === 'Email') setEmailing(true);
+      else if (label === 'Send Email') setEmailing(true);
       else if (label === '⇩ Export' && !haveRecord) await runDefault('Excel');
       else if ((label === 'Excel' || label === '⇩ Export') && haveRecord)
         saveFile(await docsMailApi.print(pageId, recordId, 'excel'), `${docNo ?? 'record'}.xlsx`);
@@ -197,6 +204,9 @@ function Bar({
   }
 
   function click(label: string) {
+    // V40 has two add buttons (head "＋ Add New", tab "＋ Add") and "Load Selected" (open the ticked row): the screens know "＋ Add", "Edit" and "View"
+    if (label === '＋ Add New' && onAction?.('＋ Add') === true) return;
+    if (label === 'Load Selected' && (onAction?.('Edit') === true || onAction?.('View') === true)) return;
     if (onAction?.(label) === true) return;
     if (DEFAULTS.has(label)) void runDefault(label);
   }
@@ -209,13 +219,15 @@ function Bar({
         if (reason !== null) {
           // the screen's own reason wins
         } else if (b.record) {
-          if (record === null) reason = 'Select a record first.';
+          if (record === null) reason = PICK_FIRST;
           else if (record.blocked[b.record]) reason = record.blocked[b.record] ?? null;
           else if (!record.allowed.includes(b.record)) reason = 'Not available for this record.';
-        } else if (b.needsRecord && !haveRecord) reason = 'Select a record first.';
+        } else if (b.needsRecord && !haveRecord) reason = PICK_FIRST;
         else if (!DEFAULTS.has(b.label) && !onAction)
           reason = 'Not available yet: this page has no handler for it.';
-        const disabled = reason !== null;
+        // A button that only needs a row stays clickable (the client's QA lists greyed buttons as defects): the click says what to do
+        const needsPick = reason === PICK_FIRST;
+        const disabled = reason !== null && !needsPick;
         return (
           <span key={b.label} className="actionbar-item" title={reason ?? undefined}>
             <button
@@ -223,7 +235,7 @@ function Bar({
               className={b.primary ? 'btn primary' : 'btn'}
               disabled={disabled}
               aria-disabled={disabled}
-              onClick={() => click(b.label)}
+              onClick={() => (needsPick ? (b.label === 'Move Forward' && pageId ? setPicking(true) : toast('Select a row first, then press ' + b.label + '.')) : click(b.label))}
             >
               {b.label}
             </button>
@@ -231,6 +243,17 @@ function Bar({
           </span>
         );
       })}
+      {picking && pageId ? (
+        <PickDocumentDialog
+          pageId={pageId}
+          onClose={() => setPicking(false)}
+          onPick={(r) => {
+            setPicking(false);
+            setPicked(r);
+          }}
+        />
+      ) : null}
+      {picked && pageId ? <MoveForwardDialog docType={pageId} docId={picked.id} docNo={picked.number} onClose={() => setPicked(null)} onMoved={() => setPicked(null)} /> : null}
       {emailing && pageId && recordId ? (
         <EmailDocDialog docType={pageId} docId={recordId} onClose={() => setEmailing(false)} />
       ) : null}

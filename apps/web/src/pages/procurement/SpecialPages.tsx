@@ -23,6 +23,8 @@ import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
 import { DateField } from '../../ui/components';
+import { useFrame } from '../frame/V40TabFrame';
+import { V40Body } from './V40Body';
 
 const s = (v: unknown): string =>
   v === null || v === undefined
@@ -35,6 +37,7 @@ const rowsOf = (v: unknown): Row[] => (Array.isArray(v) ? (v as Row[]) : []);
 // ------------------------------------------------------------------------------------------------ GRN
 export function GrnPage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
+  const inV40 = Boolean(useFrame());
   const list = useLoad(() => listDocs('/scm/grn', { size: 50 }), []);
   const [receiving, setReceiving] = useState(false);
   const [open, setOpen] = useState<Doc | null>(null);
@@ -52,51 +55,65 @@ export function GrnPage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       <ErrorBox message={error || list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Receipt</th>
-              <th>PO</th>
-              <th>Supplier</th>
-              <th>Date</th>
-              <th>Value</th>
-              <th>Inspection</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows ?? []).length === 0 && !list.loading ? (
-              <Empty cols={7}>No receipts yet. Click ＋ Receive against PO.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((g) => (
-              <tr key={g.id}>
-                <td>
-                  <button
-                    type="button"
-                    className="link"
-                    onClick={() =>
-                      void getDoc('/scm/grn', g.id)
-                        .then(setOpen)
-                        .catch((e: unknown) => setError(toUiError(e).message))
-                    }
-                  >
-                    {s(g.number)}
-                  </button>
-                </td>
-                <td>{s(g.poNo)}</td>
-                <td>{s(g.supplierName)}</td>
-                <td>{dmy(s(g.receiptDate))}</td>
-                <td>{inr(s(g.totalValue))}</td>
-                <td>{s(g.qcStatus)}</td>
-                <td>
-                  <Pill>{g.status}</Pill>
-                </td>
+      {inV40 ? (
+        <V40Body
+          pageId="scm-grn"
+          actions={actions}
+          reloadKey={list.data}
+          onView={(id) =>
+            void getDoc('/scm/grn', id)
+              .then(setOpen)
+              .catch((e: unknown) => setError(toUiError(e).message))
+          }
+          onChanged={list.reload}
+        />
+      ) : (
+        <div className="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Receipt</th>
+                <th>PO</th>
+                <th>Supplier</th>
+                <th>Date</th>
+                <th>Value</th>
+                <th>Inspection</th>
+                <th>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {(list.data?.rows ?? []).length === 0 && !list.loading ? (
+                <Empty cols={7}>No receipts yet. Click ＋ Receive against PO.</Empty>
+              ) : null}
+              {(list.data?.rows ?? []).map((g) => (
+                <tr key={g.id}>
+                  <td>
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() =>
+                        void getDoc('/scm/grn', g.id)
+                          .then(setOpen)
+                          .catch((e: unknown) => setError(toUiError(e).message))
+                      }
+                    >
+                      {s(g.number)}
+                    </button>
+                  </td>
+                  <td>{s(g.poNo)}</td>
+                  <td>{s(g.supplierName)}</td>
+                  <td>{dmy(s(g.receiptDate))}</td>
+                  <td>{inr(s(g.totalValue))}</td>
+                  <td>{s(g.qcStatus)}</td>
+                  <td>
+                    <Pill>{g.status}</Pill>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {receiving ? (
         <ReceiveForm
           onClose={() => setReceiving(false)}
@@ -489,6 +506,7 @@ function GrnDetail({
 // ------------------------------------------------------------------------------------------------ purchase invoice
 export function InvoicePage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
+  const inV40 = Boolean(useFrame());
   const list = useLoad(() => listDocs('/scm/purchaseinvoice', { size: 50 }), []);
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState<Doc | null>(null);
@@ -506,63 +524,77 @@ export function InvoicePage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       <ErrorBox message={error || list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Our no.</th>
-              <th>Supplier invoice</th>
-              <th>Supplier</th>
-              <th>Date</th>
-              <th>Net payable</th>
-              <th>Matching</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows ?? []).length === 0 && !list.loading ? (
-              <Empty cols={7}>No invoices yet.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((i) => (
-              <tr key={i.id}>
-                <td>
-                  <button
-                    type="button"
-                    className="link"
-                    onClick={() =>
-                      void getDoc('/scm/purchaseinvoice', i.id)
-                        .then(setOpen)
-                        .catch((e: unknown) => setError(toUiError(e).message))
-                    }
-                  >
-                    {s(i.number)}
-                  </button>
-                </td>
-                <td>{s(i.vendorInvoiceNo)}</td>
-                <td>{s(i.supplierName)}</td>
-                <td>{dmy(s(i.invoiceDate))}</td>
-                <td>{inr(s(i.netPayable))}</td>
-                <td>
-                  <Pill
-                    tone={
-                      i.matchState === 'ON_HOLD'
-                        ? 'rejected'
-                        : i.matchState === 'OVERRIDDEN'
-                          ? 'pending-approval'
-                          : 'approved'
-                    }
-                  >
-                    {s(i.matchState)}
-                  </Pill>
-                </td>
-                <td>
-                  <Pill>{i.status}</Pill>
-                </td>
+      {inV40 ? (
+        <V40Body
+          pageId="scm-purchaseinvoice"
+          actions={actions}
+          reloadKey={list.data}
+          onView={(id) =>
+            void getDoc('/scm/purchaseinvoice', id)
+              .then(setOpen)
+              .catch((e: unknown) => setError(toUiError(e).message))
+          }
+          onChanged={list.reload}
+        />
+      ) : (
+        <div className="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Our no.</th>
+                <th>Supplier invoice</th>
+                <th>Supplier</th>
+                <th>Date</th>
+                <th>Net payable</th>
+                <th>Matching</th>
+                <th>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {(list.data?.rows ?? []).length === 0 && !list.loading ? (
+                <Empty cols={7}>No invoices yet.</Empty>
+              ) : null}
+              {(list.data?.rows ?? []).map((i) => (
+                <tr key={i.id}>
+                  <td>
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() =>
+                        void getDoc('/scm/purchaseinvoice', i.id)
+                          .then(setOpen)
+                          .catch((e: unknown) => setError(toUiError(e).message))
+                      }
+                    >
+                      {s(i.number)}
+                    </button>
+                  </td>
+                  <td>{s(i.vendorInvoiceNo)}</td>
+                  <td>{s(i.supplierName)}</td>
+                  <td>{dmy(s(i.invoiceDate))}</td>
+                  <td>{inr(s(i.netPayable))}</td>
+                  <td>
+                    <Pill
+                      tone={
+                        i.matchState === 'ON_HOLD'
+                          ? 'rejected'
+                          : i.matchState === 'OVERRIDDEN'
+                            ? 'pending-approval'
+                            : 'approved'
+                      }
+                    >
+                      {s(i.matchState)}
+                    </Pill>
+                  </td>
+                  <td>
+                    <Pill>{i.status}</Pill>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {creating ? (
         <InvoiceForm
           onClose={() => setCreating(false)}
@@ -941,6 +973,7 @@ function InvoiceDetail({
 // ------------------------------------------------------------------------------------------------ comparison
 export function ComparisonPage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
+  const inV40 = Boolean(useFrame());
   const list = useLoad(() => listDocs('/scm/comparison', { size: 50 }), []);
   const rfqs = useLoad(() => listDocs('/scm/rfq', { size: 100 }), []);
   const [rfqId, setRfqId] = useState('');
@@ -984,41 +1017,55 @@ export function ComparisonPage({ actions }: { actions: ActionSet }) {
           </button>
         </div>
       ) : null}
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Number</th>
-              <th>Created</th>
-              <th>Awarded</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows ?? []).length === 0 && !list.loading ? (
-              <Empty cols={4}>No comparisons yet.</Empty>
-            ) : null}
-            {(list.data?.rows ?? []).map((c) => (
-              <tr key={c.id}>
-                <td>
-                  <button
-                    type="button"
-                    className="link"
-                    onClick={() => void getDoc('/scm/comparison', c.id).then(setOpen)}
-                  >
-                    {s(c.number)}
-                  </button>
-                </td>
-                <td>{dmy(s(c.createdAt))}</td>
-                <td>{c.lockedAt ? 'Yes' : 'No'}</td>
-                <td>
-                  <Pill>{c.status}</Pill>
-                </td>
+      {inV40 ? (
+        <V40Body
+          pageId="scm-comparison"
+          actions={actions}
+          reloadKey={list.data}
+          onView={(id) =>
+            void getDoc('/scm/comparison', id)
+              .then(setOpen)
+              .catch((e: unknown) => setMsg(toUiError(e).message))
+          }
+          onChanged={list.reload}
+        />
+      ) : (
+        <div className="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Number</th>
+                <th>Created</th>
+                <th>Awarded</th>
+                <th>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {(list.data?.rows ?? []).length === 0 && !list.loading ? (
+                <Empty cols={4}>No comparisons yet.</Empty>
+              ) : null}
+              {(list.data?.rows ?? []).map((c) => (
+                <tr key={c.id}>
+                  <td>
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() => void getDoc('/scm/comparison', c.id).then(setOpen)}
+                    >
+                      {s(c.number)}
+                    </button>
+                  </td>
+                  <td>{dmy(s(c.createdAt))}</td>
+                  <td>{c.lockedAt ? 'Yes' : 'No'}</td>
+                  <td>
+                    <Pill>{c.status}</Pill>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {open ? (
         <Modal
           title={`Comparison ${s(open.number)}`}
@@ -1147,11 +1194,7 @@ export function ApPage({ actions }: { actions: ActionSet }) {
             ＋ Proposal for invoices due till
           </button>
         ) : null}
-        <DateField
-          aria-label="Due till"
-          value={till}
-          onChange={(e) => setTill(e.target.value)}
-        />
+        <DateField aria-label="Due till" value={till} onChange={(e) => setTill(e.target.value)} />
       </PageHead>
       <ErrorBox message={msg} />
       <div className="tabs" role="tablist">
@@ -1489,6 +1532,7 @@ function BinDialog({
 // ------------------------------------------------------------------------------------------------ evaluation
 export function EvaluationPage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
+  const inV40 = Boolean(useFrame());
   const [period, setPeriod] = useState(todayIso().slice(0, 7));
   const list = useLoad(() => getJson<Row[]>(`/scm/evaluation?period=${period}`), [period]);
   const [msg, setMsg] = useState('');
@@ -1523,41 +1567,50 @@ export function EvaluationPage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       <ErrorBox message={msg || list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Supplier</th>
-              <th>Quality</th>
-              <th>Delivery</th>
-              <th>Cost</th>
-              <th>Response</th>
-              <th>Overall</th>
-              <th>Grade</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data ?? []).length === 0 && !list.loading ? (
-              <Empty cols={8}>No evaluation for this month yet. Click Run evaluation.</Empty>
-            ) : null}
-            {(list.data ?? []).map((r) => (
-              <tr key={s(r.id)} className={r.riskFlag === true ? 'row-red' : undefined}>
-                <td>{s(r.rank)}</td>
-                <td>{s(r.supplierName)}</td>
-                <td>{s(r.quality)}</td>
-                <td>{s(r.delivery)}</td>
-                <td>{s(r.cost)}</td>
-                <td>{s(r.response)}</td>
-                <td>{s(r.overall)}</td>
-                <td>
-                  <Pill>{s(r.grade)}</Pill>
-                </td>
+      {inV40 ? (
+        <V40Body
+          pageId="scm-evaluation"
+          actions={actions}
+          reloadKey={list.data}
+          onChanged={list.reload}
+        />
+      ) : (
+        <div className="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Supplier</th>
+                <th>Quality</th>
+                <th>Delivery</th>
+                <th>Cost</th>
+                <th>Response</th>
+                <th>Overall</th>
+                <th>Grade</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {(list.data ?? []).length === 0 && !list.loading ? (
+                <Empty cols={8}>No evaluation for this month yet. Click Run evaluation.</Empty>
+              ) : null}
+              {(list.data ?? []).map((r) => (
+                <tr key={s(r.id)} className={r.riskFlag === true ? 'row-red' : undefined}>
+                  <td>{s(r.rank)}</td>
+                  <td>{s(r.supplierName)}</td>
+                  <td>{s(r.quality)}</td>
+                  <td>{s(r.delivery)}</td>
+                  <td>{s(r.cost)}</td>
+                  <td>{s(r.response)}</td>
+                  <td>{s(r.overall)}</td>
+                  <td>
+                    <Pill>{s(r.grade)}</Pill>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </>
   );
 }

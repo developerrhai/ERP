@@ -195,6 +195,10 @@ export function createQmsRouter(): Router {
       kind: kindZ.optional(),
       itemId: uuid.optional(),
       status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+      q: z.string().trim().max(80).optional(),
+      // paging is optional here: without it the whole list comes back, as the plans screen expects
+      page: z.coerce.number().int().min(1).max(100000).optional(),
+      size: z.coerce.number().int().min(1).max(200).optional(),
     })
     .strict();
   router.get(
@@ -203,7 +207,17 @@ export function createQmsRouter(): Router {
     validate({ query: planQ }),
     h(async (req, res) => {
       const q = validated(res, 'query', planQ);
-      send(res, { rows: await masterService.listPlans(q.kind, q.itemId, q.status) });
+      let rows = await masterService.listPlans(q.kind, q.itemId, q.status);
+      if (q.q) {
+        const needle = q.q.toLowerCase();
+        rows = rows.filter((r) =>
+          [r.code, r.name, r.itemName].some((x) => String(x ?? '').toLowerCase().includes(needle)),
+        );
+      }
+      const total = rows.length;
+      const page = q.page ?? 1;
+      const size = q.size ?? Math.max(total, 1);
+      send(res, { rows: rows.slice((page - 1) * size, page * size), total, page, size });
     }),
   );
   const previewQ = z
@@ -458,7 +472,7 @@ export function createQmsRouter(): Router {
   // ---------------------------------------------------------------- forms (8D, alert, MOM, CI)
   const fListQ = z
     .object({
-      kind: formKindZ,
+      kind: formKindZ.optional(),
       status: z.enum(['Open', 'Closed', 'Cancelled']).optional(),
       q: z.string().trim().max(80).optional(),
       ...pageQuery,
@@ -469,8 +483,14 @@ export function createQmsRouter(): Router {
     validate({ query: fListQ }),
     h(async (req, res) => {
       const q = validated(res, 'query', fListQ);
-      await need(req, PAGE_OF_FORM[q.kind], 'view');
-      const r = await formsService.list(callerOf(req), PAGE_OF_FORM[q.kind], q);
+      if (q.kind) await need(req, PAGE_OF_FORM[q.kind], 'view');
+      // no kind: every kind the caller may view
+      const kinds: FormKind[] = [];
+      if (!q.kind)
+        for (const k of FORM_KINDS)
+          if (req.auth && (await can(accessUserOf(req.auth), PAGE_OF_FORM[k], 'view'))) kinds.push(k);
+      if (!q.kind && kinds.length === 0) throw Errors.forbidden();
+      const r = await formsService.list(callerOf(req), q.kind ? PAGE_OF_FORM[q.kind] : '', { ...q, kinds });
       paged(res, r.rows, r.total, q.page, q.size);
     }),
   );

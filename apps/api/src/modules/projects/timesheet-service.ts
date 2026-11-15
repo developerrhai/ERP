@@ -80,6 +80,19 @@ export class TimesheetService {
       }>;
     },
   ): Promise<Row> {
+    // 0. One timesheet per employee per week (unique employee_id + week_start): a clear 409, not a database error
+    const existing = await query(
+      prisma,
+      `SELECT timesheet_no, status FROM timesheets WHERE employee_id = $1::uuid AND week_start = $2::date`,
+      input.employeeId,
+      input.weekStartDate,
+    );
+    if (existing[0]) {
+      throw Errors.conflict(
+        `A timesheet for the week starting ${input.weekStartDate} already exists (${String(existing[0].timesheet_no)}, ${String(existing[0].status)}). Open it instead of creating a new one.`,
+      );
+    }
+
     // 1. Validate hours per day across lines <= 24 (TS_DAY_HRS)
     const hoursByDate = new Map<string, number>();
     for (const l of input.lines) {
@@ -123,14 +136,23 @@ export class TimesheetService {
       totalBillable += l.billableHours ?? l.hours;
     }
 
-    const timesheetId = await insertRow(prisma, 'timesheets', {
-      timesheet_no: `TS-${input.weekStartDate.replace(/-/g, '')}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`,
-      employee_id: input.employeeId,
-      week_start: input.weekStartDate,
-      total_hours: totalHours,
-      status: 'DRAFT',
-      created_by_id: caller.auth.userId,
-    });
+    let timesheetId: string;
+    try {
+      timesheetId = await insertRow(prisma, 'timesheets', {
+        timesheet_no: `TS-${input.weekStartDate.replace(/-/g, '')}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`,
+        employee_id: input.employeeId,
+        week_start: input.weekStartDate,
+        total_hours: totalHours,
+        status: 'DRAFT',
+        created_by_id: caller.auth.userId,
+      });
+    } catch (e) {
+      // two requests at the same moment can both pass the check above; the unique key still stops the second one
+      if (/ts_emp_week_unique|employee_id, week_start/.test(String((e as Error).message))) {
+        throw Errors.conflict(`A timesheet for the week starting ${input.weekStartDate} already exists. Open it instead of creating a new one.`);
+      }
+      throw e;
+    }
 
     for (const l of input.lines) {
       await insertRow(prisma, 'timesheet_lines', {
@@ -160,26 +182,46 @@ export class TimesheetService {
     const ts = await this.getTimesheet(caller, id);
     if (ts.status === 'APPROVED') return ts;
 
-    // Fetch employee rate (TS_NO_RATE)
+    // The employee's plant comes from the current assignment (employees has no unit_id column).
     const empRows = await query(
       prisma,
-      `SELECT e.id, e.emp_code, e.unit_id, e.hourly_rate, pt.cost_rate AS team_rate
-       FROM employees e
-       LEFT JOIN project_team pt ON pt.employee_id = e.id
-       WHERE e.id = $1::uuid
-       LIMIT 1`,
-      ts.employee_id,
+      `SELECT e.id, e.emp_code,
+              (SELECT a.unit_id FROM employee_assignments a
+                WHERE a.employee_id = e.id AND a.effective_from <= $2::date
+                  AND (a.effective_to IS NULL OR a.effective_to >= $2::date)
+                ORDER BY a.effective_from DESC LIMIT 1) AS unit_id,
+              (SELECT s.monthly_ctc FROM employee_salary_assignments s
+                WHERE s.employee_id = e.id AND s.status = 'ACTIVE' AND s.effective_from <= $2::date
+                  AND (s.effective_to IS NULL OR s.effective_to >= $2::date)
+                ORDER BY s.effective_from DESC LIMIT 1) AS monthly_ctc
+         FROM employees e WHERE e.id = $1::uuid`,
+      ts.employeeId,
+      ts.weekStart,
     );
     const emp = empRows[0];
-    const costRate = Number(emp?.hourly_rate ?? emp?.team_rate ?? 0);
-    if (costRate <= 0) {
-      throw Errors.conflict(`TS_NO_RATE: No cost rate for employee ${emp?.emp_code ?? ts.employee_id}; ask HR.`);
+    // Cost rate per hour (TS_NO_RATE): the rate agreed for the employee on that project, else monthly pay / (26 days x 8 hours).
+    const ctcRate = Number(emp?.monthly_ctc ?? 0) > 0 ? Math.round((Number(emp?.monthly_ctc) / 208) * 100) / 100 : 0;
+    const teamRates = await query(
+      prisma,
+      `SELECT project_id, cost_rate FROM project_team WHERE employee_id = $1::uuid`,
+      ts.employeeId,
+    );
+    const teamRateOf = new Map(teamRates.map((r) => [String(r.project_id), Number(r.cost_rate ?? 0)]));
+    const rateFor = (projectId: string) => {
+      const t = teamRateOf.get(projectId) ?? 0;
+      return t > 0 ? t : ctcRate;
+    };
+    const lines = (ts.lines as Row[]) || [];
+    for (const l of lines) {
+      if (rateFor(String(l.projectId)) <= 0) {
+        throw Errors.conflict(`TS_NO_RATE: No cost rate for employee ${emp?.emp_code ?? ts.employeeId}; ask HR.`);
+      }
     }
 
     // Freeze rate on lines and compute total cost per project
     const projectTotals = new Map<string, number>();
-    const lines = (ts.lines as Row[]) || [];
     for (const l of lines) {
+      const costRate = rateFor(String(l.projectId));
       const lineCost = Math.round(Number(l.hours) * costRate * 100) / 100;
       await exec(
         prisma,
@@ -190,7 +232,7 @@ export class TimesheetService {
         lineCost,
         l.id,
       );
-      const projId = String(l.project_id);
+      const projId = String(l.projectId);
       const prev = projectTotals.get(projId) ?? 0;
       projectTotals.set(projId, prev + lineCost);
     }
@@ -198,7 +240,7 @@ export class TimesheetService {
     // Post to GL through PostingService
     // Dr Project Labour Cost 5112 (with project_id) / Cr Labour Cost Absorbed 5113
     const unitId = (emp?.unit_id as string) || caller.ctx.unitId || '';
-    const docDate = String(ts.week_start);
+    const docDate = String(ts.weekStart);
 
     const glLines: any[] = [];
     let grandTotalCost = 0;
@@ -210,7 +252,7 @@ export class TimesheetService {
         debit: pCost.toFixed(2),
         credit: '0.00',
         projectId: projId,
-        narration: `Timesheet labour cost: ${String(ts.employee_name)} (${docDate})`,
+        narration: `Timesheet labour cost: ${String(ts.employeeName)} (${docDate})`,
       });
     }
 
@@ -218,13 +260,14 @@ export class TimesheetService {
       accountCode: '5113', // Labour Cost Absorbed
       debit: '0.00',
       credit: grandTotalCost.toFixed(2),
-      narration: `Absorbed labour cost: ${String(ts.employee_name)} (${docDate})`,
+      narration: `Absorbed labour cost: ${String(ts.employeeName)} (${docDate})`,
     });
 
     let journalId: string | null = null;
     try {
-      const posted = await PostingService.postJournal(
-        prisma,
+      // inside a transaction: the debit = credit check runs when the transaction ends
+      const posted = await prisma.$transaction((tx) => PostingService.postJournal(
+        tx,
         {
           unitId,
           docDate,
@@ -232,12 +275,12 @@ export class TimesheetService {
           source: 'EVENT',
           sourceDocType: 'TIMESHEET',
           sourceDocId: String(ts.id),
-          sourceDocNo: `TS-${String(ts.employee_id).slice(0, 8)}-${docDate}`,
-          narration: `Labour booking for week ${docDate} - ${String(ts.employee_name)}`,
+          sourceDocNo: `TS-${String(ts.employeeId).slice(0, 8)}-${docDate}`,
+          narration: `Labour booking for week ${docDate} - ${String(ts.employeeName)}`,
           lines: glLines,
         },
         { userId: caller.auth.userId },
-      );
+      ));
       journalId = posted.id;
     } catch (err: any) {
       console.warn('Timesheet journal posting note:', err.message);

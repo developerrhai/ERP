@@ -92,6 +92,23 @@ export async function getAttendanceDays(month: string, employeeId?: string) {
   return res.data;
 }
 
+export interface HrShift {
+  id: string;
+  code: string;
+  name: string;
+  /** HH:MM */
+  startTime: string;
+  /** HH:MM (the next morning for a night shift) */
+  endTime: string;
+  breakMinutes: number;
+  isNight: boolean;
+}
+
+export async function getShifts(): Promise<HrShift[]> {
+  const res = await request<HrShift[]>('/hr/shifts');
+  return res.data ?? [];
+}
+
 export async function getExpenseClaims() {
   const res = await request<any[]>('/hr/expenses/claims');
   return res.data;

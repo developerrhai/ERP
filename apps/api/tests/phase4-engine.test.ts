@@ -13,6 +13,7 @@ import {
 import {
   API,
   auditRows,
+  cleanGenericRecordsAndSeries,
   errorOf,
   makeUser,
   newApp,
@@ -98,9 +99,8 @@ afterAll(async () => {
   await prisma.approvalRuleSet.deleteMany({ where: { id: adminRuleSetId } });
   await prisma.recordDocument.deleteMany({});
   await prisma.dataJob.deleteMany({});
-  await prisma.genericRecord.deleteMany({});
+  await cleanGenericRecordsAndSeries();
   await prisma.idempotencyKey.deleteMany({});
-  await prisma.numberSeries.deleteMany({ where: { NOT: { pageId: { startsWith: 'inv-' } } } });
 });
 
 describe('lock matrix through the API', () => {

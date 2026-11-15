@@ -88,6 +88,12 @@ export interface WarrantyCheck {
   reasons: string[];
 }
 
+export interface TechnicianInput {
+  employeeId?: string;
+  maxOpenJobs?: number;
+  skills?: Array<{ skillCode: string; level: number }>;
+}
+
 export const serviceApi = {
   listTickets: (params?: { status?: string; customerId?: string; technicianId?: string; priority?: number }) => {
     const q = new URLSearchParams();
@@ -140,6 +146,17 @@ export const serviceApi = {
     api<{ unassignedTickets: ServiceTicket[]; lanes: Array<{ technician: any; assignedTickets: ServiceTicket[] }> }>(
       '/service/technicians/board',
     ),
+
+  technicianEmployeeOptions: () =>
+    api<Array<{ id: string; label: string }>>('/service/technicians/employee-options'),
+  createTechnician: (body: TechnicianInput) =>
+    api<any>('/service/technicians', { method: 'POST', body: JSON.stringify(body) }),
+  updateTechnician: (id: string, body: TechnicianInput) =>
+    api<any>(`/service/technicians/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deactivateTechnician: (id: string) =>
+    api<any>(`/service/technicians/${id}`, { method: 'DELETE' }),
+  createWarrantyTerm: (body: Record<string, unknown>) =>
+    api<any>('/service/warranty-terms', { method: 'POST', body: JSON.stringify(body) }),
 
   listVisits: (params?: { technicianId?: string; date?: string; status?: string }) => {
     const q = new URLSearchParams();

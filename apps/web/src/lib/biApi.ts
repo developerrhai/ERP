@@ -1,5 +1,6 @@
 // apps/web/src/lib/biApi.ts
 import { request, type RequestOptions } from './api';
+import type { AiOverview, Analytics } from '../pages/bi/analyticsModel';
 
 async function api<T>(path: string, opts?: RequestOptions): Promise<T> {
   const env = await request<T>(path, opts);
@@ -20,6 +21,11 @@ export const biApi = {
   runReport: (id: string) => api<any>(`/bi/reports/${id}/run`, { method: 'POST' }),
   listSchedules: () => api<any[]>('/bi/schedules'),
   createSchedule: (body: any) => api<any>('/bi/schedules', { method: 'POST', body: JSON.stringify(body) }),
+
+  // Analytics dashboards (computed from real records), BI library and AI overview
+  getAnalytics: (kind: string) => api<Analytics>(`/bi/analytics/${encodeURIComponent(kind)}`),
+  getLibrary: () => api<any>('/bi/library'),
+  getAiOverview: () => api<AiOverview>('/ai/overview'),
 
   // Global Search
   search: (q: string, types?: string) => {

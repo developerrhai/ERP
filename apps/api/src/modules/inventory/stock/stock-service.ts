@@ -584,6 +584,14 @@ async function loadWarehouse(tx: Db, id: string): Promise<WarehouseRow> {
   return r[0];
 }
 
+/** Date (YYYY-MM-DD) of the last ledger movement of an item in a warehouse, or null. */
+export async function lastMovementDate(tx: Db, itemId: string, warehouseId: string): Promise<string | null> {
+  const r = await tx.$queryRaw<{ d: Date | null }[]>`
+    SELECT max(posting_date) AS d FROM stock_ledger
+    WHERE item_id = ${itemId}::uuid AND warehouse_id = ${warehouseId}::uuid`;
+  return r[0]?.d ? isoOf(r[0].d) : null;
+}
+
 async function assertNotBackdated(tx: Db, m: StockMoveInput) {
   if (m.allowBackdate) return;
   const r = await tx.$queryRaw<{ d: Date | null }[]>`
@@ -592,7 +600,7 @@ async function assertNotBackdated(tx: Db, m: StockMoveInput) {
   const last = r[0]?.d ? isoOf(r[0].d) : null;
   if (last && m.postingDate < last) {
     throw Errors.backdatedPosting(
-      `The last movement of this item here is dated ${last}; a posting dated ${m.postingDate} needs a user with approve rights.`,
+      `This posting is dated ${m.postingDate}, before the last movement of this item in the warehouse (${last}). Use a date on or after ${last}, or ask a user with approve rights to post it.`,
     );
   }
 }

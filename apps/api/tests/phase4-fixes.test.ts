@@ -7,7 +7,7 @@ import { invalidateAccessCache } from '../src/core/rbac/access';
 import { datePairsOf } from '../src/engine/date-order';
 import type { PageSchema } from '../src/engine/field-schema';
 import type { FieldMeta } from '../src/engine/field-types';
-import { API, auditRows, errorOf, newApp, prisma, signInAs, signInOwner } from './helpers';
+import { API, auditRows, cleanGenericRecordsAndSeries, errorOf, newApp, prisma, signInAs, signInOwner } from './helpers';
 import type { Signed } from './helpers';
 import { makeDepartment, restoreGlobal, snapshotGlobal } from './phase2-helpers';
 import type { GlobalSnapshot } from './phase2-helpers';
@@ -47,9 +47,8 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
-  await prisma.genericRecord.deleteMany({});
+  await cleanGenericRecordsAndSeries();
   await prisma.idempotencyKey.deleteMany({});
-  await prisma.numberSeries.deleteMany({ where: { NOT: { pageId: { startsWith: 'inv-' } } } });
 });
 
 async function create(s: Signed, pageId = LEADS, extra: Record<string, unknown> = {}, h = {}) {

@@ -13,6 +13,7 @@ import { query, norm } from '../procurement/core';
 import { biService } from './bi-service';
 import { aiService } from './ai-service';
 import { automationCommService, AUTOMATION_EVENTS } from './automation-comm-service';
+import { getAnalytics, getAiOverview, getLibrary } from './analytics-service';
 
 registerJobHandler(QUEUES.biKpiRefresh, async () => {
   // Periodic snapshot computation handled per unit/dept
@@ -157,6 +158,31 @@ export function createPhase19Router(): Router {
     asyncHandler(async (req: Request, res: Response) => {
       const data = await biService.createSchedule(callerOf(req), req.body);
       res.status(201).json({ data });
+    }),
+  );
+
+  // Read-only analytics for the BI dashboards (sales, purchase, inventory, finance, branch, profit), the BI library and the AI overview
+  router.get(
+    '/bi/analytics/:kind',
+    asyncHandler(async (req: Request, res: Response) => {
+      const data = await getAnalytics(callerOf(req), req.params.kind!);
+      res.json({ data });
+    }),
+  );
+
+  router.get(
+    '/bi/library',
+    asyncHandler(async (req: Request, res: Response) => {
+      const data = await getLibrary(callerOf(req));
+      res.json({ data });
+    }),
+  );
+
+  router.get(
+    '/ai/overview',
+    asyncHandler(async (req: Request, res: Response) => {
+      const data = await getAiOverview(callerOf(req));
+      res.json({ data });
     }),
   );
 

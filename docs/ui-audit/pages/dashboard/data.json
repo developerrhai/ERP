@@ -1,0 +1,87 @@
+{
+ "id": "dashboard",
+ "role": "super",
+ "at": "2026-11-14T22:31:20.690Z",
+ "tabs": {
+  "main": {
+   "v40": {
+    "tabs": [],
+    "columns": [
+     "Work",
+     "Count",
+     "Priority",
+     "Action",
+     "Project",
+     "Progress",
+     "Status",
+     "Type",
+     "Number",
+     "Details",
+     "Date / Time"
+    ],
+    "fields": [],
+    "buttons": [
+     "← Return",
+     "⇧ Import",
+     "⇩ Export",
+     "Duplicates",
+     "Department Inbox",
+     "Approvals",
+     "Project History",
+     "360° Tracking",
+     "Tasks",
+     "Shifts",
+     "Open Details",
+     "History",
+     "Open"
+    ],
+    "cards": [
+     "Department Work Queue",
+     "Active Projects",
+     "Recent Department Activity"
+    ],
+    "filters": [
+     "SELECT"
+    ],
+    "badges": [],
+    "rows": 16,
+    "textLen": 2135,
+    "sideways": false
+   },
+   "erp": {
+    "tabs": [],
+    "columns": [
+     "Work",
+     "Count",
+     "Priority",
+     "Action",
+     "Project",
+     "Status",
+     "Type",
+     "Number",
+     "Details",
+     "Date / Time"
+    ],
+    "fields": [],
+    "buttons": [
+     "Department Inbox",
+     "Approvals",
+     "Project History",
+     "360° Tracking",
+     "Tasks",
+     "Shifts",
+     "Open Details",
+     "Privacy Notice (DPDP)"
+    ],
+    "cards": [],
+    "filters": [
+     "Department Filter"
+    ],
+    "badges": [],
+    "rows": 10,
+    "textLen": 1634,
+    "sideways": false
+   }
+  }
+ }
+}
