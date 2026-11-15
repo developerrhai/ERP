@@ -56,8 +56,23 @@
 .fam-v40 .notice { padding: 10px 12px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e40af; border-radius: 8px; font-size: 11px; line-height: 1.5; }
 .fam-v40 .v9-pulse { display: inline-flex; align-items: center; gap: 5px; }
 
+/* Asset Lifecycle Stepper */
+.fam-v40 .v9-stepper { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; margin-top: 6px; }
+.fam-v40 .v9-step { border: 1px solid var(--line, #e2e8f0); background: var(--card2, #f8fafc); border-radius: 8px; padding: 8px 6px; text-align: center; font-size: 11px; }
+.fam-v40 .v9-step.done { background: #dcfce7; border-color: #86efac; color: #15803d; }
+.fam-v40 .v9-step.current { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; font-weight: 700; }
+.fam-v40 .v9-step b { display: block; margin-bottom: 2px; font-size: 11px; }
+.fam-v40 .v9-step span { font-size: 10px; opacity: 0.85; }
+
+/* Reliability & Metric Rows */
+.fam-v40 .v9-metric-row { display: grid; grid-template-columns: 1fr auto; gap: 7px; padding: 7px 0; border-bottom: 1px solid var(--line, #e2e8f0); font-size: 12px; }
+.fam-v40 .v9-metric-row:last-child { border-bottom: 0; }
+.fam-v40 .v9-metric-row span { color: var(--muted, #64748b); }
+.fam-v40 .v9-metric-row b { color: var(--text, #172033); }
+
 @media (max-width: 900px) {
   .fam-v40 .v9-grid { grid-template-columns: 1fr; }
+  .fam-v40 .v9-stepper { grid-template-columns: repeat(2, 1fr); }
   .fam-v40 .v17-mini-flow { grid-template-columns: repeat(2, 1fr); }
   .fam-v40 .v8-table-summary { grid-template-columns: repeat(2, 1fr); }
 }

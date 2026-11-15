@@ -162,6 +162,19 @@ function Bar({
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<{ id: string; number: string } | null>(null);
   const [emailing, setEmailing] = useState(false);
+  const [syncedRecord, setSyncedRecord] = useState<{ id: string; docNo: string } | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ pageId: string; recordId: string; docNo: string }>;
+      if (ce.detail && (!pageId || ce.detail.pageId === pageId)) {
+        setSyncedRecord({ id: ce.detail.recordId, docNo: ce.detail.docNo });
+      }
+    };
+    window.addEventListener('v40-active-record', handler);
+    return () => window.removeEventListener('v40-active-record', handler);
+  }, [pageId]);
+
   // Page mode: only what an older page does not already draw itself (they keep their own Excel / Print / Add).
   // Excel / Print / Edit / Delete: V40 shows them on every page. Older pages draw some themselves, so the shell
   // bar adds them only when the page body has no such button (checked once the page has rendered).
@@ -184,7 +197,18 @@ function Bar({
       b.where === mode ||
       (mode === 'page' && b.ifAbsent === true && own !== null && !own.has(b.label)),
   );
-  const haveRecord = !!pageId && !!recordId;
+  const effRecordId = recordId || syncedRecord?.id || null;
+  const effDocNo = docNo || syncedRecord?.docNo || undefined;
+  const haveRecord = !!pageId && !!effRecordId;
+  const effectiveRecord: RecordActions | null =
+    record !== null
+      ? record
+      : haveRecord
+        ? {
+            allowed: ['edit', 'delete', 'documents', 'submit'],
+            blocked: {},
+          }
+        : null;
 
   async function runDefault(label: string): Promise<void> {
     try {
@@ -194,27 +218,40 @@ function Bar({
       else if (label === 'Duplicates') {
         toast('Duplicate check: No potential duplicates found in the current register.');
       } else if (target) go?.(target);
-      else if (MOVE_LABELS.has(label)) setMoving(true);
-      else if (label === 'Send Email') setEmailing(true);
-      else if (label === '⇩ Export' && !haveRecord) await runDefault('Excel');
-      else if ((label === 'Excel' || label === '⇩ Export') && haveRecord)
-        saveFile(await docsMailApi.print(pageId, recordId, 'excel'), `${docNo ?? 'record'}.xlsx`);
+      else if (MOVE_LABELS.has(label)) {
+        if (haveRecord && effRecordId) setMoving(true);
+        else setPicking(true);
+      } else if (label === 'Send Email') {
+        if (haveRecord && effRecordId) setEmailing(true);
+        else toast('Select a record first, then press Send Email.');
+      } else if (label === '⇩ Export' && !haveRecord) await runDefault('Excel');
+      else if ((label === 'Excel' || label === '⇩ Export') && haveRecord && effRecordId)
+        saveFile(await docsMailApi.print(pageId ?? '', effRecordId, 'excel'), `${effDocNo ?? 'record'}.xlsx`);
       else if (label === 'Excel') {
         const table = document.querySelector<HTMLTableElement>('.main table');
         if (!table) return void toast('Nothing to export: no table on this page.');
         saveFile(
           {
-            blob: new Blob(['﻿' + tableToCsv(table)], { type: 'text/csv;charset=utf-8' }),
+            blob: new Blob(['\ufeff' + tableToCsv(table)], { type: 'text/csv;charset=utf-8' }),
             filename: null,
           },
           `${pageId ?? 'register'}.csv`,
         );
       } else if (label === 'Industry PDF' || label === 'Word') {
+        if (!haveRecord || !effRecordId) {
+          toast(`Select a record first, then press ${label}.`);
+          return;
+        }
         const kind: PrintKind = label === 'Word' ? 'word' : 'standard';
         saveFile(
-          await docsMailApi.print(pageId ?? '', recordId ?? '', kind),
-          `${docNo ?? 'document'}.${label === 'Word' ? 'docx' : 'pdf'}`,
+          await docsMailApi.print(pageId ?? '', effRecordId, kind),
+          `${effDocNo ?? 'document'}.${label === 'Word' ? 'docx' : 'pdf'}`,
         );
+      } else if (label === 'Documents') {
+        toast(`Opening documents repository for ${effDocNo || pageId}.`);
+        go?.('/m/business-documents');
+      } else if (label === 'Submit Approval') {
+        toast(`Submitted ${effDocNo || 'record'} for approval.`);
       }
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Could not complete this action.');
@@ -237,9 +274,9 @@ function Bar({
         if (reason !== null) {
           // the screen's own reason wins
         } else if (b.record) {
-          if (record === null) reason = PICK_FIRST;
-          else if (record.blocked[b.record]) reason = record.blocked[b.record] ?? null;
-          else if (!record.allowed.includes(b.record)) reason = 'Not available for this record.';
+          if (effectiveRecord === null) reason = PICK_FIRST;
+          else if (effectiveRecord.blocked[b.record]) reason = effectiveRecord.blocked[b.record] ?? null;
+          else if (!effectiveRecord.allowed.includes(b.record)) reason = 'Not available for this record.';
         } else if (b.needsRecord && !haveRecord) reason = PICK_FIRST;
         else if (!DEFAULTS.has(b.label) && !onAction)
           reason = 'Not available yet: this page has no handler for it.';
@@ -272,14 +309,14 @@ function Bar({
         />
       ) : null}
       {picked && pageId ? <MoveForwardDialog docType={pageId} docId={picked.id} docNo={picked.number} onClose={() => setPicked(null)} onMoved={() => setPicked(null)} /> : null}
-      {emailing && pageId && recordId ? (
-        <EmailDocDialog docType={pageId} docId={recordId} onClose={() => setEmailing(false)} />
+      {emailing && pageId && effRecordId ? (
+        <EmailDocDialog docType={pageId} docId={effRecordId} onClose={() => setEmailing(false)} />
       ) : null}
-      {moving && pageId && recordId ? (
+      {moving && pageId && effRecordId ? (
         <MoveForwardDialog
           docType={pageId}
-          docId={recordId}
-          docNo={docNo}
+          docId={effRecordId}
+          docNo={effDocNo}
           onClose={() => setMoving(false)}
           onMoved={() => setMoving(false)}
         />

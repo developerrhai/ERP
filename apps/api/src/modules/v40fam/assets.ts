@@ -41,7 +41,7 @@ const CAP_REG = [...ASSET5, 'Capitalization No', 'Purchase Ref', 'Capitalization
 const capLine = (comp: string): string =>
   `(SELECT sum(cl.amount) FROM asset_cap_cost_lines cl WHERE cl.cap_id = t.id AND cl.component = '${comp}')`;
 const CAPITALIZATION: PageDef = {
-  from: `asset_capitalisations t JOIN assets a ON a.id = t.asset_id ${BV} LEFT JOIN users ap ON ap.id = t.approved_by_id ${apJoin('asset-capitalization')}`,
+  from: `asset_capitalisations t JOIN assets a ON a.id = t.asset_id ${BV} LEFT JOIN users apu ON apu.id = t.approved_by_id ${apJoin('asset-capitalization')}`,
   unit: 't.unit_id',
   soft: 't.deleted_at',
   number: 't.cap_no',
@@ -59,7 +59,7 @@ const CAPITALIZATION: PageDef = {
     Installation: m(capLine('INSTALLATION')),
     'Other Cost': m(`(SELECT sum(cl.amount) FROM asset_cap_cost_lines cl WHERE cl.cap_id = t.id AND cl.component NOT IN ('BASE'))`),
     'Capitalized Value': m('t.total_cost'),
-    Approver: t('ap.name'),
+    Approver: t('apu.name'),
     'Project Number': none(),
     Status: pill('t.status'),
     ...common('asset-capitalization', 't.cap_no'),

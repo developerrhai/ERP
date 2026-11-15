@@ -270,6 +270,8 @@ function DetailedTable({
   columns,
   onExportCsv,
   onExportPdf,
+  onExportWord,
+  onExportEmail,
   onRowAction,
 }: {
   title: string;
@@ -277,9 +279,11 @@ function DetailedTable({
   columns: V40Column[];
   onExportCsv: () => void;
   onExportPdf: () => void;
+  onExportWord: () => void;
+  onExportEmail: () => void;
   onRowAction: (action: string, row: V40Row) => void;
 }) {
-  const displayCols = columns.filter((c) => c.type !== 'actions' && c.type !== 'docs').slice(0, 6);
+  const displayCols = columns.filter((c) => c.type !== 'actions' && c.type !== 'docs').slice(0, 10);
 
   return (
     <div className="card v92-table-section">
@@ -289,6 +293,12 @@ function DetailedTable({
           <small>{`${Math.min(20, rows.length)} working records • full actions available`}</small>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          <button type="button" className="btn sm" onClick={onExportEmail}>
+            Send Email
+          </button>
+          <button type="button" className="btn sm" onClick={onExportWord}>
+            Word
+          </button>
           <button type="button" className="btn sm" onClick={onExportCsv}>
             Excel
           </button>
@@ -448,6 +458,27 @@ export function FamV40Body({
     [dataRows, activeRecordId],
   );
 
+  useEffect(() => {
+    const handleAdd = (e: Event) => {
+      const customEvent = e as CustomEvent<{ pageId: string }>;
+      if (!customEvent.detail || customEvent.detail.pageId === pageId) {
+        setShowAddModal(true);
+      }
+    };
+    window.addEventListener('v40-add-record', handleAdd);
+    return () => window.removeEventListener('v40-add-record', handleAdd);
+  }, [pageId]);
+
+  useEffect(() => {
+    if (activeRecord) {
+      window.dispatchEvent(
+        new CustomEvent('v40-active-record', {
+          detail: { pageId, recordId: activeRecord.id, docNo: activeRecord.number },
+        }),
+      );
+    }
+  }, [pageId, activeRecord]);
+
   const toggleAll = () => {
     if (picked.size === filteredRows.length) setPicked(new Set());
     else setPicked(new Set(filteredRows.map((r) => r.id)));
@@ -550,6 +581,14 @@ export function FamV40Body({
   const fifthMetric = useMemo(() => {
     const total = totalCount || filteredRows.length;
     switch (pageId) {
+      case 'asset-master': return { label: 'Active Assets', value: `${total}` };
+      case 'asset-capitalization': return { label: 'Capitalized Value', value: '₹ 1.84 Cr' };
+      case 'asset-allocation': return { label: 'Allocated Rate', value: '94.2%' };
+      case 'asset-transfer': return { label: 'Transfers Pending', value: `${total}` };
+      case 'asset-maintenance': return { label: 'Work Orders', value: `${total}` };
+      case 'asset-depreciation': return { label: 'Monthly Depreciation', value: '₹ 4.2L' };
+      case 'asset-disposal': return { label: 'Disposals Recorded', value: `${total}` };
+      case 'asset-qr': return { label: 'QR Tags Generated', value: '100%' };
       case 'log-transporters': return { label: 'Active Transporters', value: `${total}` };
       case 'log-routes': return { label: 'Active Routes', value: `${total}` };
       case 'log-freight': return { label: 'Freight Verified', value: '100%' };
@@ -630,7 +669,7 @@ export function FamV40Body({
         </div>
         <div className="v8-mini">
           <small>AI Risk</small>
-          <b style={{ color: '#16a34a' }}>14/100 Low</b>
+          <b style={{ color: '#16a34a' }}>{pageId.startsWith('asset-') ? '21/100 Controlled' : '14/100 Low'}</b>
         </div>
         <div className="v8-mini">
           <small>{fifthMetric.label}</small>
@@ -726,6 +765,180 @@ export function FamV40Body({
               >
                 Create CAPA
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.6 Asset Maintenance Workspace Panel */}
+      {pageId === 'asset-maintenance' ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Asset Maintenance</h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  Preventive/breakdown maintenance planning with downtime, spare and MTBF/MTTR visibility.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● Working
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+              <select
+                value={dept}
+                onChange={(e) => setDept(e.target.value)}
+                aria-label="Department Filter"
+                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--line, #cbd5e1)', fontSize: 12 }}
+              >
+                {DEPARTMENTS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Quick filter for department wise records on this page</small>
+            </div>
+            <div className="table-wrap">
+              <table className="register-table">
+                <thead>
+                  <tr>
+                    <th>Equipment</th>
+                    <th>Type</th>
+                    <th>Due / Start</th>
+                    <th>Downtime</th>
+                    <th>Spare</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRows.slice(0, 8).map((r, i) => (
+                    <tr key={`wo-${r.id || i}`}>
+                      <td><strong>{r['Equipment'] ?? r['Asset'] ?? `Machine-${String(i + 1).padStart(2, '0')}`}</strong></td>
+                      <td>{r['Service Type'] ?? (i % 2 === 0 ? 'Preventive' : 'Breakdown')}</td>
+                      <td>{r['Due Date'] ?? r['Service Date'] ?? `2026-11-${String(10 + i).padStart(2, '0')}`}</td>
+                      <td>{i % 2 === 0 ? '0 hr' : `${(i % 4) + 1.5} hr`}</td>
+                      <td>{i % 3 === 0 ? 'Short' : 'Available'}</td>
+                      <td><span className="chip">{r.status || (i % 3 === 0 ? 'Review' : 'Scheduled')}</span></td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn sm primary"
+                          onClick={() => {
+                            toast(`Maintenance Work Order created for ${r['Equipment'] ?? r.number ?? 'asset'}.`);
+                          }}
+                        >
+                          Create WO
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 10px 0' }}>Reliability Indicators</h3>
+            <div className="v9-metric-row"><span>MTBF</span><b>180 hr</b></div>
+            <div className="v9-metric-row"><span>MTTR</span><b>2.4 hr</b></div>
+            <div className="v9-metric-row"><span>PM compliance</span><b>96%</b></div>
+            <div className="v9-metric-row"><span>Breakdown frequency</span><b>1%</b></div>
+            <div className="v9-metric-row"><span>Spare readiness</span><b>94%</b></div>
+            <div style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                className="btn primary"
+                style={{ width: '100%' }}
+                onClick={() => setShowAddModal(true)}
+              >
+                ＋ Create Maintenance Order
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.7 Asset Lifecycle Workspace Panel (All other Asset submodules) */}
+      {pageId.startsWith('asset-') && pageId !== 'asset-maintenance' ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>{`${title} Register`}</h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  Asset lifecycle, allocation, book value, depreciation, maintenance and disposal controls.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● Working
+              </span>
+            </div>
+            {/* 5-Stage Asset Lifecycle Stepper */}
+            <div className="v9-stepper" style={{ marginBottom: 12 }}>
+              {[
+                { name: 'Capitalized', status: 'Active' },
+                { name: 'Allocated', status: 'Active' },
+                { name: 'In Use', status: 'Active' },
+                { name: 'Maintenance', status: 'Future' },
+                { name: 'Disposal', status: 'Future' },
+              ].map((st, i) => (
+                <div key={st.name} className={`v9-step ${i < 2 ? 'done' : i === 2 ? 'current' : ''}`}>
+                  <b>{st.name}</b>
+                  <span>{st.status}</span>
+                </div>
+              ))}
+            </div>
+            {/* Department Filter */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select
+                value={dept}
+                onChange={(e) => setDept(e.target.value)}
+                aria-label="Department Filter"
+                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--line, #cbd5e1)', fontSize: 12 }}
+              >
+                {DEPARTMENTS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Quick filter for department wise records on this page</small>
+            </div>
+          </div>
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 10px 0' }}>Lifecycle Actions</h3>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  toast(`Transfer initiated for ${activeRecord?.number || 'selected asset'}.`);
+                  navigate('/m/asset-transfer');
+                }}
+              >
+                Transfer
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  toast(`Depreciation posted to GL for ${activeRecord?.number || 'selected asset'}.`);
+                  navigate('/m/asset-depreciation');
+                }}
+              >
+                Post Depreciation
+              </button>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={() => {
+                  toast(`Asset disposal initiated for ${activeRecord?.number || 'selected asset'}.`);
+                  navigate('/m/asset-disposal');
+                }}
+              >
+                Dispose
+              </button>
+            </div>
+            <div className="notice" style={{ marginTop: 12 }}>
+              Select an asset from the register or record dropdown above to run targeted lifecycle actions.
             </div>
           </div>
         </div>
@@ -954,6 +1167,16 @@ export function FamV40Body({
         columns={columns}
         onExportCsv={handleExportCsv}
         onExportPdf={handleExportPdf}
+        onExportWord={() => {
+          if (activeRecord) void handleWordExport(activeRecord);
+          else if (filteredRows[0]) void handleWordExport(filteredRows[0]);
+          else toast('No records available to export Word.');
+        }}
+        onExportEmail={() => {
+          if (activeRecord) setEmailing(activeRecord.number || activeRecord.id);
+          else if (filteredRows[0]) setEmailing(filteredRows[0].number || filteredRows[0].id);
+          else toast('No records available to send email.');
+        }}
         onRowAction={handleRowAction}
       />
 
