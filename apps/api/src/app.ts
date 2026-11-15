@@ -136,7 +136,22 @@ export function createApp(options: AppOptions = {}): Express {
       // Exact allow-list only. No Origin header (same-origin, curl, server-to-server) needs no
       // CORS headers; an unlisted origin gets none, so the browser blocks the response.
       origin: (origin, callback) => {
-        callback(null, origin !== undefined && corsOrigins.includes(origin) ? origin : false);
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+        let isAllowed = corsOrigins.includes(origin);
+        if (!isAllowed) {
+          try {
+            const parsed = new URL(origin);
+            if (parsed.hostname.endsWith('.vercel.app') || parsed.hostname.endsWith('sawantgroup.co.in')) {
+              isAllowed = true;
+            }
+          } catch {
+            isAllowed = false;
+          }
+        }
+        callback(null, isAllowed ? origin : false);
       },
       credentials: true,
       allowedHeaders: [
