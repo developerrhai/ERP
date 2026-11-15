@@ -183,11 +183,12 @@ function RecordControlsBar({
   onResetDemo?: () => void;
 }) {
   const navigate = useNavigate();
+  const currentId = activeId || (rows.length && rows[0] ? rows[0].id : '');
 
   return (
     <div className="recordbar" role="toolbar" aria-label="Record Action Bar">
       <select
-        value={activeId}
+        value={activeId || currentId}
         onChange={(e) => onSelect(e.target.value)}
         aria-label="Active Record"
       >
@@ -201,7 +202,7 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
-        onClick={() => onSelect(activeId || (rows.length && rows[0] ? rows[0].id : ''))}
+        onClick={() => onSelect(currentId)}
       >
         Load Selected
       </button>
@@ -216,7 +217,7 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
-        disabled={!activeId || !actions.edit}
+        disabled={!currentId || !actions.edit}
         onClick={onEdit}
       >
         Edit
@@ -224,7 +225,7 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm danger"
-        disabled={!activeId || !actions.delete}
+        disabled={!currentId || !actions.delete}
         onClick={onDelete}
       >
         Delete
@@ -232,7 +233,7 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
-        disabled={!activeId}
+        disabled={!currentId}
         onClick={onDocuments}
       >
         Documents
@@ -240,7 +241,7 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
-        disabled={!activeId || !actions.submit}
+        disabled={!currentId || !actions.submit}
         onClick={onSubmitApproval}
       >
         Submit Approval
@@ -255,7 +256,7 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
-        disabled={!activeId}
+        disabled={!currentId}
         onClick={onMoveForward}
       >
         Move Forward
@@ -263,7 +264,7 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
-        disabled={!activeId}
+        disabled={!currentId}
         onClick={onMoveForward}
       >
         Move Forward - Internal
@@ -321,7 +322,7 @@ function DetailedTable({
     <div className="card v92-table-section">
       <div className="v92-table-title">
         <div>
-          <h3>{`${title} Register • Detailed Table`}</h3>
+          <h3>{`${title === 'Warehouse Master' ? 'Warehouse Directory' : title} Register • Detailed Table`}</h3>
           <small>{`${Math.min(20, rows.length)} working records • full actions available`}</small>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -416,6 +417,7 @@ export function FamV40Body({
   const [status, setStatus] = useState('');
   const [dept, setDept] = useState('All Departments');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [selectedOrder, setSelectedOrder] = useState('SO-2026-0001');
   const [activeRecordId, setActiveRecordId] = useState('');
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -452,14 +454,14 @@ export function FamV40Body({
     const tabName = frame?.tabName ?? '';
     const isFirst = frame?.index === 0;
 
-    void getSalesV40(pageId, { tab: tabName, first: isFirst, q, status, page, size: 50 })
+    void getSalesV40(pageId, { tab: tabName, first: isFirst, q, status, page, size: pageSize })
       .then((res) => {
         if (!live) return;
         setDataRows(res.rows);
         setColumns(res.columns);
         setTotalCount(res.total);
-        if (res.rows.length && res.rows[0] && !activeRecordId) {
-          setActiveRecordId(res.rows[0].id);
+        if (res.rows.length && res.rows[0]) {
+          setActiveRecordId((prev) => (prev && res.rows.some((r) => r.id === prev) ? prev : res.rows[0]!.id));
         }
       })
       .catch((err) => {
@@ -470,7 +472,7 @@ export function FamV40Body({
     return () => {
       live = false;
     };
-  }, [pageId, frame?.tabName, frame?.index, q, status, page, tick]);
+  }, [pageId, frame?.tabName, frame?.index, q, status, page, pageSize, tick]);
 
   // Department-filtered rows (with calibration due/expired toggle)
   const filteredRows = useMemo(() => {
@@ -513,6 +515,21 @@ export function FamV40Body({
         }),
       );
     }
+  }, [pageId, activeRecord]);
+
+  useEffect(() => {
+    const handleReq = (e: Event) => {
+      const ce = e as CustomEvent<{ pageId: string }>;
+      if ((!ce.detail || ce.detail.pageId === pageId) && activeRecord) {
+        window.dispatchEvent(
+          new CustomEvent('v40-active-record', {
+            detail: { pageId, recordId: activeRecord.id, docNo: activeRecord.number },
+          }),
+        );
+      }
+    };
+    window.addEventListener('v40-request-active-record', handleReq);
+    return () => window.removeEventListener('v40-request-active-record', handleReq);
   }, [pageId, activeRecord]);
 
   const toggleAll = () => {
@@ -667,6 +684,16 @@ export function FamV40Body({
       case 'sales-pricelist': return { label: 'Active Price Lists', value: `${total}` };
       case 'sales-credit': return { label: 'Approved Credit Limits', value: `${total}` };
       case 'sales-returns': return { label: 'Return Rate', value: '0.4% Low' };
+      case 'wms-warehouses': return { label: 'Storage Capacity', value: '94% Utilized' };
+      case 'wms-zones': return { label: 'Active Zones', value: `${total}` };
+      case 'wms-racks': return { label: 'Active Racks', value: `${total}` };
+      case 'wms-bins': return { label: 'Bin Fill Rate', value: '88.5%' };
+      case 'wms-putaway': return { label: 'Put-Away Queue', value: `${total}` };
+      case 'wms-pick': return { label: 'Pick Tasks', value: `${total}` };
+      case 'wms-packing': return { label: 'Pack Units', value: `${total}` };
+      case 'wms-cycle': return { label: 'Cycle Accuracy', value: '99.8%' };
+      case 'wms-physical': return { label: 'Count Discrepancy', value: '0.1% Low' };
+      case 'wms-transfer': return { label: 'Transfers In Transit', value: `${total}` };
       default: return { label: 'Active Units', value: `${total}` };
     }
   }, [pageId, totalCount, filteredRows.length]);
@@ -1046,6 +1073,19 @@ export function FamV40Body({
             </option>
           ))}
         </select>
+        <select
+          value={pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setPage(1);
+          }}
+          aria-label="Rows Selector"
+        >
+          <option value="10">10 rows</option>
+          <option value="20">20 rows</option>
+          <option value="25">25 rows</option>
+          <option value="50">50 rows</option>
+        </select>
         <button
           type="button"
           className="btn sm"
@@ -1057,6 +1097,43 @@ export function FamV40Body({
         <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--muted, #64748b)' }}>
           {`${filteredRows.length} of ${totalCount || filteredRows.length} records`}
         </span>
+      </div>
+
+      {/* 4.5 Bulk Actions Bar */}
+      <div className="sv40-bulk" role="group" aria-label="Selected records" style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <span className="v8-badge" style={{ padding: '4px 8px', borderRadius: 4, background: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: 12 }}>
+          {`${picked.size} selected`}
+        </span>
+        <button
+          type="button"
+          className="btn sm"
+          disabled={picked.size === 0}
+          onClick={handleExportCsv}
+        >
+          Export Selected
+        </button>
+        <button
+          type="button"
+          className="btn sm primary"
+          disabled={picked.size === 0}
+          onClick={() => {
+            toast(`${picked.size} records submitted for approval.`);
+            setPicked(new Set());
+          }}
+        >
+          Submit Selected
+        </button>
+        <button
+          type="button"
+          className="btn sm danger"
+          disabled={picked.size === 0}
+          onClick={() => {
+            toast(`${picked.size} records deleted.`);
+            setPicked(new Set());
+          }}
+        >
+          Delete Selected
+        </button>
       </div>
 
       {/* 5. Primary Horizontal Register Table */}

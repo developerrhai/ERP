@@ -172,8 +172,11 @@ function Bar({
       }
     };
     window.addEventListener('v40-active-record', handler);
+    if (pageId && !syncedRecord) {
+      window.dispatchEvent(new CustomEvent('v40-request-active-record', { detail: { pageId } }));
+    }
     return () => window.removeEventListener('v40-active-record', handler);
-  }, [pageId]);
+  }, [pageId, syncedRecord]);
 
   // Page mode: only what an older page does not already draw itself (they keep their own Excel / Print / Add).
   // Excel / Print / Edit / Delete: V40 shows them on every page. Older pages draw some themselves, so the shell
