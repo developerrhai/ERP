@@ -78,8 +78,14 @@ function cell(v: unknown): string {
   if (v === null || v === undefined || v === '') return '';
   if (v instanceof Date) return fmtDate(v);
   if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if (typeof v === 'number') return Math.round(v).toLocaleString('en-IN');
   if (typeof v === 'object') return JSON.stringify(v);
-  return String(v);
+  const s = String(v).trim();
+  if (/^-?\d+\.\d+$/.test(s)) {
+    const num = Number(s);
+    if (!isNaN(num)) return Math.round(num).toLocaleString('en-IN');
+  }
+  return s;
 }
 
 /** The print model of a record of the catalog, built from its table row and its lines (every record prints). */
@@ -102,7 +108,16 @@ async function rowDto(caller: Caller, doc: CatalogDoc, id: string): Promise<Prin
       const keys = Object.keys(ls[0]!).filter((k) => !HIDE.test(k) || k === 'item_name');
       lines = {
         columns: keys.map((k) => ({ key: k, label: pretty(k === 'item_name' ? 'item' : k), format: 'text', align: ls.some((x) => typeof x[k] === 'number' || /^-?\d+(\.\d+)?$/.test(String(x[k] ?? ''))) ? ('right' as const) : ('left' as const) })),
-        rows: ls.map((x) => Object.fromEntries(keys.map((k) => [k, x[k] instanceof Date ? fmtDate(x[k]) : (x[k] as string | number | null) ?? null]))) as never,
+        rows: ls.map((x) => Object.fromEntries(keys.map((k) => {
+          const val = x[k];
+          if (val instanceof Date) return [k, fmtDate(val)];
+          if (typeof val === 'number') return [k, Math.round(val).toLocaleString('en-IN')];
+          if (typeof val === 'string' && /^-?\d+\.\d+$/.test(val.trim())) {
+            const n = Number(val.trim());
+            if (!isNaN(n)) return [k, Math.round(n).toLocaleString('en-IN')];
+          }
+          return [k, (val as string | number | null) ?? null];
+        }))) as never,
       };
     }
   }

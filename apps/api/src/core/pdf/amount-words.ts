@@ -75,5 +75,5 @@ export function groupIndian(value: number, decimals = 2): string {
 }
 
 export function formatInr(value: number): string {
-  return `₹ ${groupIndian(value, 2)}`;
+  return `₹ ${groupIndian(Math.round(value), 0)}`;
 }

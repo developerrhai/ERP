@@ -109,12 +109,13 @@ function ensureRoom(
 
 function formatCell(value: string | number | null | undefined, format: string): string {
   if (value === null || value === undefined || value === '') return '';
-  if (typeof value === 'number') {
-    if (format === 'money') return groupIndian(value, 2);
-    if (format === 'percent') return `${groupIndian(value, 2)}%`;
-    return groupIndian(value, Number.isInteger(value) ? 0 : 3);
+  const num = typeof value === 'number' ? value : (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value.trim()) ? Number(value.trim()) : NaN);
+  if (!isNaN(num)) {
+    if (format === 'money') return groupIndian(Math.round(num), 0);
+    if (format === 'percent') return `${groupIndian(num, 2)}%`;
+    return groupIndian(Math.round(num), 0);
   }
-  return value;
+  return String(value);
 }
 
 export async function renderDocumentPdf(

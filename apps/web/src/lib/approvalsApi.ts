@@ -376,7 +376,7 @@ export function inr(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === '') return '—';
   const n = Number(value);
   if (!Number.isFinite(n)) return '—';
-  return `₹ ${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+  return `₹ ${Math.round(n).toLocaleString('en-IN')}`;
 }
 
 /** "Pending L2/4 · Department Head" for the chip on a document. */

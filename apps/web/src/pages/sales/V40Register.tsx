@@ -94,7 +94,7 @@ const PAGE_SIZE = 20;
 const num = (v: string | null): string => {
   if (v === null || v === '') return '—';
   const n = Number(v);
-  return Number.isNaN(n) ? v : n.toLocaleString('en-IN', { maximumFractionDigits: 3 });
+  return Number.isNaN(n) ? v : Math.round(n).toLocaleString('en-IN');
 };
 
 function csvCell(v: string): string {
@@ -116,6 +116,10 @@ function Cell({
   if (col.type === 'num') return <td className="num">{num(v)}</td>;
   if (col.type === 'date') return <td>{dmy(v)}</td>;
   if (col.type === 'pill') return <td>{v ? <Pill>{v}</Pill> : '—'}</td>;
+  if (v !== null && /^-?\d+\.\d+$/.test(v.trim())) {
+    const n = Number(v.trim());
+    if (!isNaN(n)) return <td className="num">{Math.round(n).toLocaleString('en-IN')}</td>;
+  }
   return <td>{v === null || v === '' ? '—' : v}</td>;
 }
 

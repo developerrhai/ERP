@@ -26,9 +26,12 @@ function formatDate(iso: string): string {
 export function displayValue(field: FieldMeta, raw: unknown): string {
   if (raw === undefined || raw === null || raw === '') return '';
   if (field.type === 'bool') return raw === true ? 'Yes' : 'No';
-  if (field.type === 'money' && typeof raw === 'number') return formatInr(raw);
-  if (field.type === 'pct' && typeof raw === 'number') return `${groupIndian(raw, 2)}%`;
-  if (typeof raw === 'number') return groupIndian(raw, Number.isInteger(raw) ? 0 : 3);
+  const num = typeof raw === 'number' ? raw : (typeof raw === 'string' && /^-?\d+(\.\d+)?$/.test(raw.trim()) ? Number(raw.trim()) : NaN);
+  if (!isNaN(num)) {
+    if (field.type === 'money') return formatInr(num);
+    if (field.type === 'pct') return `${groupIndian(num, 2)}%`;
+    return groupIndian(Math.round(num), 0);
+  }
   if (field.type === 'date' && typeof raw === 'string') return formatDate(raw);
   return typeof raw === 'string' ? raw : JSON.stringify(raw);
 }

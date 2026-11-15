@@ -50,6 +50,17 @@ const NOUNS: Record<string, string> = {
   'qms-capa': 'CAPA',
   'qms-5why': '5 Why Cases',
   'qms-calibration': 'Instruments',
+  'sales-quotations': 'Quotations',
+  'sales-orders': 'Sales Orders',
+  'sales-enquiries': 'Enquiries',
+  'sales-reservations': 'Stock Reservations',
+  'sales-delivery': 'Delivery Plans',
+  'sales-dispatch': 'Dispatches',
+  'sales-invoices': 'Invoices',
+  'sales-collections': 'Collections',
+  'sales-pricelist': 'Price Lists',
+  'sales-credit': 'Credit Limits',
+  'sales-returns': 'Sales Returns',
 };
 
 export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
@@ -57,6 +68,6 @@ export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
 export const FAM_PAGE_CFG: Record<string, { noun: string; print?: boolean }> = Object.fromEntries(
   Object.entries(NOUNS).map(([id, noun]) => [
     id,
-    id === 'gate-out' || id === 'log-shipments' ? { noun, print: true } : { noun },
+    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') ? { noun, print: true } : { noun },
   ]),
 );

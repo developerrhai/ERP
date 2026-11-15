@@ -1,20 +1,20 @@
 // Small helpers shared by the Finance screens: Indian money format, DD-MM-YYYY dates, status pills.
 import type { ReactNode } from 'react';
 
-const INR = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const INR = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-/** "125000.5" -> "₹ 1,25,000.50" */
+/** "125000" -> "₹ 1,25,000" */
 export function inr(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === '') return '—';
   const n = Number(value);
-  return Number.isNaN(n) ? '—' : `₹ ${INR.format(n)}`;
+  return Number.isNaN(n) ? '—' : `₹ ${INR.format(Math.round(n))}`;
 }
 
 /** Plain number with Indian grouping, no symbol, for table columns. */
 export function amt(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === '') return '';
   const n = Number(value);
-  return Number.isNaN(n) || n === 0 ? '' : INR.format(n);
+  return Number.isNaN(n) || n === 0 ? '' : INR.format(Math.round(n));
 }
 
 /** "2026-11-06" -> "06-11-2026" */

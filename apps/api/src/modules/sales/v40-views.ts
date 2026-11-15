@@ -2099,6 +2099,7 @@ function resolveView(def: PageDef, q: V40Query): { labels: string[]; view: ViewD
 const cast = (c: Col): string => {
   if (!c.e) return 'NULL::text';
   if (c.type === 'date') return `to_char((${c.e})::date,'YYYY-MM-DD')`;
+  if (c.type === 'inr' || c.type === 'num') return `round((${c.e})::numeric, 0)::text`;
   return `(${c.e})::text`;
 };
 

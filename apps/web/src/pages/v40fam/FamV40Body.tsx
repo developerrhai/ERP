@@ -15,11 +15,35 @@ import { docsMailApi, saveFile } from '../../lib/docsMailApi';
 import { toUiError } from '../../lib/errors';
 import type { ActionSet } from '../../types';
 import { useFrame } from '../frame/V40TabFrame';
-import { getSalesV40, type V40Column, type V40Row } from '../sales/salesV40Api';
+import { getSalesV40, type V40Column, type V40ColType, type V40Row } from '../sales/salesV40Api';
 import { FAM_PAGE_CFG } from './famIds';
 import { DocumentsPanel } from '../generic/DocumentsPanel';
 import type { PageSchema } from '../generic/engineApi';
 import './fam-v40.css';
+
+function formatCellValue(val: unknown, type?: V40ColType): ReactNode {
+  if (val === null || val === undefined || val === '') return '—';
+  const s = String(val).trim();
+  if (type === 'inr') {
+    const num = Number(s);
+    if (!isNaN(num) && s !== '') {
+      return `₹ ${Math.round(num).toLocaleString('en-IN')}`;
+    }
+  }
+  if (type === 'num') {
+    const num = Number(s);
+    if (!isNaN(num) && s !== '') {
+      return Math.round(num).toLocaleString('en-IN');
+    }
+  }
+  if (/^-?\d+\.\d+$/.test(s)) {
+    const num = Number(s);
+    if (!isNaN(num)) {
+      return Math.round(num).toLocaleString('en-IN');
+    }
+  }
+  return s;
+}
 
 const DEPARTMENTS = [
   'All Departments',
@@ -239,6 +263,14 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
+        disabled={!activeId}
+        onClick={onMoveForward}
+      >
+        Move Forward - Internal
+      </button>
+      <button
+        type="button"
+        className="btn sm"
         onClick={() => navigate('/m/document-movement-center')}
       >
         Move Document
@@ -326,7 +358,9 @@ function DetailedTable({
                 <td>{idx + 1}</td>
                 <td><strong>{r.number || '—'}</strong></td>
                 {displayCols.map((c) => (
-                  <td key={c.key}>{r[c.key] ?? '—'}</td>
+                  <td key={c.key} className={c.type === 'inr' || c.type === 'num' ? 'num' : undefined}>
+                    {formatCellValue(r[c.key], c.type)}
+                  </td>
                 ))}
                 <td>
                   <span className="chip">{r.status || 'Active'}</span>
@@ -335,14 +369,16 @@ function DetailedTable({
                   <div className="proc-row-actions">
                     <button type="button" className="btn sm" onClick={() => onRowAction('view', r)}>View</button>
                     <button type="button" className="btn sm" onClick={() => onRowAction('edit', r)}>Edit</button>
-                    <button type="button" className="btn sm danger" onClick={() => onRowAction('delete', r)}>Delete</button>
+                    <button type="button" className="btn sm" onClick={() => onRowAction('docs', r)}>Docs</button>
                     <button type="button" className="btn sm" onClick={() => onRowAction('email', r)}>Email</button>
                     <button type="button" className="btn sm" onClick={() => onRowAction('word', r)}>Word</button>
                     <button type="button" className="btn sm" onClick={() => onRowAction('pdf', r)}>PDF</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('docs', r)}>Docs</button>
+                    <button type="button" className="btn sm danger" onClick={() => onRowAction('delete', r)}>Delete</button>
                     <button type="button" className="btn sm" onClick={() => onRowAction('submit', r)}>Submit</button>
                     <button type="button" className="btn sm" onClick={() => onRowAction('track', r)}>360° Track</button>
                     <button type="button" className="btn sm" onClick={() => onRowAction('move', r)}>Move Forward</button>
+                    <button type="button" className="btn sm" onClick={() => onRowAction('move', r)}>Move Forward - Internal</button>
+                    <button type="button" className="btn sm" onClick={() => onRowAction('moveDoc', r)}>Move Document</button>
                   </div>
                 </td>
               </tr>
@@ -564,6 +600,9 @@ export function FamV40Body({
       case 'move':
         setMoving({ id: row.id, number: row.number || row.id });
         break;
+      case 'moveDoc':
+        navigate('/m/document-movement-center');
+        break;
       default:
         break;
     }
@@ -617,6 +656,17 @@ export function FamV40Body({
       case 'qms-capa': return { label: 'Active CAPAs', value: `${total}` };
       case 'qms-5why': return { label: 'Root Cause Cases', value: `${total}` };
       case 'qms-calibration': return { label: 'Calibrated In Date', value: `${total}` };
+      case 'sales-quotations': return { label: 'Quotations Value', value: '₹ 4.8 Cr' };
+      case 'sales-orders': return { label: 'Order Intake', value: '₹ 8.2 Cr' };
+      case 'sales-enquiries': return { label: 'Active Enquiries', value: `${total}` };
+      case 'sales-reservations': return { label: 'Reserved Stock', value: '100% Allocated' };
+      case 'sales-delivery': return { label: 'On-Time Schedule', value: '98.5%' };
+      case 'sales-dispatch': return { label: 'Dispatched Units', value: `${total}` };
+      case 'sales-invoices': return { label: 'Invoiced Value', value: '₹ 6.4 Cr' };
+      case 'sales-collections': return { label: 'Collected Amount', value: '₹ 5.9 Cr' };
+      case 'sales-pricelist': return { label: 'Active Price Lists', value: `${total}` };
+      case 'sales-credit': return { label: 'Approved Credit Limits', value: `${total}` };
+      case 'sales-returns': return { label: 'Return Rate', value: '0.4% Low' };
       default: return { label: 'Active Units', value: `${total}` };
     }
   }, [pageId, totalCount, filteredRows.length]);
@@ -1119,7 +1169,7 @@ export function FamV40Body({
                     }
                     return (
                       <td key={c.key} className={c.type === 'inr' || c.type === 'num' ? 'num' : undefined}>
-                        {r[c.key] ?? '—'}
+                        {formatCellValue(r[c.key], c.type)}
                       </td>
                     );
                   })}
