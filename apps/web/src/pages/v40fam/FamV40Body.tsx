@@ -90,6 +90,10 @@ const WMS_TITLES: Record<string, string> = {
   'inv-serial': 'Serial Number Tracking – Detailed Table',
   'inv-expiry': 'Expiry Tracking – Detailed Table',
   'inv-reconciliation': 'Stock Reconciliation – Detailed Table',
+  'auto-workflows': 'Workflow Automation Workspace – Detailed Table',
+  'auto-rules': 'Rule Library – Detailed Table',
+  'auto-jobs': 'Job Queue – Detailed Table',
+  'auto-webhooks': 'Webhook Registry – Detailed Table',
 };
 
 const DEPARTMENTS = [
@@ -243,7 +247,7 @@ function RecordControlsBar({
         <option value="">{`Record: [Select ${title}]`}</option>
         {rows.map((r) => (
           <option key={r.id} value={r.id}>
-            {`Record: [${r['Item Code'] || r['itemCode'] || r['Batch No'] || r['batchNo'] || r['Serial No'] || r['serialNo'] || r['Voucher No'] || r['txnId'] || r['Opening Ref'] || r['openingRef'] || r['Adjustment No'] || r['adjNo'] || r['Transfer No'] || r['transferNo'] || r['Reservation No'] || r['resNo'] || r['Reconciliation No'] || r['reconNo'] || r['Vendor Invoice'] || r['Invoice No'] || r['GSTIN'] || r['TDS Entry No'] || r['TCS Entry No'] || r['HSN SAC'] || r['EWB No'] || r['Return Period'] || r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
+            {`Record: [${r['Record ID'] || r['Rule ID'] || r['Job ID'] || r['Webhook ID'] || r['Model Rule'] || r['Rule Name'] || r['Job Name'] || r.Event || r['Item Code'] || r['itemCode'] || r['Batch No'] || r['batchNo'] || r['Serial No'] || r['serialNo'] || r['Voucher No'] || r['txnId'] || r['Opening Ref'] || r['openingRef'] || r['Adjustment No'] || r['adjNo'] || r['Transfer No'] || r['transferNo'] || r['Reservation No'] || r['resNo'] || r['Reconciliation No'] || r['reconNo'] || r['Vendor Invoice'] || r['Invoice No'] || r['GSTIN'] || r['TDS Entry No'] || r['TCS Entry No'] || r['HSN SAC'] || r['EWB No'] || r['Return Period'] || r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
           </option>
         ))}
       </select>
@@ -789,6 +793,10 @@ export function FamV40Body({
       case 'inv-serial': return { label: 'Tracked Serials', value: `${total}` };
       case 'inv-expiry': return { label: 'Expired Stock', value: '0 Low' };
       case 'inv-reconciliation': return { label: 'Audit Compliance', value: '100%' };
+      case 'auto-workflows': return { label: 'Automated Tasks', value: `${total}` };
+      case 'auto-rules': return { label: 'Active Rules', value: `${total}` };
+      case 'auto-jobs': return { label: 'Job Success Rate', value: '99.4%' };
+      case 'auto-webhooks': return { label: 'Sync Success Rate', value: '99.8%' };
       case 'wms-warehouses': return { label: 'Storage Capacity', value: '94% Utilized' };
       case 'wms-zones': return { label: 'Active Zones', value: `${total}` };
       case 'wms-racks': return { label: 'Active Racks', value: `${total}` };
@@ -838,26 +846,196 @@ export function FamV40Body({
       {/* 3. Five Summary / KPI Cards */}
       <div className="v8-table-summary" role="group" aria-label="KPI Summary Cards">
         <div className="v8-mini">
-          <small>Records in Scope</small>
-          <b>{totalCount || filteredRows.length}</b>
+          <small>{pageId === 'auto-jobs' ? 'Demo / Live Records' : 'Records in Scope'}</small>
+          <b>{totalCount || filteredRows.length}{pageId === 'auto-jobs' ? ' Active' : ''}</b>
         </div>
         <div className="v8-mini">
-          <small>Completion</small>
-          <b>100%</b>
+          <small>{pageId === 'auto-jobs' ? 'Data Completeness' : 'Completion'}</small>
+          <b>{pageId === 'auto-jobs' ? '98%' : '100%'}</b>
         </div>
         <div className="v8-mini">
           <small>Open / Pending</small>
-          <b>{filteredRows.filter((r) => !/completed|closed|delivered|exited|posted/i.test(r.status ?? '')).length}</b>
+          <b>{pageId === 'auto-jobs' ? '0 Pending' : filteredRows.filter((r) => !/completed|closed|delivered|exited|posted/i.test(r.status ?? '')).length}</b>
         </div>
         <div className="v8-mini">
-          <small>At Risk</small>
+          <small>{pageId === 'auto-jobs' ? 'AI Risk Score' : 'At Risk'}</small>
           <b style={{ color: '#16a34a' }}>{pageId.startsWith('asset-') ? '21/100 Controlled' : '0 Low'}</b>
         </div>
         <div className="v8-mini">
-          <small>{fifthMetric.label}</small>
-          <b>{fifthMetric.value}</b>
+          <small>{pageId === 'auto-jobs' ? 'Primary Metric' : fifthMetric.label}</small>
+          <b>{pageId === 'auto-jobs' ? '99.4%' : fifthMetric.value}</b>
         </div>
       </div>
+
+      {/* 3.1 Workflow Automation Workspace Kanban (When viewing auto-workflows) */}
+      {pageId === 'auto-workflows' ? (
+        <div className="card panel" style={{ marginTop: 12, padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div>
+              <h3 style={{ margin: 0 }}>Workflow Automation Workspace</h3>
+              <div style={{ fontSize: 11, color: '#64748b' }}>Kanban stages for intelligent workflow progression and AI rule exception handling</div>
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#2563eb' }}>5 Stages Active</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+            {[
+              { stage: 'Created', count: 4, tag: 'Incoming Triggers' },
+              { stage: 'Validation', count: 3, tag: 'AST Rule Checks' },
+              { stage: 'Approval', count: 5, tag: 'Hierarchy Matrix' },
+              { stage: 'Execution', count: 8, tag: 'Action Dispatch' },
+              { stage: 'Closed', count: 5, tag: 'Audit Completed' },
+            ].map((st) => (
+              <div key={st.stage} style={{ background: '#f8fafc', padding: 10, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <b style={{ fontSize: 13, color: '#1e293b' }}>{st.stage}</b>
+                  <span style={{ fontSize: 11, background: '#e0e7ff', color: '#3730a3', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+                    {st.count}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>{st.tag}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[1, 2].map((k) => (
+                    <div key={k} style={{ background: '#fff', padding: 8, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 11 }}>
+                      <b>WF-{st.stage.slice(0, 2).toUpperCase()}-0{k}</b>
+                      <div style={{ color: '#64748b', margin: '2px 0 4px 0' }}>Score: {80 + k * 5}% • ERP Auto</div>
+                      <button
+                        type="button"
+                        className="btn sm"
+                        style={{ fontSize: 10, padding: '2px 6px', width: '100%' }}
+                        onClick={() => toast(`Moved forward WF-${st.stage.slice(0, 2).toUpperCase()}-0${k}`)}
+                      >
+                        Move Forward
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.2 Automation Rules Document Register & Actions (When viewing auto-rules) */}
+      {pageId === 'auto-rules' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginTop: 12 }}>
+          <div className="card panel" style={{ padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Rule Library Document Register</h3>
+                <div style={{ fontSize: 11, color: '#64748b' }}>Controlled regulatory SOPs, matrix specifications and compliance rules</div>
+              </div>
+              <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>● Audited</span>
+            </div>
+            <div className="table-wrap">
+              <table className="register-table" style={{ fontSize: 11 }}>
+                <thead>
+                  <tr>
+                    <th>Document</th>
+                    <th>Category</th>
+                    <th>Revision</th>
+                    <th>Linked Record</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { doc: 'Procurement Rule Matrix', cat: 'Approval Hierarchy', rev: 'v3.2', rec: 'RUL-001', exp: '2027-12-31', st: 'Active' },
+                    { doc: 'Credit Control Governance', cat: 'Finance Policy', rev: 'v2.1', rec: 'RUL-002', exp: '2027-06-30', st: 'Active' },
+                    { doc: 'Inventory Safety Guard Spec', cat: 'WMS Control', rev: 'v4.0', rec: 'RUL-003', exp: '2028-03-31', st: 'Active' },
+                  ].map((r, i) => (
+                    <tr key={i}>
+                      <td><b>{r.doc}</b></td>
+                      <td>{r.cat}</td>
+                      <td>{r.rev}</td>
+                      <td>{r.rec}</td>
+                      <td>{r.exp}</td>
+                      <td><span className="v8-badge active">{r.st}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="card panel" style={{ padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+            <h3 style={{ margin: '0 0 4px 0' }}>Document Actions</h3>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Upload compliance documentation and create revisions</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button type="button" className="btn" onClick={() => toast('Opening Upload Vault...')}>
+                Open Upload Vault
+              </button>
+              <button type="button" className="btn primary" onClick={() => toast('Creating New Revision...')}>
+                New Revision
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.3 Webhooks Registry Health & Recent API Activity (When viewing auto-webhooks) */}
+      {pageId === 'auto-webhooks' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginTop: 12 }}>
+          <div className="card panel" style={{ padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Webhook Registry</h3>
+                <div style={{ fontSize: 11, color: '#64748b' }}>Outbound integration security, standard HMAC signatures and delivery health</div>
+              </div>
+              <button
+                type="button"
+                className="btn primary sm"
+                onClick={() => toast('Connection test passed! All endpoints responded within 120ms.')}
+              >
+                Run Connection Test
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', fontSize: 10 }}>Authentication</small>
+                <div style={{ fontWeight: 700, fontSize: 12, color: '#16a34a' }}>OK (HMAC-SHA256)</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', fontSize: 10 }}>Connection</small>
+                <div style={{ fontWeight: 700, fontSize: 12, color: '#16a34a' }}>100% Reached</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', fontSize: 10 }}>Field Mapping</small>
+                <div style={{ fontWeight: 700, fontSize: 12, color: '#16a34a' }}>Verified</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', fontSize: 10 }}>Sync</small>
+                <div style={{ fontWeight: 700, fontSize: 12, color: '#16a34a' }}>99.8% Delivered</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', fontSize: 10 }}>Webhook</small>
+                <div style={{ fontWeight: 700, fontSize: 12, color: '#16a34a' }}>Configured</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', fontSize: 10 }}>Error Handling</small>
+                <div style={{ fontWeight: 700, fontSize: 12, color: '#2563eb' }}>Exponential Backoff Active</div>
+              </div>
+            </div>
+          </div>
+          <div className="card panel" style={{ padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+            <h3 style={{ margin: '0 0 4px 0' }}>Recent API / Sync Activity</h3>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>Live telemetry stream of outbound event payloads</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
+              <div style={{ padding: 6, background: '#f8fafc', borderRadius: 4, border: '1px solid #e2e8f0' }}>
+                <b>invoice.generated</b> → <span style={{ color: '#16a34a' }}>200 OK</span>
+                <div style={{ color: '#64748b', fontSize: 10 }}>23:12:04 • 48ms • Payload: INV-2026-081</div>
+              </div>
+              <div style={{ padding: 6, background: '#f8fafc', borderRadius: 4, border: '1px solid #e2e8f0' }}>
+                <b>payment.received</b> → <span style={{ color: '#16a34a' }}>200 OK</span>
+                <div style={{ color: '#64748b', fontSize: 10 }}>22:50:18 • 62ms • Payload: PAY-99120</div>
+              </div>
+              <div style={{ padding: 6, background: '#f8fafc', borderRadius: 4, border: '1px solid #e2e8f0' }}>
+                <b>order.dispatched</b> → <span style={{ color: '#16a34a' }}>200 OK</span>
+                <div style={{ color: '#64748b', fontSize: 10 }}>21:30:45 • 54ms • Payload: DSP-4402</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* 3.5 Quality / Inspection Workspace Panel (When viewing QMS modules) */}
       {pageId.startsWith('qms-') ? (

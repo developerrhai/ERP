@@ -92,6 +92,10 @@ const NOUNS: Record<string, string> = {
   'inv-serial': 'Serial Number Tracking',
   'inv-expiry': 'Expiry Tracking',
   'inv-reconciliation': 'Stock Reconciliation',
+  'auto-workflows': 'Workflow Automation',
+  'auto-rules': 'Automation Rules',
+  'auto-jobs': 'Background Jobs',
+  'auto-webhooks': 'Webhooks',
 };
 
 export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
@@ -99,6 +103,6 @@ export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
 export const FAM_PAGE_CFG: Record<string, { noun: string; print?: boolean }> = Object.fromEntries(
   Object.entries(NOUNS).map(([id, noun]) => [
     id,
-    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') || id.startsWith('inv-') ? { noun, print: true } : { noun },
+    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') || id.startsWith('inv-') || id.startsWith('auto-') ? { noun, print: true } : { noun },
   ]),
 );
