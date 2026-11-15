@@ -43,5 +43,10 @@ apps/api/storage/
 
 # Phase 36 feed state (generated passwords)
 tests/feed/ui/state.json
-docs/ui-audit/shots/
-docs/ui-audit/gallery.html
+
+# Docs folder — not pushed to git (internal/confidential phase notes & UI audit)
+docs/
+docs2/
+researcher/
+*.html
+RHAI_ERP_V40_Edit_Update_Fixed.html

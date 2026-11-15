@@ -1,8 +1,0 @@
-{"id":"sales-orders","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
-{"id":"scm-po","rows":6,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
-{"id":"master-customers","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
-{"id":"crm-leads","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
-{"id":"sales-quotations","rows":9,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
-{"id":"scm-grn","rows":4,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
-{"id":"inv-batch","rows":1,"rowButton":false,"pageButton":true,"disabled":false,"emptyPicker":true,"result":"TOAST: SYSTEM GREEN "}
-{"id":"scm-suppliers","rows":20,"rowButton":false,"pageButton":true,"disabled":false,"viaPicker":true,"result":"DIALOG","depts":13}
