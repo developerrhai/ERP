@@ -19,7 +19,8 @@ export type V40Kind =
   | 'quote'
   | 'comparison'
   | 'evaluation'
-  | 'contract';
+  | 'contract'
+  | 'approval';
 
 export interface V40Query {
   q?: string | undefined;
@@ -42,6 +43,7 @@ interface Spec {
   scope: 'doc' | 'unit' | 'none';
   /** unit column when scope is 'unit' */
   unitCol?: string;
+  softDelete?: boolean;
 }
 
 /** Sales order numbers that share the project of a document (a PR / PO / GRN has no direct sales order column). */
@@ -283,6 +285,22 @@ const SPECS: Record<V40Kind, Spec> = {
     search: ['t.number', 's.name', 's.code', 't.title'],
     status: 't.status',
   },
+  approval: {
+    page: 'scm-approval',
+    scope: 'none',
+    softDelete: false,
+    from: `approval_requests t
+      LEFT JOIN departments d ON d.id = t.department_id
+      LEFT JOIN users u ON u.id = t.requested_by`,
+    select: `t.id::text AS id, t.doc_code AS number, t.doc_code AS document_no,
+      t.doc_type AS transaction_type, t.status, t.current_level, t.total_levels, t.amount,
+      t.requested_at AS submitted_at, t.created_at,
+      d.name AS department, u.name AS requester,
+      t.doc_id::text AS document_id, t.version`,
+    order: 't.requested_at DESC, t.doc_code DESC',
+    search: ['t.doc_code', 't.doc_type', 'd.name', 'u.name'],
+    status: 't.status',
+  },
 };
 
 export const V40_KINDS = Object.keys(SPECS) as V40Kind[];
@@ -305,7 +323,11 @@ export async function v40Register(
       args.push(caller.ctx.unitId);
       where.push(`${spec.unitCol ?? 't.unit_id'} = $${args.length}::uuid`);
     } else if (!caller.ctx.allUnits) where.push('false');
-  } else where.push('t.deleted_at IS NULL');
+  } else if (spec.softDelete === false) {
+    where.push('1=1');
+  } else {
+    where.push('t.deleted_at IS NULL');
+  }
   if (q.q) {
     args.push(`%${q.q}%`);
     where.push(`(${spec.search.map((c) => `${c}::text ILIKE $${args.length}`).join(' OR ')})`);

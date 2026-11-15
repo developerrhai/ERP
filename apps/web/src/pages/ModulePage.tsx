@@ -56,6 +56,7 @@ import { BatchesPage, BinsPage, SerialsPage } from './inventory/MastersPages';
 import { CountsPage, CycleCountsPage, ReorderPage, ReservationsPage } from './inventory/StockPages';
 import { VouchersPage } from './inventory/VouchersPage';
 import { DocPage } from './procurement/DocPage';
+import { V40Body } from './procurement/V40Body';
 import { CON_CFG, PO_CFG, PR_CFG, RFQ_CFG, VQ_CFG } from './procurement/configs';
 import { FB_CFG, FU_CFG, LEAD_CFG, MTG_CFG, OPP_CFG, SO_CFG } from './procurement/salesConfigs';
 import {
@@ -601,6 +602,8 @@ function PageBody({
       return <InvoicePage actions={actions} />;
     case 'scm-evaluation':
       return <EvaluationPage actions={actions} />;
+    case 'scm-approval':
+      return <V40Body pageId="scm-approval" actions={actions} />;
     case 'wms-putaway':
       return <PutawayPage actions={actions} />;
     // Phase 8 inventory screens

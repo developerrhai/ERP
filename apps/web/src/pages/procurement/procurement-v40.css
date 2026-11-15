@@ -20,6 +20,64 @@
 .proc-v40 .proc-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; }
 .proc-v40 td.num { text-align: right; white-space: nowrap; }
 .proc-v40 .table-wrap { overflow-x: auto; }
+
+/* Connected Manufacturing 360 Ribbon */
+.proc-v40 .v17-integrated { margin: 0 0 12px; border: 1px solid #bfd2e6; border-left: 5px solid #17365d; background: linear-gradient(135deg, #f8fbff, #eef6ff); border-radius: 10px; padding: 11px; }
+.proc-v40 .v17-integrated-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.proc-v40 .v17-integrated-head h3 { margin: 0; color: #17365d; font-size: 14px; font-weight: 700; }
+.proc-v40 .v17-integrated-head p { margin: 3px 0 0; color: #52677f; font-size: 11px; }
+.proc-v40 .v17-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.proc-v40 .v17-actions select { min-width: 230px; border: 1px solid #bfd2e6; border-radius: 8px; padding: 6px 8px; background: #fff; font-size: 12px; }
+.proc-v40 .v17-mini-flow { display: grid; grid-template-columns: repeat(5, minmax(110px, 1fr)); gap: 6px; margin-top: 9px; }
+.proc-v40 .v17-mini-stage { border: 1px solid #d9e4ef; border-radius: 7px; background: #fff; padding: 7px; min-height: 54px; }
+.proc-v40 .v17-mini-stage.done { background: #f0fdf4; border-color: #86efac; }
+.proc-v40 .v17-mini-stage.current { background: #eff6ff; border-color: #60a5fa; box-shadow: inset 0 0 0 1px #60a5fa; }
+.proc-v40 .v17-mini-stage.blocked { background: #fff7ed; border-color: #fdba74; }
+.proc-v40 .v17-mini-stage small { display: block; font-size: 9px; color: #64748b; text-transform: uppercase; }
+.proc-v40 .v17-mini-stage b { display: block; font-size: 11px; color: #17365d; margin-top: 3px; }
+
+/* Record Controls Bar */
+.proc-v40 .recordbar { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; padding: 9px 12px; border: 1px solid var(--line, #e2e8f0); background: var(--card, #fff); border-radius: 11px; margin-bottom: 12px; }
+.proc-v40 .recordbar select { min-width: 250px; border: 1px solid var(--line, #e2e8f0); border-radius: 8px; padding: 6px 8px; background: var(--card, #fff); font-size: 12px; }
+
+/* Summary / KPI Cards above register */
+.proc-v40 .v8-table-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 10px; border-bottom: 1px solid var(--line, #e2e8f0); background: var(--card2, #f8fafc); }
+.proc-v40 .v8-mini { padding: 8px 10px; border: 1px solid var(--line, #e2e8f0); border-radius: 10px; background: var(--card, #fff); }
+.proc-v40 .v8-mini small { display: block; color: var(--muted, #64748b); font-size: 10px; text-transform: uppercase; }
+.proc-v40 .v8-mini b { display: block; font-size: 14px; margin-top: 3px; color: var(--text, #172033); }
+
+/* Secondary Detailed Register Table */
+.proc-v40 .v92-table-section { margin-top: 14px; border: 1px solid var(--line, #e2e8f0); border-radius: 10px; background: var(--card, #fff); overflow: hidden; }
+.proc-v40 .v92-table-title { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line, #e2e8f0); background: var(--card2, #f8fafc); flex-wrap: wrap; gap: 8px; }
+.proc-v40 .v92-table-title h3 { margin: 0; font-size: 13px; font-weight: 700; color: #17365d; }
+.proc-v40 .v92-table-title small { color: var(--muted, #64748b); font-size: 11px; }
+
+/* Approval Level 1-5 Stepper */
+.proc-v40 .v9-stepper { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; margin-top: 8px; }
+.proc-v40 .v9-step { border: 1px solid var(--line, #e2e8f0); background: var(--card2, #f8fafc); border-radius: 10px; padding: 10px 8px; text-align: center; font-size: 11px; }
+.proc-v40 .v9-step.done { background: #dcfce7; border-color: #86efac; }
+.proc-v40 .v9-step.current { background: #dbeafe; border-color: #93c5fd; box-shadow: inset 0 0 0 1px #93c5fd; }
+.proc-v40 .v9-step b { display: block; margin-bottom: 2px; font-size: 11px; }
+
+/* Simulation & Guardrails */
+.proc-v40 .v9-result { border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 11px; padding: 10px; text-align: center; }
+.proc-v40 .v9-result small { display: block; color: #1e40af; font-size: 10px; text-transform: uppercase; }
+.proc-v40 .v9-result b { display: block; font-size: 15px; margin-top: 4px; color: #1e3a8a; }
+.proc-v40 .v9-metric-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line, #e2e8f0); font-size: 12px; }
+.proc-v40 .v9-metric-row:last-child { border-bottom: none; }
+
+/* Graphs and Comparison */
+.proc-v40 .v8-graph-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px; margin-top: 10px; }
+.proc-v40 .v8-graph-card { min-width: 0; background: var(--card, #fff); border: 1px solid var(--line, #e2e8f0); border-radius: 10px; padding: 12px; }
+.proc-v40 .v8-graph-card h3 { margin: 0 0 4px; font-size: 13px; }
+.proc-v40 .v8-sub { font-size: 10px; color: var(--muted, #64748b); margin-bottom: 8px; }
+
+@media (max-width: 900px) {
+  .proc-v40 .v17-mini-flow { grid-template-columns: repeat(2, 1fr); }
+  .proc-v40 .v8-table-summary { grid-template-columns: repeat(2, 1fr); }
+  .proc-v40 .v9-stepper { grid-template-columns: repeat(2, 1fr); }
+  .proc-v40 .v8-graph-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 760px) {
   .proc-v40 .proc-split { grid-template-columns: 1fr; }
 }

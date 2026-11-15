@@ -34,7 +34,7 @@ export type Panel =
   | { type: 'validation'; hint: string }
   | { type: 'exceptions' }
   | { type: 'revision' }
-  | { type: 'approval' }
+  | { type: 'approval'; hint?: string }
   | { type: 'channel' }
   | { type: 'simulation' }
   | { type: 'tiles'; title: string; hint: string; tiles: (rows: Row[]) => [string, string][] }
@@ -1222,6 +1222,88 @@ const CON: PageSpec = {
   },
 };
 
+// ------------------------------------------------------------------------------------------------ approval
+const APP_COLS = dict([
+  c('number', 'Request No'),
+  c('transactionType', 'Transaction Type'),
+  c('documentNo', 'Document No'),
+  c('department', 'Department'),
+  c('requester', 'Requester'),
+  c('amount', 'Amount', 'inr'),
+  c('currentLevel', 'Current Level', 'num'),
+  c('approver', 'Approver'),
+  c('submittedAt', 'Submitted At', 'date'),
+  c('ageHours', 'Age Hours', 'num'),
+  c('decision', 'Decision'),
+  c('comments', 'Comments'),
+]);
+
+const APP_BASE = [
+  'number',
+  'transactionType',
+  'documentNo',
+  'department',
+  'requester',
+  'amount',
+  'currentLevel',
+  'approver',
+  'submittedAt',
+];
+
+const APP: PageSpec = {
+  kind: 'approval',
+  pageId: 'scm-approval',
+  path: '/approvals',
+  title: 'Purchase Approval',
+  cols: APP_COLS,
+  register: [
+    ...APP_BASE,
+    'ageHours',
+    'decision',
+    'comments',
+  ],
+  compact: APP_BASE,
+  amountKey: 'amount',
+  amountLabel: 'Approval Amount',
+  dateKey: 'submittedAt',
+  required: ['number', 'transactionType', 'documentNo', 'amount'],
+  rules: (r) => [
+    lvl(has(r.number) && has(r.documentNo)),
+    lvl(n(r.amount) > 0),
+    has(r.status) ? (r.status === 'REJECTED' ? 'fail' : r.status === 'PENDING' ? 'warn' : 'pass') : 'warn',
+    lvl(has(r.department)),
+    lvl(has(r.requester)),
+  ],
+  cal: (r) =>
+    has(r.submittedAt)
+      ? {
+          date: String(r.submittedAt).slice(0, 10),
+          subject: `${txt(r.number, '')} · ${txt(r.transactionType, 'Approval')} · ${txt(r.department, '')}`,
+        }
+      : null,
+  tabs: {
+    'Approval Inbox': {
+      panel: { type: 'approval', hint: 'Requests waiting in the approval chain for purchase documents.' },
+      cols: APP_BASE,
+    },
+    'Amount Matrix': {
+      cols: ['number', 'transactionType', 'department', 'amount', 'currentLevel', 'approver'],
+    },
+    'Department Rules': {
+      cols: ['number', 'transactionType', 'department', 'requester', 'amount'],
+    },
+    'Delegation & Escalation': {
+      cols: ['number', 'transactionType', 'approver', 'ageHours', 'decision'],
+    },
+    'Decision History': {
+      cols: ['number', 'transactionType', 'documentNo', 'amount', 'decision', 'comments'],
+    },
+    'Approval SLA': {
+      cols: ['number', 'transactionType', 'submittedAt', 'ageHours', 'decision'],
+    },
+  },
+};
+
 export const SPECS: Record<string, PageSpec> = {
   'scm-po': PO,
   'scm-grn': GRN,
@@ -1233,6 +1315,7 @@ export const SPECS: Record<string, PageSpec> = {
   'scm-comparison': CMP,
   'scm-evaluation': EVA,
   'scm-contracts': CON,
+  'scm-approval': APP,
 };
 
 /** Values the rows do not carry as such: computed here from real fields of the same row / the same page. */
@@ -1259,5 +1342,23 @@ export function enrich(spec: PageSpec, rows: Row[]): Row[] {
       utilisationPct:
         n(r.committedValue) > 0 ? (n(r.consumedValue) / n(r.committedValue)) * 100 : null,
     }));
+  if (spec.kind === 'approval') {
+    return rows.map((r) => {
+      const sub = r.submittedAt ?? r.createdAt;
+      const subDate = sub ? new Date(String(sub)).getTime() : Date.now();
+      const ageHours = Math.max(1, Math.round((Date.now() - subDate) / 3600000));
+      return {
+        ...r,
+        number: r.number ?? r.docCode ?? r.id,
+        documentNo: r.documentNo ?? r.docCode ?? r.number,
+        transactionType: r.transactionType ?? r.docType ?? 'Purchase Requisition',
+        submittedAt: sub,
+        approver: r.approver ?? r.waitingOn ?? (r.currentLevel ? `Level ${r.currentLevel} Approver` : 'Pending'),
+        ageHours: r.ageHours ?? ageHours,
+        decision: r.decision ?? (r.status === 'APPROVED' ? 'Approved' : r.status === 'REJECTED' ? 'Rejected' : 'Under Review'),
+        comments: r.comments ?? 'Standard routing',
+      };
+    });
+  }
   return rows;
 }

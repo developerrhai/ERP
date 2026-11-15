@@ -27,6 +27,7 @@ const SCM_V40_IDS = [
   'scm-comparison',
   'scm-evaluation',
   'scm-contracts',
+  'scm-approval',
 ];
 
 const ALL_CLAIMED_PAGES = new Set<string>([

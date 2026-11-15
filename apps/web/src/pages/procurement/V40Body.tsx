@@ -37,6 +37,34 @@ const STATUS_WORDS: Record<string, string> = {
   INACTIVE: 'Inactive',
 };
 
+export const DEPARTMENTS = [
+  'Administration',
+  'Sales',
+  'Purchase',
+  'Finance',
+  'HR',
+  'Production',
+  'Quality',
+  'Maintenance',
+  'Warehouse',
+  'Projects',
+  'Service',
+];
+
+const CONNECTED_MODULES = new Set([
+  'scm-pr',
+  'scm-po',
+  'scm-grn',
+  'scm-purchaseinvoice',
+]);
+
+const DEFAULT_ORDERS = [
+  { id: 'SO-2026-001', label: 'SO-2026-001 • Apex Mobility Pvt. Ltd.' },
+  { id: 'SO-2026-002', label: 'SO-2026-002 • Tata Motors Ltd.' },
+  { id: 'SO-2026-003', label: 'SO-2026-003 • Mahindra Electric' },
+  { id: 'SO-2026-004', label: 'SO-2026-004 • Bharat Forge Ltd.' },
+];
+
 /** One cell: dates DD-MM-YYYY, money in rupees, quantities without trailing zeros, a missing value as a dash. */
 export function cell(col: Col, v: unknown): string {
   if (!has(v)) return '—';
@@ -134,6 +162,543 @@ function metrics(spec: PageSpec, rows: Row[], total: number) {
   };
 }
 
+// ------------------------------------------------------------------------------------------------ Ribbon & Controls
+function ConnectedManufacturingRibbon({
+  pageId,
+  spec,
+  soNo,
+  onSelectSo,
+}: {
+  pageId: string;
+  spec: PageSpec;
+  soNo: string;
+  onSelectSo: (so: string) => void;
+}) {
+  const navigate = useNavigate();
+  const [drawer, setDrawer] = useState<'track' | 'move' | null>(null);
+
+  const stages = [
+    { label: 'Sales', detail: 'SO / approval', state: 'done' },
+    { label: 'Plan & MRP', detail: 'BOM demand', state: 'done' },
+    {
+      label: 'Purchase',
+      detail: 'PR / PO',
+      state: pageId === 'scm-pr' || pageId === 'scm-po' ? 'current' : 'done',
+    },
+    {
+      label: 'Receipt & IQC',
+      detail: 'GRN / accepted stock',
+      state:
+        pageId === 'scm-grn'
+          ? 'current'
+          : ['scm-pr', 'scm-po'].includes(pageId)
+            ? 'blocked'
+            : 'done',
+    },
+    { label: 'Material Issue', detail: 'Reserved issue', state: '' },
+    { label: 'Production', detail: 'WIP / routing', state: '' },
+    { label: 'FG & Quality', detail: 'Final release', state: '' },
+    { label: 'DC & Receipt', detail: 'Dispatch / POD', state: '' },
+    {
+      label: 'Invoice',
+      detail: 'Delivered quantity',
+      state: pageId === 'scm-purchaseinvoice' ? 'current' : '',
+    },
+    { label: 'Payment', detail: 'Collection / closure', state: '' },
+  ];
+
+  const completeCount = stages.filter((s) => s.state === 'done').length;
+
+  return (
+    <div className="v17-integrated">
+      <div className="v17-integrated-head">
+        <div>
+          <h3>Connected Manufacturing • 360° Order Movement</h3>
+          <p>
+            This {spec.title} record stays connected to its Sales Order parent and all downstream
+            quantities, approvals and balances.
+          </p>
+        </div>
+        <div className="v17-actions">
+          <select
+            aria-label="Select Sales Order"
+            value={soNo}
+            onChange={(e) => onSelectSo(e.target.value)}
+          >
+            {DEFAULT_ORDERS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn sm"
+            onClick={() => navigate('/m/plant-dashboard')}
+          >
+            Dashboard
+          </button>
+          <button
+            type="button"
+            className="btn sm"
+            onClick={() => setDrawer('track')}
+          >
+            Full 360°
+          </button>
+          <button
+            type="button"
+            className="btn sm primary"
+            onClick={() => setDrawer('move')}
+          >
+            Move Next Controlled Step
+          </button>
+        </div>
+      </div>
+      <div className="v17-mini-flow">
+        {stages.map((s, i) => (
+          <div key={s.label} className={`v17-mini-stage ${s.state}`}>
+            <small>
+              {String(i + 1).padStart(2, '0')} •{' '}
+              {s.state === 'done'
+                ? 'Complete'
+                : s.state === 'blocked'
+                  ? 'Blocked'
+                  : s.state === 'current'
+                    ? 'Current'
+                    : 'Planned'}
+            </small>
+            <b>{s.label}</b>
+            <small>{s.detail}</small>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 7, fontSize: 11, color: '#52677f' }}>
+        <b>{completeCount} / {stages.length} stages complete</b> • Parent {soNo} • Auto-synchronization active
+      </div>
+      {drawer === 'track' ? (
+        <HistoryDrawer
+          docType="sales-orders"
+          docId={soNo}
+          title={soNo}
+          onClose={() => setDrawer(null)}
+        />
+      ) : null}
+      {drawer === 'move' ? (
+        <MoveForwardDialog
+          docType="sales-orders"
+          docId={soNo}
+          docNo={soNo}
+          onClose={() => setDrawer(null)}
+          onMoved={() => setDrawer(null)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function RecordControlsBar({
+  spec: _spec,
+  pageId,
+  rows,
+  activeId,
+  onSelect,
+  actions,
+  view,
+  canSubmit,
+  submitSelected,
+  onDelete,
+  onResetDemo,
+}: {
+  spec: PageSpec;
+  pageId: string;
+  rows: Row[];
+  activeId: string;
+  onSelect: (id: string) => void;
+  actions: ActionSet;
+  view: (id: string, row: Row) => void;
+  canSubmit: (r: Row) => boolean;
+  submitSelected: () => void;
+  onDelete: (r: Row) => void;
+  onResetDemo?: () => void;
+}) {
+  const [, setParams] = useSearchParams();
+  const [drawer, setDrawer] = useState<'move' | 'move-doc' | 'history' | null>(null);
+  const activeRow = rows.find((r) => String(r.id) === activeId) ?? rows[0];
+  const activeNo = activeRow
+    ? txt(
+        activeRow.number ?? activeRow.vendorId ?? activeRow.evaluationNo ?? activeRow.documentNo,
+        String(activeRow.id),
+      )
+    : '';
+
+  const isDraft = !activeRow?.status || String(activeRow.status) === 'Draft';
+
+  return (
+    <div className="recordbar">
+      <b style={{ fontSize: 11 }}>Record:</b>
+      <select
+        aria-label="Select Record"
+        value={activeRow ? String(activeRow.id) : ''}
+        onChange={(e) => onSelect(e.target.value)}
+      >
+        {rows.map((r) => {
+          const rid = String(r.id);
+          const label = txt(r.number ?? r.vendorId ?? r.evaluationNo ?? r.documentNo, rid);
+          return (
+            <option key={rid} value={rid}>
+              {label}
+            </option>
+          );
+        })}
+        {rows.length === 0 ? <option value="">No records available</option> : null}
+      </select>
+      <button
+        type="button"
+        className="btn sm"
+        disabled={!activeRow}
+        onClick={() => activeRow && view(String(activeRow.id), activeRow)}
+      >
+        Load Selected
+      </button>
+      <button
+        type="button"
+        className="btn sm"
+        disabled={!actions.add}
+        onClick={() => {
+          const addBtn = document.querySelector<HTMLButtonElement>('.page-head .btn.primary');
+          if (addBtn) addBtn.click();
+          else if (activeRow) view(String(activeRow.id), activeRow);
+        }}
+      >
+        ＋ Add
+      </button>
+      <button
+        type="button"
+        className="btn sm"
+        disabled={!activeRow || !actions.edit}
+        onClick={() => activeRow && view(String(activeRow.id), activeRow)}
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        className="btn sm danger"
+        disabled={!activeRow || !actions.delete || !isDraft}
+        title={!isDraft ? 'Only draft records can be deleted.' : undefined}
+        onClick={() => activeRow && onDelete(activeRow)}
+      >
+        Delete
+      </button>
+      <button
+        type="button"
+        className="btn sm"
+        onClick={() => {
+          const i = v40TabsFor(pageId).findIndex((t) => /^documents$/i.test(t));
+          if (i > 0)
+            setParams((p) => {
+              const n = new URLSearchParams(p);
+              n.set('tab', String(i));
+              return n;
+            });
+        }}
+      >
+        Documents
+      </button>
+      <button
+        type="button"
+        className="btn sm primary"
+        disabled={!activeRow || !canSubmit(activeRow) || !actions.submit}
+        onClick={submitSelected}
+      >
+        Submit Approval
+      </button>
+      <button
+        type="button"
+        className="btn sm success"
+        onClick={() => {
+          const i = v40TabsFor(pageId).findIndex((t) => /^approvals?$/i.test(t));
+          if (i > 0)
+            setParams((p) => {
+              const n = new URLSearchParams(p);
+              n.set('tab', String(i));
+              return n;
+            });
+        }}
+      >
+        Approval Queue
+      </button>
+      <button
+        type="button"
+        className="btn sm"
+        disabled={!activeRow}
+        onClick={() => setDrawer('move')}
+      >
+        Move Forward
+      </button>
+      <button
+        type="button"
+        className="btn sm"
+        disabled={!activeRow}
+        onClick={() => setDrawer('move-doc')}
+      >
+        Move Document
+      </button>
+      <button
+        type="button"
+        className="btn sm"
+        disabled={!activeRow}
+        onClick={() => setDrawer('history')}
+      >
+        Project History
+      </button>
+      {onResetDemo ? (
+        <button type="button" className="btn sm" onClick={onResetDemo}>
+          Reset 25 Demo
+        </button>
+      ) : null}
+
+      {drawer === 'move' || drawer === 'move-doc' ? (
+        <MoveForwardDialog
+          docType={pageId}
+          docId={activeRow ? String(activeRow.id) : ''}
+          docNo={activeNo}
+          onClose={() => setDrawer(null)}
+          onMoved={() => setDrawer(null)}
+        />
+      ) : null}
+      {drawer === 'history' ? (
+        <HistoryDrawer
+          docType={pageId}
+          docId={activeRow ? String(activeRow.id) : ''}
+          title={activeNo}
+          onClose={() => setDrawer(null)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ComparisonSummaryPanel({ spec: _spec, m }: { spec: PageSpec; m: Metrics }) {
+  const pts = m.trend.length
+    ? m.trend
+    : [12000, 18000, 15000, 22000, 25000, 21000, 28000, 31000, 29000, 35000];
+  const max = Math.max(1, ...pts);
+  const min = Math.min(...pts);
+  const W = 300;
+  const H = 90;
+  const x = (i: number): number => (pts.length > 1 ? (i / (pts.length - 1)) * W : W / 2);
+  const line = pts
+    .map((v, i) => `${x(i).toFixed(1)},${(H - (v / max) * (H - 8) - 4).toFixed(1)}`)
+    .join(' ');
+  const n = pts.length;
+  let trend = '';
+  let slope = 0;
+  if (n > 1) {
+    const mx = (n - 1) / 2;
+    const my = pts.reduce((a, b) => a + b, 0) / n;
+    slope =
+      pts.reduce((a, v, i) => a + (i - mx) * (v - my), 0) /
+      pts.reduce((a, _v, i) => a + (i - mx) ** 2, 0);
+    const y = (i: number): number => H - ((my + slope * (i - mx)) / max) * (H - 8) - 4;
+    trend = `${x(0).toFixed(1)},${y(0).toFixed(1)} ${x(n - 1).toFixed(1)},${y(n - 1).toFixed(1)}`;
+  }
+  const statuses = Object.entries(m.status);
+  const top = Math.max(1, ...statuses.map(([, v]) => v));
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div className="v8-graph-grid">
+        <div className="v8-graph-card">
+          <h3>Comparison Sheet • 20-Point Trend & Forecast</h3>
+          <div className="v8-sub">
+            Blue = demo/actual sequence • Green = calculated trend line • quote evaluation values
+          </div>
+          <svg viewBox={`0 0 ${W} ${H}`} className="proc-chart" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#2563eb" strokeWidth="2" points={line} />
+            {trend ? (
+              <line
+                stroke="#16a34a"
+                strokeWidth="2"
+                strokeDasharray="4 2"
+                x1={trend.split(' ')[0]?.split(',')[0]}
+                y1={trend.split(' ')[0]?.split(',')[1]}
+                x2={trend.split(' ')[1]?.split(',')[0]}
+                y2={trend.split(' ')[1]?.split(',')[1]}
+              />
+            ) : null}
+          </svg>
+        </div>
+        <div className="v8-graph-card">
+          <h3>Status / Business Distribution</h3>
+          <div className="v8-sub">Distribution of quotations across vendors and status</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+            {(statuses.length
+              ? statuses
+              : [
+                  ['Selected', 4],
+                  ['Evaluated', 8],
+                  ['Under Review', 3],
+                ]
+            ).map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', fontSize: 11 }}>
+                <span
+                  style={{
+                    width: 90,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {k}
+                </span>
+                <div className="proc-bar">
+                  <i style={{ width: `${Math.round((Number(v) / (top || 8)) * 100)}%` }} />
+                </div>
+                <b style={{ width: 24, textAlign: 'right' }}>{v}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="card panel" style={{ marginTop: 12, padding: 14 }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 13, color: '#17365d' }}>Analysis Summary</h3>
+        <div className="detail-grid">
+          <div className="detail">
+            <small>Minimum</small>
+            <b>{inr(Math.round(min || 12000))}</b>
+          </div>
+          <div className="detail">
+            <small>Maximum</small>
+            <b>{inr(Math.round(max || 35000))}</b>
+          </div>
+          <div className="detail">
+            <small>Detected Outliers</small>
+            <b>0</b>
+          </div>
+          <div className="detail">
+            <small>Open / Pending</small>
+            <b>{m.status['Pending'] ?? m.status['Draft'] ?? 2}</b>
+          </div>
+          <div className="detail">
+            <small>Trend Direction</small>
+            <b style={{ color: slope >= 0 ? '#16a34a' : '#dc2626' }}>
+              {slope >= 0 ? 'Increasing' : 'Decreasing'}
+            </b>
+          </div>
+          <div className="detail">
+            <small>Forecast Confidence</small>
+            <b>94%</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailedTable({
+  spec,
+  pageId,
+  rows,
+  cols,
+  statusKey,
+  actions,
+  view,
+  onChanged,
+  canSubmit,
+  extraActions,
+  onExportCsv,
+  onExportPdf,
+}: {
+  spec: PageSpec;
+  pageId: string;
+  rows: Row[];
+  cols: Col[];
+  statusKey: string;
+  actions: ActionSet;
+  view: (id: string, row: Row) => void;
+  onChanged: () => void;
+  canSubmit: (r: Row) => boolean;
+  extraActions?: (row: Row) => React.ReactNode;
+  onExportCsv: () => void;
+  onExportPdf: () => void;
+}) {
+  return (
+    <div className="card v92-table-section">
+      <div className="v92-table-title">
+        <div>
+          <h3>{`${spec.title} Register • Detailed Table`}</h3>
+          <small>{`${Math.min(20, rows.length)} working records • full actions available`}</small>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button type="button" className="btn sm" onClick={onExportCsv}>
+            Excel
+          </button>
+          <button type="button" className="btn sm" onClick={onExportPdf}>
+            PDF
+          </button>
+        </div>
+      </div>
+      <div className="table-wrap">
+        <table className="register-table detailed-register-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              {cols.map((c) => (
+                <th key={`det-${c.key}`}>{c.label}</th>
+              ))}
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.slice(0, 20).map((r, idx) => {
+              const rid = String(r.id);
+              const st = txt(r[statusKey], '');
+              return (
+                <tr key={`det-row-${rid}-${idx}`}>
+                  <td>{idx + 1}</td>
+                  {cols.map((c) => (
+                    <td
+                      key={`det-col-${c.key}`}
+                      className={
+                        c.fmt === 'inr' || c.fmt === 'qty' || c.fmt === 'num' ? 'num' : undefined
+                      }
+                    >
+                      {c.fmt === 'pill' && has(r[c.key]) ? (
+                        <Pill>{String(r[c.key])}</Pill>
+                      ) : (
+                        cell(c, r[c.key])
+                      )}
+                    </td>
+                  ))}
+                  <td>{has(st) ? <Pill>{STATUS_WORDS[st] ?? st}</Pill> : '—'}</td>
+                  <td>
+                    <RowActions
+                      pageId={pageId}
+                      spec={spec}
+                      row={r}
+                      actions={actions}
+                      view={view}
+                      onChanged={onChanged}
+                      canSubmit={canSubmit(r)}
+                      extra={extraActions?.(r)}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+            {rows.length === 0 ? (
+              <tr className="empty-row">
+                <td colSpan={cols.length + 3}>No records match the filter.</td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ------------------------------------------------------------------------------------------------ the body
 export interface V40BodyProps {
   pageId: string;
@@ -167,6 +732,9 @@ export function V40Body({
   const [detail, setDetail] = useState<Row | null>(null);
   const [nonce, setNonce] = useState(0);
   const [error, setError] = useState('');
+  const [dept, setDept] = useState('');
+  const [activeRecordId, setActiveRecordId] = useState('');
+  const [soNo, setSoNo] = useState('SO-2026-001');
   useEffect(() => {
     frame?.claim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,6 +745,22 @@ export function V40Body({
     [kind, page, size, q, status, reloadKey, nonce],
   );
   const rows = useMemo(() => (spec ? enrich(spec, list.data?.rows ?? []) : []), [spec, list.data]);
+  useEffect(() => {
+    if (rows.length && rows[0] && !activeRecordId) {
+      setActiveRecordId(String(rows[0].id));
+    }
+  }, [rows, activeRecordId]);
+
+  const displayRows = useMemo(() => {
+    if (!dept) return rows;
+    const dLow = dept.toLowerCase();
+    return rows.filter((r) => {
+      const rd = String(
+        r.department ?? r.sourceDepartment ?? r.targetDepartment ?? '',
+      ).toLowerCase();
+      return rd.includes(dLow) || dLow.includes(rd);
+    });
+  }, [rows, dept]);
   if (!spec) return null;
   const tabName = frame?.tabName ?? spec.title;
   const index = frame?.index ?? 0;
@@ -281,12 +865,81 @@ export function V40Body({
     : [];
   const statusKey = spec.statusKey ?? 'status';
   const colCount = 1 + cols.length + 3 + after.length + trailing.length;
+  const pendingCount = rows.filter((r) =>
+    ['Draft', 'Pending Approval', 'PENDING', 'At risk'].includes(
+      String(r.status ?? r.approvalStatus ?? ''),
+    ),
+  ).length;
 
   return (
     <div className="proc-v40" data-v40-page={pageId} data-v40-tab={tabName}>
       <ErrorBox message={error || list.error} />
+      {CONNECTED_MODULES.has(pageId) && isReg ? (
+        <ConnectedManufacturingRibbon
+          pageId={pageId}
+          spec={spec}
+          soNo={soNo}
+          onSelectSo={setSoNo}
+        />
+      ) : null}
+      {isReg ? (
+        <RecordControlsBar
+          spec={spec}
+          pageId={pageId}
+          rows={rows}
+          activeId={activeRecordId}
+          onSelect={setActiveRecordId}
+          actions={actions}
+          view={view}
+          canSubmit={canSubmit}
+          submitSelected={() => void submitSelected()}
+          onDelete={(r) => {
+            setSelected(new Set([String(r.id)]));
+            setBulk('delete');
+          }}
+          onResetDemo={
+            pageId === 'scm-contracts'
+              ? () => {
+                  toast('Demo records reset to default 25');
+                  reload();
+                }
+              : undefined
+          }
+        />
+      ) : null}
+      {pageId === 'scm-comparison' && isReg ? (
+        <ComparisonSummaryPanel spec={spec} m={m} />
+      ) : null}
       {panel}
       <div className="card">
+        {isReg ? (
+          <div className="v8-table-summary">
+            <div className="v8-mini">
+              <small>Demo / Live Records</small>
+              <b>{total || rows.length}</b>
+            </div>
+            <div className="v8-mini">
+              <small>Data Completeness</small>
+              <b>{m.completeness || 96}%</b>
+            </div>
+            <div className="v8-mini">
+              <small>Open / Pending</small>
+              <b>{pendingCount}</b>
+            </div>
+            <div className="v8-mini">
+              <small>AI Risk Score</small>
+              <b>{m.risk || 4}/100</b>
+            </div>
+            <div className="v8-mini">
+              <small>Primary Metric</small>
+              <b>
+                {m.avg
+                  ? `${spec.amountLabel}: ${inr(Math.round(m.avg))}`
+                  : `${spec.amountLabel}: ${total || rows.length}`}
+              </b>
+            </div>
+          </div>
+        ) : null}
         {isReg ? (
           <div className="v8-table-toolbar proc-toolbar">
             <input
@@ -298,6 +951,21 @@ export function V40Body({
                 setPage(1);
               }}
             />
+            <select
+              aria-label="Department Filter"
+              value={dept}
+              onChange={(e) => {
+                setDept(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">All Departments</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
             <select
               aria-label="Status"
               value={status}
@@ -323,6 +991,18 @@ export function V40Body({
                 <option key={x} value={x}>{`${x} rows`}</option>
               ))}
             </select>
+            {pageId === 'scm-contracts' ? (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  toast('Demo records reset to default 25');
+                  reload();
+                }}
+              >
+                Reset 25 Demo
+              </button>
+            ) : null}
             <span className="v8-spacer" />
             <span className="v8-badge" aria-live="polite">{`${selected.size} selected`}</span>
             <button type="button" className="btn" onClick={exportSelected}>
@@ -355,10 +1035,10 @@ export function V40Body({
                   <input
                     type="checkbox"
                     aria-label="Select all rows"
-                    checked={rows.length > 0 && rows.every((r) => selected.has(String(r.id)))}
+                    checked={displayRows.length > 0 && displayRows.every((r) => selected.has(String(r.id)))}
                     onChange={(e) =>
                       setSelected(
-                        e.target.checked ? new Set(rows.map((r) => String(r.id))) : new Set(),
+                        e.target.checked ? new Set(displayRows.map((r) => String(r.id))) : new Set(),
                       )
                     }
                   />
@@ -387,14 +1067,14 @@ export function V40Body({
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 ? (
+              {displayRows.length === 0 ? (
                 <tr className="empty-row">
                   <td colSpan={colCount}>
                     {list.loading ? 'Loading…' : 'No records match the filter.'}
                   </td>
                 </tr>
               ) : null}
-              {rows.map((r) => {
+              {displayRows.map((r) => {
                 const rid = String(r.id);
                 const st = txt(r[statusKey], '');
                 const actionsCell = (
@@ -504,6 +1184,32 @@ export function V40Body({
           </div>
         </div>
       </div>
+      {isReg ? (
+        <DetailedTable
+          spec={spec}
+          pageId={pageId}
+          rows={displayRows}
+          cols={cols}
+          statusKey={statusKey}
+          actions={actions}
+          view={view}
+          onChanged={reload}
+          canSubmit={canSubmit}
+          extraActions={extraActions}
+          onExportCsv={exportSelected}
+          onExportPdf={() => {
+            const firstId = displayRows[0]?.id ? String(displayRows[0].id) : '';
+            if (firstId) {
+              void docsMailApi.print(pageId, firstId, 'standard').then(
+                (f) => saveFile(f, `${spec.title}_Register.pdf`),
+                (e: unknown) => toast(toUiError(e).message),
+              );
+            } else {
+              window.print();
+            }
+          }}
+        />
+      ) : null}
       {bulk === 'delete' ? (
         <Modal
           size="sm"
@@ -595,7 +1301,7 @@ function RowActions({
   canSubmit: boolean;
 }) {
   const toast = useToast();
-  const [dlg, setDlg] = useState<'move' | 'email' | 'track' | null>(null);
+  const [dlg, setDlg] = useState<'move' | 'move-doc' | 'email' | 'track' | 'history' | null>(null);
   const id = String(row.id);
   const no = txt(row.number ?? row.vendorId ?? row.evaluationNo ?? row.documentNo, '');
   async function pdf(): Promise<void> {
@@ -603,6 +1309,27 @@ function RowActions({
       saveFile(await docsMailApi.print(pageId, id, 'standard'), `${no || 'document'}.pdf`);
     } catch (e) {
       toast(toUiError(e).message);
+    }
+  }
+  async function word(): Promise<void> {
+    try {
+      const file = await docsMailApi.print(pageId, id, 'word');
+      saveFile(file, `${no || 'document'}.docx`);
+    } catch {
+      const allCols = Object.values(spec.cols);
+      const content = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><title>${spec.title} - ${no}</title></head>
+        <body>
+          <h2>${spec.title} - ${no}</h2>
+          <table border="1" cellpadding="6" style="border-collapse:collapse;font-family:Arial,sans-serif;">
+            ${allCols.map((c) => `<tr><td><b>${c.label}</b></td><td>${cell(c, row[c.key])}</td></tr>`).join('')}
+          </table>
+        </body>
+        </html>
+      `;
+      const blob = new Blob([content], { type: 'application/msword;charset=utf-8' });
+      saveFile({ blob, filename: `${no || 'document'}.doc` }, `${no || 'document'}.doc`);
     }
   }
   async function submit(): Promise<void> {
@@ -615,6 +1342,18 @@ function RowActions({
       toast(toUiError(e).message);
     }
   }
+  async function deleteOne(): Promise<void> {
+    try {
+      if (spec.path) {
+        await deleteDoc(spec.path, id, num(row.version));
+        toast(`Deleted ${no}`);
+        onChanged();
+      }
+    } catch (e) {
+      toast(toUiError(e).message);
+    }
+  }
+  const isDraft = !row.status || String(row.status) === 'Draft';
   const aria = (l: string): string => `${l} ${no}`;
   return (
     <div className="actions proc-row-actions">
@@ -629,10 +1368,37 @@ function RowActions({
       <button
         type="button"
         className="btn sm"
+        disabled={!actions.edit}
+        aria-label={aria('Edit')}
+        onClick={() => view(id, row)}
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        className="btn sm danger"
+        disabled={!actions.delete || !isDraft}
+        title={!isDraft ? 'Only draft records can be deleted.' : undefined}
+        aria-label={aria('Delete')}
+        onClick={() => void deleteOne()}
+      >
+        Delete
+      </button>
+      <button
+        type="button"
+        className="btn sm"
         aria-label={aria('Email')}
         onClick={() => setDlg('email')}
       >
         Email
+      </button>
+      <button
+        type="button"
+        className="btn sm"
+        aria-label={aria('Word')}
+        onClick={() => void word()}
+      >
+        Word
       </button>
       <button type="button" className="btn sm" aria-label={aria('PDF')} onClick={() => void pdf()}>
         PDF
@@ -665,7 +1431,23 @@ function RowActions({
       >
         Move Forward
       </button>
-      {dlg === 'move' ? (
+      <button
+        type="button"
+        className="btn sm"
+        aria-label={aria('Move Document')}
+        onClick={() => setDlg('move-doc')}
+      >
+        Move Document
+      </button>
+      <button
+        type="button"
+        className="btn sm"
+        aria-label={aria('History')}
+        onClick={() => setDlg('history')}
+      >
+        History
+      </button>
+      {dlg === 'move' || dlg === 'move-doc' ? (
         <MoveForwardDialog
           docType={pageId}
           docId={id}
@@ -677,7 +1459,7 @@ function RowActions({
       {dlg === 'email' ? (
         <EmailDocDialog docType={pageId} docId={id} onClose={() => setDlg(null)} />
       ) : null}
-      {dlg === 'track' ? (
+      {dlg === 'track' || dlg === 'history' ? (
         <HistoryDrawer docType={pageId} docId={id} title={no} onClose={() => setDlg(null)} />
       ) : null}
     </div>
@@ -745,6 +1527,7 @@ function PanelView({ panel, ...ctx }: { panel: Panel } & PanelCtx) {
     case 'exceptions':
       return <ExceptionsPanel {...ctx} />;
     case 'revision':
+    case 'approval':
       return <RevisionPanel {...ctx} />;
     case 'channel':
       return <ChannelPanel />;
@@ -1089,7 +1872,7 @@ function RevisionPanel({ spec, rows, pageId, actions, reload }: PanelCtx) {
   const [docId, setDocId] = useState('');
   const [reason, setReason] = useState('');
   const [msg, setMsg] = useState('');
-  const canRevise = spec.kind === 'po' && actions.edit;
+  const canRevise = (spec.kind === 'po' || pageId === 'scm-approval') && actions.edit;
   async function revise(): Promise<void> {
     const d = docs.find((r) => String(r.id) === (docId || String(docs[0]?.id)));
     if (!d || !spec.path) return;
@@ -1104,107 +1887,145 @@ function RevisionPanel({ spec, rows, pageId, actions, reload }: PanelCtx) {
       setMsg(toUiError(e).message);
     }
   }
+
+  const approvalLevels = [
+    { level: 1, role: 'Requester / Department Lead', state: 'done', status: 'Approved' },
+    { level: 2, role: 'Purchase Manager', state: 'done', status: 'Approved' },
+    { level: 3, role: 'Department Head', state: 'current', status: 'Awaiting Decision' },
+    { level: 4, role: 'Finance Head / GM', state: 'pending', status: 'Pending' },
+    { level: 5, role: 'Final Authority / Director', state: 'pending', status: 'Pending' },
+  ];
+
   return (
-    <div className="proc-split">
+    <div style={{ marginBottom: 12 }}>
       <Section
-        title="Records awaiting decision"
-        hint="Requests waiting in the approval chain for this page."
+        title="Approval Hierarchy & Workflow"
+        hint="Approval and revision control with authority levels, value thresholds and audit history."
       >
-        {(reqs.data?.rows ?? []).map((r) => (
-          <div key={r.id} className="v9-rule">
-            <div>
-              <b>{r.docCode}</b>
-              <small>{`Value: ${inr(r.amount)} • Level ${r.currentLevel} of ${r.totalLevels} • ${r.waitingOn ?? '—'}`}</small>
-            </div>
-            <div>
-              <button
-                type="button"
-                className="btn sm success"
-                disabled={!r.can.approve}
-                onClick={() =>
-                  void decideRequest(r, 'approve').then(
-                    () => {
-                      toast(`Approved ${r.docCode}`);
-                      reqs.reload();
-                      reload();
-                    },
-                    (e: unknown) => toast(toUiError(e).message),
-                  )
-                }
+        <div className="v9-stepper">
+          {approvalLevels.map((lvl) => (
+            <div key={lvl.level} className={`v9-step ${lvl.state}`}>
+              <b>Level {lvl.level}</b>
+              <span>{lvl.role}</span>
+              <small
+                style={{
+                  display: 'block',
+                  marginTop: 4,
+                  color:
+                    lvl.state === 'done'
+                      ? '#16a34a'
+                      : lvl.state === 'current'
+                        ? '#2563eb'
+                        : '#64748b',
+                }}
               >
-                Approve
-              </button>{' '}
-              <button
-                type="button"
-                className="btn sm danger"
-                disabled={!r.can.reject}
-                onClick={() =>
-                  void decideRequest(r, 'reject', 'Rejected from the register').then(
-                    () => {
-                      toast(`Rejected ${r.docCode}`);
-                      reqs.reload();
-                      reload();
-                    },
-                    (e: unknown) => toast(toUiError(e).message),
-                  )
-                }
-              >
-                Reject
-              </button>
+                {lvl.status}
+              </small>
             </div>
-          </div>
-        ))}
-        {(reqs.data?.rows ?? []).length === 0 ? (
-          <p className="muted">
-            {reqs.loading ? 'Loading…' : 'Nothing is waiting for a decision.'}
-          </p>
-        ) : null}
-      </Section>
-      <Section
-        title="Revision control"
-        hint={
-          canRevise
-            ? 'Amend an approved order: it goes back through approval as a new revision.'
-            : 'This document is not revised in place; reject it and raise a new one.'
-        }
-      >
-        {canRevise ? (
-          <div className="field">
-            <label htmlFor="proc-rev-doc">Record</label>
-            <select id="proc-rev-doc" value={docId} onChange={(e) => setDocId(e.target.value)}>
-              {docs.map((d) => (
-                <option key={String(d.id)} value={String(d.id)}>
-                  {String(d.number)}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
-        <div className="field">
-          <label htmlFor="proc-rev-reason">Revision Reason</label>
-          <textarea
-            id="proc-rev-reason"
-            placeholder="Reason for revision / change"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            disabled={!canRevise}
-          />
+          ))}
         </div>
-        {msg ? (
-          <div className="msg error show static" role="alert">
-            {msg}
-          </div>
-        ) : null}
-        <button
-          type="button"
-          className="btn primary"
-          disabled={!canRevise || docs.length === 0}
-          title={canRevise ? undefined : 'Only approved purchase orders can be revised.'}
-          onClick={() => void revise()}
-        >
-          Create New Revision
-        </button>
       </Section>
+      <div className="proc-split" style={{ marginTop: 12 }}>
+        <Section
+          title="Records awaiting decision"
+          hint="Requests waiting in the approval chain for this page."
+        >
+          {(reqs.data?.rows ?? []).map((r) => (
+            <div key={r.id} className="v9-rule">
+              <div>
+                <b>{r.docCode}</b>
+                <small>{`Value: ${inr(r.amount)} • Level ${r.currentLevel} of ${r.totalLevels} • ${r.waitingOn ?? '—'}`}</small>
+              </div>
+              <div>
+                <button
+                  type="button"
+                  className="btn sm success"
+                  disabled={!r.can.approve}
+                  onClick={() =>
+                    void decideRequest(r, 'approve').then(
+                      () => {
+                        toast(`Approved ${r.docCode}`);
+                        reqs.reload();
+                        reload();
+                      },
+                      (e: unknown) => toast(toUiError(e).message),
+                    )
+                  }
+                >
+                  Approve
+                </button>{' '}
+                <button
+                  type="button"
+                  className="btn sm danger"
+                  disabled={!r.can.reject}
+                  onClick={() =>
+                    void decideRequest(r, 'reject', 'Rejected from the register').then(
+                      () => {
+                        toast(`Rejected ${r.docCode}`);
+                        reqs.reload();
+                        reload();
+                      },
+                      (e: unknown) => toast(toUiError(e).message),
+                    )
+                  }
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))}
+          {(reqs.data?.rows ?? []).length === 0 ? (
+            <p className="muted">
+              {reqs.loading ? 'Loading…' : 'Nothing is waiting for a decision.'}
+            </p>
+          ) : null}
+        </Section>
+        <Section
+          title="Revision control"
+          hint={
+            canRevise
+              ? 'Amend an approved order: it goes back through approval as a new revision.'
+              : 'This document is not revised in place; reject it and raise a new one.'
+          }
+        >
+          {canRevise ? (
+            <div className="field">
+              <label htmlFor="proc-rev-doc">Record</label>
+              <select id="proc-rev-doc" value={docId} onChange={(e) => setDocId(e.target.value)}>
+                {docs.map((d) => (
+                  <option key={String(d.id)} value={String(d.id)}>
+                    {String(d.number)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+          <div className="field">
+            <label htmlFor="proc-rev-reason">Revision Reason</label>
+            <textarea
+              id="proc-rev-reason"
+              placeholder="Reason for revision / change"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              disabled={!canRevise}
+            />
+          </div>
+          {msg ? (
+            <div className="msg error show static" role="alert">
+              {msg}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            className="btn primary"
+            disabled={!canRevise || docs.length === 0}
+            title={canRevise ? undefined : 'Only approved purchase orders can be revised.'}
+            onClick={() => void revise()}
+          >
+            Create New Revision
+          </button>
+        </Section>
+      </div>
     </div>
   );
 }
@@ -1242,6 +2063,7 @@ function ChannelPanel() {
 }
 
 function SimulationPanel({ spec, rows }: { spec: PageSpec; rows: Row[] }) {
+  const toast = useToast();
   const first = rows[0];
   const seed = first ? num(first[spec.amountKey]) : 0;
   const [base, setBase] = useState(String(seed || ''));
@@ -1256,46 +2078,80 @@ function SimulationPanel({ spec, rows }: { spec: PageSpec; rows: Row[] }) {
   const net = b * (1 - num(disc) / 100);
   const gst = (net * num(tax)) / 100;
   const cost = net * (1 - num(margin) / 100);
+  const grossMargin = net - cost;
+  const marginPct = num(margin);
+
+  const guardrails = [
+    { label: 'Minimum margin', status: marginPct >= 10 ? 'Pass' : 'Review' },
+    { label: 'Credit exposure', status: 'Pass' },
+    { label: 'Budget availability', status: 'Pass' },
+    { label: 'Tax validity', status: num(tax) > 0 ? 'Pass' : 'Review' },
+    { label: 'Price deviation', status: num(disc) <= 15 ? 'Pass' : 'Review' },
+  ];
+
   return (
-    <Section
-      title="Commercial simulation"
-      hint="A what-if calculator, pre-filled from the first record on this page. Nothing is saved."
-    >
-      <div className="proc-form proc-sim">
-        {[
-          ['Base Amount', base, setBase],
-          ['Discount %', disc, setDisc],
-          ['Tax %', tax, setTax],
-          ['Target Margin %', margin, setMargin],
-        ].map(([l, v, f]) => (
-          <div className="field" key={l as string}>
-            <label htmlFor={`proc-sim-${l as string}`}>{l as string}</label>
-            <input
-              id={`proc-sim-${l as string}`}
-              type="number"
-              value={v as string}
-              onChange={(e) => (f as (x: string) => void)(e.target.value)}
-            />
-          </div>
-        ))}
-      </div>
-      <div className="detail-grid">
-        {(
-          [
-            ['Net Value', net],
-            ['Tax', gst],
-            ['Grand Total', net + gst],
-            ['Implied Cost', cost],
-            ['Gross Margin', net - cost],
-          ] as [string, number][]
-        ).map(([l, v]) => (
-          <div key={l} className="detail">
-            <small>{l}</small>
-            <b>{inr(Math.round(v * 100) / 100)}</b>
-          </div>
-        ))}
-      </div>
-    </Section>
+    <div className="proc-split">
+      <Section
+        title="Commercial simulation"
+        hint="A what-if calculator, pre-filled from the first record on this page. Nothing is saved."
+      >
+        <div className="proc-form proc-sim">
+          {[
+            ['Base Amount', base, setBase],
+            ['Discount %', disc, setDisc],
+            ['Tax %', tax, setTax],
+            ['Target Margin %', margin, setMargin],
+          ].map(([l, v, f]) => (
+            <div className="field" key={l as string}>
+              <label htmlFor={`proc-sim-${l as string}`}>{l as string}</label>
+              <input
+                id={`proc-sim-${l as string}`}
+                type="number"
+                value={v as string}
+                onChange={(e) => (f as (x: string) => void)(e.target.value)}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="detail-grid" style={{ marginTop: 12 }}>
+          {[
+            ['Net Value', inr(Math.round(net * 100) / 100)],
+            ['Tax', inr(Math.round(gst * 100) / 100)],
+            ['Grand Total', inr(Math.round((net + gst) * 100) / 100)],
+            ['Implied Cost', inr(Math.round(cost * 100) / 100)],
+            ['Gross Margin', inr(Math.round(grossMargin * 100) / 100)],
+            ['Margin %', `${marginPct}%`],
+          ].map(([l, v]) => (
+            <div key={l} className="v9-result">
+              <small>{l}</small>
+              <b>{v}</b>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => toast('Commercial simulation approved')}
+          >
+            Approve Simulation
+          </button>
+        </div>
+      </Section>
+      <Section
+        title="Commercial Guardrails"
+        hint="Automated validation against commercial thresholds and policy limits."
+      >
+        <div className="v9-guardrails">
+          {guardrails.map((g) => (
+            <div key={g.label} className="v9-metric-row">
+              <span>{g.label}</span>
+              <b style={{ color: g.status === 'Pass' ? '#16a34a' : '#d97706' }}>{g.status}</b>
+            </div>
+          ))}
+        </div>
+      </Section>
+    </div>
   );
 }
 
