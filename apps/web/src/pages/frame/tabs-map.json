@@ -918,6 +918,17 @@
   "Reports",
   "Audit Trail"
  ],
+ "crm-pipeline": [
+  "Sales Pipeline / Kanban Workspace",
+  "Opportunity Register",
+  "Quotations",
+  "Sales Orders",
+  "Analytics & Graphs",
+  "Documents",
+  "Approvals",
+  "Reports",
+  "Audit Trail"
+ ],
  "crm-sources": [
   "Source Master",
   "Campaign Mapping",

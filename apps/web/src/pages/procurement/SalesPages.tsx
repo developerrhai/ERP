@@ -2,6 +2,7 @@
 // (customer RFQs + quotations), dispatch with the delivery challan, sales invoices from a dispatch, sales returns,
 // collections (receipts against invoices) and delivery scheduling (open order balance by month).
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { EmailDocButton } from '../../components/EmailDocDialog';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
@@ -37,8 +38,11 @@ const rowsOf = (v: unknown): Row[] => (Array.isArray(v) ? (v as Row[]) : []);
 const STAGES = ['Prospecting', 'Qualification', 'Proposal', 'Negotiation', 'Won', 'Lost'];
 export function PipelinePage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
+  const navigate = useNavigate();
   const board = useLoad(() => getJson<{ stages: Row[] }>('/crm/pipeline'), []);
   const [msg, setMsg] = useState('');
+  const [q, setQ] = useState('');
+  const [salesperson, setSalesperson] = useState('');
   const [moving, setMoving] = useState<{ id: string; title: string; to: string } | null>(null);
   const [reason, setReason] = useState('');
   async function move(id: string, stage: string, lostReason?: string) {
@@ -59,8 +63,68 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
       <PageHead
         title="Sales Pipeline"
         sub="Every open opportunity by stage. Move a card with its menu; Lost needs a reason."
-      />
+      >
+        <button
+          type="button"
+          className="btn primary"
+          onClick={() => navigate('/m/crm-opportunities')}
+        >
+          ＋ New Opportunity
+        </button>
+      </PageHead>
       <ErrorBox message={msg || board.error} />
+
+      {/* Module Navigation Tabs */}
+      <div className="tabs" style={{ marginBottom: 12 }}>
+        <button type="button" className="tab active">
+          Pipeline / Kanban
+        </button>
+        <button
+          type="button"
+          className="tab"
+          onClick={() => navigate('/m/crm-opportunities')}
+        >
+          Opportunity Register
+        </button>
+        <button
+          type="button"
+          className="tab"
+          onClick={() => navigate('/m/sales-quotations')}
+        >
+          Quotations
+        </button>
+        <button
+          type="button"
+          className="tab"
+          onClick={() => navigate('/m/sales-orders')}
+        >
+          Sales Orders
+        </button>
+      </div>
+
+      {/* Search & Salesperson Filter */}
+      <div className="toolbar" style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="search"
+          aria-label="Search opportunity/customer"
+          placeholder="Search opportunity or customer..."
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          style={{ minWidth: 260 }}
+        />
+        <select
+          aria-label="Salesperson filter"
+          value={salesperson}
+          onChange={(e) => setSalesperson(e.target.value)}
+        >
+          <option value="">All Salespeople</option>
+          <option value="Nishant Mishra">Nishant Mishra</option>
+          <option value="Amit Sharma">Amit Sharma</option>
+          <option value="Pooja Verma">Pooja Verma</option>
+          <option value="Rahul Patil">Rahul Patil</option>
+        </select>
+      </div>
+
       <div
         className="kanban"
         style={{
@@ -69,42 +133,62 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
           gap: 12,
         }}
       >
-        {(board.data?.stages ?? []).map((col) => (
-          <section key={s(col.stage)} className="card" aria-label={s(col.stage)}>
-            <h3>
-              {s(col.stage)} <small>({s(col.count)})</small>
-            </h3>
-            <p>
-              {inr(s(col.amount))} · weighted {inr(s(col.weighted))}
-            </p>
-            {rowsOf(col.items).map((o) => (
-              <div key={s(o.id)} className="card">
-                <b>{s(o.title)}</b>
-                <div>{s(o.customerName) || '—'}</div>
-                <div>{inr(s(o.amount))}</div>
-                {actions.edit && !['Won', 'Lost'].includes(s(col.stage)) ? (
-                  <select
-                    aria-label={`Move ${s(o.title)}`}
-                    value=""
-                    onChange={(e) => {
-                      const to = e.target.value;
-                      if (!to) return;
-                      if (to === 'Lost') {
-                        setReason('');
-                        setMoving({ id: s(o.id), title: s(o.title), to });
-                      } else void move(s(o.id), to);
-                    }}
-                  >
-                    <option value="">Move to…</option>
-                    {STAGES.filter((x) => x !== s(col.stage)).map((x) => (
-                      <option key={x}>{x}</option>
-                    ))}
-                  </select>
-                ) : null}
-              </div>
-            ))}
-          </section>
-        ))}
+        {(board.data?.stages ?? []).map((col) => {
+          const rawItems = rowsOf(col.items);
+          const filteredItems = rawItems.filter((o) => {
+            const matchQ =
+              !q ||
+              s(o.title).toLowerCase().includes(q.toLowerCase()) ||
+              s(o.customerName).toLowerCase().includes(q.toLowerCase());
+            return matchQ;
+          });
+          return (
+            <section key={s(col.stage)} className="card" aria-label={s(col.stage)}>
+              <h3>
+                {s(col.stage)} <small>({filteredItems.length})</small>
+              </h3>
+              <p>
+                {inr(s(col.amount))} · weighted {inr(s(col.weighted))}
+              </p>
+              {filteredItems.map((o) => (
+                <div key={s(o.id)} className="card">
+                  <b>{s(o.title)}</b>
+                  <div>{s(o.customerName) || '—'}</div>
+                  <div>{inr(s(o.amount))}</div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() => navigate('/m/crm-opportunities')}
+                    >
+                      View
+                    </button>
+                    {actions.edit && !['Won', 'Lost'].includes(s(col.stage)) ? (
+                      <select
+                        aria-label={`Move ${s(o.title)}`}
+                        value=""
+                        style={{ fontSize: 12, padding: '2px 6px' }}
+                        onChange={(e) => {
+                          const to = e.target.value;
+                          if (!to) return;
+                          if (to === 'Lost') {
+                            setReason('');
+                            setMoving({ id: s(o.id), title: s(o.title), to });
+                          } else void move(s(o.id), to);
+                        }}
+                      >
+                        <option value="">Move to…</option>
+                        {STAGES.filter((x) => x !== s(col.stage)).map((x) => (
+                          <option key={x}>{x}</option>
+                        ))}
+                      </select>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </section>
+          );
+        })}
       </div>
       {moving ? (
         <Modal

@@ -59,6 +59,13 @@ const WMS_TITLES: Record<string, string> = {
   'wms-transfer': 'Transfer Queue – Detailed Table',
   'wms-barcode': 'Barcode Registry – Detailed Table',
   'wms-rfid': 'RFID Tag Registry – Detailed Table',
+  'crm-leads': 'Lead Register – Detailed Table',
+  'crm-opportunities': 'Opportunity Register – Detailed Table',
+  'crm-followups': 'Follow-up Planner – Detailed Table',
+  'crm-meetings': 'Meetings & Calls – Detailed Table',
+  'crm-customer360': 'Customer 360° – Detailed Table',
+  'crm-feedback': 'Customer Feedback – Detailed Table',
+  'crm-sources': 'Source Master – Detailed Table',
 };
 
 const DEPARTMENTS = [
@@ -212,7 +219,7 @@ function RecordControlsBar({
         <option value="">{`Record: [Select ${title}]`}</option>
         {rows.map((r) => (
           <option key={r.id} value={r.id}>
-            {`Record: [${r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
+            {`Record: [${r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
           </option>
         ))}
       </select>
@@ -464,6 +471,15 @@ export function FamV40Body({
   const [showEditModal, setShowEditModal] = useState(false);
   const [askDelete, setAskDelete] = useState<V40Row | null>(null);
   const [onlyDueOrExpired, setOnlyDueOrExpired] = useState(false);
+  const [commChannel, setCommChannel] = useState('Call');
+  const [commNote, setCommNote] = useState('');
+  const [commDate, setCommDate] = useState('');
+  const [commTimeline, setCommTimeline] = useState<Array<{ channel: string; target: string; date: string; status: string; note: string }>>([
+    { channel: 'Call', target: 'Acme Corp Lead', date: '2026-11-15', status: 'Completed', note: 'Discussion captured and next proposal action assigned.' },
+    { channel: 'Email', target: 'Apex Engineering', date: '2026-11-14', status: 'Pending', note: 'Quotation revision sent. Awaiting procurement signoff.' },
+    { channel: 'Meeting', target: 'Tech Corp Demo', date: '2026-11-12', status: 'Completed', note: 'Presented V40 ERP capabilities to CXO stakeholders.' },
+    { channel: 'WhatsApp', target: 'Zenith Logistics', date: '2026-11-10', status: 'In Progress', note: 'Shared updated spec sheet and delivery lead-time commitment.' },
+  ]);
   const [qmsParams, setQmsParams] = useState<Array<{ name: string; val1: string; val2: string; res: string }>>([
     { name: 'Dimension A', val1: '10.0', val2: '9.5', res: 'Pass' },
     { name: 'Dimension B', val1: '10.5', val2: '10.0', res: 'Pass' },
@@ -718,6 +734,13 @@ export function FamV40Body({
       case 'sales-pricelist': return { label: 'Active Price Lists', value: `${total}` };
       case 'sales-credit': return { label: 'Approved Credit Limits', value: `${total}` };
       case 'sales-returns': return { label: 'Return Rate', value: '0.4% Low' };
+      case 'crm-leads': return { label: 'Average Score', value: '78/100' };
+      case 'crm-opportunities': return { label: 'Pipeline Value', value: '₹ 84,50,000' };
+      case 'crm-followups': return { label: 'Due Today', value: '6 Tasks' };
+      case 'crm-meetings': return { label: 'Scheduled', value: '4 Calls' };
+      case 'crm-customer360': return { label: 'Key Accounts', value: '18 Active' };
+      case 'crm-feedback': return { label: 'CSAT Rating', value: '4.8 / 5.0' };
+      case 'crm-sources': return { label: 'Conversion ROI', value: '340%' };
       case 'wms-warehouses': return { label: 'Storage Capacity', value: '94% Utilized' };
       case 'wms-zones': return { label: 'Active Zones', value: `${total}` };
       case 'wms-racks': return { label: 'Active Racks', value: `${total}` };
@@ -1269,6 +1292,494 @@ export function FamV40Body({
         </div>
       ) : null}
 
+      {/* 3.9 CRM Workspace Panel: Funnel & Stage Action Queue (Leads & Opportunities) */}
+      {pageId === 'crm-leads' || pageId === 'crm-opportunities' ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Pipeline & Conversion Funnel</h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  Stage movement, probability, funnel leakage and conversion actions.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● Active
+              </span>
+            </div>
+            <div
+              className="v9-funnel"
+              style={{
+                display: 'flex',
+                gap: 12,
+                alignItems: 'flex-end',
+                justifyContent: 'space-around',
+                padding: '16px 8px',
+                background: 'var(--muted-bg, #f8fafc)',
+                borderRadius: 8,
+                border: '1px solid var(--line, #cbd5e1)',
+                minHeight: 140,
+              }}
+            >
+              {[
+                { stage: 'New', count: 12, color: '#3b82f6', height: 80 },
+                { stage: 'Qualified', count: 9, color: '#06b6d4', height: 65 },
+                { stage: 'Proposal', count: 7, color: '#8b5cf6', height: 50 },
+                { stage: 'Negotiation', count: 4, color: '#f59e0b', height: 35 },
+                { stage: 'Won', count: 3, color: '#10b981', height: 25 },
+              ].map((s) => (
+                <div key={s.stage} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                  <div
+                    style={{
+                      width: '100%',
+                      maxWidth: 48,
+                      height: s.height,
+                      backgroundColor: s.color,
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'all 0.3s ease',
+                    }}
+                  />
+                  <b style={{ marginTop: 8, fontSize: 13 }}>{s.stage}</b>
+                  <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>{s.count} records</small>
+                </div>
+              ))}
+            </div>
+
+            {/* Stage Action Queue */}
+            <div style={{ marginTop: 14 }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: 13 }}>Stage Action Queue</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+                {filteredRows.slice(0, 6).map((r, i) => {
+                  const leadName = r['Lead Name'] ?? r['Opportunity Name'] ?? r['Company'] ?? r['Customer'] ?? `Lead-${i + 1}`;
+                  const stages = ['New', 'Qualified', 'Proposal', 'Negotiation', 'Won'];
+                  const curStage = r['Stage'] ?? stages[i % stages.length];
+                  const prob = 45 + i * 10;
+                  return (
+                    <div
+                      key={`stage-q-${r.id || i}`}
+                      style={{
+                        padding: '10px 12px',
+                        border: '1px solid var(--line, #cbd5e1)',
+                        borderRadius: 6,
+                        background: '#fff',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 12 }}>{leadName}</div>
+                        <div style={{ fontSize: 11, color: 'var(--muted, #64748b)', marginTop: 2 }}>
+                          {curStage} • Probability {prob}%
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn sm primary"
+                        style={{ marginTop: 8 }}
+                        onClick={() => toast(`Moved ${leadName} to next stage.`)}
+                      >
+                        Move Next
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 10px 0' }}>Conversion Drivers</h3>
+            <div className="v9-metric-row">
+              <span>Follow-up discipline</span>
+              <b>92%</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Proposal quality</span>
+              <b>88%</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Price competitiveness</span>
+              <b>79%</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Decision-maker access</span>
+              <b>85%</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Closure probability</span>
+              <b>74%</b>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                className="btn primary"
+                style={{ width: '100%' }}
+                onClick={() => setShowAddModal(true)}
+              >
+                {pageId === 'crm-leads' ? '＋ Create Lead' : '＋ Create Opportunity'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.10 CRM Workspace Panel: Activity Timeline & Interaction Center (Follow-ups, Meetings, Feedback) */}
+      {pageId === 'crm-followups' || pageId === 'crm-meetings' || pageId === 'crm-feedback' ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Activity & Interaction Timeline</h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  Customer, lead and account interaction history with actionable follow-ups and outcome tracking.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● Logged
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                maxHeight: 280,
+                overflowY: 'auto',
+                paddingRight: 4,
+              }}
+            >
+              {commTimeline.map((item, idx) => (
+                <div
+                  key={`timeline-${idx}`}
+                  style={{
+                    padding: '8px 12px',
+                    borderLeft: '3px solid #3b82f6',
+                    background: 'var(--muted-bg, #f8fafc)',
+                    borderRadius: '0 6px 6px 0',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <b style={{ fontSize: 12 }}>
+                      {item.channel} • {item.target}
+                    </b>
+                    <span className="chip" style={{ fontSize: 10 }}>
+                      {item.status}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--muted, #64748b)', marginTop: 2 }}>
+                    Date: {item.date}
+                  </div>
+                  <div style={{ fontSize: 12, marginTop: 4 }}>{item.note}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 10px 0' }}>Add Activity</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="field">
+                <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4 }}>Channel</label>
+                <select
+                  value={commChannel}
+                  onChange={(e) => setCommChannel(e.target.value)}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: 4, border: '1px solid var(--line, #cbd5e1)' }}
+                >
+                  <option value="Call">Call</option>
+                  <option value="Email">Email</option>
+                  <option value="Meeting">Meeting</option>
+                  <option value="WhatsApp">WhatsApp</option>
+                </select>
+              </div>
+              <div className="field">
+                <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4 }}>Notes / Discussion</label>
+                <textarea
+                  value={commNote}
+                  onChange={(e) => setCommNote(e.target.value)}
+                  placeholder="Discussion outcome or action item..."
+                  rows={2}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: 4, border: '1px solid var(--line, #cbd5e1)' }}
+                />
+              </div>
+              <div className="field">
+                <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4 }}>Next Follow-up Date</label>
+                <input
+                  type="date"
+                  value={commDate}
+                  onChange={(e) => setCommDate(e.target.value)}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: 4, border: '1px solid var(--line, #cbd5e1)' }}
+                />
+              </div>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => {
+                  if (!commNote.trim()) {
+                    toast('Please enter notes or outcome for this activity.');
+                    return;
+                  }
+                  setCommTimeline((prev) => [
+                    {
+                      channel: commChannel,
+                      target: activeRecord?.number || 'Selected Customer',
+                      date: commDate || new Date().toISOString().slice(0, 10),
+                      status: 'Completed',
+                      note: commNote.trim(),
+                    },
+                    ...prev,
+                  ]);
+                  setCommNote('');
+                  toast('Activity saved to interaction timeline.');
+                }}
+              >
+                Save Activity
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.11 CRM Customer 360 Workspace Panel */}
+      {pageId === 'crm-customer360' ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Customer 360° Account Desk</h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  Comprehensive profile, order history, credit exposure, active tickets and relationship health.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● 360 View
+              </span>
+            </div>
+
+            {/* Customer Details Grid */}
+            <div
+              className="detail-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                gap: 8,
+                padding: '10px 12px',
+                background: 'var(--muted-bg, #f8fafc)',
+                borderRadius: 6,
+                marginBottom: 12,
+              }}
+            >
+              <div className="detail">
+                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Account Name</small>
+                <div style={{ fontWeight: 600 }}>{activeRecord ? (activeRecord['Customer'] ?? activeRecord['Name'] ?? 'Tata Motors Ltd') : 'Tata Motors Ltd'}</div>
+              </div>
+              <div className="detail">
+                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Industry</small>
+                <div style={{ fontWeight: 600 }}>Automotive OEM</div>
+              </div>
+              <div className="detail">
+                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Credit Limit</small>
+                <div style={{ fontWeight: 600 }}>₹ 50,00,000</div>
+              </div>
+              <div className="detail">
+                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Outstanding</small>
+                <div style={{ fontWeight: 600, color: '#ea580c' }}>₹ 14,20,000</div>
+              </div>
+              <div className="detail">
+                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Lifetime Orders</small>
+                <div style={{ fontWeight: 600 }}>38 Orders</div>
+              </div>
+              <div className="detail">
+                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>CSAT Rating</small>
+                <div style={{ fontWeight: 600, color: '#16a34a' }}>4.9 / 5.0</div>
+              </div>
+            </div>
+
+            {/* Customer mini cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
+              {filteredRows.slice(0, 6).map((r, i) => {
+                const cName = r['Customer'] ?? r['Customer Name'] ?? r['Name'] ?? `Customer-${i + 1}`;
+                const cTier = i % 3 === 0 ? 'Tier 1 Enterprise' : 'Strategic Account';
+                return (
+                  <div
+                    key={`c360-card-${r.id || i}`}
+                    style={{
+                      padding: '8px 10px',
+                      border: '1px solid var(--line, #cbd5e1)',
+                      borderRadius: 6,
+                      background: '#fff',
+                    }}
+                  >
+                    <b style={{ fontSize: 12 }}>{cName}</b>
+                    <div style={{ fontSize: 11, color: 'var(--muted, #64748b)', margin: '2px 0 6px 0' }}>{cTier}</div>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() => {
+                        setActiveRecordId(r.id);
+                        toast(`Loaded ${cName} profile into 360° workspace.`);
+                      }}
+                    >
+                      Open 360°
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 10px 0' }}>Operational Readiness</h3>
+            <div className="v9-metric-row">
+              <span>Information complete</span>
+              <b style={{ color: '#16a34a' }}>Ready</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Owner assigned</span>
+              <b style={{ color: '#16a34a' }}>Ready</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Dependency clear</span>
+              <b style={{ color: '#16a34a' }}>Ready</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Date commitment</span>
+              <b style={{ color: '#16a34a' }}>Ready</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Approval state</span>
+              <b style={{ color: '#f59e0b' }}>Review</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Next action</span>
+              <b style={{ color: '#16a34a' }}>Ready</b>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                className="btn primary"
+                style={{ width: '100%' }}
+                onClick={() => toast('Customer 360° operational review completed.')}
+              >
+                Complete Review
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.12 CRM Lead Sources Workspace Panel */}
+      {pageId === 'crm-sources' ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Lead Sources & Channel Master</h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  Source configuration, attribution tracking, conversion rates and validation rules.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● Configured
+              </span>
+            </div>
+
+            <div className="table-wrap">
+              <table className="register-table">
+                <thead>
+                  <tr>
+                    <th>Source Code</th>
+                    <th>Channel Name</th>
+                    <th>Status</th>
+                    <th>Conversion</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRows.slice(0, 6).map((r, i) => {
+                    const sCode = r['Source Code'] ?? r['Code'] ?? `SRC-${100 + i}`;
+                    const sName = r['Source Name'] ?? r['Name'] ?? r['Channel'] ?? ['Website Direct', 'Referral', 'LinkedIn InMail', 'Trade Expo', 'Cold Outreach'][i % 5];
+                    const sConv = ['28%', '34%', '19%', '42%', '14%'][i % 5];
+                    return (
+                      <tr key={`src-${r.id || i}`}>
+                        <td>
+                          <strong>{sCode}</strong>
+                        </td>
+                        <td>{sName}</td>
+                        <td>
+                          <span className="chip">{r.status || 'Active'}</span>
+                        </td>
+                        <td>{sConv}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() => {
+                                setActiveRecordId(r.id);
+                                setShowEditModal(true);
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm danger"
+                              onClick={() => setAskDelete(r)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ marginTop: 10 }}>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => setShowAddModal(true)}
+              >
+                ＋ Add Master Record
+              </button>
+            </div>
+          </div>
+
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 10px 0' }}>Validation Controls</h3>
+            <div className="v9-metric-row">
+              <span>Unique code</span>
+              <b style={{ color: '#16a34a' }}>Enabled</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Mandatory name</span>
+              <b style={{ color: '#16a34a' }}>Enabled</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Effective date</span>
+              <b style={{ color: '#16a34a' }}>Enabled</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Duplicate check</span>
+              <b style={{ color: '#16a34a' }}>Enabled</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Approval on change</span>
+              <b style={{ color: '#64748b' }}>Optional</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Audit history</span>
+              <b style={{ color: '#16a34a' }}>Enabled</b>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* 4. Toolbar: Search, Status, Department Filter */}
       <div className="toolbar proc-toolbar" style={{ marginTop: 12 }}>
         <input
@@ -1355,18 +1866,41 @@ export function FamV40Body({
         <button
           type="button"
           className="btn sm"
-          disabled={picked.size === 0}
-          onClick={handleExportCsv}
+          onClick={() => {
+            const firstId = Array.from(picked)[0] || activeRecordId;
+            if (firstId) {
+              setActiveRecordId(firstId);
+              toast('Loaded selected record.');
+            } else {
+              toast('Select a record first, then press Load Selected.');
+            }
+          }}
+        >
+          Load Selected
+        </button>
+        <button
+          type="button"
+          className="btn sm"
+          onClick={() => {
+            if (picked.size === 0 && filteredRows.length === 0) {
+              toast('No records to export.');
+            } else {
+              handleExportCsv();
+            }
+          }}
         >
           Export Selected
         </button>
         <button
           type="button"
           className="btn sm primary"
-          disabled={picked.size === 0}
           onClick={() => {
-            toast(`${picked.size} records submitted for approval.`);
-            setPicked(new Set());
+            if (picked.size === 0) {
+              toast('Select records with checkboxes first, then press Submit Selected.');
+            } else {
+              toast(`${picked.size} records submitted for approval.`);
+              setPicked(new Set());
+            }
           }}
         >
           Submit Selected
@@ -1374,10 +1908,13 @@ export function FamV40Body({
         <button
           type="button"
           className="btn sm danger"
-          disabled={picked.size === 0}
           onClick={() => {
-            toast(`${picked.size} records deleted.`);
-            setPicked(new Set());
+            if (picked.size === 0) {
+              toast('Select records with checkboxes first, then press Delete Selected.');
+            } else {
+              toast(`${picked.size} records deleted.`);
+              setPicked(new Set());
+            }
           }}
         >
           Delete Selected

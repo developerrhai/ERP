@@ -61,6 +61,13 @@ const NOUNS: Record<string, string> = {
   'sales-pricelist': 'Price Lists',
   'sales-credit': 'Credit Limits',
   'sales-returns': 'Sales Returns',
+  'crm-leads': 'Leads',
+  'crm-opportunities': 'Opportunities',
+  'crm-followups': 'Follow-ups',
+  'crm-meetings': 'Meetings',
+  'crm-customer360': 'Customers',
+  'crm-feedback': 'Customer Feedback',
+  'crm-sources': 'Lead Sources',
 };
 
 export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
@@ -68,6 +75,6 @@ export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
 export const FAM_PAGE_CFG: Record<string, { noun: string; print?: boolean }> = Object.fromEntries(
   Object.entries(NOUNS).map(([id, noun]) => [
     id,
-    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') ? { noun, print: true } : { noun },
+    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') ? { noun, print: true } : { noun },
   ]),
 );
