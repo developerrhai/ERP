@@ -294,7 +294,7 @@ const SPECS: Record<V40Kind, Spec> = {
       LEFT JOIN users u ON u.id = t.requested_by`,
     select: `t.id::text AS id, t.doc_code AS number, t.doc_code AS document_no,
       t.doc_type AS transaction_type, t.status, t.current_level, t.total_levels, t.amount,
-      t.requested_at AS submitted_at, t.created_at,
+      t.requested_at AS submitted_at, t.requested_at AS created_at,
       d.name AS department, u.name AS requester,
       t.doc_id::text AS document_id, t.version`,
     order: 't.requested_at DESC, t.doc_code DESC',
