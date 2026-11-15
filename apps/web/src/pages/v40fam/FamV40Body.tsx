@@ -46,19 +46,19 @@ function formatCellValue(val: unknown, type?: V40ColType): ReactNode {
 }
 
 const WMS_TITLES: Record<string, string> = {
-  'wms-warehouses': 'Warehouse Directory • Detailed Table',
-  'wms-zones': 'Zone Directory • Detailed Table',
-  'wms-racks': 'Rack Directory • Detailed Table',
-  'wms-shelves': 'Shelf Directory • Detailed Table',
-  'wms-bins': 'Bin Directory • Detailed Table',
-  'wms-putaway': 'Putaway Queue • Detailed Table',
-  'wms-pick': 'Pick Waves • Detailed Table',
-  'wms-packing': 'Packing Queue • Detailed Table',
-  'wms-cycle': 'Cycle Count Plan • Detailed Table',
-  'wms-physical': 'Physical Count Plan • Detailed Table',
-  'wms-transfer': 'Transfer Queue • Detailed Table',
-  'wms-barcode': 'Barcode Registry • Detailed Table',
-  'wms-rfid': 'RFID Tag Registry • Detailed Table',
+  'wms-warehouses': 'Warehouse Directory – Detailed Table',
+  'wms-zones': 'Zone Directory – Detailed Table',
+  'wms-racks': 'Rack Directory – Detailed Table',
+  'wms-shelves': 'Shelf Directory – Detailed Table',
+  'wms-bins': 'Bin Directory – Detailed Table',
+  'wms-putaway': 'Putaway Queue – Detailed Table',
+  'wms-pick': 'Pick Waves – Detailed Table',
+  'wms-packing': 'Packing Queue – Detailed Table',
+  'wms-cycle': 'Cycle Count Plan – Detailed Table',
+  'wms-physical': 'Physical Count Plan – Detailed Table',
+  'wms-transfer': 'Transfer Queue – Detailed Table',
+  'wms-barcode': 'Barcode Registry – Detailed Table',
+  'wms-rfid': 'RFID Tag Registry – Detailed Table',
 };
 
 const DEPARTMENTS = [
@@ -199,6 +199,7 @@ function RecordControlsBar({
   onResetDemo?: () => void;
 }) {
   const navigate = useNavigate();
+  const toast = useToast();
   const currentId = activeId || (rows.length && rows[0] ? rows[0].id : '');
 
   return (
@@ -233,32 +234,43 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
-        disabled={!currentId || !actions.edit}
-        onClick={onEdit}
+        disabled={!actions.edit}
+        onClick={() => {
+          if (!currentId) toast('Select a record first, then press Edit.');
+          else onEdit();
+        }}
       >
         Edit
       </button>
       <button
         type="button"
         className="btn sm danger"
-        disabled={!currentId || !actions.delete}
-        onClick={onDelete}
+        disabled={!actions.delete}
+        onClick={() => {
+          if (!currentId) toast('Select a record first, then press Delete.');
+          else onDelete();
+        }}
       >
         Delete
       </button>
       <button
         type="button"
         className="btn sm"
-        disabled={!currentId}
-        onClick={onDocuments}
+        onClick={() => {
+          if (!currentId) toast('Select a record first, then press Documents.');
+          else onDocuments();
+        }}
       >
         Documents
       </button>
       <button
         type="button"
         className="btn sm"
-        disabled={!currentId || !actions.submit}
-        onClick={onSubmitApproval}
+        disabled={!actions.submit}
+        onClick={() => {
+          if (!currentId) toast('Select a record first, then press Submit Approval.');
+          else onSubmitApproval();
+        }}
       >
         Submit Approval
       </button>
@@ -272,16 +284,20 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
-        disabled={!currentId}
-        onClick={onMoveForward}
+        onClick={() => {
+          if (!currentId) toast('Select a record first, then press Move Forward.');
+          else onMoveForward();
+        }}
       >
         Move Forward
       </button>
       <button
         type="button"
         className="btn sm"
-        disabled={!currentId}
-        onClick={onMoveForward}
+        onClick={() => {
+          if (!currentId) toast('Select a record first, then press Move Forward - Internal.');
+          else onMoveForward();
+        }}
       >
         Move Forward - Internal
       </button>
@@ -753,7 +769,7 @@ export function FamV40Body({
           <b>{totalCount || filteredRows.length}</b>
         </div>
         <div className="v8-mini">
-          <small>Data Completeness</small>
+          <small>Completion</small>
           <b>100%</b>
         </div>
         <div className="v8-mini">

@@ -43,7 +43,7 @@ export const BAR: readonly Btn[] = [
   { label: 'Word', need: 'print', needsRecord: true },
   { label: 'Print', need: 'print', where: 'full', ifAbsent: true },
   { label: '＋ Add New', need: 'add', primary: true },
-  { label: 'Load Selected', need: 'view', needsRecord: true, where: 'full' },
+  { label: 'Load Selected', need: 'view', ifAbsent: true },
   { label: '＋ Add', need: 'add', where: 'full' },
   { label: '⇧ Import', need: 'add' },
   { label: '⇩ Export', need: 'export' },

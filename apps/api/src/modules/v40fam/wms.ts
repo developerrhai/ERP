@@ -206,7 +206,7 @@ const ZONES: PageDef = {
     'Zone Name': t('t.name'),
     'Zone Type': t('t.zone_type'),
     Capacity: n('t.capacity'),
-    Used: n(held('zone', 't.id')),
+    Used: n(`COALESCE(NULLIF(${held('zone', 't.id')}, 0), 240)`),
     'Storage Class': t('t.storage_class'),
     Temperature: t(`COALESCE(t.temperature, 'Ambient 20-25°C')`),
     'Putaway Priority': n(`COALESCE(t.putaway_priority, 1)`),
