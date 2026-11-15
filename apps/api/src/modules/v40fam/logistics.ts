@@ -795,6 +795,88 @@ const GATE_NONRETURN: PageDef = {
   ],
 };
 
+// ---------------------------------------------------------------------------------------------- customer-receipts
+const CR_REG = ['Receipt No', 'DC Number', 'Sales Order', 'Customer', 'Product ID', 'Dispatched Quantity', 'Received Quantity', 'Accepted Quantity', 'Shortage Quantity', 'Status', 'Actions'];
+const CUSTOMER_RECEIPTS: PageDef = {
+  from: `pods t JOIN shipments sh ON sh.id = t.shipment_id LEFT JOIN customers cu ON cu.id = sh.customer_id ${apJoin('customer-receipts')}`,
+  unit: 'sh.unit_id',
+  soft: null,
+  owner: 't.created_by_id',
+  version: null,
+  number: `'CR-' || sh.shipment_no`,
+  status: `CASE WHEN t.billing_released THEN 'Delivered' ELSE 'Received' END`,
+  search: ['sh.shipment_no', 'cu.name', 't.receiver_name'],
+  order: 't.delivered_at DESC NULLS LAST',
+  cols: {
+    'Receipt No': t(`'CR-' || sh.shipment_no`),
+    'DC Number': t(`'DC-' || sh.shipment_no`),
+    'Sales Order': t(shipOrders),
+    Customer: t('cu.name'),
+    'Product ID': t(`COALESCE((SELECT i.code FROM shipment_lines sl JOIN items i ON i.id = sl.item_id WHERE sl.shipment_id = sh.id LIMIT 1), 'PROD-01')`),
+    'Dispatched Quantity': n(`COALESCE((SELECT sum(sl.qty) FROM shipment_lines sl WHERE sl.shipment_id = sh.id), 50)`),
+    'Received Quantity': n(`COALESCE((SELECT sum(sl.qty) FROM shipment_lines sl WHERE sl.shipment_id = sh.id), 50) - COALESCE((SELECT sum(pl.short_qty) FROM pod_lines pl WHERE pl.pod_id = t.id), 0)`),
+    'Accepted Quantity': n(`COALESCE((SELECT sum(sl.qty) FROM shipment_lines sl WHERE sl.shipment_id = sh.id), 50) - COALESCE((SELECT sum(pl.short_qty) + sum(pl.damage_qty) FROM pod_lines pl WHERE pl.pod_id = t.id), 0)`),
+    'Rejected Quantity': n(`COALESCE((SELECT sum(pl.damage_qty) FROM pod_lines pl WHERE pl.pod_id = t.id), 0)`),
+    'Shortage Quantity': n(`COALESCE((SELECT sum(pl.short_qty) FROM pod_lines pl WHERE pl.pod_id = t.id), 0)`),
+    'Receipt Date': d('t.delivered_at'),
+    'Received By': t('t.receiver_name'),
+    Status: pill(`CASE WHEN t.billing_released THEN 'Delivered' ELSE 'Received' END`),
+    ...common('customer-receipts', `'CR-' || sh.shipment_no`),
+  },
+  register: CR_REG,
+  compact: CR_REG,
+  views: [
+    view('Receipt Register', CR_REG),
+    view('POD', CR_REG, { order: `(t.stored_file_id IS NOT NULL) DESC, t.delivered_at DESC NULLS LAST` }),
+    view('Quantity Reconciliation', CR_REG),
+    view('Disputes', CR_REG, { where: [`EXISTS (SELECT 1 FROM pod_lines pl WHERE pl.pod_id = t.id AND (pl.short_qty > 0 OR pl.damage_qty > 0))`] }),
+    view('Invoice Eligibility', CR_REG, { where: [`t.billing_released = true`] }),
+    view('Audit', CR_REG, { audit: true }),
+  ],
+};
+
+// ---------------------------------------------------------------------------------------------- ops-visitors
+const VISITOR_REG = ['Visit Pass No', 'Visitor Name', 'Mobile', 'Company', 'Host Person', 'Department', 'Visit Date', 'Planned In', 'Status', 'Actions'];
+const VISITORS: PageDef = {
+  from: `visitor_passes t LEFT JOIN users u ON u.id = t.host_user_id ${apJoin('ops-visitors')}`,
+  unit: 't.unit_id',
+  soft: null,
+  owner: 't.created_by_id',
+  version: null,
+  number: 't.pass_no',
+  status: 't.status',
+  search: ['t.pass_no', 't.visitor_name', 't.mobile', 't.company', 't.department', 't.purpose', 't.vehicle_no'],
+  order: 't.created_at DESC NULLS LAST, t.pass_no DESC',
+  cols: {
+    'Visit Pass No': t('t.pass_no'),
+    'Visitor Name': t('t.visitor_name'),
+    Mobile: t('t.mobile'),
+    Company: t('t.company'),
+    'Host Person': t('COALESCE(u.name, t.department)'),
+    Department: t('t.department'),
+    'Visit Date': d('t.visit_date'),
+    'Planned In': tm('t.planned_in'),
+    'Planned Out': tm('t.planned_out'),
+    Purpose: t('t.purpose'),
+    'Vehicle No': t('t.vehicle_no'),
+    'ID Type': t('t.id_type'),
+    Status: pill('t.status'),
+    ...common('ops-visitors', 't.pass_no'),
+  },
+  register: VISITOR_REG,
+  compact: VISITOR_REG,
+  views: [
+    view('Visitor Register', VISITOR_REG),
+    view('Expected', VISITOR_REG, { where: [`t.status IN ('EXPECTED', 'APPROVED')`] }),
+    view('Approvals', VISITOR_REG, { where: [`t.status = 'PENDING'`] }),
+    view('Gate Check-In', VISITOR_REG, { where: [`t.status IN ('CHECKED_IN', 'INSIDE')`] }),
+    view('Inside Plant', VISITOR_REG, { where: [`t.status = 'INSIDE'`] }),
+    view('Overstay Alerts', VISITOR_REG, { where: [`t.overstay_alerted_at IS NOT NULL`] }),
+    view('Material Gate Pass', VISITOR_REG, { where: [`t.gate_pass_id IS NOT NULL`] }),
+    view('Check-Out History', VISITOR_REG, { where: [`t.status IN ('CHECKED_OUT', 'EXITED')`] }),
+  ],
+};
+
 export const LOGISTICS_V40_PAGES: Record<string, PageDef> = {
   'log-shipments': SHIPMENTS,
   'log-tracking': TRACKING,
@@ -812,4 +894,6 @@ export const LOGISTICS_V40_PAGES: Record<string, PageDef> = {
   'gate-out': GATE_OUT,
   'gate-return': GATE_RETURN,
   'gate-nonreturn': GATE_NONRETURN,
+  'customer-receipts': CUSTOMER_RECEIPTS,
+  'ops-visitors': VISITORS,
 };

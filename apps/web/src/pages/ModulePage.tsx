@@ -708,6 +708,8 @@ function PageBody({
       return <LogisticsPage initialTab="TRANSPORTERS" />;
     case 'log-pod':
       return <LogisticsPage initialTab="POD" />;
+    case 'customer-receipts':
+      return <LogisticsPage initialTab="POD" />;
     case 'container-track':
       return <LogisticsPage initialTab="CONTAINERS" />;
 

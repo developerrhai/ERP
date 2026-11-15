@@ -20,6 +20,8 @@ const NOUNS: Record<string, string> = {
   'log-routes': 'Routes',
   'log-transporters': 'Transporters',
   'log-pod': 'PODs',
+  'customer-receipts': 'Customer Receipts',
+  'ops-visitors': 'Visitors',
   'container-track': 'Containers',
   'fleet-vehicles': 'Vehicles',
   'fleet-drivers': 'Drivers',

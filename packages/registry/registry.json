@@ -827,6 +827,10 @@
           "title": "POD Tracking"
         },
         {
+          "id": "customer-receipts",
+          "title": "Customer Material Receipt"
+        },
+        {
           "id": "fleet-vehicles",
           "title": "Fleet Vehicles"
         },
@@ -857,6 +861,10 @@
         {
           "id": "gate-return",
           "title": "Returnable Gate Pass"
+        },
+        {
+          "id": "ops-visitors",
+          "title": "Visitor Management"
         },
         {
           "id": "gate-nonreturn",
@@ -5871,6 +5879,36 @@
         "Status"
       ]
     },
+    "customer-receipts": {
+      "title": "Customer Material Receipt",
+      "family": "Logistics / Fleet",
+      "purpose": "Record proof of delivery, accepted quantity, shortages, rejection and customer confirmation.",
+      "tabs": [
+        "Receipt Register",
+        "POD",
+        "Quantity Reconciliation",
+        "Disputes",
+        "Invoice Eligibility",
+        "Audit"
+      ],
+      "fields": [
+        "Receipt No",
+        "DC Number",
+        "Sales Order",
+        "Customer",
+        "Product ID",
+        "Dispatched Quantity",
+        "Received Quantity",
+        "Accepted Quantity",
+        "Rejected Quantity",
+        "Shortage Quantity",
+        "Receipt Date",
+        "Received By",
+        "Inspection Status",
+        "Inventory Posted",
+        "Status"
+      ]
+    },
     "fleet-vehicles": {
       "title": "Fleet Vehicles",
       "family": "Logistics / Fleet",
@@ -6084,6 +6122,40 @@
         "Return Date",
         "Balance Qty",
         "Authorized By",
+        "Status"
+      ]
+    },
+    "ops-visitors": {
+      "title": "Visitor Management",
+      "family": "Logistics / Fleet",
+      "purpose": "Pre-approve visitors, issue gate passes, track entry and exit, and retain department visit history.",
+      "tabs": [
+        "Visitor Register",
+        "Expected",
+        "Approvals",
+        "Gate Check-In",
+        "Inside Plant",
+        "Overstay Alerts",
+        "Material Gate Pass",
+        "Check-Out History",
+        "Analytics & Graphs",
+        "Documents",
+        "Reports",
+        "Audit Trail"
+      ],
+      "fields": [
+        "Visit Pass No",
+        "Visitor Name",
+        "Mobile",
+        "Company",
+        "Host Person",
+        "Department",
+        "Visit Date",
+        "Planned In",
+        "Planned Out",
+        "Purpose",
+        "Vehicle No",
+        "ID Type",
         "Status"
       ]
     },

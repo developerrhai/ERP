@@ -27,7 +27,7 @@ import {
   type V40Panel,
   type V40Row,
 } from './salesV40Api';
-import { FAM_PAGE_CFG } from '../v40fam/famIds';
+import { FAM_PAGE_CFG, FAM_V40_IDS } from '../v40fam/famIds';
 import './sales-v40.css';
 
 interface PageCfg {
@@ -253,7 +253,7 @@ export interface V40RegisterProps {
 /** Wrap the table of a sales page: `<V40Register pageId=… actions=… fallback={<table…/>} />`. */
 export function V40Register(props: V40RegisterProps) {
   const frame = useFrame();
-  if (!frame || !SALES_V40_IDS.has(props.pageId)) return <>{props.fallback}</>;
+  if (!frame || (!SALES_V40_IDS.has(props.pageId) && !FAM_V40_IDS.has(props.pageId))) return <>{props.fallback}</>;
   return (
     <V40Body {...props} tabName={frame.tabName} first={frame.index === 0} claim={frame.claim} />
   );

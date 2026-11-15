@@ -62,6 +62,24 @@ function ProtectedApp() {
           <Route path="notifications" element={<Navigate to="/m/notif-center" replace />} />
           <Route path="gate/kiosk" element={<GateKioskPage />} />
           <Route path="m/approval-matrix" element={<Navigate to="/m/admin-approval" replace />} />
+          <Route path="lng-transporters" element={<Navigate to="/m/log-transporters" replace />} />
+          <Route path="lng-routes" element={<Navigate to="/m/log-routes" replace />} />
+          <Route path="lng-freight" element={<Navigate to="/m/log-freight" replace />} />
+          <Route path="lng-shipments" element={<Navigate to="/m/log-shipments" replace />} />
+          <Route path="lng-tracking" element={<Navigate to="/m/log-tracking" replace />} />
+          <Route path="lng-pod" element={<Navigate to="/m/log-pod" replace />} />
+          <Route path="customer-receipts" element={<Navigate to="/m/customer-receipts" replace />} />
+          <Route path="fleet-vehicles" element={<Navigate to="/m/fleet-vehicles" replace />} />
+          <Route path="fleet-drivers" element={<Navigate to="/m/fleet-drivers" replace />} />
+          <Route path="fleet-fuel" element={<Navigate to="/m/fleet-fuel" replace />} />
+          <Route path="fleet-service" element={<Navigate to="/m/fleet-service" replace />} />
+          <Route path="fleet-documents" element={<Navigate to="/m/fleet-documents" replace />} />
+          <Route path="gate-in" element={<Navigate to="/m/gate-in" replace />} />
+          <Route path="gate-out" element={<Navigate to="/m/gate-out" replace />} />
+          <Route path="gate-return" element={<Navigate to="/m/gate-return" replace />} />
+          <Route path="gate-nonreturn" element={<Navigate to="/m/gate-nonreturn" replace />} />
+          <Route path="ops-visitors" element={<Navigate to="/m/ops-visitors" replace />} />
+          <Route path="container-track" element={<Navigate to="/m/container-track" replace />} />
           <Route path="m/:pageId" element={<ModulePage user={user} />} />
           <Route path="m/:pageId/:sub" element={<ModulePage user={user} />} />
           <Route path="*" element={<NotFoundPage />} />

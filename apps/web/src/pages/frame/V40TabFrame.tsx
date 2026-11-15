@@ -223,6 +223,16 @@ export function V40TabFrame({ pageId, tabs, children }: { pageId: string; tabs: 
             →
           </button>
         ) : null}
+        <button
+          type="button"
+          className="btn sm primary v40-tab-add"
+          style={{ whiteSpace: 'nowrap', marginLeft: '6px' }}
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent('v40-add-record', { detail: { pageId } }));
+          }}
+        >
+          ＋ Add
+        </button>
       </div>
       <FrameCtx.Provider value={frameState}>
         {!isClaimed && kind === 'audit' ? (

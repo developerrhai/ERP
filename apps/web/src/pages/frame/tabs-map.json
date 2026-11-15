@@ -944,6 +944,20 @@
   "Reports",
   "Audit Trail"
  ],
+ "ops-visitors": [
+  "Visitor Register",
+  "Expected",
+  "Approvals",
+  "Gate Check-In",
+  "Inside Plant",
+  "Overstay Alerts",
+  "Material Gate Pass",
+  "Check-Out History",
+  "Analytics & Graphs",
+  "Documents",
+  "Reports",
+  "Audit Trail"
+ ],
  "dispatch-dc": [
   "DC Register",
   "SO Quantity Control",

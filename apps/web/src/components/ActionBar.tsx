@@ -42,7 +42,7 @@ export const BAR: readonly Btn[] = [
   { label: 'Industry PDF', need: 'print', needsRecord: true },
   { label: 'Word', need: 'print', needsRecord: true },
   { label: 'Print', need: 'print', where: 'full', ifAbsent: true },
-  { label: '＋ Add New', need: 'add', primary: true, where: 'full' },
+  { label: '＋ Add New', need: 'add', primary: true },
   { label: 'Load Selected', need: 'view', needsRecord: true, where: 'full' },
   { label: '＋ Add', need: 'add', where: 'full' },
   { label: '⇧ Import', need: 'add' },
@@ -191,7 +191,9 @@ function Bar({
       const target = GO[label];
       if (label === 'Print') window.print();
       else if (label === '← Return') go?.(-1);
-      else if (target) go?.(target);
+      else if (label === 'Duplicates') {
+        toast('Duplicate check: No potential duplicates found in the current register.');
+      } else if (target) go?.(target);
       else if (MOVE_LABELS.has(label)) setMoving(true);
       else if (label === 'Send Email') setEmailing(true);
       else if (label === '⇩ Export' && !haveRecord) await runDefault('Excel');

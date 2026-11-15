@@ -1,7 +1,53 @@
-/* Standard-screen section under the V40 tab views of the WMS, Logistics / Fleet / Gate and Assets pages (FamV40Body.tsx). */
+/* V40 body of the Warehouse / WMS, Logistics / Fleet / Gate and Assets pages. */
+.fam-v40 {
+  display: block;
+  width: 100%;
+}
 .fam-standard { margin-top: 14px; }
 .fam-standard > summary { cursor: pointer; font-size: 13px; color: var(--muted, #667); padding: 6px 0; }
 .fam-cards { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; align-items: stretch; }
 .fam-card { border: 1px solid var(--line, #dde); border-radius: 8px; padding: 8px 14px; min-width: 130px; display: flex; flex-direction: column; }
 .fam-card span { font-size: 12px; color: var(--muted, #667); }
 .fam-card strong { font-size: 20px; }
+
+/* Connected Manufacturing 360 Ribbon */
+.fam-v40 .v17-integrated { margin: 0 0 12px; border: 1px solid #bfd2e6; border-left: 5px solid #17365d; background: linear-gradient(135deg, #f8fbff, #eef6ff); border-radius: 10px; padding: 11px; }
+.fam-v40 .v17-integrated-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fam-v40 .v17-integrated-head h3 { margin: 0; color: #17365d; font-size: 14px; font-weight: 700; }
+.fam-v40 .v17-integrated-head p { margin: 3px 0 0; color: #52677f; font-size: 11px; }
+.fam-v40 .v17-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.fam-v40 .v17-actions select { min-width: 230px; border: 1px solid #bfd2e6; border-radius: 8px; padding: 6px 8px; background: #fff; font-size: 12px; }
+.fam-v40 .v17-mini-flow { display: grid; grid-template-columns: repeat(5, minmax(110px, 1fr)); gap: 6px; margin-top: 9px; }
+.fam-v40 .v17-mini-stage { border: 1px solid #d9e4ef; border-radius: 7px; background: #fff; padding: 7px; min-height: 54px; }
+.fam-v40 .v17-mini-stage.done { background: #f0fdf4; border-color: #86efac; }
+.fam-v40 .v17-mini-stage.current { background: #eff6ff; border-color: #60a5fa; box-shadow: inset 0 0 0 1px #60a5fa; }
+.fam-v40 .v17-mini-stage.blocked { background: #fff7ed; border-color: #fdba74; }
+.fam-v40 .v17-mini-stage small { display: block; font-size: 9px; color: #64748b; text-transform: uppercase; }
+.fam-v40 .v17-mini-stage b { display: block; font-size: 11px; color: #17365d; margin-top: 3px; }
+
+/* Record Controls Bar */
+.fam-v40 .recordbar { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; padding: 9px 12px; border: 1px solid var(--line, #e2e8f0); background: var(--card, #fff); border-radius: 11px; margin-bottom: 12px; }
+.fam-v40 .recordbar select { min-width: 250px; border: 1px solid var(--line, #e2e8f0); border-radius: 8px; padding: 6px 8px; background: var(--card, #fff); font-size: 12px; }
+
+/* Summary / KPI Cards above register */
+.fam-v40 .v8-table-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 10px; border-bottom: 1px solid var(--line, #e2e8f0); background: var(--card2, #f8fafc); }
+.fam-v40 .v8-mini { padding: 8px 10px; border: 1px solid var(--line, #e2e8f0); border-radius: 10px; background: var(--card, #fff); }
+.fam-v40 .v8-mini small { display: block; color: var(--muted, #64748b); font-size: 10px; text-transform: uppercase; }
+.fam-v40 .v8-mini b { display: block; font-size: 14px; margin-top: 3px; color: var(--text, #172033); }
+
+/* Secondary Detailed Register Table */
+.fam-v40 .v92-table-section { margin-top: 14px; border: 1px solid var(--line, #e2e8f0); border-radius: 10px; background: var(--card, #fff); overflow: hidden; }
+.fam-v40 .v92-table-title { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line, #e2e8f0); background: var(--card2, #f8fafc); flex-wrap: wrap; gap: 8px; }
+.fam-v40 .v92-table-title h3 { margin: 0; font-size: 13px; font-weight: 700; color: #17365d; }
+.fam-v40 .v92-table-title small { color: var(--muted, #64748b); font-size: 11px; }
+
+/* Toolbar */
+.fam-v40 .proc-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; }
+.fam-v40 .proc-row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.fam-v40 td.num { text-align: right; white-space: nowrap; }
+.fam-v40 .table-wrap { overflow-x: auto; }
+
+@media (max-width: 900px) {
+  .fam-v40 .v17-mini-flow { grid-template-columns: repeat(2, 1fr); }
+  .fam-v40 .v8-table-summary { grid-template-columns: repeat(2, 1fr); }
+}
