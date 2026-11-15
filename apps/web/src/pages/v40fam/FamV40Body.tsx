@@ -66,6 +66,16 @@ const WMS_TITLES: Record<string, string> = {
   'crm-customer360': 'Customer 360° – Detailed Table',
   'crm-feedback': 'Customer Feedback – Detailed Table',
   'crm-sources': 'Source Master – Detailed Table',
+  'tax-gst': 'GST Configuration – Detailed Table',
+  'tax-gstr1': 'GSTR-1 Invoices – Detailed Table',
+  'tax-gstr3b': 'GSTR-3B Returns – Detailed Table',
+  'tax-tds': 'TDS Register – Detailed Table',
+  'tax-tcs': 'TCS Register – Detailed Table',
+  'tax-hsn': 'HSN / SAC Master – Detailed Table',
+  'tax-einvoice': 'E-Invoice Queue – Detailed Table',
+  'tax-eway': 'E-Way Bill Queue – Detailed Table',
+  'tax-salesreg': 'Sales Register – Detailed Table',
+  'tax-purchasereg': 'Purchase Register – Detailed Table',
 };
 
 const DEPARTMENTS = [
@@ -219,7 +229,7 @@ function RecordControlsBar({
         <option value="">{`Record: [Select ${title}]`}</option>
         {rows.map((r) => (
           <option key={r.id} value={r.id}>
-            {`Record: [${r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
+            {`Record: [${r['Vendor Invoice'] || r['Invoice No'] || r['GSTIN'] || r['TDS Entry No'] || r['TCS Entry No'] || r['HSN SAC'] || r['EWB No'] || r['Return Period'] || r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
           </option>
         ))}
       </select>
@@ -741,6 +751,16 @@ export function FamV40Body({
       case 'crm-customer360': return { label: 'Key Accounts', value: '18 Active' };
       case 'crm-feedback': return { label: 'CSAT Rating', value: '4.8 / 5.0' };
       case 'crm-sources': return { label: 'Conversion ROI', value: '340%' };
+      case 'tax-gst': return { label: 'Valid Registrations', value: '100% Compliant' };
+      case 'tax-gstr1': return { label: 'Net Tax Liability', value: '₹ 14,20,000' };
+      case 'tax-gstr3b': return { label: 'Net Payable', value: '₹ 11,85,000' };
+      case 'tax-tds': return { label: 'TDS Deducted', value: '₹ 3,45,000' };
+      case 'tax-tcs': return { label: 'TCS Collected', value: '₹ 1,12,000' };
+      case 'tax-hsn': return { label: 'Active Codes', value: `${total}` };
+      case 'tax-einvoice': return { label: 'IRN Generated', value: '100%' };
+      case 'tax-eway': return { label: 'Active E-Way', value: `${total}` };
+      case 'tax-salesreg': return { label: 'Total Sales Tax', value: '₹ 18,60,000' };
+      case 'tax-purchasereg': return { label: 'ITC Eligible', value: '₹ 12,40,000' };
       case 'wms-warehouses': return { label: 'Storage Capacity', value: '94% Utilized' };
       case 'wms-zones': return { label: 'Active Zones', value: `${total}` };
       case 'wms-racks': return { label: 'Active Racks', value: `${total}` };
@@ -1775,6 +1795,134 @@ export function FamV40Body({
             <div className="v9-metric-row">
               <span>Audit history</span>
               <b style={{ color: '#16a34a' }}>Enabled</b>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.13 Tax Statutory Workspace Panel (v9TaxWorkspace parity for GST Setup to Purchase Register) */}
+      {pageId.startsWith('tax-') ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>{`${title} Workspace`}</h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  Indian statutory validation, document status, tax compliance rules and filing readiness.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● Statutory Active
+              </span>
+            </div>
+
+            {/* Statutory Stepper Tiles */}
+            <div
+              className="v9-stepper"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              {[
+                { label: 'Source Data', status: 'Passed', active: true },
+                { label: 'Tax Validation', status: 'Passed', active: true },
+                { label: 'Document Generation', status: 'Ready', active: true },
+                { label: 'Portal Status', status: 'Pending', active: false },
+                { label: 'Reconciliation', status: 'Pending', active: false },
+              ].map((st) => (
+                <div
+                  key={st.label}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    background: st.active ? 'var(--muted-bg, #f1f5f9)' : '#fff',
+                    border: `1px solid ${st.status === 'Ready' ? '#3b82f6' : st.active ? '#10b981' : 'var(--line, #cbd5e1)'}`,
+                    textAlign: 'center',
+                  }}
+                >
+                  <b style={{ fontSize: 11, display: 'block' }}>{st.label}</b>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: st.status === 'Passed' ? '#16a34a' : st.status === 'Ready' ? '#2563eb' : '#64748b',
+                    }}
+                  >
+                    {st.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Validation Detail Grid */}
+            <div
+              className="detail-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                gap: 8,
+                padding: '10px 12px',
+                background: 'var(--muted-bg, #f8fafc)',
+                borderRadius: 6,
+              }}
+            >
+              {[
+                { key: 'GSTIN Validity', val: 'Validated', ok: true },
+                { key: 'HSN/SAC Mapping', val: 'Validated', ok: true },
+                { key: 'Tax Rate', val: 'Validated', ok: true },
+                { key: 'Place of Supply', val: 'Validated', ok: true },
+                { key: 'IRN / EWB', val: 'Review', ok: false },
+                { key: 'Return Mapping', val: 'Review', ok: false },
+              ].map((v) => (
+                <div key={v.key} className="detail">
+                  <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>{v.key}</small>
+                  <div style={{ fontWeight: 600, color: v.ok ? '#16a34a' : '#ea580c' }}>{v.val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 10px 0' }}>Compliance Actions</h3>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => toast(`Statutory validation executed for ${title}. All rules passed.`)}
+              >
+                Run Validation
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => toast(`Downloading compliance letterhead PDF for ${title}...`)}
+              >
+                Download Letterhead PDF
+              </button>
+              {pageId === 'tax-tds' || pageId === 'tax-tcs' ? (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => toast(`Record challan modal opened for ${title}.`)}
+                >
+                  Record challan
+                </button>
+              ) : null}
+              {pageId === 'tax-eway' ? (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => toast('Generating official E-Way Bill PDF...')}
+                >
+                  E-Way PDF
+                </button>
+              ) : null}
+            </div>
+            <div className="notice" style={{ marginTop: 12 }}>
+              {totalCount || filteredRows.length} statutory records checked. {Math.max(0, (totalCount || filteredRows.length) - 3)} are filing-ready; 3 contain review flags for verification.
             </div>
           </div>
         </div>

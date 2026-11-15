@@ -67,11 +67,13 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
   if (p.status) qs.set('status', p.status);
   const base = pageId.startsWith('qms-')
     ? '/qms'
-    : SALES_V40_IDS.has(pageId)
-      ? '/sales'
-      : FAM_V40_IDS.has(pageId)
-        ? '/fam'
-        : '/sales';
+    : pageId.startsWith('tax-')
+      ? '/tax'
+      : SALES_V40_IDS.has(pageId)
+        ? '/sales'
+        : FAM_V40_IDS.has(pageId)
+          ? '/fam'
+          : '/sales';
   const r = await request<V40Row[]>(`${base}/v40/${pageId}?${qs.toString()}`);
   const meta = (r.meta ?? {}) as unknown as Partial<V40Page> & { total?: number };
   return {

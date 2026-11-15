@@ -68,6 +68,16 @@ const NOUNS: Record<string, string> = {
   'crm-customer360': 'Customers',
   'crm-feedback': 'Customer Feedback',
   'crm-sources': 'Lead Sources',
+  'tax-gst': 'GST Setup',
+  'tax-gstr1': 'GSTR-1 Invoices',
+  'tax-gstr3b': 'GSTR-3B Returns',
+  'tax-tds': 'TDS Entries',
+  'tax-tcs': 'TCS Entries',
+  'tax-hsn': 'HSN / SAC Codes',
+  'tax-einvoice': 'E-Invoices',
+  'tax-eway': 'E-Way Bills',
+  'tax-salesreg': 'Sales Register',
+  'tax-purchasereg': 'Purchase Register',
 };
 
 export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
@@ -75,6 +85,6 @@ export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
 export const FAM_PAGE_CFG: Record<string, { noun: string; print?: boolean }> = Object.fromEntries(
   Object.entries(NOUNS).map(([id, noun]) => [
     id,
-    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') ? { noun, print: true } : { noun },
+    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') ? { noun, print: true } : { noun },
   ]),
 );
