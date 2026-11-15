@@ -20,12 +20,5 @@ export const SCREEN_PAGES: ReadonlySet<string> = new Set([
   'service-spares',
   'tax-gst',
   'tax-hsn',
-  'wms-transfer',
-  'wms-zones',
-  'wms-racks',
-  'wms-shelves',
-  'wms-rfid',
-  'wms-pick',
-  'wms-packing',
   'qms-5why',
 ]);

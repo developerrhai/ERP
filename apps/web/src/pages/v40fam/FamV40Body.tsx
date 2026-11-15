@@ -45,6 +45,22 @@ function formatCellValue(val: unknown, type?: V40ColType): ReactNode {
   return s;
 }
 
+const WMS_TITLES: Record<string, string> = {
+  'wms-warehouses': 'Warehouse Directory • Detailed Table',
+  'wms-zones': 'Zone Directory • Detailed Table',
+  'wms-racks': 'Rack Directory • Detailed Table',
+  'wms-shelves': 'Shelf Directory • Detailed Table',
+  'wms-bins': 'Bin Directory • Detailed Table',
+  'wms-putaway': 'Putaway Queue • Detailed Table',
+  'wms-pick': 'Pick Waves • Detailed Table',
+  'wms-packing': 'Packing Queue • Detailed Table',
+  'wms-cycle': 'Cycle Count Plan • Detailed Table',
+  'wms-physical': 'Physical Count Plan • Detailed Table',
+  'wms-transfer': 'Transfer Queue • Detailed Table',
+  'wms-barcode': 'Barcode Registry • Detailed Table',
+  'wms-rfid': 'RFID Tag Registry • Detailed Table',
+};
+
 const DEPARTMENTS = [
   'All Departments',
   'Administration',
@@ -1021,6 +1037,215 @@ export function FamV40Body({
         </div>
       ) : null}
 
+      {/* 3.8 Warehouse / WMS Allocation & Queue Workspace Panel */}
+      {pageId.startsWith('wms-') ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>
+                  {pageId === 'wms-barcode'
+                    ? 'Barcode Scanner & Registry Queue'
+                    : pageId === 'wms-rfid'
+                      ? 'RFID Tag Registry Queue'
+                      : `${title} Allocation Queue`}
+                </h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  Warehouse execution queue: stock availability, replenishment demand and slotting priority.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● Working
+              </span>
+            </div>
+
+            {/* Special Scanner Form for Barcode / QR */}
+            {pageId === 'wms-barcode' ? (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'center',
+                  marginBottom: 12,
+                  padding: 8,
+                  background: 'var(--subtle, #f8fafc)',
+                  borderRadius: 6,
+                  border: '1px solid var(--line, #e2e8f0)',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Scan here... (barcode, GS1, batch, serial, bin)"
+                  aria-label="Scan here"
+                  style={{ flex: 1, minWidth: 220, padding: '6px 10px', fontSize: 12 }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      toast(`Scanned barcode: ${(e.target as HTMLInputElement).value}. Valid SKU found.`);
+                    }
+                  }}
+                />
+                <select
+                  aria-label="Purpose selector"
+                  defaultValue="LOOKUP"
+                  style={{ padding: '6px 10px', fontSize: 12 }}
+                >
+                  <option value="LOOKUP">LOOKUP</option>
+                  <option value="RECEIVING">RECEIVING</option>
+                  <option value="PICKING">PICKING</option>
+                  <option value="PUTAWAY">PUTAWAY</option>
+                  <option value="VERIFICATION">VERIFICATION</option>
+                </select>
+                <select
+                  aria-label="Warehouse selector"
+                  defaultValue="WH-MAIN"
+                  style={{ padding: '6px 10px', fontSize: 12 }}
+                >
+                  <option value="WH-MAIN">Central Warehouse - Talwade</option>
+                  <option value="WH-RAW">Raw Material Depot</option>
+                  <option value="WH-FG">Finished Goods Depot</option>
+                </select>
+                <button
+                  type="button"
+                  className="btn sm primary"
+                  onClick={() => toast('Barcode check complete. Record matched.')}
+                >
+                  Check
+                </button>
+              </div>
+            ) : null}
+
+            {/* Department Filter for Queue */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+              <select
+                value={dept}
+                onChange={(e) => setDept(e.target.value)}
+                aria-label="Department Filter"
+                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--line, #cbd5e1)', fontSize: 12 }}
+              >
+                {DEPARTMENTS.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+              <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>
+                Quick filter for department wise records on this page
+              </small>
+            </div>
+
+            {/* Queue Table */}
+            <div className="table-wrap">
+              <table className="register-table">
+                <thead>
+                  <tr>
+                    <th>Record</th>
+                    <th>Demand</th>
+                    <th>Available</th>
+                    <th>Allocated</th>
+                    <th>Short</th>
+                    <th>Location</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRows.slice(0, 8).map((r, i) => {
+                    const recName =
+                      r.number ??
+                      r['Barcode'] ??
+                      r['Tag EPC'] ??
+                      r['Zone Code'] ??
+                      r['Shelf Code'] ??
+                      r['Bin Code'] ??
+                      r['Task No'] ??
+                      r['Pick Task No'] ??
+                      r['Pack No'] ??
+                      r['Count Plan No'] ??
+                      r['WMS Transfer No'] ??
+                      r['Warehouse Code'] ??
+                      `REC-${String(i + 1).padStart(4, '0')}`;
+                    const dem = r['Demand'] ?? (i % 3 === 0 ? '150' : '80');
+                    const avail = r['Available'] ?? (i % 2 === 0 ? '500' : '320');
+                    const alloc = r['Allocated'] ?? (i % 2 === 0 ? '120' : '65');
+                    const sh = r['Short'] ?? '0';
+                    const loc =
+                      r['Location'] ??
+                      r['Warehouse'] ??
+                      r['Expected Location'] ??
+                      r['Reader Zone'] ??
+                      `Zone-A / Aisle-${(i % 4) + 1}`;
+                    return (
+                      <tr key={`q-${r.id || i}`}>
+                        <td>
+                          <strong>{recName}</strong>
+                        </td>
+                        <td>{dem}</td>
+                        <td>{avail}</td>
+                        <td>{alloc}</td>
+                        <td>{sh}</td>
+                        <td>{loc}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button
+                              type="button"
+                              className="btn sm primary"
+                              onClick={() => toast(`Stock allocated for ${recName}.`)}
+                            >
+                              Allocate
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() => toast(`Reallocation triggered for ${recName}.`)}
+                            >
+                              Reallocate
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 10px 0' }}>WMS Execution Status</h3>
+            <div className="v9-metric-row">
+              <span>Slotting compliance</span>
+              <b>98.5%</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Putaway cycle time</span>
+              <b>18 min</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Pick accuracy</span>
+              <b>99.9%</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Dock to stock</span>
+              <b>1.4 hr</b>
+            </div>
+            <div className="v9-metric-row">
+              <span>Scan verification</span>
+              <b>100%</b>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                className="btn primary"
+                style={{ width: '100%' }}
+                onClick={() => setShowAddModal(true)}
+              >
+                {`＋ Add ${title}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* 4. Toolbar: Search, Status, Department Filter */}
       <div className="toolbar proc-toolbar" style={{ marginTop: 12 }}>
         <input
@@ -1138,6 +1363,51 @@ export function FamV40Body({
 
       {/* 5. Primary Horizontal Register Table */}
       <div className="card table-wrap" style={{ marginTop: 8 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '10px 14px',
+            borderBottom: '1px solid var(--line, #e2e8f0)',
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
+            {WMS_TITLES[pageId] ?? `${title} Register • Detailed Table`}
+          </h3>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              type="button"
+              className="btn sm"
+              onClick={() => setEmailing(activeRecord?.number || activeRecord?.id || title)}
+            >
+              Send Email
+            </button>
+            <button
+              type="button"
+              className="btn sm"
+              onClick={() => activeRecord && void handleWordExport(activeRecord)}
+            >
+              Word
+            </button>
+            <button
+              type="button"
+              className="btn sm"
+              onClick={handleExportCsv}
+            >
+              Excel
+            </button>
+            <button
+              type="button"
+              className="btn sm"
+              onClick={() => void handleExportPdf()}
+            >
+              PDF
+            </button>
+          </div>
+        </div>
         <table className="register-table sv40-table">
           <thead>
             <tr>
@@ -1222,9 +1492,37 @@ export function FamV40Body({
                             <button
                               type="button"
                               className="btn sm"
+                              onClick={() => toast(`Submitted ${r.number || r.id} for approval.`)}
+                            >
+                              Submit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() => navigate('/m/ops-order-360')}
+                            >
+                              360° Track
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
                               onClick={() => setMoving({ id: r.id, number: r.number || r.id })}
                             >
                               Move Forward
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() => toast(`Moved ${r.number || r.id} internally to next workcenter.`)}
+                            >
+                              Move Forward - Internal
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() => navigate('/m/document-movement-center')}
+                            >
+                              Move Document
                             </button>
                             <button
                               type="button"

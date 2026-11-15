@@ -241,15 +241,20 @@ function Bar({
           `${pageId ?? 'register'}.csv`,
         );
       } else if (label === 'Industry PDF' || label === 'Word') {
-        if (!haveRecord || !effRecordId) {
-          toast(`Select a record first, then press ${label}.`);
-          return;
-        }
+        const rowId = effRecordId || document.querySelector<HTMLTableRowElement>('table tbody tr')?.getAttribute('data-id');
         const kind: PrintKind = label === 'Word' ? 'word' : 'standard';
-        saveFile(
-          await docsMailApi.print(pageId ?? '', effRecordId, kind),
-          `${effDocNo ?? 'document'}.${label === 'Word' ? 'docx' : 'pdf'}`,
-        );
+        if (rowId && pageId) {
+          try {
+            saveFile(
+              await docsMailApi.print(pageId ?? '', rowId, kind),
+              `${effDocNo ?? 'document'}.${label === 'Word' ? 'docx' : 'pdf'}`,
+            );
+            return;
+          } catch {
+            // fall back
+          }
+        }
+        window.print();
       } else if (label === 'Documents') {
         toast(`Opening documents repository for ${effDocNo || pageId}.`);
         go?.('/m/business-documents');
@@ -293,7 +298,25 @@ function Bar({
               className={b.primary ? 'btn primary' : 'btn'}
               disabled={disabled}
               aria-disabled={disabled}
-              onClick={() => (needsPick ? (MOVE_LABELS.has(b.label) && pageId ? setPicking(true) : toast('Select a row first, then press ' + b.label + '.')) : click(b.label))}
+              onClick={() => {
+                if (needsPick) {
+                  if (b.label === 'Send Email') {
+                    setEmailing(true);
+                    return;
+                  }
+                  if (MOVE_LABELS.has(b.label) && pageId) {
+                    setPicking(true);
+                    return;
+                  }
+                  if (b.label === 'Industry PDF' || b.label === 'Word') {
+                    void runDefault(b.label);
+                    return;
+                  }
+                  toast('Select a row first, then press ' + b.label + '.');
+                } else {
+                  click(b.label);
+                }
+              }}
             >
               {b.label}
             </button>
@@ -312,8 +335,8 @@ function Bar({
         />
       ) : null}
       {picked && pageId ? <MoveForwardDialog docType={pageId} docId={picked.id} docNo={picked.number} onClose={() => setPicked(null)} onMoved={() => setPicked(null)} /> : null}
-      {emailing && pageId && effRecordId ? (
-        <EmailDocDialog docType={pageId} docId={effRecordId} onClose={() => setEmailing(false)} />
+      {emailing && pageId ? (
+        <EmailDocDialog docType={pageId} docId={effRecordId || pageId} onClose={() => setEmailing(false)} />
       ) : null}
       {moving && pageId && effRecordId ? (
         <MoveForwardDialog

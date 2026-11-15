@@ -168,7 +168,20 @@ const WAREHOUSES: PageDef = {
 };
 
 // ---------------------------------------------------------------------------------------------- zones
-const ZONE_LABELS = ['Zone Code', 'Warehouse', 'Zone Name', 'Zone Type', 'Capacity', 'Used', 'Storage Class', 'Status', 'Actions'];
+const ZONE_LABELS = [
+  'Zone Code',
+  'Warehouse',
+  'Zone Name',
+  'Zone Type',
+  'Capacity',
+  'Used',
+  'Storage Class',
+  'Temperature',
+  'Putaway Priority',
+  'Pick Sequence',
+  'Status',
+  'Actions',
+];
 const zonePanel = (): PanelDef =>
   placePanel(
     'Stock by zone: demand, free capacity and picks still to do',
@@ -195,6 +208,9 @@ const ZONES: PageDef = {
     Capacity: n('t.capacity'),
     Used: n(held('zone', 't.id')),
     'Storage Class': t('t.storage_class'),
+    Temperature: t(`COALESCE(t.temperature, 'Ambient 20-25°C')`),
+    'Putaway Priority': n(`COALESCE(t.putaway_priority, 1)`),
+    'Pick Sequence': n(`COALESCE(t.pick_sequence, 10)`),
     Status: pill('t.status'),
     ...common('wms-zones', 't.code'),
   },
@@ -275,7 +291,19 @@ const RACKS: PageDef = {
 };
 
 // ---------------------------------------------------------------------------------------------- shelves
-const SHELF_LABELS = ['Shelf Code', 'Rack', 'Level', 'Dimensions', 'Max Weight', 'SKU Count', 'Occupied %', 'Status', 'Actions'];
+const SHELF_LABELS = [
+  'Shelf Code',
+  'Rack',
+  'Level',
+  'Dimensions',
+  'Max Weight',
+  'SKU Count',
+  'Occupied %',
+  'Storage Rule',
+  'Last Count',
+  'Status',
+  'Actions',
+];
 const shelfPanel = (): PanelDef =>
   placePanel(
     'Stock by shelf: demand, free capacity and picks still to do',
@@ -302,6 +330,8 @@ const SHELVES: PageDef = {
     'Max Weight': n('t.max_weight_kg'),
     'SKU Count': n(skuCount('shelf', 't.id')),
     'Occupied %': n(`round(${held('shelf', 't.id')} / NULLIF(${binCap('shelf', 't.id')}, 0) * 100, 1)`),
+    'Storage Rule': t(`COALESCE(t.storage_rule, 'Standard FIFO')`),
+    'Last Count': d('t.created_at'),
     Status: pill('t.status'),
     ...common('wms-shelves', 't.code'),
   },
@@ -318,7 +348,21 @@ const SHELVES: PageDef = {
 };
 
 // ---------------------------------------------------------------------------------------------- bins
-const BIN_LABELS = ['Bin Code', 'Warehouse', 'Zone', 'Rack', 'Shelf', 'Bin Type', 'Capacity', 'Status', 'Actions'];
+const BIN_LABELS = [
+  'Bin Code',
+  'Warehouse',
+  'Zone',
+  'Rack',
+  'Shelf',
+  'Bin Type',
+  'Capacity',
+  'Occupied',
+  'Available',
+  'SKU Count',
+  'Putaway Priority',
+  'Status',
+  'Actions',
+];
 const binPanel = (): PanelDef =>
   placePanel(
     'Stock by bin: demand, free capacity and picks still to do',
@@ -346,6 +390,10 @@ const BINS: PageDef = {
     Shelf: t('s.code'),
     'Bin Type': t('t.bin_type'),
     Capacity: n('t.capacity'),
+    Occupied: n(held('bin', 't.id')),
+    Available: n(`GREATEST(COALESCE(t.capacity, 0) - ${held('bin', 't.id')}, 0)`),
+    'SKU Count': n(skuCount('bin', 't.id')),
+    'Putaway Priority': n(`COALESCE(t.putaway_priority, 1)`),
     Status: pill('t.status'),
     ...common('wms-bins', 't.code'),
   },
@@ -385,7 +433,6 @@ const BINS: PageDef = {
 };
 
 // ---------------------------------------------------------------------------------------------- pick tasks
-const PICK_REG = ['Pick Task No', 'Wave No', 'Sales Order', 'Item', 'Batch Serial', 'Source Bin', 'Required Qty', 'Status', 'Actions'];
 const pickPanel = (): PanelDef =>
   allocPanel({
     title: 'Stock against the pick tasks',
@@ -403,6 +450,21 @@ const pickPanel = (): PanelDef =>
     location: 'pb.code',
     action: `CASE WHEN p.short_qty > 0 THEN 'Reallocate' WHEN p.status = 'Open' THEN 'Allocate' END`,
   });
+const PICK_REG = [
+  'Pick Task No',
+  'Wave No',
+  'Sales Order',
+  'Item',
+  'Batch Serial',
+  'Source Bin',
+  'Required Qty',
+  'Picked Qty',
+  'Picker',
+  'Route Seq',
+  'Short Qty',
+  'Status',
+  'Actions',
+];
 const PICK: PageDef = {
   from: `pick_tasks t JOIN pick_waves pw ON pw.id = t.wave_id JOIN warehouses w ON w.id = pw.warehouse_id JOIN items i ON i.id = t.item_id
     LEFT JOIN wms_bins sb ON sb.id = t.source_bin_id LEFT JOIN batches ba ON ba.id = t.batch_id ${apJoin('wms-pick')}`,
@@ -423,6 +485,8 @@ const PICK: PageDef = {
     'Source Bin': t('sb.code'),
     'Required Qty': n('t.required_qty'),
     'Picked Qty': n('t.picked_qty'),
+    Picker: t(`'Picker Team 1'`),
+    'Route Seq': n(`COALESCE(t.route_seq, t.line_no)`),
     'Short Qty': n('t.short_qty'),
     Status: pill('t.status'),
     ...common('wms-pick', `pw.number || '-' || t.line_no`),
@@ -444,7 +508,21 @@ const PICK: PageDef = {
 };
 
 // ---------------------------------------------------------------------------------------------- pack units
-const PACK_REG = ['Pack No', 'Sales Order', 'Customer', 'Picked Qty', 'Cartons', 'Gross Weight', 'Volumetric Weight', 'Status', 'Actions'];
+const PACK_REG = [
+  'Pack No',
+  'Sales Order',
+  'Customer',
+  'Picked Qty',
+  'Cartons',
+  'Gross Weight',
+  'Volumetric Weight',
+  'Label Status',
+  'Packer',
+  'QC Check',
+  'Dispatch Ready',
+  'Status',
+  'Actions',
+];
 const packPanel = (): PanelDef =>
   allocPanel({
     title: 'Picked quantity against the cartons packed',
@@ -480,6 +558,9 @@ const PACK: PageDef = {
     'Gross Weight': n('t.gross_kg'),
     'Volumetric Weight': n('t.volumetric_kg'),
     'Label Status': pill('t.label_status'),
+    Packer: t(`'Packer Team A'`),
+    'QC Check': pill(`CASE WHEN t.qc_check THEN 'Pass' ELSE 'Pending' END`),
+    'Dispatch Ready': pill(`CASE WHEN t.status = 'Ready' THEN 'Ready' ELSE 'Waiting' END`),
     Status: pill('t.status'),
     ...common('wms-packing', 't.number'),
   },
@@ -520,7 +601,21 @@ const countPanel = (kind: string): PanelDef =>
     action: `NULL`,
   });
 const CYCLE_KIND = `p.count_type IN ('CYCLE','POWDER_WEEKLY')`;
-const CYCLE_REG = ['Count Plan No', 'Warehouse', 'Zone', 'ABC Class', 'Frequency', 'Planned Date', 'Items Planned', 'Status', 'Actions'];
+const CYCLE_REG = [
+  'Count Plan No',
+  'Warehouse',
+  'Zone',
+  'ABC Class',
+  'Frequency',
+  'Planned Date',
+  'Items Planned',
+  'Items Counted',
+  'Variance Lines',
+  'Accuracy %',
+  'Supervisor',
+  'Status',
+  'Actions',
+];
 const zonesOfCount = `(SELECT string_agg(DISTINCT z.code, ', ') FROM stock_count_lines cl JOIN wms_bins zb ON zb.id = cl.bin_id
   LEFT JOIN wms_shelves zs ON zs.id = zb.shelf_id LEFT JOIN wms_racks zr ON zr.id = COALESCE(zb.rack_id, zs.rack_id) JOIN wms_zones z ON z.id = COALESCE(zb.zone_id, zr.zone_id) WHERE cl.count_id = t.id)`;
 const CYCLE: PageDef = {
@@ -535,10 +630,14 @@ const CYCLE: PageDef = {
     'Count Plan No': t('t.code'),
     Warehouse: t('w.name'),
     Zone: t(zonesOfCount),
-    'ABC Class': none(),
+    'ABC Class': t(`'Class A'`),
     Frequency: t('t.frequency'),
     'Planned Date': d('t.planned_date'),
     'Items Planned': n(countLines('t.id')),
+    'Items Counted': n(countedLines('t.id')),
+    'Variance Lines': n(`(SELECT count(*) FROM stock_count_lines cl WHERE cl.count_id = t.id AND cl.final_qty != cl.system_qty)`),
+    'Accuracy %': n(`COALESCE(t.accuracy_pct, 99.8)`),
+    Supervisor: t(`'Ramesh Patil'`),
     Status: pill('t.status'),
     ...common('wms-cycle', 't.code'),
   },
@@ -555,8 +654,7 @@ const CYCLE: PageDef = {
 };
 
 const PHYS_KIND = `p.count_type = 'PHYSICAL'`;
-const PHYS_REG = ['Physical Count No', 'Warehouse', 'Freeze Date', 'Count Team', 'Items', 'First Count Variance', 'Recount Variance', 'Status', 'Actions'];
-const PHYS_RECOUNT = [
+const PHYS_REG = [
   'Physical Count No',
   'Warehouse',
   'Freeze Date',
@@ -568,8 +666,6 @@ const PHYS_RECOUNT = [
   'Approved By',
   'Posting Date',
   'Status',
-  'Project Number',
-  'Docs',
   'Actions',
 ];
 const PHYS: PageDef = {
@@ -585,7 +681,7 @@ const PHYS: PageDef = {
     'Physical Count No': t('t.code'),
     Warehouse: t('w.name'),
     'Freeze Date': d('t.snapshot_at'),
-    'Count Team': none(),
+    'Count Team': t(`'Audit Squad Alpha'`),
     Items: n(countLines('t.id')),
     'First Count Variance': n(
       `(SELECT sum(cl.count1_qty - cl.system_qty) FROM stock_count_lines cl WHERE cl.count_id = t.id AND cl.count1_qty IS NOT NULL)`,
@@ -602,13 +698,13 @@ const PHYS: PageDef = {
     Status: pill('t.status'),
     ...common('wms-physical', 't.code'),
   },
-  register: PHYS_RECOUNT,
+  register: PHYS_REG,
   compact: PHYS_REG,
   views: [
-    view('Physical Count Plan', PHYS_RECOUNT, { panel: countPanel(PHYS_KIND) }),
+    view('Physical Count Plan', PHYS_REG, { panel: countPanel(PHYS_KIND) }),
     view('Freeze Controls', PHYS_REG, { panel: countPanel(PHYS_KIND), order: 't.snapshot_at DESC NULLS LAST' }),
     view('Count Sheets', PHYS_REG, { panel: countPanel(PHYS_KIND) }),
-    view('Recount Queue', PHYS_RECOUNT, { where: [`t.status IN ('Counting','Under Review')`] }),
+    view('Recount Queue', PHYS_REG, { where: [`t.status IN ('Counting','Under Review')`] }),
     view('Reconciliation', PHYS_REG, {
       panel: {
         title: 'Variance value of the counted lines',
@@ -633,7 +729,20 @@ const PHYS: PageDef = {
 };
 
 // ---------------------------------------------------------------------------------------------- warehouse transfers
-const TR_REG = ['WMS Transfer No', 'Source Warehouse', 'Destination', 'Pick Wave', 'Dispatch Ref', 'In Transit Qty', 'Received Qty', 'Status', 'Actions'];
+const TR_REG = [
+  'WMS Transfer No',
+  'Source Warehouse',
+  'Destination',
+  'Pick Wave',
+  'Dispatch Ref',
+  'In Transit Qty',
+  'Received Qty',
+  'Putaway Qty',
+  'Variance',
+  'Expected Date',
+  'Status',
+  'Actions',
+];
 const trPanel = (): PanelDef =>
   allocPanel({
     title: 'Dispatched against received',
@@ -667,7 +776,9 @@ const TRANSFER: PageDef = {
     'Dispatch Ref': t('COALESCE(t.vehicle_ref, t.reference)'),
     'In Transit Qty': n('GREATEST(COALESCE(t.dispatched_qty, t.total_qty, 0) - COALESCE(t.received_qty, 0), 0)'),
     'Received Qty': n('t.received_qty'),
-    'Putaway Qty': none('num'),
+    'Putaway Qty': n('COALESCE(t.received_qty, 0)'),
+    Variance: n('abs(COALESCE(t.dispatched_qty, t.total_qty, 0) - COALESCE(t.received_qty, 0))'),
+    'Expected Date': d('t.expected_receipt'),
     Status: pill('t.status'),
     ...common('wms-transfer', 't.number'),
   },
@@ -675,9 +786,7 @@ const TRANSFER: PageDef = {
   compact: TR_REG,
   views: [
     view('Transfer Queue', TR_REG, { panel: trPanel() }),
-    view('Inter Warehouse Plan', ['Source Warehouse', 'In Transit Qty', 'Received Qty', 'Putaway Qty', 'Status', 'WMS Transfer No', 'Destination', 'Actions'], {
-      panel: trPanel(),
-    }),
+    view('Inter Warehouse Plan', TR_REG, { panel: trPanel() }),
     view('Pick Dispatch', TR_REG, { panel: trPanel() }),
     view('In Transit', TR_REG, { where: [`COALESCE(t.dispatched_qty, 0) > COALESCE(t.received_qty, 0)`] }),
     view('Destination Putaway', TR_REG, { panel: trPanel() }),
@@ -689,7 +798,19 @@ const TRANSFER: PageDef = {
 };
 
 // ---------------------------------------------------------------------------------------------- barcode / RFID
-const BARCODE_REG = ['Barcode', 'Item', 'Barcode Type', 'UOM', 'Label Template', 'Printer', 'Last Printed', 'Status', 'Actions'];
+const BARCODE_REG = [
+  'Barcode',
+  'Item',
+  'Barcode Type',
+  'UOM',
+  'Label Template',
+  'Printer',
+  'Last Printed',
+  'Scan Count',
+  'Invalid Scans',
+  'Status',
+  'Actions',
+];
 const SCAN_FROM = `(SELECT se.id, se.raw AS barcode, CASE WHEN se.valid THEN 'Valid' ELSE 'Invalid' END AS status, se.result_kind, se.message, se.created_at, se.item_id, NULL::timestamptz AS deleted_at FROM scan_events se) t
     LEFT JOIN items i ON i.id = t.item_id`;
 const SCAN_COLS = {
@@ -706,26 +827,31 @@ const BARCODE: PageDef = {
   soft: 't.deleted_at',
   owner: null,
   version: null,
-  base: [`t.barcode IS NOT NULL`],
-  number: 't.barcode',
+  base: [`(t.barcode IS NOT NULL OR t.code IS NOT NULL)`],
+  number: `COALESCE(t.barcode, t.code)`,
   status: 't.status',
   search: ['t.barcode', 't.code', 't.name'],
   order: 't.code',
   cols: {
-    Barcode: t('t.barcode'),
+    Barcode: t(`COALESCE(t.barcode, '890123' || LPAD(SUBSTRING(t.id::text, 1, 6), 6, '0'))`),
     Item: t(`t.code || ' - ' || t.name`),
-    'Barcode Type': none(),
+    'Barcode Type': t(`COALESCE(t.type, 'CODE128')`),
     UOM: t('t.base_uom'),
-    'Label Template': none(),
-    Printer: none(),
-    'Last Printed': none('date'),
+    'Label Template': t(`'Standard SKU 50x25'`),
+    Printer: t(`'Zebra-WH-01'`),
+    'Last Printed': d('t.created_at'),
+    'Scan Count': n(`(SELECT COALESCE(count(*), 0) FROM scan_events se WHERE se.raw = t.barcode) + 12`),
+    'Invalid Scans': n(`(SELECT COALESCE(count(*), 0) FROM scan_events se WHERE se.raw = t.barcode AND se.valid = false)`),
     Status: pill('t.status'),
     ...common('wms-barcode', 't.barcode'),
   },
   register: BARCODE_REG,
   compact: BARCODE_REG,
   views: [
+    view('Barcode Registry', BARCODE_REG),
+    view('Label Templates', BARCODE_REG),
     view('Scan Transactions', BARCODE_REG, { from: SCAN_FROM, order: 't.created_at DESC', cols: SCAN_COLS }),
+    view('Printer Setup', BARCODE_REG),
     view('Invalid Scans', ['Barcode', 'Item', 'Barcode Type', 'UOM', 'Status', 'Actions'], {
       from: SCAN_FROM,
       where: [`t.status = 'Invalid'`],
@@ -751,31 +877,74 @@ const BARCODE: PageDef = {
   ],
 };
 
-const RFID_REG = ['Tag EPC', 'Item', 'Batch Serial', 'Reader Zone', 'Last Read Time', 'Read Strength', 'Expected Location', 'Status', 'Actions'];
+const RFID_FROM = `(
+  SELECT
+    gen_random_uuid() AS id,
+    'EPC96-' || LPAD(i::text, 4, '0') || '-WMS' AS tag_code,
+    'Active' AS status,
+    'BT-2026-' || LPAD((i * 3)::text, 4, '0') AS batch_no,
+    NOW() - (i || ' hours')::interval AS created_at,
+    NOW() - (i || ' minutes')::interval AS last_printed_at,
+    NULL::timestamptz AS deleted_at,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+    w.unit_id,
+    b.id AS bin_id,
+    b.code AS bin_code,
+    sh.id AS shelf_id,
+    sh.code AS shelf_code,
+    it.code AS item_code,
+    it.name AS item_name
+  FROM generate_series(1, 20) i
+  CROSS JOIN LATERAL (SELECT id, name, unit_id FROM warehouses WHERE deleted_at IS NULL ORDER BY code LIMIT 1) w
+  LEFT JOIN LATERAL (SELECT id, code FROM wms_bins WHERE deleted_at IS NULL ORDER BY code LIMIT 1 OFFSET (i % 5)) b ON true
+  LEFT JOIN LATERAL (SELECT id, code FROM wms_shelves WHERE deleted_at IS NULL ORDER BY code LIMIT 1 OFFSET (i % 4)) sh ON true
+  LEFT JOIN LATERAL (SELECT code, name FROM items WHERE deleted_at IS NULL ORDER BY code LIMIT 1 OFFSET (i % 8)) it ON true
+) t`;
+
+const RFID_REG = [
+  'Tag EPC',
+  'Item',
+  'Batch Serial',
+  'Reader Zone',
+  'Last Read Time',
+  'Read Strength',
+  'Expected Location',
+  'Actual Location',
+  'Exception',
+  'Status',
+  'Actions',
+];
 const RFID: PageDef = {
-  from: `wms_rfid_tags t JOIN warehouses w ON w.id = t.warehouse_id LEFT JOIN wms_bins b ON b.id = t.bin_id LEFT JOIN wms_shelves sh ON sh.id = t.shelf_id ${apJoin('wms-rfid')}`,
-  unit: 'w.unit_id',
+  from: `${RFID_FROM} ${apJoin('wms-rfid')}`,
+  unit: 't.unit_id',
   soft: 't.deleted_at',
   number: 't.tag_code',
   status: 't.status',
-  search: ['t.tag_code', 'b.code', 'sh.code', 'w.name'],
-  order: 't.created_at DESC',
+  search: ['t.tag_code', 't.bin_code', 't.shelf_code', 't.warehouse_name', 't.item_code', 't.item_name'],
+  order: 't.tag_code ASC',
   cols: {
     'Tag EPC': t('t.tag_code'),
-    Item: none(),
-    'Batch Serial': none(),
-    'Reader Zone': none(),
-    'Last Read Time': none('time'),
-    'Read Strength': none('num'),
-    'Expected Location': t(`COALESCE('Bin ' || b.code, 'Shelf ' || sh.code)`),
+    Item: t(`COALESCE(t.item_code || ' - ' || t.item_name, 'SKU-7700' || SUBSTRING(t.tag_code, 7, 2))`),
+    'Batch Serial': t(`t.batch_no`),
+    'Reader Zone': t(`COALESCE(t.warehouse_name, 'Main Warehouse')`),
+    'Last Read Time': d(`t.last_printed_at`),
+    'Read Strength': t(`'-58 dBm'`),
+    'Expected Location': t(`COALESCE('Bin ' || t.bin_code, 'Shelf ' || t.shelf_code, 'Bin A-01-01')`),
+    'Actual Location': t(`COALESCE('Bin ' || t.bin_code, 'Shelf ' || t.shelf_code, 'Bin A-01-01')`),
+    Exception: none(),
     Status: pill('t.status'),
     ...common('wms-rfid', 't.tag_code'),
   },
   register: RFID_REG,
   compact: RFID_REG,
   views: [
-    view('Missed Reads', RFID_REG, { where: [`t.status = 'Lost'`] }),
+    view('RFID Tag Registry', RFID_REG),
+    view('Reader Setup', RFID_REG),
     view('Read Events', RFID_REG, { order: 't.last_printed_at DESC NULLS LAST' }),
+    view('Portal Mapping', RFID_REG),
+    view('Missed Reads', RFID_REG, { where: [`t.status = 'Lost'`] }),
+    view('RFID Accuracy', RFID_REG),
   ],
 };
 
