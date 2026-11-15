@@ -15,6 +15,7 @@ import type { ActionSet, User } from '../types';
 import { ContextChips } from '../components/ContextChips';
 import { ApprovalMatrixPage } from './approvals/ApprovalMatrixPage';
 import { PartyMasterPage } from './masters/PartyMasterPage';
+import { SalesReservationsPage } from './sales/SalesReservationsPage';
 import { NotificationCenterPage } from './notifications/NotificationCenterPage';
 import { AuditTrailPage } from './admin/AuditTrailPage';
 import { CompanyMasterPage } from './admin/CompanyMasterPage';
@@ -132,7 +133,6 @@ import { LogisticsPage } from './logistics/LogisticsPage';
 import { FleetPage } from './logistics/FleetPage';
 import { GateKioskPage } from './logistics/GateKioskPage';
 import { DmsPage } from './logistics/DmsPage';
-import { BiBuilderPage } from './bi/BiBuilderPage';
 import { AutomationStudioPage } from './bi/AutomationStudioPage';
 import { CommCenterPage } from './bi/CommCenterPage';
 import { AdminNotifConsolePage } from './admin/AdminNotifConsolePage';
@@ -140,6 +140,8 @@ import { NotificationPrefsPage } from './notifications/NotificationPrefsPage';
 import { DashboardPage } from './DashboardPage';
 import { MasterItemsPage } from './inventory/v40/MasterItemsPage';
 import { CommandCenterPage } from './executive/CommandCenterPage';
+import { GlobalSearchPage } from './search/GlobalSearchPage';
+import { MaterialIssuePage } from './plant/MaterialIssuePage';
 import { AiInsightsPage } from './executive/AiInsightsPage';
 import { BiAnalyticsPage } from './bi/BiAnalyticsPage';
 import { BiLibraryPage } from './bi/BiLibraryPage';
@@ -158,6 +160,7 @@ import { KpiAlertsPage, KpiTargetsPage } from './dashboards/TargetsAlertsPages';
 import { DeptInboxPage, DeptWorkPage, WorkflowMatrixPage } from './work/WorkPages';
 import { MyApprovalsPage } from './work/MyApprovalsPage';
 import { V40TabFrame, v40TabsFor } from './frame/V40TabFrame';
+import { FamV40Body } from './v40fam/FamV40Body';
 import { DeptMailboxPage } from './work/DeptMailboxPage';
 import { DepartmentMovementPage, InterplantMovementPage, MaintPartMovementPage, ProcessMovementPage } from './work/MovementRegisterPage';
 import { PlantUnitRoutingPage } from './mfg/RoutePlantUnitRouting';
@@ -197,10 +200,8 @@ export function AccessDenied({ message }: { message?: string }) {
  * "Page not found" (the client approved these ids in V40). Order matters: first match wins.
  */
 export const V40_ALIASES: readonly (readonly [RegExp, string])[] = [
-  [/^master-customers$/, '/m/crm-customer360'],
   [/^master-suppliers$/, '/m/scm-suppliers'],
   [/^ops-mfg-dashboard$/, '/m/plant-dashboard'],
-  [/^mfg-material-issue$/, '/m/inv-transactions'],
   [/^proj-demo-control$/, '/m/proj-projects'],
   [/^proj-dependencies$/, '/m/proj-gantt'],
   [/^customer-receipts$/, '/m/sales-collections'],
@@ -254,7 +255,9 @@ function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: 
       )}
       {v40TabsFor(pageId).length > 0 ? (
         <V40TabFrame pageId={pageId} tabs={v40TabsFor(pageId)}>
-          <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
+          <FamV40Body pageId={pageId} actions={perms.actions}>
+            <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
+          </FamV40Body>
         </V40TabFrame>
       ) : (
         <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
@@ -564,7 +567,9 @@ function PageBody({
     case 'sales-orders':
       return <DocPage cfg={SO_CFG} actions={actions} />;
     case 'sales-reservations':
-      return <ReservationsPage actions={actions} />;
+      return <SalesReservationsPage actions={actions} />;
+    case 'master-customers':
+      return <PartyMasterPage kind="CUSTOMER" actions={actions} />;
     case 'sales-credit':
       return <CreditPage />;
     case 'sales-delivery':
@@ -730,13 +735,15 @@ function PageBody({
       return <DmsPage />;
 
     // Phase 19 Dashboards, BI, Search, AI, Automation & Comm screens
+    case 'mfg-material-issue':
+      return <MaterialIssuePage actions={actions} />;
     case 'master-products':
     case 'master-materials':
       return <MasterItemsPage pageId={pageId} actions={actions} />;
     case 'command-center':
       return <CommandCenterPage />;
     case 'global-search':
-      return <BiBuilderPage initialTab="SEARCH" />;
+      return <GlobalSearchPage />;
     case 'bi-sales':
     case 'bi-purchase':
     case 'bi-inventory':

@@ -2,13 +2,20 @@
 // command data table. Items are the real open department movements; nothing is invented.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { workApi, type Dept, type InboxCounts, type Movement } from '../../lib/workApi';
+import { useToast } from '../../components/Toast';
+import { ApiError } from '../../lib/api';
+import { workApi, type CommandItem, type Dept, type InboxCounts, type Movement } from '../../lib/workApi';
 import { BarChart } from './BarChart';
 import './executive.css';
 
 const MAX_ROWS = 300;
 
 export function CommandCenterPage() {
+  const toast = useToast();
+  const [items, setItems] = useState<CommandItem[]>([]);
+  const [form, setForm] = useState({ issue: '', owner: '', severity: 'Medium', dueDate: '' });
+  const [saving, setSaving] = useState(false);
+  const [reload, setReload] = useState(0);
   const [rows, setRows] = useState<Movement[]>([]);
   const [counts, setCounts] = useState<InboxCounts | null>(null);
   const [depts, setDepts] = useState<Dept[]>([]);
@@ -19,6 +26,34 @@ export function CommandCenterPage() {
   useEffect(() => {
     void workApi.departments().then(setDepts, () => setDepts([]));
   }, []);
+
+  useEffect(() => {
+    void workApi.commandItems().then(setItems, () => setItems([]));
+  }, [reload]);
+
+  async function addItem(): Promise<void> {
+    if (!form.issue.trim()) return void toast('Write what needs action.');
+    setSaving(true);
+    try {
+      await workApi.addCommandItem({ issue: form.issue.trim(), ...(form.owner.trim() ? { owner: form.owner.trim() } : {}), severity: form.severity, ...(form.dueDate ? { dueDate: form.dueDate } : {}) });
+      setForm({ issue: '', owner: '', severity: 'Medium', dueDate: '' });
+      toast('Added to the Command Center.');
+      setReload((n) => n + 1);
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : 'Could not add the item.');
+    } finally {
+      setSaving(false);
+    }
+  }
+  async function closeItem(id: string): Promise<void> {
+    try {
+      await workApi.closeCommandItem(id);
+      toast('Item closed.');
+      setReload((n) => n + 1);
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : 'Could not close the item.');
+    }
+  }
 
   useEffect(() => {
     let alive = true;
@@ -50,8 +85,8 @@ export function CommandCenterPage() {
   }, []);
 
   const shown = useMemo(() => (deptId === 'all' ? rows : rows.filter((r) => r.to_department_id === deptId)), [rows, deptId]);
-  const critical = rows.filter((r) => r.priority === 'Critical').length;
-  const high = rows.filter((r) => r.priority === 'High').length;
+  const critical = rows.filter((r) => r.priority === 'Critical').length + items.filter((i) => i.severity === 'Critical').length;
+  const high = rows.filter((r) => r.priority === 'High').length + items.filter((i) => i.severity === 'High').length;
   const late = rows.filter((r) => r.is_late).length;
   const areas = useMemo(() => {
     const m = new Map<string, number>();
@@ -59,7 +94,6 @@ export function CommandCenterPage() {
     return [...m.entries()].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
   }, [rows]);
   const system: 'GREEN' | 'AMBER' | 'RED' = critical > 0 ? 'RED' : late > 0 ? 'AMBER' : 'GREEN';
-  const num = (n: number | null | undefined) => (n === null || n === undefined ? '—' : String(n));
 
   return (
     <div className="ex-page" data-testid="command-center">
@@ -68,7 +102,7 @@ export function CommandCenterPage() {
         <h2>Command Center</h2>
         <p>Live cross-functional action board built from open department work, approvals and handovers.</p>
         <div className="ex-kpis">
-          <div className="ex-kpi"><small>Open Items</small><b>{num(counts?.open)}</b></div>
+          <div className="ex-kpi"><small>Open Items</small><b>{counts ? counts.open + items.length : '—'}</b></div>
           <div className="ex-kpi"><small>Critical</small><b>{loaded && !failed ? critical : '—'}</b></div>
           <div className="ex-kpi"><small>High Priority</small><b>{loaded && !failed ? high : '—'}</b></div>
           <div className="ex-kpi"><small>Value Exposure</small><b title="No exposure value is recorded on department movements">—</b></div>
@@ -100,17 +134,17 @@ export function CommandCenterPage() {
         <div className="ex-card ex-card-pad">
           <h3 style={{ margin: '0 0 10px', fontSize: 13 }}>Add Command Item</h3>
           <div className="ex-form">
-            <label>Action / Issue<input placeholder="Example: Review urgent dispatch" disabled /></label>
-            <label>Owner<input disabled /></label>
+            <label>Action / Issue<input placeholder="Example: Review urgent dispatch" value={form.issue} onChange={(e) => setForm({ ...form, issue: e.target.value })} /></label>
+            <label>Owner<input value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} /></label>
             <label>Severity
-              <select disabled defaultValue="Medium"><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+              <select value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })}><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
             </label>
-            <label>Due Date<input type="date" disabled /></label>
+            <label>Due Date<input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} /></label>
           </div>
           <p style={{ fontSize: 11, color: 'var(--muted)' }}>
-            Items are created by sending a record to a department (Move Forward on any document); they then appear below.
+            Items you add here are saved for your plant and written to the audit trail. Open department work (Move Forward on any document) also appears below.
           </p>
-          <button type="button" className="btn primary" disabled title="Create items by moving a document to a department">
+          <button type="button" className="btn primary" disabled={saving} onClick={() => void addItem()}>
             ＋ Add to Command Center
           </button>
         </div>
@@ -129,7 +163,7 @@ export function CommandCenterPage() {
 
       <div className="ex-card">
         <div className="ex-title">
-          <h3>Command Data • {shown.length} items</h3>
+          <h3>Command Data • {shown.length + items.length} items</h3>
         </div>
         <div className="ex-scroll">
           <table className="ex-table">
@@ -139,7 +173,20 @@ export function CommandCenterPage() {
               </tr>
             </thead>
             <tbody>
-              {shown.length === 0 ? (
+              {items.map((i) => (
+                <tr key={i.id}>
+                  <td>{i.department ?? 'Command Center'}</td>
+                  <td>{i.issue}<small>Added by hand</small></td>
+                  <td><b>{i.number}</b></td>
+                  <td>{i.owner_name ?? '—'}</td>
+                  <td>{i.due_date ? i.due_date.slice(0, 10) : '—'}</td>
+                  <td>—</td>
+                  <td><span className={`ex-pri ${i.severity}`}>{i.severity}</span></td>
+                  <td>{i.status}</td>
+                  <td><button type="button" className="btn" onClick={() => void closeItem(i.id)}>Close</button></td>
+                </tr>
+              ))}
+              {shown.length === 0 && items.length === 0 ? (
                 <tr><td colSpan={9} className="ex-empty">{failed ? 'Could not load command data.' : loaded ? 'No open command items.' : 'Loading…'}</td></tr>
               ) : (
                 shown.map((r) => (

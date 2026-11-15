@@ -1,6 +1,7 @@
 // Phase 9 screens that are more than a header + lines form: Goods Receipt (receive against a PO, QC decision),
 // Purchase Invoice (matching traffic lights, payment readiness), Vendor Comparison, Accounts Payable,
 // Put-away (phone) and Supplier Evaluation.
+import { FinV40 } from '../finance/FinV40';
 import { useState } from 'react';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
@@ -1196,157 +1197,165 @@ export function ApPage({ actions }: { actions: ActionSet }) {
         ) : null}
         <DateField aria-label="Due till" value={till} onChange={(e) => setTill(e.target.value)} />
       </PageHead>
-      <ErrorBox message={msg} />
-      <div className="tabs" role="tablist">
-        {(
-          [
-            ['pay', 'Payables'],
-            ['age', 'Ageing'],
-            ['due', 'Due calendar'],
-            ['prop', 'Payments'],
-          ] as const
-        ).map(([k, l]) => (
-          <button
-            key={k}
-            type="button"
-            role="tab"
-            aria-selected={tab === k}
-            className={tab === k ? 'tab active' : 'tab'}
-            onClick={() => setTab(k)}
-          >
-            {l}
-          </button>
-        ))}
-      </div>
-      {tab === 'pay' ? (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Supplier</th>
-                <th>Invoice</th>
-                <th>Due</th>
-                <th>MSME due</th>
-                <th>Outstanding</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(pay.data?.rows ?? []).length === 0 && !pay.loading ? (
-                <Empty cols={5}>Nothing is waiting to be paid.</Empty>
-              ) : null}
-              {(pay.data?.rows ?? []).map((r) => (
-                <tr key={s(r.id)} className={r.msmeOverdue === true ? 'row-red' : undefined}>
-                  <td>{s(r.supplierName)}</td>
-                  <td>{s(r.number)}</td>
-                  <td>{dmy(s(r.dueDate))}</td>
-                  <td>{dmy(s(r.msmeDueDate))}</td>
-                  <td>{inr(s(r.outstanding))}</td>
-                </tr>
+      <FinV40
+        pageId="fin-ap"
+        actions={actions}
+        fallback={
+          <>
+            <ErrorBox message={msg} />
+            <div className="tabs" role="tablist">
+              {(
+                [
+                  ['pay', 'Payables'],
+                  ['age', 'Ageing'],
+                  ['due', 'Due calendar'],
+                  ['prop', 'Payments'],
+                ] as const
+              ).map(([k, l]) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === k}
+                  className={tab === k ? 'tab active' : 'tab'}
+                  onClick={() => setTab(k)}
+                >
+                  {l}
+                </button>
               ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-      {tab === 'age' ? (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Supplier</th>
-                {['NOT_DUE', '0-30', '31-60', '61-90', '90+'].map((b) => (
-                  <th key={b}>{b === 'NOT_DUE' ? 'Not due' : b}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(age.data?.suppliers ?? []).map((r) => (
-                <tr key={s(r.supplierId)}>
-                  <td>{s(r.supplierName)}</td>
-                  {['NOT_DUE', '0-30', '31-60', '61-90', '90+'].map((b) => (
-                    <td key={b}>{inr(s((r.buckets as Row)[b]))}</td>
-                  ))}
-                </tr>
-              ))}
-              <tr>
-                <td>
-                  <b>Total</b>
-                </td>
-                {['NOT_DUE', '0-30', '31-60', '61-90', '90+'].map((b) => (
-                  <td key={b}>
-                    <b>{inr(s(age.data?.totals?.[b]))}</b>
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-      {tab === 'due' ? (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Invoices</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(due.data ?? []).map((d) => (
-                <tr key={s(d.date)} className={d.msme === true ? 'row-red' : undefined}>
-                  <td>{dmy(s(d.date))}</td>
-                  <td>{rowsOf(d.invoices).length}</td>
-                  <td>{inr(s(d.amount))}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-      {tab === 'prop' ? (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Payment</th>
-                <th>Supplier</th>
-                <th>Amount</th>
-                <th>UTR</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {(props.data?.rows ?? []).length === 0 && !props.loading ? (
-                <Empty cols={6}>No payments yet.</Empty>
-              ) : null}
-              {(props.data?.rows ?? []).map((p) => (
-                <tr key={p.id}>
-                  <td>{s(p.number)}</td>
-                  <td>{s(p.supplierName)}</td>
-                  <td>{inr(s(p.amount))}</td>
-                  <td>{s(p.utr)}</td>
-                  <td>
-                    <Pill>{p.status}</Pill>
-                  </td>
-                  <td>
-                    {p.status === 'Approved' && actions.post ? (
-                      <PostPayment
-                        id={p.id}
-                        onDone={() => {
-                          toast('Payment posted');
-                          props.reload();
-                          pay.reload();
-                        }}
-                      />
+            </div>
+            {tab === 'pay' ? (
+              <div className="card table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Supplier</th>
+                      <th>Invoice</th>
+                      <th>Due</th>
+                      <th>MSME due</th>
+                      <th>Outstanding</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(pay.data?.rows ?? []).length === 0 && !pay.loading ? (
+                      <Empty cols={5}>Nothing is waiting to be paid.</Empty>
                     ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
+                    {(pay.data?.rows ?? []).map((r) => (
+                      <tr key={s(r.id)} className={r.msmeOverdue === true ? 'row-red' : undefined}>
+                        <td>{s(r.supplierName)}</td>
+                        <td>{s(r.number)}</td>
+                        <td>{dmy(s(r.dueDate))}</td>
+                        <td>{dmy(s(r.msmeDueDate))}</td>
+                        <td>{inr(s(r.outstanding))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+            {tab === 'age' ? (
+              <div className="card table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Supplier</th>
+                      {['NOT_DUE', '0-30', '31-60', '61-90', '90+'].map((b) => (
+                        <th key={b}>{b === 'NOT_DUE' ? 'Not due' : b}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(age.data?.suppliers ?? []).map((r) => (
+                      <tr key={s(r.supplierId)}>
+                        <td>{s(r.supplierName)}</td>
+                        {['NOT_DUE', '0-30', '31-60', '61-90', '90+'].map((b) => (
+                          <td key={b}>{inr(s((r.buckets as Row)[b]))}</td>
+                        ))}
+                      </tr>
+                    ))}
+                    <tr>
+                      <td>
+                        <b>Total</b>
+                      </td>
+                      {['NOT_DUE', '0-30', '31-60', '61-90', '90+'].map((b) => (
+                        <td key={b}>
+                          <b>{inr(s(age.data?.totals?.[b]))}</b>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+            {tab === 'due' ? (
+              <div className="card table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Invoices</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(due.data ?? []).map((d) => (
+                      <tr key={s(d.date)} className={d.msme === true ? 'row-red' : undefined}>
+                        <td>{dmy(s(d.date))}</td>
+                        <td>{rowsOf(d.invoices).length}</td>
+                        <td>{inr(s(d.amount))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+            {tab === 'prop' ? (
+              <div className="card table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Payment</th>
+                      <th>Supplier</th>
+                      <th>Amount</th>
+                      <th>UTR</th>
+                      <th>Status</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(props.data?.rows ?? []).length === 0 && !props.loading ? (
+                      <Empty cols={6}>No payments yet.</Empty>
+                    ) : null}
+                    {(props.data?.rows ?? []).map((p) => (
+                      <tr key={p.id}>
+                        <td>{s(p.number)}</td>
+                        <td>{s(p.supplierName)}</td>
+                        <td>{inr(s(p.amount))}</td>
+                        <td>{s(p.utr)}</td>
+                        <td>
+                          <Pill>{p.status}</Pill>
+                        </td>
+                        <td>
+                          {p.status === 'Approved' && actions.post ? (
+                            <PostPayment
+                              id={p.id}
+                              onDone={() => {
+                                toast('Payment posted');
+                                props.reload();
+                                pay.reload();
+                              }}
+                            />
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }

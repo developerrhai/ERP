@@ -1,5 +1,6 @@
 // Bank Reconciliation (fin-bankreco): import a statement, match its lines to ledger rows, post the entries the
 // books are missing, and reconcile when the difference is exactly zero.
+import { FinV40 } from './FinV40';
 import { useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
@@ -39,65 +40,73 @@ export function BankRecoPage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       <ErrorBox message={list.error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Period</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Opening
-              </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Closing
-              </th>
-              <th scope="col">Status</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(list.data?.rows ?? []).map((s) => (
-              <tr key={s.id}>
-                <td>
-                  {dmy(s.periodFrom)} to {dmy(s.periodTo)}
-                </td>
-                <td style={{ textAlign: 'right' }}>{inr(s.openingBalance)}</td>
-                <td style={{ textAlign: 'right' }}>{inr(s.closingBalance)}</td>
-                <td>
-                  <Pill>{s.status}</Pill>
-                </td>
-                <td>
-                  <button type="button" className="btn sm" onClick={() => setOpen(s.id)}>
-                    Open
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {list.data && list.data.rows.length === 0 ? (
-              <Empty cols={5}>No statements yet. Click ＋ Import Statement.</Empty>
+      <FinV40
+        pageId="fin-bankreco"
+        actions={actions}
+        fallback={
+          <>
+            <div className="card table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Period</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>
+                      Opening
+                    </th>
+                    <th scope="col" style={{ textAlign: 'right' }}>
+                      Closing
+                    </th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(list.data?.rows ?? []).map((s) => (
+                    <tr key={s.id}>
+                      <td>
+                        {dmy(s.periodFrom)} to {dmy(s.periodTo)}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>{inr(s.openingBalance)}</td>
+                      <td style={{ textAlign: 'right' }}>{inr(s.closingBalance)}</td>
+                      <td>
+                        <Pill>{s.status}</Pill>
+                      </td>
+                      <td>
+                        <button type="button" className="btn sm" onClick={() => setOpen(s.id)}>
+                          Open
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {list.data && list.data.rows.length === 0 ? (
+                    <Empty cols={5}>No statements yet. Click ＋ Import Statement.</Empty>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+            {importing ? (
+              <ImportForm
+                onClose={() => setImporting(false)}
+                onSaved={() => {
+                  setImporting(false);
+                  list.reload();
+                  toast('Statement imported.');
+                }}
+              />
             ) : null}
-          </tbody>
-        </table>
-      </div>
-      {importing ? (
-        <ImportForm
-          onClose={() => setImporting(false)}
-          onSaved={() => {
-            setImporting(false);
-            list.reload();
-            toast('Statement imported.');
-          }}
-        />
-      ) : null}
-      {open ? (
-        <Workbench
-          id={open}
-          actions={actions}
-          onClose={() => {
-            setOpen(null);
-            list.reload();
-          }}
-        />
-      ) : null}
+            {open ? (
+              <Workbench
+                id={open}
+                actions={actions}
+                onClose={() => {
+                  setOpen(null);
+                  list.reload();
+                }}
+              />
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }

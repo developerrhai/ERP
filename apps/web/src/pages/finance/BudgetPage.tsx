@@ -1,4 +1,5 @@
 // Budgeting (fin-budget): twelve monthly amounts per expense account. Only an Active budget is enforced.
+import { FinV40 } from './FinV40';
 import { useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
@@ -46,94 +47,102 @@ export function BudgetPage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       <ErrorBox message={error || err} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Budget</th>
-              <th scope="col">Account</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Year total
-              </th>
-              <th scope="col">Status</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(data ?? []).map((b) => (
-              <tr key={b.id}>
-                <td>
-                  <strong>{b.name}</strong>
-                </td>
-                <td>
-                  {b.accountCode} · {b.accountName}
-                </td>
-                <td style={{ textAlign: 'right' }}>{inr(b.total)}</td>
-                <td>
-                  <Pill>{b.status}</Pill>
-                </td>
-                <td>
-                  <div className="actions">
-                    {b.status === 'Draft' && actions.approve ? (
-                      <button
-                        type="button"
-                        className="btn sm"
-                        title="Start enforcing this budget"
-                        onClick={() =>
-                          void act(
-                            () => setBudgetStatus(b.id, b.version, 'Active'),
-                            'Budget is now active.',
-                          )
-                        }
-                      >
-                        Activate
-                      </button>
-                    ) : null}
-                    {b.status === 'Active' && actions.approve ? (
-                      <button
-                        type="button"
-                        className="btn sm"
-                        onClick={() =>
-                          void act(
-                            () => setBudgetStatus(b.id, b.version, 'Closed'),
-                            'Budget closed.',
-                          )
-                        }
-                      >
-                        Close
-                      </button>
-                    ) : null}
-                    {b.status === 'Draft' && actions.delete ? (
-                      <button
-                        type="button"
-                        className="btn sm danger"
-                        aria-label={`Delete ${b.name}`}
-                        onClick={() => void act(() => deleteBudget(b.id), 'Budget deleted.')}
-                      >
-                        Delete
-                      </button>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {loading && !data ? <Empty cols={5}>Loading…</Empty> : null}
-            {data && data.length === 0 ? (
-              <Empty cols={5}>No budgets yet. Click ＋ New Budget.</Empty>
+      <FinV40
+        pageId="fin-budget"
+        actions={actions}
+        fallback={
+          <>
+            <div className="card table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Budget</th>
+                    <th scope="col">Account</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>
+                      Year total
+                    </th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data ?? []).map((b) => (
+                    <tr key={b.id}>
+                      <td>
+                        <strong>{b.name}</strong>
+                      </td>
+                      <td>
+                        {b.accountCode} · {b.accountName}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>{inr(b.total)}</td>
+                      <td>
+                        <Pill>{b.status}</Pill>
+                      </td>
+                      <td>
+                        <div className="actions">
+                          {b.status === 'Draft' && actions.approve ? (
+                            <button
+                              type="button"
+                              className="btn sm"
+                              title="Start enforcing this budget"
+                              onClick={() =>
+                                void act(
+                                  () => setBudgetStatus(b.id, b.version, 'Active'),
+                                  'Budget is now active.',
+                                )
+                              }
+                            >
+                              Activate
+                            </button>
+                          ) : null}
+                          {b.status === 'Active' && actions.approve ? (
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() =>
+                                void act(
+                                  () => setBudgetStatus(b.id, b.version, 'Closed'),
+                                  'Budget closed.',
+                                )
+                              }
+                            >
+                              Close
+                            </button>
+                          ) : null}
+                          {b.status === 'Draft' && actions.delete ? (
+                            <button
+                              type="button"
+                              className="btn sm danger"
+                              aria-label={`Delete ${b.name}`}
+                              onClick={() => void act(() => deleteBudget(b.id), 'Budget deleted.')}
+                            >
+                              Delete
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {loading && !data ? <Empty cols={5}>Loading…</Empty> : null}
+                  {data && data.length === 0 ? (
+                    <Empty cols={5}>No budgets yet. Click ＋ New Budget.</Empty>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+            {adding ? (
+              <BudgetForm
+                onClose={() => setAdding(false)}
+                onSaved={() => {
+                  setAdding(false);
+                  reload();
+                  toast('Budget saved as Draft.');
+                }}
+              />
             ) : null}
-          </tbody>
-        </table>
-      </div>
-      {adding ? (
-        <BudgetForm
-          onClose={() => setAdding(false)}
-          onSaved={() => {
-            setAdding(false);
-            reload();
-            toast('Budget saved as Draft.');
-          }}
-        />
-      ) : null}
+          </>
+        }
+      />
     </>
   );
 }

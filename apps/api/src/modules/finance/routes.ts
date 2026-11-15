@@ -36,6 +36,8 @@ import { PostingService } from './posting-service';
 import { recoService } from './reco-service';
 import { reportsService } from './reports-service';
 import { journalService, MANUAL_VOUCHER_TYPES } from './journal-service';
+import { mountV40 } from './v40-route';
+import { FINANCE_V40_PAGES } from './v40-views';
 
 const uuid = z.string().uuid('Invalid id.');
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-11-30.');
@@ -81,6 +83,8 @@ export function createFinanceRouter(): Router {
   const r = Router();
   r.use(resolveContext);
   router.use('/finance', r);
+  // V40 tab views of the finance pages (page-by-page build)
+  mountV40(r, '/v40/:pageId', FINANCE_V40_PAGES);
 
   // ===== chart of accounts ============================================================================
   const accountBody = z

@@ -1,0 +1,104 @@
+/* V40 tab content of the Finance and Tax pages (FinV40.tsx). */
+.fv40 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fv40-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.fv40-toolbar input:not([type]),
+.fv40-toolbar input[type='text'] {
+  min-width: 220px;
+}
+.fv40-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted, #667);
+}
+.fv40-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--line, #dde);
+  border-radius: 8px;
+  background: var(--soft, #f6f7fb);
+}
+.fv40-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px;
+}
+.fv40-card {
+  padding: 8px 12px;
+  border: 1px solid var(--line, #dde);
+  border-radius: 8px;
+}
+.fv40-card b {
+  display: block;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.fv40-card span {
+  font-size: 12px;
+  color: var(--muted, #667);
+}
+.fv40-table th,
+.fv40-table td {
+  white-space: nowrap;
+}
+.fv40-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.fv40-table .row-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+.fv40-table tr.selected td {
+  background: var(--row-selected, #eef3ff);
+}
+.fv40-pager {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.fv40-panel h3 {
+  margin: 12px 0 6px;
+  font-size: 14px;
+}
+.fv40-nosource {
+  font-size: 12px;
+}
+.fv40-detail {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+}
+.fv40-detail dt {
+  color: var(--muted, #667);
+}
+@media (max-width: 480px) {
+  .fv40-toolbar > * {
+    flex: 1 1 100%;
+  }
+  .fv40-count {
+    margin-left: 0;
+  }
+}
+.fv40-detail-row {
+  display: contents;
+}
+.fv40-legacy:not(.open) > *:not(.modal-bg) {
+  display: none;
+}
+.fv40-legacy-bar {
+  justify-content: flex-start;
+}

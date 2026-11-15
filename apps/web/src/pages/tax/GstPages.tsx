@@ -1,6 +1,7 @@
 // Phase 11 screens: GSTR-1, GSTR-3B (with GSTR-2B / ITC and the settlement), e-invoice, e-way bill, TDS returns and
 // register exports. The app never talks to GSTN, the IRP, the e-way portal or TRACES: it prepares files and records
 // the numbers a person types in from those portals.
+import { FinV40 } from '../finance/FinV40';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Modal } from '../../components/Modal';
@@ -293,83 +294,94 @@ export function Gstr1Page({ actions }: { actions: ActionSet }) {
           </button>
         ) : null}
       </PageHead>
-      <MonthBar month={month} onChange={setMonth}>
-        <span>
-          {s(d?.gstin)} · <Pill>{s(status.status) || '…'}</Pill>
-          {status.arn ? ` · ARN ${s(status.arn)}` : ''}
-        </span>
-      </MonthBar>
-      <ErrorBox message={r.error || msg} />
-      {d ? (
-        <>
-          <h3>Checks</h3>
-          <Issues list={(d.issues as Row[]) ?? []} />
-          <h3>Summary</h3>
-          <Simple
-            cols={[
-              ['section', 'Section'],
-              ['count', 'Documents'],
-              ['taxable', 'Taxable value', true],
-              ['igst', 'IGST', true],
-              ['cgst', 'CGST', true],
-              ['sgst', 'SGST', true],
-            ]}
-            rows={Object.entries(summary).map(([k, v]) => ({ section: k.toUpperCase(), ...v }))}
-            empty="Nothing in this month."
-          />
-          <h3>B2B invoices</h3>
-          <Simple
-            cols={[
-              ['docNo', 'Invoice'],
-              ['date', 'Date'],
-              ['customer', 'Customer'],
-              ['gstin', 'GSTIN'],
-              ['value', 'Value', true],
-              ['taxable', 'Taxable', true],
-            ]}
-            rows={(d.b2b as Row[]) ?? []}
-            empty="No B2B invoices."
-          />
-          <h3>Credit / debit notes</h3>
-          <Simple
-            cols={[
-              ['docNo', 'Note'],
-              ['date', 'Date'],
-              ['customer', 'Customer'],
-              ['against', 'Against invoice'],
-              ['value', 'Value', true],
-            ]}
-            rows={(d.cdnr as Row[]) ?? []}
-            empty="No notes."
-          />
-          <h3>HSN summary</h3>
-          <Simple
-            cols={[
-              ['hsn', 'HSN'],
-              ['rate', 'Rate %'],
-              ['qty', 'Quantity'],
-              ['taxable', 'Taxable', true],
-              ['cgst', 'CGST', true],
-              ['sgst', 'SGST', true],
-              ['igst', 'IGST', true],
-            ]}
-            rows={(d.hsn as Row[]) ?? []}
-            empty="No HSN lines."
-          />
-        </>
-      ) : null}
-      {filing ? (
-        <FileDialog
-          type="GSTR1"
-          month={month}
-          onClose={() => setFiling(false)}
-          onDone={() => {
-            setFiling(false);
-            toast('GSTR-1 marked as filed');
-            r.reload();
-          }}
-        />
-      ) : null}
+      <FinV40
+        pageId="tax-gstr1"
+        actions={actions}
+        fallback={
+          <>
+            <MonthBar month={month} onChange={setMonth}>
+              <span>
+                {s(d?.gstin)} · <Pill>{s(status.status) || '…'}</Pill>
+                {status.arn ? ` · ARN ${s(status.arn)}` : ''}
+              </span>
+            </MonthBar>
+            <ErrorBox message={r.error || msg} />
+            {d ? (
+              <>
+                <h3>Checks</h3>
+                <Issues list={(d.issues as Row[]) ?? []} />
+                <h3>Summary</h3>
+                <Simple
+                  cols={[
+                    ['section', 'Section'],
+                    ['count', 'Documents'],
+                    ['taxable', 'Taxable value', true],
+                    ['igst', 'IGST', true],
+                    ['cgst', 'CGST', true],
+                    ['sgst', 'SGST', true],
+                  ]}
+                  rows={Object.entries(summary).map(([k, v]) => ({
+                    section: k.toUpperCase(),
+                    ...v,
+                  }))}
+                  empty="Nothing in this month."
+                />
+                <h3>B2B invoices</h3>
+                <Simple
+                  cols={[
+                    ['docNo', 'Invoice'],
+                    ['date', 'Date'],
+                    ['customer', 'Customer'],
+                    ['gstin', 'GSTIN'],
+                    ['value', 'Value', true],
+                    ['taxable', 'Taxable', true],
+                  ]}
+                  rows={(d.b2b as Row[]) ?? []}
+                  empty="No B2B invoices."
+                />
+                <h3>Credit / debit notes</h3>
+                <Simple
+                  cols={[
+                    ['docNo', 'Note'],
+                    ['date', 'Date'],
+                    ['customer', 'Customer'],
+                    ['against', 'Against invoice'],
+                    ['value', 'Value', true],
+                  ]}
+                  rows={(d.cdnr as Row[]) ?? []}
+                  empty="No notes."
+                />
+                <h3>HSN summary</h3>
+                <Simple
+                  cols={[
+                    ['hsn', 'HSN'],
+                    ['rate', 'Rate %'],
+                    ['qty', 'Quantity'],
+                    ['taxable', 'Taxable', true],
+                    ['cgst', 'CGST', true],
+                    ['sgst', 'SGST', true],
+                    ['igst', 'IGST', true],
+                  ]}
+                  rows={(d.hsn as Row[]) ?? []}
+                  empty="No HSN lines."
+                />
+              </>
+            ) : null}
+            {filing ? (
+              <FileDialog
+                type="GSTR1"
+                month={month}
+                onClose={() => setFiling(false)}
+                onDone={() => {
+                  setFiling(false);
+                  toast('GSTR-1 marked as filed');
+                  r.reload();
+                }}
+              />
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }
@@ -395,37 +407,47 @@ export function Gstr3bPage({ actions }: { actions: ActionSet }) {
           </button>
         ) : null}
       </PageHead>
-      <MonthBar month={month} onChange={setMonth}>
-        <span>
-          {s(r.data?.gstin)} · <Pill>{s(status.status) || '…'}</Pill>
-          {status.arn ? ` · ARN ${s(status.arn)}` : ''}
-        </span>
-      </MonthBar>
-      <Tabs
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          ['return', 'Return'],
-          ['itc', 'GSTR-2B & ITC'],
-          ['settle', 'Settlement'],
-        ]}
+      <FinV40
+        pageId="tax-gstr3b"
+        actions={actions}
+        fallback={
+          <>
+            <MonthBar month={month} onChange={setMonth}>
+              <span>
+                {s(r.data?.gstin)} · <Pill>{s(status.status) || '…'}</Pill>
+                {status.arn ? ` · ARN ${s(status.arn)}` : ''}
+              </span>
+            </MonthBar>
+            <Tabs
+              value={tab}
+              onChange={setTab}
+              tabs={[
+                ['return', 'Return'],
+                ['itc', 'GSTR-2B & ITC'],
+                ['settle', 'Settlement'],
+              ]}
+            />
+            <ErrorBox message={r.error} />
+            {tab === 'return' && r.data ? <ReturnTab d={r.data} /> : null}
+            {tab === 'itc' ? <ItcTab month={month} actions={actions} /> : null}
+            {tab === 'settle' ? (
+              <SettleTab month={month} actions={actions} onChange={r.reload} />
+            ) : null}
+            {filing ? (
+              <FileDialog
+                type="GSTR3B"
+                month={month}
+                onClose={() => setFiling(false)}
+                onDone={() => {
+                  setFiling(false);
+                  toast('GSTR-3B marked as filed');
+                  r.reload();
+                }}
+              />
+            ) : null}
+          </>
+        }
       />
-      <ErrorBox message={r.error} />
-      {tab === 'return' && r.data ? <ReturnTab d={r.data} /> : null}
-      {tab === 'itc' ? <ItcTab month={month} actions={actions} /> : null}
-      {tab === 'settle' ? <SettleTab month={month} actions={actions} onChange={r.reload} /> : null}
-      {filing ? (
-        <FileDialog
-          type="GSTR3B"
-          month={month}
-          onClose={() => setFiling(false)}
-          onDone={() => {
-            setFiling(false);
-            toast('GSTR-3B marked as filed');
-            r.reload();
-          }}
-        />
-      ) : null}
     </>
   );
 }
@@ -733,11 +755,7 @@ function SettleTab({
       {actions.post && !done ? (
         <div className="toolbar">
           <label htmlFor="st-date">Paid on</label>
-          <DateField
-            id="st-date"
-            value={paidOn}
-            onChange={(e) => setPaidOn(e.target.value)}
-          />
+          <DateField id="st-date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
           <label htmlFor="st-bank">Bank</label>
           <select id="st-bank" value={bank} onChange={(e) => setBank(e.target.value)}>
             <option value="">Choose…</option>
@@ -808,138 +826,151 @@ export function EinvoicePage({ actions }: { actions: ActionSet }) {
         title="E-Invoice"
         sub="Make the IRP request file, upload it on the e-invoice portal, then type the IRN and acknowledgement here. The app does not connect to the portal."
       />
-      <Tabs
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          ['pending', 'Waiting for an IRN'],
-          ['done', 'Recorded'],
-        ]}
-      />
-      <ErrorBox message={msg || pend.error || recs.error} />
-      {tab === 'pending' ? (
-        <>
-          {pend.data && !pend.data.enabled ? (
-            <p>E-invoice is not switched on for this unit's GST registration (GST Setup).</p>
-          ) : null}
-          <div className="card table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Document</th>
-                  <th>Date</th>
-                  <th>Customer</th>
-                  <th>Value</th>
-                  <th>Age (days)</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {((pend.data?.rows as Row[]) ?? []).length === 0 && !pend.loading ? (
-                  <Empty cols={6}>No B2B document is waiting.</Empty>
+      <FinV40
+        pageId="tax-einvoice"
+        actions={actions}
+        fallback={
+          <>
+            <Tabs
+              value={tab}
+              onChange={setTab}
+              tabs={[
+                ['pending', 'Waiting for an IRN'],
+                ['done', 'Recorded'],
+              ]}
+            />
+            <ErrorBox message={msg || pend.error || recs.error} />
+            {tab === 'pending' ? (
+              <>
+                {pend.data && !pend.data.enabled ? (
+                  <p>E-invoice is not switched on for this unit's GST registration (GST Setup).</p>
                 ) : null}
-                {((pend.data?.rows as Row[]) ?? []).map((r) => (
-                  <tr key={s(r.id)} className={r.late ? 'row-red' : undefined}>
-                    <td>
-                      {s(r.docType)} {s(r.docNo)}
-                    </td>
-                    <td>{dmy(s(r.date))}</td>
-                    <td>{s(r.customer)}</td>
-                    <td>{inr(s(r.total))}</td>
-                    <td>
-                      {s(r.ageDays)}
-                      {r.late ? ' (late)' : ''}
-                    </td>
-                    <td>
-                      <button type="button" className="btn sm" onClick={() => void json(r)}>
-                        Download request JSON
-                      </button>{' '}
-                      {actions.add ? (
-                        <button
-                          type="button"
-                          className="btn sm primary"
-                          onClick={() => setEntering(r)}
-                        >
-                          Enter IRN
-                        </button>
+                <div className="card table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Document</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Value</th>
+                        <th>Age (days)</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {((pend.data?.rows as Row[]) ?? []).length === 0 && !pend.loading ? (
+                        <Empty cols={6}>No B2B document is waiting.</Empty>
                       ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      ) : (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Document</th>
-                <th>IRN</th>
-                <th>Ack no.</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {(recs.data ?? []).length === 0 && !recs.loading ? (
-                <Empty cols={5}>No IRN recorded yet.</Empty>
-              ) : null}
-              {(recs.data ?? []).map((r) => (
-                <tr key={s(r.id)}>
-                  <td>
-                    {s(r.docType)} {s(r.docNo)}
-                  </td>
-                  <td title={s(r.irn)}>{s(r.irn).slice(0, 16)}…</td>
-                  <td>{s(r.ackNo)}</td>
-                  <td>
-                    <Pill>{s(r.status)}</Pill>
-                    {r.lateReported ? ' late' : ''}
-                  </td>
-                  <td>
-                    {actions.cancel && s(r.status) === 'Generated' ? (
-                      <button
-                        type="button"
-                        className="btn sm"
-                        onClick={() =>
-                          ask(
-                            'Cancel IRN',
-                            [{ key: 'reason', label: 'Why is this IRN cancelled? (5+ letters)' }],
-                            (v) => {
-                              post(`/tax/einvoice/${s(r.id)}/cancel`, { reason: v.reason })
-                                .then(() => {
-                                  toast('IRN cancelled');
-                                  recs.reload();
-                                })
-                                .catch((e: unknown) => setMsg(toUiError(e).message));
-                            },
-                          )
-                        }
-                      >
-                        Cancel IRN
-                      </button>
+                      {((pend.data?.rows as Row[]) ?? []).map((r) => (
+                        <tr key={s(r.id)} className={r.late ? 'row-red' : undefined}>
+                          <td>
+                            {s(r.docType)} {s(r.docNo)}
+                          </td>
+                          <td>{dmy(s(r.date))}</td>
+                          <td>{s(r.customer)}</td>
+                          <td>{inr(s(r.total))}</td>
+                          <td>
+                            {s(r.ageDays)}
+                            {r.late ? ' (late)' : ''}
+                          </td>
+                          <td>
+                            <button type="button" className="btn sm" onClick={() => void json(r)}>
+                              Download request JSON
+                            </button>{' '}
+                            {actions.add ? (
+                              <button
+                                type="button"
+                                className="btn sm primary"
+                                onClick={() => setEntering(r)}
+                              >
+                                Enter IRN
+                              </button>
+                            ) : null}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              <div className="card table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Document</th>
+                      <th>IRN</th>
+                      <th>Ack no.</th>
+                      <th>Status</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(recs.data ?? []).length === 0 && !recs.loading ? (
+                      <Empty cols={5}>No IRN recorded yet.</Empty>
                     ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {askNode}
-      {entering ? (
-        <IrnDialog
-          row={entering}
-          onClose={() => setEntering(null)}
-          onDone={() => {
-            setEntering(null);
-            toast('IRN recorded');
-            pend.reload();
-            recs.reload();
-          }}
-        />
-      ) : null}
+                    {(recs.data ?? []).map((r) => (
+                      <tr key={s(r.id)}>
+                        <td>
+                          {s(r.docType)} {s(r.docNo)}
+                        </td>
+                        <td title={s(r.irn)}>{s(r.irn).slice(0, 16)}…</td>
+                        <td>{s(r.ackNo)}</td>
+                        <td>
+                          <Pill>{s(r.status)}</Pill>
+                          {r.lateReported ? ' late' : ''}
+                        </td>
+                        <td>
+                          {actions.cancel && s(r.status) === 'Generated' ? (
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() =>
+                                ask(
+                                  'Cancel IRN',
+                                  [
+                                    {
+                                      key: 'reason',
+                                      label: 'Why is this IRN cancelled? (5+ letters)',
+                                    },
+                                  ],
+                                  (v) => {
+                                    post(`/tax/einvoice/${s(r.id)}/cancel`, { reason: v.reason })
+                                      .then(() => {
+                                        toast('IRN cancelled');
+                                        recs.reload();
+                                      })
+                                      .catch((e: unknown) => setMsg(toUiError(e).message));
+                                  },
+                                )
+                              }
+                            >
+                              Cancel IRN
+                            </button>
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {askNode}
+            {entering ? (
+              <IrnDialog
+                row={entering}
+                onClose={() => setEntering(null)}
+                onDone={() => {
+                  setEntering(null);
+                  toast('IRN recorded');
+                  pend.reload();
+                  recs.reload();
+                }}
+              />
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }
@@ -1035,143 +1066,151 @@ export function EwayPage({ actions }: { actions: ActionSet }) {
         title="E-Way Bill"
         sub="Make the Part-A / Part-B file for the e-way bill portal, then type the e-way bill number here. The app does not connect to the portal."
       />
-      <Tabs
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          ['pending', 'Invoices without a bill'],
-          ['done', 'E-way bills'],
-        ]}
+      <FinV40
+        pageId="tax-eway"
+        actions={actions}
+        fallback={
+          <>
+            <Tabs
+              value={tab}
+              onChange={setTab}
+              tabs={[
+                ['pending', 'Invoices without a bill'],
+                ['done', 'E-way bills'],
+              ]}
+            />
+            <ErrorBox message={msg || pend.error || list.error} />
+            {tab === 'pending' ? (
+              <div className="card table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Invoice</th>
+                      <th>Date</th>
+                      <th>Customer</th>
+                      <th>Value</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {((pend.data?.rows as Row[]) ?? []).length === 0 && !pend.loading ? (
+                      <Empty cols={5}>
+                        Every invoice above {inr(s(pend.data?.minValue))} has an e-way bill.
+                      </Empty>
+                    ) : null}
+                    {((pend.data?.rows as Row[]) ?? []).map((r) => (
+                      <tr key={s(r.id)}>
+                        <td>{s(r.docNo)}</td>
+                        <td>{dmy(s(r.date))}</td>
+                        <td>{s(r.customer)}</td>
+                        <td>{inr(s(r.total))}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn sm"
+                            onClick={() =>
+                              ask(
+                                'Distance',
+                                [{ key: 'km', label: 'Distance in kilometres', type: 'number' }],
+                                (v) => void json(r, v.km ?? ''),
+                              )
+                            }
+                          >
+                            Download request JSON
+                          </button>{' '}
+                          {actions.add ? (
+                            <button
+                              type="button"
+                              className="btn sm primary"
+                              onClick={() => setEntering(r)}
+                            >
+                              Enter e-way bill
+                            </button>
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="card table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Invoice</th>
+                      <th>E-way bill</th>
+                      <th>Km</th>
+                      <th>Valid until</th>
+                      <th>Status</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(list.data ?? []).length === 0 && !list.loading ? (
+                      <Empty cols={6}>No e-way bill recorded.</Empty>
+                    ) : null}
+                    {(list.data ?? []).map((r) => (
+                      <tr key={s(r.id)} className={r.expired ? 'row-red' : undefined}>
+                        <td>{s(r.docNo)}</td>
+                        <td>{s(r.ewbNo)}</td>
+                        <td>{s(r.distanceKm)}</td>
+                        <td>{new Date(s(r.validUntil)).toLocaleString('en-IN')}</td>
+                        <td>
+                          <Pill>{r.expired ? 'Expired' : s(r.status)}</Pill>
+                        </td>
+                        <td>
+                          {actions.edit && s(r.status) === 'Active' ? (
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() =>
+                                ask(
+                                  'Extend e-way bill',
+                                  [
+                                    { key: 'km', label: 'Remaining distance (km)', type: 'number' },
+                                    { key: 'reason', label: 'Reason for the extension' },
+                                  ],
+                                  (v) => {
+                                    post(`/tax/eway/${s(r.id)}/extend`, {
+                                      remainingKm: Number(v.km),
+                                      reason: v.reason,
+                                    })
+                                      .then(() => {
+                                        toast('Validity extended');
+                                        list.reload();
+                                      })
+                                      .catch((e: unknown) => setMsg(toUiError(e).message));
+                                  },
+                                )
+                              }
+                            >
+                              Extend
+                            </button>
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {askNode}
+            {entering ? (
+              <EwbDialog
+                row={entering}
+                onClose={() => setEntering(null)}
+                onDone={() => {
+                  setEntering(null);
+                  toast('E-way bill recorded');
+                  pend.reload();
+                  list.reload();
+                }}
+              />
+            ) : null}
+          </>
+        }
       />
-      <ErrorBox message={msg || pend.error || list.error} />
-      {tab === 'pending' ? (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Invoice</th>
-                <th>Date</th>
-                <th>Customer</th>
-                <th>Value</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {((pend.data?.rows as Row[]) ?? []).length === 0 && !pend.loading ? (
-                <Empty cols={5}>
-                  Every invoice above {inr(s(pend.data?.minValue))} has an e-way bill.
-                </Empty>
-              ) : null}
-              {((pend.data?.rows as Row[]) ?? []).map((r) => (
-                <tr key={s(r.id)}>
-                  <td>{s(r.docNo)}</td>
-                  <td>{dmy(s(r.date))}</td>
-                  <td>{s(r.customer)}</td>
-                  <td>{inr(s(r.total))}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="btn sm"
-                      onClick={() =>
-                        ask(
-                          'Distance',
-                          [{ key: 'km', label: 'Distance in kilometres', type: 'number' }],
-                          (v) => void json(r, v.km ?? ''),
-                        )
-                      }
-                    >
-                      Download request JSON
-                    </button>{' '}
-                    {actions.add ? (
-                      <button
-                        type="button"
-                        className="btn sm primary"
-                        onClick={() => setEntering(r)}
-                      >
-                        Enter e-way bill
-                      </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Invoice</th>
-                <th>E-way bill</th>
-                <th>Km</th>
-                <th>Valid until</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {(list.data ?? []).length === 0 && !list.loading ? (
-                <Empty cols={6}>No e-way bill recorded.</Empty>
-              ) : null}
-              {(list.data ?? []).map((r) => (
-                <tr key={s(r.id)} className={r.expired ? 'row-red' : undefined}>
-                  <td>{s(r.docNo)}</td>
-                  <td>{s(r.ewbNo)}</td>
-                  <td>{s(r.distanceKm)}</td>
-                  <td>{new Date(s(r.validUntil)).toLocaleString('en-IN')}</td>
-                  <td>
-                    <Pill>{r.expired ? 'Expired' : s(r.status)}</Pill>
-                  </td>
-                  <td>
-                    {actions.edit && s(r.status) === 'Active' ? (
-                      <button
-                        type="button"
-                        className="btn sm"
-                        onClick={() =>
-                          ask(
-                            'Extend e-way bill',
-                            [
-                              { key: 'km', label: 'Remaining distance (km)', type: 'number' },
-                              { key: 'reason', label: 'Reason for the extension' },
-                            ],
-                            (v) => {
-                              post(`/tax/eway/${s(r.id)}/extend`, {
-                                remainingKm: Number(v.km),
-                                reason: v.reason,
-                              })
-                                .then(() => {
-                                  toast('Validity extended');
-                                  list.reload();
-                                })
-                                .catch((e: unknown) => setMsg(toUiError(e).message));
-                            },
-                          )
-                        }
-                      >
-                        Extend
-                      </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {askNode}
-      {entering ? (
-        <EwbDialog
-          row={entering}
-          onClose={() => setEntering(null)}
-          onDone={() => {
-            setEntering(null);
-            toast('E-way bill recorded');
-            pend.reload();
-            list.reload();
-          }}
-        />
-      ) : null}
     </>
   );
 }

@@ -29,11 +29,12 @@ import {
   useUserOptions,
 } from './Shared';
 import { DateField } from '../../ui/components';
+import { withPlantV40 } from '../plant/PlantV40';
 
 const pill = (v: unknown) => <Pill tone={TONE[s(v)]}>{s(v).replace(/_/g, ' ')}</Pill>;
 
 // ------------------------------------------------------------------------------------------------ preventive plans
-export function PreventivePage({ actions }: { actions: ActionSet }) {
+function PreventivePageBody({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<'plans' | 'checklists'>('plans');
   return (
     <>
@@ -249,7 +250,7 @@ function Checklists({ actions }: { actions: ActionSet }) {
 }
 
 // ------------------------------------------------------------------------------------------------ PM schedule
-export function SchedulePage({ actions }: { actions: ActionSet }) {
+function SchedulePageBody({ actions }: { actions: ActionSet }) {
   const [status, setStatus] = useState('');
   const list = useLoad(() => alist('/maint/schedules', { status }), [status]);
   return (
@@ -312,7 +313,7 @@ export function SchedulePage({ actions }: { actions: ActionSet }) {
 }
 
 // ------------------------------------------------------------------------------------------------ breakdowns
-export function BreakdownPage({ actions }: { actions: ActionSet }) {
+function BreakdownPageBody({ actions }: { actions: ActionSet }) {
   const [status, setStatus] = useState('');
   const [adding, setAdding] = useState(false);
   const [view, setView] = useState<string | null>(null);
@@ -555,7 +556,7 @@ function BdView({
 }
 
 // ------------------------------------------------------------------------------------------------ work orders
-export function WorkOrdersPage({
+function WorkOrdersPageBody({
   actions,
   page,
   base,
@@ -1007,7 +1008,7 @@ function WoView({
 }
 
 // ------------------------------------------------------------------------------------------------ spares, downtime, MTBF, alerts
-export function SparesPage() {
+function SparesPageBody() {
   const [q, setQ] = useState('');
   const list = useLoad(() => alist('/maint/spares', { q }), [q]);
   return (
@@ -1041,7 +1042,7 @@ export function SparesPage() {
   );
 }
 
-export function DowntimePage({ actions }: { actions: ActionSet }) {
+function DowntimePageBody({ actions }: { actions: ActionSet }) {
   const toast = useToast();
   const [type, setType] = useState('');
   const [adding, setAdding] = useState(false);
@@ -1139,7 +1140,7 @@ export function DowntimePage({ actions }: { actions: ActionSet }) {
   );
 }
 
-export function MtbfPage() {
+function MtbfPageBody() {
   const [from, setFrom] = useState(addDays(todayIso(), -90));
   const [to, setTo] = useState(todayIso());
   const d = useLoad(() => aget('/maint/reports/mtbf', { from, to }), [from, to]);
@@ -1175,7 +1176,7 @@ export function MtbfPage() {
   );
 }
 
-export function AlertsPage({ actions }: { actions: ActionSet }) {
+function AlertsPageBody({ actions }: { actions: ActionSet }) {
   const toast = useToast();
   const [status, setStatus] = useState('OPEN');
   const list = useLoad(() => alist('/maint/alerts', { status }), [status]);
@@ -1257,3 +1258,19 @@ export function AlertsPage({ actions }: { actions: ActionSet }) {
     </>
   );
 }
+
+export const PreventivePage = withPlantV40('maint-preventive', PreventivePageBody);
+
+export const SchedulePage = withPlantV40('maint-schedule', SchedulePageBody);
+
+export const BreakdownPage = withPlantV40('maint-breakdown', BreakdownPageBody);
+
+export const WorkOrdersPage = withPlantV40((p: { page: string }) => (p.page === 'maint-workorders' ? 'maint-workorders' : null), WorkOrdersPageBody);
+
+export const SparesPage = withPlantV40('maint-spares', SparesPageBody);
+
+export const DowntimePage = withPlantV40('maint-downtime', DowntimePageBody);
+
+export const MtbfPage = withPlantV40('maint-mtbf', MtbfPageBody);
+
+export const AlertsPage = withPlantV40('maint-alerts', AlertsPageBody);

@@ -1,6 +1,8 @@
 // Phase 25 routes: /api/v1/work. Inbox, Work Center, Move Forward and the receive / accept / return / recall / complete
 // actions, history, the Workflow Matrix. Nothing here forwards by itself.
+import { commandItems } from './command-items';
 import { docPicker } from './picker';
+import { searchFamilies, searchRecords } from './record-search';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -144,6 +146,33 @@ export function createWorkRouter(): Router {
     ok(res, { holder: await workService.holder(p.docType, p.docId), ...(await workService.history(p.docType, p.docId)) });
   }));
 
+  const cmdBody = z
+    .object({
+      issue: z.string().min(1).max(300),
+      owner: z.string().max(80).nullable().optional(),
+      severity: z.enum(['Critical', 'High', 'Medium', 'Low']).optional(),
+      dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+      departmentId: z.string().uuid().nullable().optional(),
+    })
+    .strict();
+  r.get('/command-items', requirePageAction('command-center', 'view'), asyncHandler(async (req: Request, res: Response) => {
+    ok(res, await commandItems.list(callerOf(req), req.query.all === 'true'));
+  }));
+  r.post('/command-items', requirePageAction('command-center', 'add'), validate({ body: cmdBody }), asyncHandler(async (req: Request, res: Response) => {
+    ok(res, await commandItems.create(callerOf(req), validated(res, 'body', cmdBody)), 201);
+  }));
+  r.post('/command-items/:id/close', requirePageAction('command-center', 'edit'), validate({ params: idParams }), asyncHandler(async (req: Request, res: Response) => {
+    ok(res, await commandItems.close(callerOf(req), validated(res, 'params', idParams).id));
+  }));
+  r.get('/record-search', asyncHandler(async (req: Request, res: Response) => {
+    const q = z.string().max(80).default('').parse(req.query.q ?? '');
+    const family = z.string().max(60).default('').parse(req.query.family ?? '');
+    const status = z.string().max(30).default('').parse(req.query.status ?? '');
+    ok(res, await searchRecords(callerOf(req), q, family, status));
+  }));
+  r.get('/record-search/families', asyncHandler(async (_req: Request, res: Response) => {
+    ok(res, searchFamilies());
+  }));
   r.get('/doc-picker/:pageId', asyncHandler(async (req: Request, res: Response) => {
     const pageId = z.string().min(1).max(80).parse(req.params.pageId);
     const q = z.string().max(60).default('').parse(req.query.q ?? '');

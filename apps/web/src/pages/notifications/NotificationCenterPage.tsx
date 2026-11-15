@@ -11,6 +11,7 @@ import {
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  markNotificationUnread,
   saveNotificationPreferences,
   type NotificationItem,
   type NotificationPreference,
@@ -19,14 +20,6 @@ import { toUiError } from '../../lib/errors';
 import { formatDateTime } from '../../lib/format';
 import { useLoad } from '../../lib/useLoad';
 
-type Chip = 'all' | 'unread' | 'approvals' | 'system';
-const CHIPS: { key: Chip; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'unread', label: 'Unread' },
-  { key: 'approvals', label: 'Approvals' },
-  { key: 'system', label: 'System' },
-];
-
 export function NotificationCenterPage() {
   const [tab, setTab] = useState<'list' | 'prefs'>('list');
   return (
@@ -34,7 +27,7 @@ export function NotificationCenterPage() {
       <div className="page-head">
         <div>
           <h1>Notification Center</h1>
-          <p>Approvals and system alerts addressed to you.</p>
+          <p>Live ERP alerts with search, filters, read state and direct record links.</p>
         </div>
       </div>
       <div className="tabs" role="tablist" aria-label="Notification views">
@@ -62,22 +55,29 @@ export function NotificationCenterPage() {
   );
 }
 
+const SEV_LABEL: Record<NotificationItem['severity'], string> = { INFO: 'Info', ACTION: 'Action', WARN: 'Warning' };
+const SEV_ICON: Record<NotificationItem['severity'], string> = { INFO: 'ℹ️', ACTION: '✅', WARN: '⚠️' };
+
+/** V40 Notification Center: four KPI cards, search + severity + read-state filters, one row per alert with Open and Read / Unread. */
 function NotificationList() {
   const navigate = useNavigate();
   const toast = useToast();
-  const [chip, setChip] = useState<Chip>('all');
   const [page, setPage] = useState(1);
-  const load = useLoad(
-    () =>
-      listNotifications({
-        page,
-        ...(chip === 'unread' ? { unread: true } : {}),
-        ...(chip === 'approvals' ? { group: 'Approvals' as const } : {}),
-        ...(chip === 'system' ? { group: 'System' as const } : {}),
-      }),
-    [chip, page],
+  const [q, setQ] = useState('');
+  const [sev, setSev] = useState('');
+  const [mode, setMode] = useState('');
+  const load = useLoad(() => listNotifications({ page, size: 50 }), [page]);
+  const all = load.data?.rows ?? [];
+  const rows = all.filter(
+    (n) =>
+      (!q || `${n.title} ${n.body}`.toLowerCase().includes(q.toLowerCase())) &&
+      (!sev || n.severity === sev) &&
+      (!mode || (mode === 'Unread' ? !n.readAt : !!n.readAt)),
   );
-  const rows = load.data?.rows ?? [];
+  const total = load.data?.meta.total ?? 0;
+  const unread = load.data?.unread ?? 0;
+  const critical = all.filter((n) => !n.readAt && n.severity === 'WARN').length;
+  const linked = all.filter((n) => !!n.link).length;
 
   const open = async (n: NotificationItem): Promise<void> => {
     if (!n.readAt) {
@@ -87,7 +87,16 @@ function NotificationList() {
     if (n.link) navigate(n.link);
     else load.reload();
   };
-
+  const toggle = async (n: NotificationItem): Promise<void> => {
+    try {
+      if (n.readAt) await markNotificationUnread(n.id);
+      else await markNotificationRead(n.id);
+      window.dispatchEvent(new Event(BELL_REFRESH_EVENT));
+      load.reload();
+    } catch {
+      toast('Could not change the read state.');
+    }
+  };
   const markAll = async (): Promise<void> => {
     try {
       await markAllNotificationsRead();
@@ -101,67 +110,56 @@ function NotificationList() {
 
   return (
     <>
-      <div className="recordbar">
-        {CHIPS.map((c) => (
-          <button
-            key={c.key}
-            type="button"
-            className={c.key === chip ? 'chip active' : 'chip'}
-            aria-pressed={c.key === chip}
-            onClick={() => {
-              setChip(c.key);
-              setPage(1);
-            }}
-          >
-            {c.label}
-            {c.key === 'unread' && load.data ? ` (${load.data.unread})` : ''}
-          </button>
-        ))}
-        <button
-          type="button"
-          className="btn sm"
-          style={{ marginLeft: 'auto' }}
-          disabled={!load.data || load.data.unread === 0}
-          onClick={() => void markAll()}
-        >
-          Mark all read
+      <div className="actions" style={{ marginBottom: 10 }}>
+        <button type="button" className="btn" disabled={!load.data || unread === 0} onClick={() => void markAll()}>
+          Mark All Read
         </button>
       </div>
+      <div className="kpis">
+        <div className="card kpi"><small>Total</small><b>{total}</b><small>Generated alerts</small></div>
+        <div className="card kpi"><small>Unread</small><b>{unread}</b><small>Needs review</small></div>
+        <div className="card kpi"><small>Critical</small><b>{critical}</b><small>Immediate</small></div>
+        <div className="card kpi"><small>Linked Records</small><b>{linked}</b><small>Direct navigation</small></div>
+      </div>
       {load.error ? <ErrorMessage onReload={load.reload}>{load.error}</ErrorMessage> : null}
-      <div className="card">
+      <div className="card panel">
+        <div className="toolbar" style={{ padding: 0, border: 0, marginBottom: 10 }}>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search notifications..." aria-label="Search notifications" />
+          <select value={sev} onChange={(e) => setSev(e.target.value)} aria-label="Severity">
+            <option value="">All Severity</option>
+            <option value="WARN">Warning</option>
+            <option value="ACTION">Action</option>
+            <option value="INFO">Info</option>
+          </select>
+          <select value={mode} onChange={(e) => setMode(e.target.value)} aria-label="Read state">
+            <option value="">Read + Unread</option>
+            <option>Unread</option>
+            <option>Read</option>
+          </select>
+        </div>
         <ul className="notif-list page">
           {rows.map((n) => (
             <li key={n.id} className={n.readAt ? 'notif read' : 'notif unread'}>
-              <button type="button" className="notif-item" onClick={() => void open(n)}>
+              <span aria-hidden="true" style={{ fontSize: 20 }}>{SEV_ICON[n.severity]}</span>
+              <div className="notif-item" style={{ flex: 1 }}>
                 <b>{n.title}</b>
                 {n.body ? <span className="v8-sub">{n.body}</span> : null}
                 <span className="v8-sub">{formatDateTime(n.createdAt)}</span>
+              </div>
+              <span className={`status ${n.severity === 'WARN' ? 'overdue' : n.severity === 'ACTION' ? 'pending' : 'active'}`}>{SEV_LABEL[n.severity]}</span>
+              <button type="button" className="btn sm" onClick={() => void open(n)}>
+                Open
               </button>
-              <span
-                className={`status ${n.severity === 'WARN' ? 'overdue' : n.severity === 'ACTION' ? 'pending' : 'active'}`}
-              >
-                {n.severity === 'ACTION' ? 'Action' : n.severity === 'WARN' ? 'Warning' : 'Info'}
-              </span>
+              <button type="button" className="btn sm" onClick={() => void toggle(n)}>
+                {n.readAt ? 'Unread' : 'Read'}
+              </button>
             </li>
           ))}
           {load.loading && !load.data ? <li className="v8-sub">Loading…</li> : null}
-          {load.data && rows.length === 0 ? (
-            <li className="v8-sub">
-              {chip === 'unread'
-                ? 'Nothing unread. You are all caught up.'
-                : 'No notifications yet. Approval requests and alerts will appear here.'}
-            </li>
-          ) : null}
+          {load.data && rows.length === 0 ? <li className="v8-sub">No notifications match the current filters.</li> : null}
         </ul>
       </div>
-      {load.data ? (
-        <Pager
-          page={load.data.meta.page}
-          size={load.data.meta.size}
-          total={load.data.meta.total}
-          onPage={setPage}
-        />
-      ) : null}
+      {load.data ? <Pager page={load.data.meta.page} size={load.data.meta.size} total={load.data.meta.total} onPage={setPage} /> : null}
     </>
   );
 }

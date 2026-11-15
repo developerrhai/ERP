@@ -1,5 +1,6 @@
 // Client of GET /sales/v40/:pageId - the V40 tab views of the CRM and Sales pages (apps/api/src/modules/sales/v40-views.ts).
 import { request } from '../../lib/api';
+import { FAM_V40_IDS } from '../v40fam/famIds';
 
 export type V40ColType = 'text' | 'date' | 'inr' | 'num' | 'pill' | 'docs' | 'actions' | 'time';
 export interface V40Column {
@@ -64,7 +65,7 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
   });
   if (p.q) qs.set('q', p.q);
   if (p.status) qs.set('status', p.status);
-  const r = await request<V40Row[]>(`/sales/v40/${pageId}?${qs.toString()}`);
+  const r = await request<V40Row[]>(`${FAM_V40_IDS.has(pageId) ? '/fam' : '/sales'}/v40/${pageId}?${qs.toString()}`);
   const meta = (r.meta ?? {}) as unknown as Partial<V40Page> & { total?: number };
   return {
     rows: r.data,

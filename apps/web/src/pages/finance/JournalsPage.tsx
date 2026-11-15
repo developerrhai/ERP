@@ -1,5 +1,6 @@
 // Journal Entries (fin-journal): Draft -> Submit -> Post -> Reverse. A Draft can be saved unbalanced; the
 // footer shows the difference live. Posted journals are never edited: use Reverse.
+import { FinV40 } from './FinV40';
 import { useRef, useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
@@ -86,125 +87,133 @@ export function JournalsPage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       <ErrorBox message={error} />
-      <div className="recordbar" style={{ marginBottom: 16 }}>
-        <input
-          type="search"
-          placeholder="Search number, narration, reference…"
-          aria-label="Search journals"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-        />
-        <select
-          aria-label="Filter by status"
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">All statuses</option>
-          <option value="Draft">Draft</option>
-          <option value="Posted">Posted</option>
-          <option value="Cancelled">Cancelled (reversed)</option>
-        </select>
-      </div>
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Number</th>
-              <th scope="col">Date</th>
-              <th scope="col">Type</th>
-              <th scope="col">Narration</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Amount
-              </th>
-              <th scope="col">Status</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(data?.rows ?? []).map((j) => (
-              <tr key={j.id}>
-                <td>
-                  <strong>{j.code}</strong>
-                </td>
-                <td>{dmy(j.docDate)}</td>
-                <td>{j.voucherType}</td>
-                <td>{j.narration ?? '—'}</td>
-                <td style={{ textAlign: 'right' }}>{inr(j.totalDebit)}</td>
-                <td>
-                  <Pill tone={j.status === 'Draft' ? j.postingStatus : j.status}>
-                    {j.status === 'Draft'
-                      ? j.postingStatus === 'Not Posted'
-                        ? 'Draft'
-                        : j.postingStatus
-                      : j.status === 'Cancelled'
-                        ? 'Reversed'
-                        : j.status}
-                  </Pill>
-                </td>
-                <td>
-                  <div className="actions">
-                    <button
-                      type="button"
-                      className="btn sm"
-                      aria-label={`Open ${j.code}`}
-                      onClick={() => setDialog({ kind: 'view', id: j.id })}
-                    >
-                      Open
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {loading && !data ? <Empty cols={7}>Loading…</Empty> : null}
-            {data && data.rows.length === 0 ? (
-              <Empty cols={7}>No journals yet. Click ＋ New Journal.</Empty>
+      <FinV40
+        pageId="fin-journal"
+        actions={actions}
+        fallback={
+          <>
+            <div className="recordbar" style={{ marginBottom: 16 }}>
+              <input
+                type="search"
+                placeholder="Search number, narration, reference…"
+                aria-label="Search journals"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+              />
+              <select
+                aria-label="Filter by status"
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">All statuses</option>
+                <option value="Draft">Draft</option>
+                <option value="Posted">Posted</option>
+                <option value="Cancelled">Cancelled (reversed)</option>
+              </select>
+            </div>
+            <div className="card table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Number</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Narration</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>
+                      Amount
+                    </th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.rows ?? []).map((j) => (
+                    <tr key={j.id}>
+                      <td>
+                        <strong>{j.code}</strong>
+                      </td>
+                      <td>{dmy(j.docDate)}</td>
+                      <td>{j.voucherType}</td>
+                      <td>{j.narration ?? '—'}</td>
+                      <td style={{ textAlign: 'right' }}>{inr(j.totalDebit)}</td>
+                      <td>
+                        <Pill tone={j.status === 'Draft' ? j.postingStatus : j.status}>
+                          {j.status === 'Draft'
+                            ? j.postingStatus === 'Not Posted'
+                              ? 'Draft'
+                              : j.postingStatus
+                            : j.status === 'Cancelled'
+                              ? 'Reversed'
+                              : j.status}
+                        </Pill>
+                      </td>
+                      <td>
+                        <div className="actions">
+                          <button
+                            type="button"
+                            className="btn sm"
+                            aria-label={`Open ${j.code}`}
+                            onClick={() => setDialog({ kind: 'view', id: j.id })}
+                          >
+                            Open
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {loading && !data ? <Empty cols={7}>Loading…</Empty> : null}
+                  {data && data.rows.length === 0 ? (
+                    <Empty cols={7}>No journals yet. Click ＋ New Journal.</Empty>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+            {data ? <Pager page={page} size={20} total={data.meta.total} onPage={setPage} /> : null}
+            {dialog?.kind === 'form' ? (
+              <JournalForm
+                {...(dialog.id ? { id: dialog.id } : {})}
+                onClose={() => setDialog(null)}
+                onSaved={(j) => done(`Journal saved as ${j.code}.`)}
+              />
             ) : null}
-          </tbody>
-        </table>
-      </div>
-      {data ? <Pager page={page} size={20} total={data.meta.total} onPage={setPage} /> : null}
-      {dialog?.kind === 'form' ? (
-        <JournalForm
-          {...(dialog.id ? { id: dialog.id } : {})}
-          onClose={() => setDialog(null)}
-          onSaved={(j) => done(`Journal saved as ${j.code}.`)}
-        />
-      ) : null}
-      {dialog?.kind === 'view' ? (
-        <JournalView
-          id={dialog.id}
-          actions={actions}
-          onClose={() => setDialog(null)}
-          onEdit={() => setDialog({ kind: 'form', id: dialog.id })}
-          onChanged={(msg) => done(msg)}
-          onReverse={(j) => setDialog({ kind: 'reverse', item: j })}
-        />
-      ) : null}
-      {dialog?.kind === 'recurring' ? (
-        <RecurringModal
-          actions={actions}
-          onClose={() => {
-            setDialog(null);
-            reload();
-          }}
-        />
-      ) : null}
-      {dialog?.kind === 'fx' ? (
-        <FxModal canEdit={actions.edit} onClose={() => setDialog(null)} />
-      ) : null}
-      {dialog?.kind === 'reverse' ? (
-        <ReverseModal
-          item={dialog.item}
-          onClose={() => setDialog(null)}
-          onDone={(c) => done(`Reversed with ${c}.`)}
-        />
-      ) : null}
+            {dialog?.kind === 'view' ? (
+              <JournalView
+                id={dialog.id}
+                actions={actions}
+                onClose={() => setDialog(null)}
+                onEdit={() => setDialog({ kind: 'form', id: dialog.id })}
+                onChanged={(msg) => done(msg)}
+                onReverse={(j) => setDialog({ kind: 'reverse', item: j })}
+              />
+            ) : null}
+            {dialog?.kind === 'recurring' ? (
+              <RecurringModal
+                actions={actions}
+                onClose={() => {
+                  setDialog(null);
+                  reload();
+                }}
+              />
+            ) : null}
+            {dialog?.kind === 'fx' ? (
+              <FxModal canEdit={actions.edit} onClose={() => setDialog(null)} />
+            ) : null}
+            {dialog?.kind === 'reverse' ? (
+              <ReverseModal
+                item={dialog.item}
+                onClose={() => setDialog(null)}
+                onDone={(c) => done(`Reversed with ${c}.`)}
+              />
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }

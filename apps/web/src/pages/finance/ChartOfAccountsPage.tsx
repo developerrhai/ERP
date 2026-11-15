@@ -1,4 +1,5 @@
 // Chart of Accounts (fin-coa): one tree of group and ledger accounts. System accounts cannot be deleted.
+import { FinV40 } from './FinV40';
 import { useRef, useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
@@ -57,108 +58,121 @@ export function ChartOfAccountsPage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       <ErrorBox message={error} />
-      <div className="recordbar" style={{ marginBottom: 16 }}>
-        <input
-          type="search"
-          placeholder="Search by code or name…"
-          aria-label="Search accounts"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Code</th>
-              <th scope="col">Account</th>
-              <th scope="col">Type</th>
-              <th scope="col">Rules</th>
-              <th scope="col">Status</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((a) => (
-              <tr key={a.id}>
-                <td>
-                  <strong>{a.code}</strong>
-                </td>
-                <td style={{ paddingLeft: 12 + depth(a) * 16, fontWeight: a.isGroup ? 600 : 400 }}>
-                  {a.name}
-                </td>
-                <td>{a.rootType}</td>
-                <td className="v8-sub">
-                  {[
-                    a.isGroup ? 'Group' : '',
-                    a.costCenterRequired ? 'Needs cost centre' : '',
-                    a.partyRequired
-                      ? a.controlSide === 'RECEIVABLE'
-                        ? 'Customer account'
-                        : 'Supplier account'
-                      : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' · ') || '—'}
-                </td>
-                <td>
-                  <Pill>{a.status}</Pill>
-                </td>
-                <td>
-                  <div className="actions">
-                    {actions.edit ? (
-                      <button
-                        type="button"
-                        className="btn sm"
-                        aria-label={`Edit ${a.name}`}
-                        onClick={() => setDialog({ kind: 'edit', item: a })}
+      <FinV40
+        pageId="fin-coa"
+        actions={actions}
+        fallback={
+          <>
+            <div className="recordbar" style={{ marginBottom: 16 }}>
+              <input
+                type="search"
+                placeholder="Search by code or name…"
+                aria-label="Search accounts"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="card table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Code</th>
+                    <th scope="col">Account</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Rules</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((a) => (
+                    <tr key={a.id}>
+                      <td>
+                        <strong>{a.code}</strong>
+                      </td>
+                      <td
+                        style={{
+                          paddingLeft: 12 + depth(a) * 16,
+                          fontWeight: a.isGroup ? 600 : 400,
+                        }}
                       >
-                        Edit
-                      </button>
-                    ) : null}
-                    {actions.delete && !a.isSystem ? (
-                      <button
-                        type="button"
-                        className="btn sm danger"
-                        aria-label={`Delete ${a.name}`}
-                        onClick={() => setDialog({ kind: 'delete', item: a })}
-                      >
-                        Delete
-                      </button>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {loading && !data ? <Empty cols={6}>Loading…</Empty> : null}
-            {data && rows.length === 0 ? (
-              <Empty cols={6}>No accounts found. Click ＋ Add Account.</Empty>
+                        {a.name}
+                      </td>
+                      <td>{a.rootType}</td>
+                      <td className="v8-sub">
+                        {[
+                          a.isGroup ? 'Group' : '',
+                          a.costCenterRequired ? 'Needs cost centre' : '',
+                          a.partyRequired
+                            ? a.controlSide === 'RECEIVABLE'
+                              ? 'Customer account'
+                              : 'Supplier account'
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') || '—'}
+                      </td>
+                      <td>
+                        <Pill>{a.status}</Pill>
+                      </td>
+                      <td>
+                        <div className="actions">
+                          {actions.edit ? (
+                            <button
+                              type="button"
+                              className="btn sm"
+                              aria-label={`Edit ${a.name}`}
+                              onClick={() => setDialog({ kind: 'edit', item: a })}
+                            >
+                              Edit
+                            </button>
+                          ) : null}
+                          {actions.delete && !a.isSystem ? (
+                            <button
+                              type="button"
+                              className="btn sm danger"
+                              aria-label={`Delete ${a.name}`}
+                              onClick={() => setDialog({ kind: 'delete', item: a })}
+                            >
+                              Delete
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {loading && !data ? <Empty cols={6}>Loading…</Empty> : null}
+                  {data && rows.length === 0 ? (
+                    <Empty cols={6}>No accounts found. Click ＋ Add Account.</Empty>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+            {dialog?.kind === 'add' ? (
+              <AccountForm
+                accounts={data?.rows ?? []}
+                onClose={() => setDialog(null)}
+                onSaved={(a) => done(`Account ${a.code} created.`)}
+              />
             ) : null}
-          </tbody>
-        </table>
-      </div>
-      {dialog?.kind === 'add' ? (
-        <AccountForm
-          accounts={data?.rows ?? []}
-          onClose={() => setDialog(null)}
-          onSaved={(a) => done(`Account ${a.code} created.`)}
-        />
-      ) : null}
-      {dialog?.kind === 'edit' ? (
-        <AccountForm
-          accounts={data?.rows ?? []}
-          item={dialog.item}
-          onClose={() => setDialog(null)}
-          onSaved={(a) => done(`Account ${a.code} updated.`)}
-        />
-      ) : null}
-      {dialog?.kind === 'delete' ? (
-        <DeleteAccount
-          item={dialog.item}
-          onClose={() => setDialog(null)}
-          onDone={() => done(`Account ${dialog.item.code} deleted.`)}
-        />
-      ) : null}
+            {dialog?.kind === 'edit' ? (
+              <AccountForm
+                accounts={data?.rows ?? []}
+                item={dialog.item}
+                onClose={() => setDialog(null)}
+                onSaved={(a) => done(`Account ${a.code} updated.`)}
+              />
+            ) : null}
+            {dialog?.kind === 'delete' ? (
+              <DeleteAccount
+                item={dialog.item}
+                onClose={() => setDialog(null)}
+                onDone={() => done(`Account ${dialog.item.code} deleted.`)}
+              />
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }

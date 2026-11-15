@@ -1,5 +1,6 @@
 // Expense Management (fin-expenses): raise a claim, submit it for approval, and (Finance) pay it. The category
 // limits are shown while you type; Finance edits them in the "Limits" tab.
+import { FinV40 } from './FinV40';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Field, SelectField } from '../../components/Field';
@@ -62,178 +63,192 @@ export function ExpensesPage({ actions }: { actions: ActionSet }) {
           </button>
         ) : null}
       </PageHead>
-      <div className="tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'claims'}
-          className={`tab${tab === 'claims' ? ' active' : ''}`}
-          onClick={() => setTab('claims')}
-        >
-          Claims
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'limits'}
-          className={`tab${tab === 'limits' ? ' active' : ''}`}
-          onClick={() => setTab('limits')}
-        >
-          Limits
-        </button>
-      </div>
-      <ErrorBox message={claims.error || err} />
-      {tab === 'claims' ? (
-        <>
-          {actions.approve ? (
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={mine}
-                onChange={(e) => {
-                  setMine(e.target.checked);
-                  setPage(1);
-                }}
-              />{' '}
-              Show only my claims
-            </label>
-          ) : null}
-          <div className="card table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Number</th>
-                  <th scope="col">Date</th>
-                  <th scope="col">Employee</th>
-                  <th scope="col">Category</th>
-                  <th scope="col">For</th>
-                  <th scope="col" style={{ textAlign: 'right' }}>
-                    Amount
-                  </th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(claims.data?.rows ?? []).map((c) => (
-                  <tr key={c.id}>
-                    <td>
-                      <strong>{c.code}</strong>
-                      {c.warnings.length ? (
-                        <div className="field-error">{c.warnings[0]?.message}</div>
-                      ) : null}
-                    </td>
-                    <td>{dmy(c.claimDate)}</td>
-                    <td>{c.employee ?? '—'}</td>
-                    <td>{c.category}</td>
-                    <td>{c.description}</td>
-                    <td style={{ textAlign: 'right' }}>{inr(c.amount)}</td>
-                    <td>
-                      <Pill>{c.status}</Pill>
-                    </td>
-                    <td>
-                      <div className="actions">
-                        {(c.status === 'Draft' || c.status === 'Rejected') && actions.submit ? (
-                          <button
-                            type="button"
-                            className="btn sm primary"
-                            title="Send for approval"
-                            onClick={() =>
-                              void act(() => submitClaim(c.id, c.version), 'Sent for approval.')
-                            }
-                          >
-                            Submit
-                          </button>
-                        ) : null}
-                        {c.status === 'Draft' && actions.delete ? (
-                          <button
-                            type="button"
-                            className="btn sm danger"
-                            aria-label={`Delete claim ${c.code}`}
-                            onClick={() => void act(() => deleteClaim(c.id), 'Draft deleted.')}
-                          >
-                            Delete
-                          </button>
-                        ) : null}
-                        {c.status === 'Approved' && actions.post ? (
-                          <button
-                            type="button"
-                            className="btn sm primary"
-                            onClick={() => setPaying(c)}
-                          >
-                            Pay
-                          </button>
-                        ) : null}
-                        {c.status === 'Approved' && actions.cancel ? (
-                          <button
-                            type="button"
-                            className="btn sm danger"
-                            onClick={() => setCancelling(c)}
-                          >
-                            Cancel
-                          </button>
-                        ) : null}
-                        {c.status === 'Pending Approval' ? (
-                          <span className="v8-sub">Waiting for the approver</span>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {claims.loading && !claims.data ? <Empty cols={8}>Loading…</Empty> : null}
-                {claims.data && claims.data.rows.length === 0 ? (
-                  <Empty cols={8}>No claims yet. Click ＋ New Claim.</Empty>
+      <FinV40
+        pageId="fin-expenses"
+        actions={actions}
+        fallback={
+          <>
+            <div className="tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 'claims'}
+                className={`tab${tab === 'claims' ? ' active' : ''}`}
+                onClick={() => setTab('claims')}
+              >
+                Claims
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 'limits'}
+                className={`tab${tab === 'limits' ? ' active' : ''}`}
+                onClick={() => setTab('limits')}
+              >
+                Limits
+              </button>
+            </div>
+            <ErrorBox message={claims.error || err} />
+            {tab === 'claims' ? (
+              <>
+                {actions.approve ? (
+                  <label className="check">
+                    <input
+                      type="checkbox"
+                      checked={mine}
+                      onChange={(e) => {
+                        setMine(e.target.checked);
+                        setPage(1);
+                      }}
+                    />{' '}
+                    Show only my claims
+                  </label>
                 ) : null}
-              </tbody>
-            </table>
-          </div>
-          {claims.data ? (
-            <Pager page={page} size={20} total={claims.data.meta.total} onPage={setPage} />
-          ) : null}
-        </>
-      ) : (
-        <Limits
-          policies={policies.data ?? []}
-          canEdit={actions.approve}
-          onSaved={() => {
-            policies.reload();
-            toast('Limit saved.');
-          }}
-        />
-      )}
-      {adding ? (
-        <ClaimForm
-          policies={policies.data ?? []}
-          onClose={() => setAdding(false)}
-          onSaved={() => {
-            setAdding(false);
-            claims.reload();
-            toast('Claim saved as Draft. Submit it when it is ready.');
-          }}
-        />
-      ) : null}
-      {paying ? (
-        <PayModal
-          claim={paying}
-          onClose={() => setPaying(null)}
-          onDone={() => {
-            setPaying(null);
-            claims.reload();
-            toast('Claim paid.');
-          }}
-        />
-      ) : null}
-      {cancelling ? (
-        <CancelClaim
-          claim={cancelling}
-          onClose={() => setCancelling(null)}
-          onDone={() => {
-            setCancelling(null);
-            claims.reload();
-            toast('Claim cancelled.');
-          }}
-        />
-      ) : null}
+                <div className="card table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th scope="col">Number</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Employee</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">For</th>
+                        <th scope="col" style={{ textAlign: 'right' }}>
+                          Amount
+                        </th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(claims.data?.rows ?? []).map((c) => (
+                        <tr key={c.id}>
+                          <td>
+                            <strong>{c.code}</strong>
+                            {c.warnings.length ? (
+                              <div className="field-error">{c.warnings[0]?.message}</div>
+                            ) : null}
+                          </td>
+                          <td>{dmy(c.claimDate)}</td>
+                          <td>{c.employee ?? '—'}</td>
+                          <td>{c.category}</td>
+                          <td>{c.description}</td>
+                          <td style={{ textAlign: 'right' }}>{inr(c.amount)}</td>
+                          <td>
+                            <Pill>{c.status}</Pill>
+                          </td>
+                          <td>
+                            <div className="actions">
+                              {(c.status === 'Draft' || c.status === 'Rejected') &&
+                              actions.submit ? (
+                                <button
+                                  type="button"
+                                  className="btn sm primary"
+                                  title="Send for approval"
+                                  onClick={() =>
+                                    void act(
+                                      () => submitClaim(c.id, c.version),
+                                      'Sent for approval.',
+                                    )
+                                  }
+                                >
+                                  Submit
+                                </button>
+                              ) : null}
+                              {c.status === 'Draft' && actions.delete ? (
+                                <button
+                                  type="button"
+                                  className="btn sm danger"
+                                  aria-label={`Delete claim ${c.code}`}
+                                  onClick={() =>
+                                    void act(() => deleteClaim(c.id), 'Draft deleted.')
+                                  }
+                                >
+                                  Delete
+                                </button>
+                              ) : null}
+                              {c.status === 'Approved' && actions.post ? (
+                                <button
+                                  type="button"
+                                  className="btn sm primary"
+                                  onClick={() => setPaying(c)}
+                                >
+                                  Pay
+                                </button>
+                              ) : null}
+                              {c.status === 'Approved' && actions.cancel ? (
+                                <button
+                                  type="button"
+                                  className="btn sm danger"
+                                  onClick={() => setCancelling(c)}
+                                >
+                                  Cancel
+                                </button>
+                              ) : null}
+                              {c.status === 'Pending Approval' ? (
+                                <span className="v8-sub">Waiting for the approver</span>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {claims.loading && !claims.data ? <Empty cols={8}>Loading…</Empty> : null}
+                      {claims.data && claims.data.rows.length === 0 ? (
+                        <Empty cols={8}>No claims yet. Click ＋ New Claim.</Empty>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+                {claims.data ? (
+                  <Pager page={page} size={20} total={claims.data.meta.total} onPage={setPage} />
+                ) : null}
+              </>
+            ) : (
+              <Limits
+                policies={policies.data ?? []}
+                canEdit={actions.approve}
+                onSaved={() => {
+                  policies.reload();
+                  toast('Limit saved.');
+                }}
+              />
+            )}
+            {adding ? (
+              <ClaimForm
+                policies={policies.data ?? []}
+                onClose={() => setAdding(false)}
+                onSaved={() => {
+                  setAdding(false);
+                  claims.reload();
+                  toast('Claim saved as Draft. Submit it when it is ready.');
+                }}
+              />
+            ) : null}
+            {paying ? (
+              <PayModal
+                claim={paying}
+                onClose={() => setPaying(null)}
+                onDone={() => {
+                  setPaying(null);
+                  claims.reload();
+                  toast('Claim paid.');
+                }}
+              />
+            ) : null}
+            {cancelling ? (
+              <CancelClaim
+                claim={cancelling}
+                onClose={() => setCancelling(null)}
+                onDone={() => {
+                  setCancelling(null);
+                  claims.reload();
+                  toast('Claim cancelled.');
+                }}
+              />
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }

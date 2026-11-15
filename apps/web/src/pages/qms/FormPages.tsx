@@ -11,6 +11,7 @@ import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, PageHead, Pill, todayIso } from '../finance/shared';
 import { DynamicFields, STATUS_TONE, Tabs, s } from './Shared';
 import { DateField } from '../../ui/components';
+import { withPlantV40 } from '../plant/PlantV40';
 
 export type FormKind = 'EIGHT_D' | 'ALERT' | 'MOM' | 'CI';
 export const FORM_LABEL: Record<FormKind, string> = {
@@ -304,7 +305,7 @@ export function FormList({ kind, actions }: { kind: FormKind; actions: ActionSet
 }
 
 /** Quality Alert is its own tab on the NCR page; 8D, continuous improvement and meetings share the CAPA page. */
-export function CapaPage({ actions }: { actions: ActionSet }) {
+function CapaPageBody({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<FormKind>('EIGHT_D');
   return (
     <>
@@ -325,3 +326,5 @@ export function CapaPage({ actions }: { actions: ActionSet }) {
     </>
   );
 }
+
+export const CapaPage = withPlantV40('qms-capa', CapaPageBody);

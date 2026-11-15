@@ -75,6 +75,7 @@ const locationOf = (wh: string | null, bins: string | null | undefined): string 
 async function whIdsByCode(caller: Caller, codes: readonly string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   if (codes.length === 0) return out;
+  // unpaginated: warehouses matching a small code list of the page being shown
   const rows = await prisma.$queryRaw<{ id: string; code: string }[]>`
     SELECT w.id::text, w.code FROM warehouses w
     WHERE w.code = ANY(${[...new Set(codes)]}::text[]) AND ${scopeSql(caller)}`;
@@ -897,6 +898,7 @@ async function countLine(caller: Caller, q: DsQuery): Promise<DsResult> {
 async function ageingDs(caller: Caller, q: DsQuery): Promise<DsResult> {
   const out = await ageing(caller, { page: 1, size: 500 });
   const codes = out.rows.map((r) => r.warehouse);
+  // unpaginated: last movement date per item of the page being shown
   const whIds = await whIdsByCode(caller, codes);
   const last = await prisma.$queryRaw<{ item_id: string; code: string; d: Date | null }[]>`
     SELECT l.item_id::text, w.code, max(l.posting_date) AS d

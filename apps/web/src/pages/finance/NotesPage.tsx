@@ -1,5 +1,6 @@
 // Credit Notes (fin-creditnote, to a customer) and Debit Notes (fin-debitnote, to a supplier): corrections that
 // involve no goods - discounts, finance charges, rate corrections. Goods returns come from Sales / Purchase.
+import { FinV40 } from './FinV40';
 import { useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
@@ -58,121 +59,137 @@ export function NotesPage({ kind, actions }: { kind: 'CREDIT' | 'DEBIT'; actions
         ) : null}
       </PageHead>
       <ErrorBox message={error || err} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Number</th>
-              <th scope="col">Date</th>
-              <th scope="col">{credit ? 'Customer' : 'Supplier'}</th>
-              <th scope="col">Effect</th>
-              <th scope="col">Reason</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
-                Amount
-              </th>
-              <th scope="col">Status</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(data?.rows ?? []).map((n) => (
-              <tr key={n.id}>
-                <td>
-                  <strong>{n.code}</strong>
-                </td>
-                <td>{dmy(n.docDate)}</td>
-                <td>{n.partyName ?? '—'}</td>
-                <td>{n.effect === 'REDUCE' ? 'Reduces the balance' : 'Adds to the balance'}</td>
-                <td>{n.reason}</td>
-                <td style={{ textAlign: 'right' }}>{inr(n.amount)}</td>
-                <td>
-                  <Pill>{n.status}</Pill>
-                </td>
-                <td>
-                  <div className="actions">
-                    {(n.status === 'Draft' || n.status === 'Rejected') && actions.submit ? (
-                      <button
-                        type="button"
-                        className="btn sm"
-                        title="Check the note and send it for approval if it is large"
-                        onClick={() =>
-                          void act(async () => {
-                            const r = await submitNote(kind, n.id, n.version);
-                            toast(
-                              r.needsApproval ? 'Sent for approval.' : 'Checked. Ready to post.',
-                            );
-                          }, '')
-                        }
-                      >
-                        Submit
-                      </button>
-                    ) : null}
-                    {(n.status === 'Draft' || n.status === 'Approved') && actions.post ? (
-                      <button
-                        type="button"
-                        className="btn sm primary"
-                        title="Write this note to the books"
-                        onClick={() =>
-                          void act(() => postNote(kind, n.id, n.version), 'Note posted.')
-                        }
-                      >
-                        Post
-                      </button>
-                    ) : null}
-                    {n.status === 'Draft' && actions.delete ? (
-                      <button
-                        type="button"
-                        className="btn sm danger"
-                        aria-label={`Delete note ${n.code}`}
-                        onClick={() => void act(() => deleteNote(kind, n.id), 'Draft deleted.')}
-                      >
-                        Delete
-                      </button>
-                    ) : null}
-                    {n.status === 'Posted' && actions.cancel ? (
-                      <button
-                        type="button"
-                        className="btn sm danger"
-                        onClick={() => setCancelling(n)}
-                      >
-                        Cancel note
-                      </button>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {loading && !data ? <Empty cols={8}>Loading…</Empty> : null}
-            {data && data.rows.length === 0 ? (
-              <Empty cols={8}>No notes yet. Click ＋ New {credit ? 'Credit' : 'Debit'} Note.</Empty>
+      <FinV40
+        pageId={kind === 'CREDIT' ? 'fin-creditnote' : 'fin-debitnote'}
+        actions={actions}
+        fallback={
+          <>
+            <div className="card table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Number</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">{credit ? 'Customer' : 'Supplier'}</th>
+                    <th scope="col">Effect</th>
+                    <th scope="col">Reason</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>
+                      Amount
+                    </th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.rows ?? []).map((n) => (
+                    <tr key={n.id}>
+                      <td>
+                        <strong>{n.code}</strong>
+                      </td>
+                      <td>{dmy(n.docDate)}</td>
+                      <td>{n.partyName ?? '—'}</td>
+                      <td>
+                        {n.effect === 'REDUCE' ? 'Reduces the balance' : 'Adds to the balance'}
+                      </td>
+                      <td>{n.reason}</td>
+                      <td style={{ textAlign: 'right' }}>{inr(n.amount)}</td>
+                      <td>
+                        <Pill>{n.status}</Pill>
+                      </td>
+                      <td>
+                        <div className="actions">
+                          {(n.status === 'Draft' || n.status === 'Rejected') && actions.submit ? (
+                            <button
+                              type="button"
+                              className="btn sm"
+                              title="Check the note and send it for approval if it is large"
+                              onClick={() =>
+                                void act(async () => {
+                                  const r = await submitNote(kind, n.id, n.version);
+                                  toast(
+                                    r.needsApproval
+                                      ? 'Sent for approval.'
+                                      : 'Checked. Ready to post.',
+                                  );
+                                }, '')
+                              }
+                            >
+                              Submit
+                            </button>
+                          ) : null}
+                          {(n.status === 'Draft' || n.status === 'Approved') && actions.post ? (
+                            <button
+                              type="button"
+                              className="btn sm primary"
+                              title="Write this note to the books"
+                              onClick={() =>
+                                void act(() => postNote(kind, n.id, n.version), 'Note posted.')
+                              }
+                            >
+                              Post
+                            </button>
+                          ) : null}
+                          {n.status === 'Draft' && actions.delete ? (
+                            <button
+                              type="button"
+                              className="btn sm danger"
+                              aria-label={`Delete note ${n.code}`}
+                              onClick={() =>
+                                void act(() => deleteNote(kind, n.id), 'Draft deleted.')
+                              }
+                            >
+                              Delete
+                            </button>
+                          ) : null}
+                          {n.status === 'Posted' && actions.cancel ? (
+                            <button
+                              type="button"
+                              className="btn sm danger"
+                              onClick={() => setCancelling(n)}
+                            >
+                              Cancel note
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {loading && !data ? <Empty cols={8}>Loading…</Empty> : null}
+                  {data && data.rows.length === 0 ? (
+                    <Empty cols={8}>
+                      No notes yet. Click ＋ New {credit ? 'Credit' : 'Debit'} Note.
+                    </Empty>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+            {data ? <Pager page={page} size={20} total={data.meta.total} onPage={setPage} /> : null}
+            {adding ? (
+              <NoteForm
+                kind={kind}
+                onClose={() => setAdding(false)}
+                onSaved={() => {
+                  setAdding(false);
+                  reload();
+                  toast('Note saved as Draft. Post it when it is right.');
+                }}
+              />
             ) : null}
-          </tbody>
-        </table>
-      </div>
-      {data ? <Pager page={page} size={20} total={data.meta.total} onPage={setPage} /> : null}
-      {adding ? (
-        <NoteForm
-          kind={kind}
-          onClose={() => setAdding(false)}
-          onSaved={() => {
-            setAdding(false);
-            reload();
-            toast('Note saved as Draft. Post it when it is right.');
-          }}
-        />
-      ) : null}
-      {cancelling ? (
-        <CancelModal
-          note={cancelling}
-          onClose={() => setCancelling(null)}
-          onDone={() => {
-            setCancelling(null);
-            reload();
-            toast('Note cancelled.');
-          }}
-          kind={kind}
-        />
-      ) : null}
+            {cancelling ? (
+              <CancelModal
+                note={cancelling}
+                onClose={() => setCancelling(null)}
+                onDone={() => {
+                  setCancelling(null);
+                  reload();
+                  toast('Note cancelled.');
+                }}
+                kind={kind}
+              />
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }

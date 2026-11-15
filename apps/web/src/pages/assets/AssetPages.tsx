@@ -9,6 +9,7 @@ import type { ActionSet } from '../../types';
 import { dmy, ErrorBox, inr, PageHead, Pill } from '../finance/shared';
 import { Tabs } from '../qms/Shared';
 import { Act, Dialog, FormModal, Grid, TONE, num, s, todayIso, useAssetOptions } from './Shared';
+import { withPlantV40 } from '../plant/PlantV40';
 
 const CRIT = ['A', 'B', 'C'];
 
@@ -41,7 +42,7 @@ function useCategories() {
 }
 
 // ------------------------------------------------------------------------------------------------ the three views
-export function MachinesPage({ actions }: { actions: ActionSet }) {
+function MachinesPageBody({ actions }: { actions: ActionSet }) {
   return (
     <AssetListPage
       page="maint-machines"
@@ -52,7 +53,7 @@ export function MachinesPage({ actions }: { actions: ActionSet }) {
     />
   );
 }
-export function EquipmentPage({ actions }: { actions: ActionSet }) {
+function EquipmentPageBody({ actions }: { actions: ActionSet }) {
   return (
     <AssetListPage
       page="maint-equipment"
@@ -883,3 +884,7 @@ function VerifyView({
     </Dialog>
   );
 }
+
+export const MachinesPage = withPlantV40('maint-machines', MachinesPageBody);
+
+export const EquipmentPage = withPlantV40('maint-equipment', EquipmentPageBody);

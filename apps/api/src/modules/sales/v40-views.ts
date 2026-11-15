@@ -12,12 +12,12 @@ import { query } from '../procurement/core';
 import type { Row } from '../procurement/core';
 
 export type ColType = 'text' | 'date' | 'inr' | 'num' | 'pill' | 'docs' | 'actions' | 'time';
-interface Col {
+export interface Col {
   /** SQL expression (text-castable); absent = no real source yet */
   e?: string;
   type: ColType;
 }
-interface PanelDef {
+export interface PanelDef {
   title: string;
   /** FROM ... with alias p (scoped like the page) */
   from: string;
@@ -29,7 +29,7 @@ interface PanelDef {
   order: string;
   cols: [label: string, expr: string | undefined, type: ColType][];
 }
-interface ViewDef {
+export interface ViewDef {
   match: RegExp;
   labels: string[];
   /** replaces the page FROM (the grain changes, e.g. order lines) */
@@ -41,11 +41,13 @@ interface ViewDef {
   /** the tab also shows the page's audit entries below the table */
   audit?: boolean;
 }
-interface PageDef {
+export interface PageDef {
   from: string;
   unit?: string | null;
   soft?: string | null;
   owner?: string | null;
+  /** SQL of the row version column (default t.version); null when the table has none */
+  version?: string | null;
   number: string;
   status: string;
   search: string[];
@@ -58,22 +60,22 @@ interface PageDef {
   views: ViewDef[];
 }
 
-const t = (e?: string): Col => (e ? { e, type: 'text' } : { type: 'text' });
-const d = (e: string): Col => ({ e, type: 'date' });
-const m = (e: string): Col => ({ e, type: 'inr' });
-const n = (e: string): Col => ({ e, type: 'num' });
-const none = (type: ColType = 'text'): Col => ({ type });
+export const t = (e?: string): Col => (e ? { e, type: 'text' } : { type: 'text' });
+export const d = (e: string): Col => ({ e, type: 'date' });
+export const m = (e: string): Col => ({ e, type: 'inr' });
+export const n = (e: string): Col => ({ e, type: 'num' });
+export const none = (type: ColType = 'text'): Col => ({ type });
 
-const DOCS = (page: string): Col => ({
+export const DOCS = (page: string): Col => ({
   e: `(SELECT count(*)::int FROM record_documents rd WHERE rd.page_id='${page}' AND rd.record_id=t.id AND rd.deleted_at IS NULL)`,
   type: 'docs',
 });
-const ACTIONS: Col = { type: 'actions' };
+export const ACTIONS: Col = { type: 'actions' };
 
 /** Latest approval request of the row (approval_requests.doc_type = page id) and the role it waits on. */
-const apJoin = (page: string, idCol = 't.id'): string =>
+export const apJoin = (page: string, idCol = 't.id'): string =>
   `LEFT JOIN LATERAL (SELECT ar.id, ar.status, ar.amount, ar.department_id FROM approval_requests ar WHERE ar.doc_type='${page}' AND ar.doc_id=${idCol} ORDER BY ar.cycle DESC LIMIT 1) ap ON true`;
-const approvalCols = (record: string): Record<string, Col> => ({
+export const approvalCols = (record: string): Record<string, Col> => ({
   Request: t(`upper(left(ap.id::text,8))`),
   Record: t(record),
   Department: t(`(SELECT dp.name FROM departments dp WHERE dp.id=ap.department_id)`),
@@ -83,7 +85,7 @@ const approvalCols = (record: string): Record<string, Col> => ({
   ),
   'Approval Status': t('ap.status'),
 });
-const APPROVAL_LABELS = [
+export const APPROVAL_LABELS = [
   'Request',
   'Record',
   'Department',
@@ -93,7 +95,7 @@ const APPROVAL_LABELS = [
   'Actions',
 ];
 
-const NOT_OPEN = `('Draft','Cancelled','Rejected')`;
+export const NOT_OPEN = `('Draft','Cancelled','Rejected')`;
 
 /** Settlement panel V40 shows next to the money tabs: invoices with what is allocated and what is left. */
 const settlementPanel = (title: string, extra: string[] = []): PanelDef => ({
@@ -2048,8 +2050,8 @@ export const SALES_V40_PAGES: Record<string, PageDef> = {
 };
 
 /** Columns V40 shows on a tab that this ERP cannot fill from any table yet (reported to the owner, shown as a dash). */
-export function noSourceColumns(pageId: string): string[] {
-  const p = SALES_V40_PAGES[pageId];
+export function noSourceColumns(pageId: string, pages: Record<string, PageDef> = SALES_V40_PAGES): string[] {
+  const p = pages[pageId];
   if (!p) return [];
   return Object.entries(p.cols)
     .filter(([label, c]) => !c.e && label !== 'Actions')
@@ -2130,6 +2132,16 @@ export async function salesV40View(
 ): Promise<V40Result> {
   const def = SALES_V40_PAGES[pageId];
   if (!def) throw new Error(`No V40 views for ${pageId}`);
+  return runV40View(def, caller, pageId, q);
+}
+
+/** The engine: any family's PageDef (Sales, Manufacturing, Quality, Maintenance) is answered the same way. */
+export async function runV40View(
+  def: PageDef,
+  caller: Caller,
+  pageId: string,
+  q: V40Query,
+): Promise<V40Result> {
   const { labels, view } = resolveView(def, q);
   const cols: Record<string, Col> = { ...def.cols, ...(view?.cols ?? {}) };
   const columns: V40Column[] = labels.map((label, i) => {
@@ -2167,7 +2179,7 @@ export async function salesV40View(
   const sel = labels.map((label, i) => `${cast(cols[label] ?? none())} AS c${i}`).join(', ');
   const rows = await query(
     prisma,
-    `SELECT t.id::text AS id, ${def.number} AS number, ${def.status} AS status, t.version::text AS version, ${sel} FROM ${from} WHERE ${w}
+    `SELECT t.id::text AS id, ${def.number} AS number, ${def.status} AS status, ${def.version === null ? 'NULL::text' : `${def.version ?? 't.version'}::text`} AS version, ${sel} FROM ${from} WHERE ${w}
       ORDER BY ${view?.order ?? def.order} LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
     ...args,
   );

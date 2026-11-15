@@ -14,6 +14,7 @@ import { JobCardPanel } from './JobCard';
 import { FileButton, ORDER_TONE, OptionSelect, s, useWarehouses, useWorkCentres } from './Kit';
 import { Act, Dialog, Grid, ReasonAct, num } from './Ui';
 import { DateField } from '../../ui/components';
+import { withPlantV40 } from '../plant/PlantV40';
 
 const STATUSES = [
   'Planned',
@@ -25,7 +26,7 @@ const STATUSES = [
   'Cancelled',
 ];
 
-export function OrdersPage({ actions }: { actions: ActionSet }) {
+function OrdersPageBody({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<'orders' | 'jobwork'>('orders');
   return (
     <>
@@ -462,7 +463,7 @@ function OrderView({
 }
 
 // ------------------------------------------------------------------------------------------------ job cards
-export function WorkOrdersPage({ actions }: { actions: ActionSet }) {
+function WorkOrdersPageBody({ actions }: { actions: ActionSet }) {
   const [status, setStatus] = useState('');
   const [wc, setWc] = useState('');
   const [view, setView] = useState<string | null>(null);
@@ -525,7 +526,7 @@ export function WorkOrdersPage({ actions }: { actions: ActionSet }) {
 }
 
 // ------------------------------------------------------------------------------------------------ finished goods
-export function FgPage({ actions }: { actions: ActionSet }) {
+function FgPageBody({ actions }: { actions: ActionSet }) {
   const list = useLoad(() => mlist('/production-orders'), []);
   const [view, setView] = useState<string | null>(null);
   const rows = (list.data?.rows ?? []).filter((r) =>
@@ -662,3 +663,9 @@ function ReceiptView({
     </Dialog>
   );
 }
+
+export const OrdersPage = withPlantV40('mfg-orders', OrdersPageBody);
+
+export const WorkOrdersPage = withPlantV40('mfg-workorders', WorkOrdersPageBody);
+
+export const FgPage = withPlantV40('mfg-fg', FgPageBody);

@@ -18,6 +18,8 @@ import { gstr2bService } from './gstr2b-service';
 import { returnsService } from './returns-service';
 import { settlementService } from './settlement-service';
 import { registerWorkbook, tdsReports } from './tds-service';
+import { mountV40 } from '../finance/v40-route';
+import { TAX_V40_PAGES } from './v40-views';
 
 const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use YYYY-MM.');
 const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD.');
@@ -41,6 +43,8 @@ export function createTaxRouter(): Router {
   const router = Router();
   router.use('/tax', authenticate, requirePasswordChanged, resolveContext);
   const ok = (res: Response, data: unknown, status = 200) => res.status(status).json({ data });
+  // V40 tab views of the tax pages (page-by-page build)
+  mountV40(router, '/tax/v40/:pageId', TAX_V40_PAGES);
 
   // idempotent money-moving POST (a double click or a retry answers the first result)
   const post = <B extends z.ZodTypeAny>(

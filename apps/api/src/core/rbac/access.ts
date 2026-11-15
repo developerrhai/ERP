@@ -202,6 +202,19 @@ export function decide(
   // 5. Administration family hard rule: role level below 95 -> false.
   if (page.family === ADMIN_FAMILY && u.level < ADMIN_LEVEL) return false;
 
+  // 5b. Cross-department movements and generic department inbox: only for Administrator and Super User
+  if ((pageId === 'dept-movement-inbox' || pageId === 'dept-inbox' || pageId === 'dept-work') && u.level < ADMIN_LEVEL) {
+    return false;
+  }
+
+  // 5c. Specific department mailbox and work center: only for members of that department or Administrator
+  const deptPageMatch = pageId.match(/^dept-(?:inbox|work)-([a-z0-9_-]+)$/);
+  if (deptPageMatch && u.level < ADMIN_LEVEL) {
+    const pageDeptSlug = deptPageMatch[1]!.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const userDepts = user.departments.map((d) => d.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    if (!userDepts.includes(pageDeptSlug)) return false;
+  }
+
   // 6 & 7. Resolve permission cells and scope.
   const row = resolvePermission(pageId, page.family, data.rows);
   if (!row.hasRow) return false;
@@ -279,6 +292,26 @@ export function explain(
       actions[action] = false;
       reasons.push(`${action}: Administration pages are only for Administrator and Super User`);
       continue;
+    }
+
+    // Cross-department movements and generic department inbox: only for Administrator and Super User
+    if ((pageId === 'dept-movement-inbox' || pageId === 'dept-inbox' || pageId === 'dept-work') && u.level < ADMIN_LEVEL) {
+      actions[action] = false;
+      reasons.push(`${action}: Cross-department movement inbox is restricted to Administrator and Super User`);
+      continue;
+    }
+
+    // Specific department mailbox and work center: only for members of that department or Administrator
+    const deptPageMatch = pageId.match(/^dept-(?:inbox|work)-([a-z0-9_-]+)$/);
+    if (deptPageMatch && u.level < ADMIN_LEVEL) {
+      const pageDeptSlug = deptPageMatch[1]!.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const userDepts = user.departments.map((d) => d.toLowerCase().replace(/[^a-z0-9]/g, ''));
+      const isMember = userDepts.includes(pageDeptSlug);
+      if (!isMember) {
+        actions[action] = false;
+        reasons.push(`${action}: Department page is restricted to members of ${deptPageMatch[1]}`);
+        continue;
+      }
     }
 
     if (!resolved.hasRow) {

@@ -33,6 +33,8 @@ import {
   updateInspection,
 } from './inspection-service';
 import type { Kind } from './inspection-service';
+import { mountV40 } from '../v40-route';
+import { QMS_V40_PAGES } from './v40-views';
 import { instrumentsService } from './instruments-service';
 import { TEMPLATE_KINDS, masterService } from './master-service';
 import { COST_CATEGORIES, DISPOSITIONS, SETTING_KEYS, registersService } from './registers-service';
@@ -121,6 +123,8 @@ const charZ = z
 export function createQmsRouter(): Router {
   const router = Router();
   router.use('/qms', authenticate, requirePasswordChanged, resolveContext);
+  // V40 tab views of the quality pages (columns V40 shows, values from the real tables)
+  mountV40(router, '/qms', QMS_V40_PAGES, g, h);
   const send = (res: Response, data: object, status = 200) => {
     const v = (data as { version?: number }).version;
     if (v !== undefined) res.set('ETag', `"${v}"`);

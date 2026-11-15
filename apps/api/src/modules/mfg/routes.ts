@@ -39,6 +39,8 @@ import { WORK_CENTRE_KINDS, masterService } from './master-service';
 import { mrpService } from './mrp-service';
 import { orderService } from './order-service';
 import { planService } from './plan-service';
+import { mountV40 } from '../v40-route';
+import { MFG_V40_PAGES } from './v40-views';
 import { reportsService } from './reports-service';
 import { routingService } from './routing-service';
 import { scrapService } from './scrap-service';
@@ -102,6 +104,8 @@ const READ_ALL = [...ORDER_PAGES, 'mfg-mrp', 'mfg-bom', 'mfg-routing', 'mfg-work
 export function createMfgRouter(): Router {
   const router = Router();
   router.use('/mfg', authenticate, requirePasswordChanged, resolveContext);
+  // V40 tab views of the manufacturing pages (columns V40 shows, values from the real tables)
+  mountV40(router, '/mfg', MFG_V40_PAGES, g, h, { 'mfg-material-issue': 'inv-transactions' });
   const send = (res: Response, data: object, status = 200) => {
     const v = (data as { version?: number }).version;
     if (v !== undefined) res.set('ETag', `"${v}"`);

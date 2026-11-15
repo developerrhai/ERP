@@ -13,9 +13,10 @@ import { CapacityTab, DailyBoard } from './BoardTabs';
 import { FileButton, ORDER_TONE, OptionSelect, s, useWarehouses } from './Kit';
 import { Act, Dialog, Grid, num } from './Ui';
 import { DateField } from '../../ui/components';
+import { withPlantV40 } from '../plant/PlantV40';
 
 // ------------------------------------------------------------------------------------------------ production plans
-export function ProductionPlansPage({ actions }: { actions: ActionSet }) {
+function ProductionPlansPageBody({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<'plans' | 'board' | 'capacity'>('plans');
   return (
     <>
@@ -352,7 +353,7 @@ function PlanView({
 // ------------------------------------------------------------------------------------------------ MRP
 const TYPE_TEXT: Record<string, string> = { MAKE: 'Make', BUY: 'Buy' };
 
-export function MrpPage({ actions }: { actions: ActionSet }) {
+function MrpPageBody({ actions }: { actions: ActionSet }) {
   const toast = useToast();
   const [view, setView] = useState<string | null>(null);
   const [days, setDays] = useState('30');
@@ -610,3 +611,7 @@ function RunView({
     </Dialog>
   );
 }
+
+export const ProductionPlansPage = withPlantV40('mfg-plan', ProductionPlansPageBody);
+
+export const MrpPage = withPlantV40('mfg-mrp', MrpPageBody);

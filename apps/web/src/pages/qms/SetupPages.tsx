@@ -13,6 +13,7 @@ import { KIND_LABEL } from './InspectionPages';
 import type { Kind } from './InspectionPages';
 import { RefPicker, Tabs, s } from './Shared';
 import { DateField } from '../../ui/components';
+import { withPlantV40 } from '../plant/PlantV40';
 
 // ------------------------------------------------------------------------------------------------ plans
 interface CharState {
@@ -627,7 +628,7 @@ function Targets({ actions }: { actions: ActionSet }) {
   );
 }
 
-export function PlansPage({ actions }: { actions: ActionSet }) {
+function PlansPageBody({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<'plans' | 'tpl' | 'targets'>('plans');
   return (
     <>
@@ -931,7 +932,7 @@ function InstrumentDialog({ onClose, onDone }: { onClose: () => void; onDone: ()
   );
 }
 
-export function CalibrationPage({ actions }: { actions: ActionSet }) {
+function CalibrationPageBody({ actions }: { actions: ActionSet }) {
   const [due, setDue] = useState(false);
   const [q, setQ] = useState('');
   const [adding, setAdding] = useState(false);
@@ -1032,3 +1033,7 @@ export function CalibrationPage({ actions }: { actions: ActionSet }) {
     </>
   );
 }
+
+export const PlansPage = withPlantV40('qms-plans', PlansPageBody);
+
+export const CalibrationPage = withPlantV40('qms-calibration', CalibrationPageBody);

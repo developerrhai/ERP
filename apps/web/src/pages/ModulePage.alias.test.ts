@@ -9,7 +9,7 @@ describe('V40 page id aliases (Phase 36)', () => {
     }
   });
   it('masters and My Approvals go to the screens that serve them', () => {
-    expect(v40AliasFor('master-customers')).toBe('/m/crm-customer360');
+    expect(v40AliasFor('master-customers')).toBeNull();
     expect(v40AliasFor('master-products')).toBeNull();
     expect(v40AliasFor('my-approvals')).toBeNull();
   });

@@ -1,0 +1,7 @@
+/* Standard-screen section under the V40 tab views of the WMS, Logistics / Fleet / Gate and Assets pages (FamV40Body.tsx). */
+.fam-standard { margin-top: 14px; }
+.fam-standard > summary { cursor: pointer; font-size: 13px; color: var(--muted, #667); padding: 6px 0; }
+.fam-cards { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; align-items: stretch; }
+.fam-card { border: 1px solid var(--line, #dde); border-radius: 8px; padding: 8px 14px; min-width: 130px; display: flex; flex-direction: column; }
+.fam-card span { font-size: 12px; color: var(--muted, #667); }
+.fam-card strong { font-size: 20px; }

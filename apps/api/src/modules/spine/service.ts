@@ -461,6 +461,7 @@ export const spineService = {
         );
         if (ins[0]) {
           raised += 1;
+          await recordAudit({ action: 'exception.raised', targetType: 'process_exception', targetId: S(ins[0].id), detail: { rule: S(rule.code), docType: S(f.doc_type), docNo: f.doc_no ? S(f.doc_no) : null, detail: f.detail ? S(f.detail) : null } });
           await spineService.notifyException(rule, f, S(ins[0].id));
           if (f.project_id) await recordEvent(prisma, { projectId: S(f.project_id), unitId: S(f.unit_id), kind: 'EXCEPTION', docType: S(f.doc_type), docId: S(f.id), docNo: S(f.doc_no), text: `${S(rule.name)}: ${S(f.detail)}`, sourceEventId: `exc:${S(ins[0].id)}` });
         }
@@ -470,6 +471,7 @@ export const spineService = {
         if (!keys.has(`${S(o.doc_type)}:${S(o.doc_id)}`)) {
           await query(prisma, `UPDATE process_exceptions SET resolved_at = now(), auto_resolved = true WHERE id = $1::uuid`, o.id);
           resolved += 1;
+          await recordAudit({ action: 'exception.auto_resolved', targetType: 'process_exception', targetId: S(o.id), detail: { rule: S(rule.code), docType: S(o.doc_type) } });
         }
       }
     }
@@ -490,7 +492,8 @@ export const spineService = {
   async exceptions(caller: Caller, f: { dept?: string; severity?: string; state?: 'open' | 'resolved' | 'all' }): Promise<Row[]> {
     return query(
       prisma,
-      `SELECT e.*, r.name AS rule_name, r.severity, r.owner_department, u.name AS assigned_to
+      `SELECT e.*, 'EX-' || upper(left(e.id::text, 8)) AS exception_no, GREATEST(0, floor(extract(epoch FROM (coalesce(e.resolved_at, now()) - e.raised_at)) / 86400))::int AS age_days,
+              CASE WHEN e.resolved_at IS NULL THEN 'Open' ELSE 'Resolved' END AS state_label, r.name AS rule_name, r.severity, r.owner_department, u.name AS assigned_to
          FROM process_exceptions e JOIN exception_rules r ON r.code = e.rule_code LEFT JOIN users u ON u.id = e.assigned_to_id
         WHERE (e.unit_id IS NULL OR e.unit_id = ANY($1::uuid[]))
           AND ($2::text IS NULL OR r.owner_department = $2) AND ($3::text IS NULL OR r.severity = $3)
@@ -502,15 +505,24 @@ export const spineService = {
   async exceptionAction(caller: Caller, id: string, action: 'note' | 'assign' | 'resolve', b: { note?: string; assignedToId?: string }): Promise<Row> {
     const e = (await query(prisma, `SELECT * FROM process_exceptions WHERE id = $1::uuid`, id))[0];
     if (!e || (e.unit_id && !caller.ctx.unitIds.includes(S(e.unit_id)))) throw Errors.notFound('Exception not found.');
+    const audit = async (name: string, detail: Record<string, string | null>): Promise<void> => {
+      await recordAudit({ action: `exception.${name}`, actorId: caller.auth.user.id, targetType: 'process_exception', targetId: id, detail: { rule: S(e.rule_code), docType: S(e.doc_type), docNo: e.doc_no ? S(e.doc_no) : null, ...detail } });
+    };
     if (action === 'note') {
       if (!b.note?.trim()) throw Errors.validation({ note: 'Write a note.' });
-      return (await query(prisma, `UPDATE process_exceptions SET note = $2 WHERE id = $1::uuid RETURNING *`, id, b.note.trim()))[0]!;
+      const row = (await query(prisma, `UPDATE process_exceptions SET note = $2 WHERE id = $1::uuid RETURNING *`, id, b.note.trim()))[0]!;
+      await audit('note', { note: b.note.trim() });
+      return row;
     }
     if (action === 'assign') {
       if (!b.assignedToId) throw Errors.validation({ assignedToId: 'Choose a person.' });
-      return (await query(prisma, `UPDATE process_exceptions SET assigned_to_id = $2::uuid WHERE id = $1::uuid RETURNING *`, id, b.assignedToId))[0]!;
+      const row = (await query(prisma, `UPDATE process_exceptions SET assigned_to_id = $2::uuid WHERE id = $1::uuid RETURNING *`, id, b.assignedToId))[0]!;
+      await audit('assigned', { assignedToId: b.assignedToId });
+      return row;
     }
-    return (await query(prisma, `UPDATE process_exceptions SET resolved_at = coalesce(resolved_at, now()), note = coalesce($2, note) WHERE id = $1::uuid RETURNING *`, id, b.note ?? null))[0]!;
+    const row = (await query(prisma, `UPDATE process_exceptions SET resolved_at = coalesce(resolved_at, now()), note = coalesce($2, note) WHERE id = $1::uuid RETURNING *`, id, b.note ?? null))[0]!;
+    await audit('resolved', { note: b.note ?? null });
+    return row;
   },
 
   // ---------------------------------------------------------------- enquiries

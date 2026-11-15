@@ -138,6 +138,15 @@ export function createNotificationsRouter(): Router {
   );
 
   router.post(
+    '/:id/unread',
+    validate({ params: idParamsSchema }),
+    asyncHandler(async (req: Request, res: Response) => {
+      const { id } = validated(res, 'params', idParamsSchema);
+      res.json({ data: await notificationService.markUnread(requireAuth(req).userId, id) });
+    }),
+  );
+
+  router.post(
     '/:id/archive',
     validate({ params: idParamsSchema }),
     asyncHandler(async (req: Request, res: Response) => {

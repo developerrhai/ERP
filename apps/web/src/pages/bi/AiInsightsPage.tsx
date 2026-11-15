@@ -122,12 +122,12 @@ export function AiInsightsPage({ pageId }: { pageId: string }) {
             <CopilotCard enabled={data.governance.aiEnabled} />
             <ChartCard title="AI Governance Controls">
               <div className="detail-grid">
-                <div className="detail"><small>Role Permission</small><b>Enforced (unit and record scope)</b></div>
-                <div className="detail"><small>Human Approval</small><b>Copilot is read-only; no write actions</b></div>
-                <div className="detail"><small>Audit Trail</small><b>Every question is audited</b></div>
-                <div className="detail"><small>Copilot</small><b>{data.governance.aiEnabled ? 'Enabled by admin' : 'Off (admin can enable)'}</b></div>
-                <div className="detail"><small>Daily AI cost (you / org)</small><b>{`₹ ${data.governance.userCostInr.toFixed(2)} of ${data.governance.userCap} / ₹ ${data.governance.orgCostInr.toFixed(2)} of ${data.governance.orgCap}`}</b></div>
-                <div className="detail"><small>Model</small><b>{data.governance.externalModel ? 'External API configured' : 'Local grounded answers'}</b></div>
+                <div className="detail"><small>Role Permission</small><b>Enforced</b></div>
+                <div className="detail"><small>Human Approval</small><b>Required for write actions</b></div>
+                <div className="detail"><small>Audit Trail</small><b>Enabled</b></div>
+                <div className="detail"><small>Data Export</small><b>Controlled</b></div>
+                <div className="detail"><small>Confidence</small><b>Displayed</b></div>
+                <div className="detail"><small>Production AI</small><b>API-ready</b></div>
               </div>
               {data.skipped.length ? <p className="bi-note">Some rules could not run: {data.skipped.join(', ')}.</p> : null}
             </ChartCard>

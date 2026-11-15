@@ -1,4 +1,5 @@
 // Cost Centers (fin-costcenter) and Profit Centers (fin-profitcenter): where money was spent / earned.
+import { FinV40 } from './FinV40';
 import { useRef, useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
@@ -45,106 +46,114 @@ export function DimensionsPage({ kind, actions }: { kind: 'cost' | 'profit'; act
         ) : null}
       </PageHead>
       <ErrorBox message={error} />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Code</th>
-              <th scope="col">Name</th>
-              <th scope="col">{kind === 'cost' ? 'Type' : 'Default for unit'}</th>
-              <th scope="col">Status</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(data?.rows ?? []).map((d) => (
-              <tr key={d.id}>
-                <td>
-                  <strong>{d.code}</strong>
-                </td>
-                <td>{d.name}</td>
-                <td>
-                  {kind === 'cost'
-                    ? d.isGroup
-                      ? 'Group'
-                      : 'Cost centre'
-                    : d.isDefault
-                      ? 'Yes'
-                      : '—'}
-                </td>
-                <td>
-                  <Pill>{d.status}</Pill>
-                </td>
-                <td>
-                  <div className="actions">
-                    {actions.edit ? (
-                      <button
-                        type="button"
-                        className="btn sm"
-                        aria-label={`Edit ${d.name}`}
-                        onClick={() => setDialog({ kind: 'edit', item: d })}
-                      >
-                        Edit
-                      </button>
-                    ) : null}
-                    {actions.delete ? (
-                      <button
-                        type="button"
-                        className="btn sm danger"
-                        aria-label={`Delete ${d.name}`}
-                        onClick={() => setDialog({ kind: 'delete', item: d })}
-                      >
-                        Delete
-                      </button>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {loading && !data ? <Empty cols={5}>Loading…</Empty> : null}
-            {data && data.rows.length === 0 ? (
-              <Empty cols={5}>Nothing here yet. Click ＋ Add {label}.</Empty>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
-      {dialog && dialog.kind !== 'delete' ? (
-        <DimensionForm
-          kind={kind}
-          label={label}
-          groups={(data?.rows ?? []).filter((d) => d.isGroup)}
-          {...(dialog.kind === 'edit' ? { item: dialog.item } : {})}
-          onClose={() => setDialog(null)}
-          onSaved={(d) => done(`${label} ${d.code} saved.`)}
-        />
-      ) : null}
-      {dialog?.kind === 'delete' ? (
-        <Modal
-          title={`Delete ${label}`}
-          size="sm"
-          onClose={() => setDialog(null)}
-          footer={
-            <>
-              <button type="button" className="btn" onClick={() => setDialog(null)}>
-                Cancel
-              </button>
-              <DeleteButton
+      <FinV40
+        pageId={kind === 'cost' ? 'fin-costcenter' : 'fin-profitcenter'}
+        actions={actions}
+        fallback={
+          <>
+            <div className="card table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Code</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">{kind === 'cost' ? 'Type' : 'Default for unit'}</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.rows ?? []).map((d) => (
+                    <tr key={d.id}>
+                      <td>
+                        <strong>{d.code}</strong>
+                      </td>
+                      <td>{d.name}</td>
+                      <td>
+                        {kind === 'cost'
+                          ? d.isGroup
+                            ? 'Group'
+                            : 'Cost centre'
+                          : d.isDefault
+                            ? 'Yes'
+                            : '—'}
+                      </td>
+                      <td>
+                        <Pill>{d.status}</Pill>
+                      </td>
+                      <td>
+                        <div className="actions">
+                          {actions.edit ? (
+                            <button
+                              type="button"
+                              className="btn sm"
+                              aria-label={`Edit ${d.name}`}
+                              onClick={() => setDialog({ kind: 'edit', item: d })}
+                            >
+                              Edit
+                            </button>
+                          ) : null}
+                          {actions.delete ? (
+                            <button
+                              type="button"
+                              className="btn sm danger"
+                              aria-label={`Delete ${d.name}`}
+                              onClick={() => setDialog({ kind: 'delete', item: d })}
+                            >
+                              Delete
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {loading && !data ? <Empty cols={5}>Loading…</Empty> : null}
+                  {data && data.rows.length === 0 ? (
+                    <Empty cols={5}>Nothing here yet. Click ＋ Add {label}.</Empty>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+            {dialog && dialog.kind !== 'delete' ? (
+              <DimensionForm
                 kind={kind}
-                item={dialog.item}
-                onDone={() => done(`${label} ${dialog.item.code} deleted.`)}
+                label={label}
+                groups={(data?.rows ?? []).filter((d) => d.isGroup)}
+                {...(dialog.kind === 'edit' ? { item: dialog.item } : {})}
+                onClose={() => setDialog(null)}
+                onSaved={(d) => done(`${label} ${d.code} saved.`)}
               />
-            </>
-          }
-        >
-          <p>
-            Delete{' '}
-            <strong>
-              {dialog.item.code} · {dialog.item.name}
-            </strong>
-            ? One that already has ledger entries cannot be deleted; make it inactive instead.
-          </p>
-        </Modal>
-      ) : null}
+            ) : null}
+            {dialog?.kind === 'delete' ? (
+              <Modal
+                title={`Delete ${label}`}
+                size="sm"
+                onClose={() => setDialog(null)}
+                footer={
+                  <>
+                    <button type="button" className="btn" onClick={() => setDialog(null)}>
+                      Cancel
+                    </button>
+                    <DeleteButton
+                      kind={kind}
+                      item={dialog.item}
+                      onDone={() => done(`${label} ${dialog.item.code} deleted.`)}
+                    />
+                  </>
+                }
+              >
+                <p>
+                  Delete{' '}
+                  <strong>
+                    {dialog.item.code} · {dialog.item.name}
+                  </strong>
+                  ? One that already has ledger entries cannot be deleted; make it inactive instead.
+                </p>
+              </Modal>
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }

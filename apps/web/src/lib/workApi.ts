@@ -165,7 +165,17 @@ const qs = (o: Record<string, string | undefined>): string => {
 
 export interface PickRow { id: string; number: string; status: string | null; date: string | null }
 
+export interface SearchHit { pageId: string; label: string; family: string; id: string; number: string; status: string | null; date: string | null; matched: string }
+
+export interface CommandItem { id: string; number: string; issue: string; owner_name: string | null; severity: 'Critical' | 'High' | 'Medium' | 'Low'; due_date: string | null; status: 'Open' | 'Closed'; department: string | null; department_id: string | null; created_at: string }
+
 export const workApi = {
+  commandItems: () => api<CommandItem[]>('/work/command-items'),
+  addCommandItem: (body: { issue: string; owner?: string; severity?: string; dueDate?: string; departmentId?: string }) => api<CommandItem>('/work/command-items', { method: 'POST', body }),
+  closeCommandItem: (id: string) => api<CommandItem>(`/work/command-items/${id}/close`, { method: 'POST', body: {} }),
+  /** Global Search: records of every page the caller may open (number / name contains the text). */
+  recordSearch: (q: string, family: string, status: string) => api<SearchHit[]>(`/work/record-search${qs({ q, family: family || undefined, status: status || undefined })}`),
+  searchFamilies: () => api<string[]>('/work/record-search/families'),
   /** The records of any page that can be moved forward (newest first, caller's plants). */
   docPicker: (pageId: string, q: string) => api<PickRow[]>(`/work/doc-picker/${encodeURIComponent(pageId)}${q ? `?q=${encodeURIComponent(q)}` : ''}`),
   departments: () => api<Dept[]>('/work/departments'),

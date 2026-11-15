@@ -1,5 +1,6 @@
 // Cash Book (fin-cashbook) and Bank Book (fin-bankbook): the ledger of one cash / bank account with a running
 // balance, plus "New payment / receipt / transfer". A payment is posted at once; undo = Cancel (a mirror journal).
+import { FinV40 } from './FinV40';
 import { useRef, useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
@@ -57,109 +58,121 @@ export function CashBankPage({ cash, actions }: { cash: boolean; actions: Action
         ) : null}
       </PageHead>
       <ErrorBox message={books.error || book.error} />
-      {books.data && mine.length === 0 ? (
-        <div className="notice" role="note">
-          No {cash ? 'cash' : 'bank'} account is set up yet.{' '}
-          {actions.add ? (
-            <button type="button" className="btn sm" onClick={() => setDialog('account')}>
-              Set one up
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-      {mine.length > 0 ? (
-        <div className="recordbar" style={{ marginBottom: 16 }}>
-          <select aria-label="Account" value={active} onChange={(e) => setBookId(e.target.value)}>
-            {mine.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-          <DateField
-            aria-label="From date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-          />
-          <DateField
-            aria-label="To date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-          />
-        </div>
-      ) : null}
-      {book.data ? (
-        <>
-          <div className="kpis">
-            <div className="kpi">
-              <small>Opening</small>
-              <b>{inr(book.data.opening)}</b>
-            </div>
-            <div className="kpi">
-              <small>Received</small>
-              <b>{inr(book.data.totalReceipts)}</b>
-            </div>
-            <div className="kpi">
-              <small>Paid</small>
-              <b>{inr(book.data.totalPayments)}</b>
-            </div>
-            <div className="kpi">
-              <small>Closing</small>
-              <b>{inr(book.data.closing)}</b>
-            </div>
-          </div>
-          <div className="card table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Date</th>
-                  <th scope="col">Voucher</th>
-                  <th scope="col">Details</th>
-                  <th scope="col" style={{ textAlign: 'right' }}>
-                    Received
-                  </th>
-                  <th scope="col" style={{ textAlign: 'right' }}>
-                    Paid
-                  </th>
-                  <th scope="col" style={{ textAlign: 'right' }}>
-                    Balance
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {book.data.rows.map((r) => (
-                  <tr key={r.id}>
-                    <td>{dmy(r.date)}</td>
-                    <td>{r.voucherNo}</td>
-                    <td>{r.narration ?? r.voucherType}</td>
-                    <td style={{ textAlign: 'right' }}>{amt(r.receipt)}</td>
-                    <td style={{ textAlign: 'right' }}>{amt(r.payment)}</td>
-                    <td style={{ textAlign: 'right' }}>{inr(r.balance)}</td>
-                  </tr>
-                ))}
-                {book.data.rows.length === 0 ? (
-                  <Empty cols={6}>No entries in this period.</Empty>
+      <FinV40
+        pageId={cash ? 'fin-cashbook' : 'fin-bankbook'}
+        actions={actions}
+        fallback={
+          <>
+            {books.data && mine.length === 0 ? (
+              <div className="notice" role="note">
+                No {cash ? 'cash' : 'bank'} account is set up yet.{' '}
+                {actions.add ? (
+                  <button type="button" className="btn sm" onClick={() => setDialog('account')}>
+                    Set one up
+                  </button>
                 ) : null}
-              </tbody>
-            </table>
-          </div>
-        </>
-      ) : null}
-      {dialog === 'pay' ? (
-        <EntryForm
-          books={mine}
-          defaultBook={active}
-          onClose={() => setDialog(null)}
-          onSaved={(m) => done(m)}
-        />
-      ) : null}
-      {dialog === 'account' ? (
-        <AccountSetup
-          cash={cash}
-          onClose={() => setDialog(null)}
-          onSaved={() => done('Account set up.')}
-        />
-      ) : null}
+              </div>
+            ) : null}
+            {mine.length > 0 ? (
+              <div className="recordbar" style={{ marginBottom: 16 }}>
+                <select
+                  aria-label="Account"
+                  value={active}
+                  onChange={(e) => setBookId(e.target.value)}
+                >
+                  {mine.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                <DateField
+                  aria-label="From date"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                />
+                <DateField
+                  aria-label="To date"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                />
+              </div>
+            ) : null}
+            {book.data ? (
+              <>
+                <div className="kpis">
+                  <div className="kpi">
+                    <small>Opening</small>
+                    <b>{inr(book.data.opening)}</b>
+                  </div>
+                  <div className="kpi">
+                    <small>Received</small>
+                    <b>{inr(book.data.totalReceipts)}</b>
+                  </div>
+                  <div className="kpi">
+                    <small>Paid</small>
+                    <b>{inr(book.data.totalPayments)}</b>
+                  </div>
+                  <div className="kpi">
+                    <small>Closing</small>
+                    <b>{inr(book.data.closing)}</b>
+                  </div>
+                </div>
+                <div className="card table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Voucher</th>
+                        <th scope="col">Details</th>
+                        <th scope="col" style={{ textAlign: 'right' }}>
+                          Received
+                        </th>
+                        <th scope="col" style={{ textAlign: 'right' }}>
+                          Paid
+                        </th>
+                        <th scope="col" style={{ textAlign: 'right' }}>
+                          Balance
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {book.data.rows.map((r) => (
+                        <tr key={r.id}>
+                          <td>{dmy(r.date)}</td>
+                          <td>{r.voucherNo}</td>
+                          <td>{r.narration ?? r.voucherType}</td>
+                          <td style={{ textAlign: 'right' }}>{amt(r.receipt)}</td>
+                          <td style={{ textAlign: 'right' }}>{amt(r.payment)}</td>
+                          <td style={{ textAlign: 'right' }}>{inr(r.balance)}</td>
+                        </tr>
+                      ))}
+                      {book.data.rows.length === 0 ? (
+                        <Empty cols={6}>No entries in this period.</Empty>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : null}
+            {dialog === 'pay' ? (
+              <EntryForm
+                books={mine}
+                defaultBook={active}
+                onClose={() => setDialog(null)}
+                onSaved={(m) => done(m)}
+              />
+            ) : null}
+            {dialog === 'account' ? (
+              <AccountSetup
+                cash={cash}
+                onClose={() => setDialog(null)}
+                onSaved={() => done('Account set up.')}
+              />
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }

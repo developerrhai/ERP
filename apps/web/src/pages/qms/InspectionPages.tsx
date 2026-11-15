@@ -12,6 +12,7 @@ import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, PageHead, Pill, todayIso } from '../finance/shared';
 import { DynamicFields, STATUS_TONE, Tabs, s } from './Shared';
 import { DateField } from '../../ui/components';
+import { withPlantV40 } from '../plant/PlantV40';
 
 export type Kind = 'INCOMING' | 'IN_PROCESS' | 'PRE_DISPATCH' | 'ISIR' | 'WELDING' | 'VT';
 export const KIND_LABEL: Record<Kind, string> = {
@@ -616,7 +617,7 @@ function SheetEditor({
   );
 }
 
-export function InspectionPage({
+function InspectionPageBody({
   kinds,
   title,
   sub,
@@ -738,3 +739,5 @@ export function InspectionPage({
     </>
   );
 }
+
+export const InspectionPage = withPlantV40((p: { kinds: string[] }) => p.kinds.length === 0 ? 'qms-inspections' : p.kinds.includes('INCOMING') ? 'qms-incoming' : p.kinds.includes('IN_PROCESS') ? 'qms-process' : p.kinds.includes('PRE_DISPATCH') ? 'qms-final' : p.kinds.includes('ISIR') ? 'qms-supplier' : null, InspectionPageBody);

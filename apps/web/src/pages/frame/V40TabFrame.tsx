@@ -11,6 +11,37 @@ import { formatDateTime } from '../../lib/format';
 import { useLoad } from '../../lib/useLoad';
 import { listPageAudit } from '../generic/engineApi';
 import { CLAIMED_PAGES } from '../inventory/v40/pages';
+import { SALES_V40_IDS } from '../sales/salesV40Api';
+import { FINANCE_V40_IDS, TAX_V40_IDS } from '../finance/finV40Api';
+import { PLANT_V40_IDS } from '../plant/plantV40Api';
+import { FAM_V40_IDS } from '../v40fam/famIds';
+
+const SCM_V40_IDS = [
+  'scm-po',
+  'scm-grn',
+  'scm-pr',
+  'scm-purchaseinvoice',
+  'scm-suppliers',
+  'scm-rfq',
+  'scm-vendorquote',
+  'scm-comparison',
+  'scm-evaluation',
+  'scm-contracts',
+];
+
+const ALL_CLAIMED_PAGES = new Set<string>([
+  ...CLAIMED_PAGES,
+  ...SALES_V40_IDS,
+  ...SCM_V40_IDS,
+  ...FINANCE_V40_IDS,
+  ...TAX_V40_IDS,
+  ...PLANT_V40_IDS,
+  ...FAM_V40_IDS,
+  'process-exceptions',
+]);
+
+/** Page-wide claimed set: once a page claims its tabs or is recognized as owning its tabs, it stays claimed across deep links and tab switches. */
+const pageWideClaimed = new Set<string>(ALL_CLAIMED_PAGES);
 
 /** What a framed page body needs: which V40 tab is open, and a way to say "I show my own tab panels" (generic module pages do). */
 export interface FrameState {
@@ -162,9 +193,14 @@ export function V40TabFrame({ pageId, tabs, children }: { pageId: string; tabs: 
     });
   const scroll = (dir: number): void => strip.current?.scrollBy({ left: dir * 240, behavior: 'smooth' });
   const kind = tabKind(tabs[active] ?? '', active);
-  // pages that always draw their own tab panels (the Inventory V40 tabs) start claimed, so a deep link to Audit Trail works too
-  const [claimed, setClaimed] = useState(CLAIMED_PAGES.has(pageId));
-  const frameState: FrameState = { tabName: tabs[active] ?? '', index: active, claim: () => setClaimed(true) };
+  // pages that always draw their own tab panels start claimed, so a deep link to Audit Trail works too
+  const [claimed, setClaimed] = useState(() => pageWideClaimed.has(pageId));
+  const claim = (): void => {
+    pageWideClaimed.add(pageId);
+    setClaimed(true);
+  };
+  const isClaimed = claimed || pageWideClaimed.has(pageId);
+  const frameState: FrameState = { tabName: tabs[active] ?? '', index: active, claim };
 
   return (
     <>
@@ -188,7 +224,13 @@ export function V40TabFrame({ pageId, tabs, children }: { pageId: string; tabs: 
         ) : null}
       </div>
       <FrameCtx.Provider value={frameState}>
-        {!claimed && kind === 'audit' ? <AuditPanel pageId={pageId} /> : !claimed && kind === 'approvals' ? <ApprovalsPanel pageId={pageId} /> : children}
+        {!isClaimed && kind === 'audit' ? (
+          <AuditPanel pageId={pageId} />
+        ) : !isClaimed && kind === 'approvals' ? (
+          <ApprovalsPanel pageId={pageId} />
+        ) : (
+          children
+        )}
       </FrameCtx.Provider>
     </>
   );

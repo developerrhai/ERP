@@ -33,6 +33,9 @@ interface Btn {
 }
 
 export const BAR: readonly Btn[] = [
+  { label: 'Dashboard', need: 'view' },
+  { label: 'Full 360°', need: 'view' },
+  { label: 'Move Next Controlled Step', need: 'view', needsRecord: true },
   { label: '← Return', need: 'view' },
   { label: 'Send Email', need: 'view', needsRecord: true },
   { label: 'Excel', need: 'export', where: 'full', ifAbsent: true },
@@ -51,6 +54,8 @@ export const BAR: readonly Btn[] = [
   { label: 'Submit Approval', need: 'submit', record: 'submit' },
   { label: 'Approval Queue', need: 'view' },
   { label: 'Move Forward', need: 'view', needsRecord: true },
+  { label: 'Move Document', need: 'view' },
+  { label: 'Move Forward - Internal', need: 'view', needsRecord: true },
   { label: 'Project History', need: 'view' },
   { label: 'Approvals', need: 'view', where: 'full', ifAbsent: true },
   { label: 'Reports', need: 'view', where: 'full', ifAbsent: true },
@@ -61,6 +66,11 @@ export const BAR: readonly Btn[] = [
 
 /** Page buttons the bar can run by itself (everything else needs the page's own onAction). */
 const DEFAULTS = new Set([
+  'Dashboard',
+  'Full 360°',
+  'Move Next Controlled Step',
+  'Move Document',
+  'Move Forward - Internal',
   '← Return',
   'Send Email',
   'Excel',
@@ -81,8 +91,14 @@ const DEFAULTS = new Set([
   '360° Tracking',
 ]);
 
+/** V40 has three buttons that move the selected record on to the next department: they all open the Move Forward dialog. */
+const MOVE_LABELS: ReadonlySet<string> = new Set(['Move Forward', 'Move Next Controlled Step', 'Move Forward - Internal']);
+
 /** Where the navigation defaults go. */
 const GO: Record<string, string> = {
+  Dashboard: '/m/dashboard',
+  'Full 360°': '/m/ops-order-360',
+  'Move Document': '/m/document-movement-center',
   '⇧ Import': '/m/admin-import',
   Duplicates: '/m/admin-duplicates',
   'Project History': '/m/project-global-history',
@@ -176,7 +192,7 @@ function Bar({
       if (label === 'Print') window.print();
       else if (label === '← Return') go?.(-1);
       else if (target) go?.(target);
-      else if (label === 'Move Forward') setMoving(true);
+      else if (MOVE_LABELS.has(label)) setMoving(true);
       else if (label === 'Send Email') setEmailing(true);
       else if (label === '⇩ Export' && !haveRecord) await runDefault('Excel');
       else if ((label === 'Excel' || label === '⇩ Export') && haveRecord)
@@ -235,7 +251,7 @@ function Bar({
               className={b.primary ? 'btn primary' : 'btn'}
               disabled={disabled}
               aria-disabled={disabled}
-              onClick={() => (needsPick ? (b.label === 'Move Forward' && pageId ? setPicking(true) : toast('Select a row first, then press ' + b.label + '.')) : click(b.label))}
+              onClick={() => (needsPick ? (MOVE_LABELS.has(b.label) && pageId ? setPicking(true) : toast('Select a row first, then press ' + b.label + '.')) : click(b.label))}
             >
               {b.label}
             </button>

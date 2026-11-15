@@ -14,6 +14,7 @@ import { fleetService } from './fleet-service';
 import { logisticsService } from './logistics-service';
 import { gateService } from './gate-service';
 import { dmsService } from './dms-service';
+import { mountFamV40 } from '../v40fam';
 
 // Register Phase 18 background workers
 registerJobHandler(QUEUES.gateReturnableOverdue, async () => {
@@ -47,6 +48,7 @@ export function createPhase18Router(): Router {
     '/gate-passes',
     '/gate',
     '/dms',
+    '/fam',
   ];
   router.use(PHASE18_PREFIXES, authenticate, requirePasswordChanged, resolveContext);
 
@@ -548,6 +550,9 @@ export function createPhase18Router(): Router {
       res.json({ data });
     }),
   );
+
+  // V40 tab views of the WMS, Logistics / Fleet / Gate and Assets pages (GET /fam/v40/:pageId)
+  mountFamV40(router);
 
   return router;
 }

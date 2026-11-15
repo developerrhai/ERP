@@ -1,5 +1,6 @@
 // Cash Flow (fin-cashflow): where the cash came from and where it went, in three sections. The report proves
 // itself: opening cash + net change = closing cash.
+import { FinV40 } from './FinV40';
 import { useState } from 'react';
 import { cashFlow } from '../../lib/financeApi';
 import { useLoad } from '../../lib/useLoad';
@@ -64,53 +65,57 @@ export function CashFlowPage() {
   return (
     <>
       <PageHead title="Cash Flow" sub="Where the cash came from and where it went in the period.">
-        <DateField
-          aria-label="From"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-        />
+        <DateField aria-label="From" value={from} onChange={(e) => setFrom(e.target.value)} />
         <DateField aria-label="To" value={to} onChange={(e) => setTo(e.target.value)} />
       </PageHead>
       <ErrorBox message={error} />
-      {data ? (
-        <>
-          <div className="kpis">
-            <div className="kpi">
-              <small>Cash at start</small>
-              <b>{inr(data.openingCash)}</b>
-            </div>
-            <div className="kpi">
-              <small>Net change</small>
-              <b>{inr(data.netChange)}</b>
-            </div>
-            <div className="kpi">
-              <small>Cash at end</small>
-              <b>{inr(data.closingCash)}</b>
-            </div>
-          </div>
-          {!data.reconciles ? (
-            <div className="msg error show static" role="alert">
-              The cash flow does not add up to the change in cash. Please tell your administrator.
-            </div>
-          ) : null}
-          <Section
-            title="Operating activities"
-            total={data.operating.total}
-            items={data.operating.items}
-            first={{ label: 'Net profit for the period', amount: data.operating.netProfit }}
-          />
-          <Section
-            title="Investing activities"
-            total={data.investing.total}
-            items={data.investing.items}
-          />
-          <Section
-            title="Financing activities"
-            total={data.financing.total}
-            items={data.financing.items}
-          />
-        </>
-      ) : null}
+      <FinV40
+        pageId="fin-cashflow"
+        fallback={
+          <>
+            {data ? (
+              <>
+                <div className="kpis">
+                  <div className="kpi">
+                    <small>Cash at start</small>
+                    <b>{inr(data.openingCash)}</b>
+                  </div>
+                  <div className="kpi">
+                    <small>Net change</small>
+                    <b>{inr(data.netChange)}</b>
+                  </div>
+                  <div className="kpi">
+                    <small>Cash at end</small>
+                    <b>{inr(data.closingCash)}</b>
+                  </div>
+                </div>
+                {!data.reconciles ? (
+                  <div className="msg error show static" role="alert">
+                    The cash flow does not add up to the change in cash. Please tell your
+                    administrator.
+                  </div>
+                ) : null}
+                <Section
+                  title="Operating activities"
+                  total={data.operating.total}
+                  items={data.operating.items}
+                  first={{ label: 'Net profit for the period', amount: data.operating.netProfit }}
+                />
+                <Section
+                  title="Investing activities"
+                  total={data.investing.total}
+                  items={data.investing.items}
+                />
+                <Section
+                  title="Financing activities"
+                  total={data.financing.total}
+                  items={data.financing.items}
+                />
+              </>
+            ) : null}
+          </>
+        }
+      />
     </>
   );
 }

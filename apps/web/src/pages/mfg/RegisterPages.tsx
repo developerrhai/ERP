@@ -12,9 +12,10 @@ import { RefPicker, Tabs } from '../qms/Shared';
 import { ChallanReworkTab } from './JobWork';
 import { FileButton, FormModal, ORDER_TONE, OptionSelect, s } from './Kit';
 import { Act, Dialog, Grid, ReasonAct, num } from './Ui';
+import { withPlantV40 } from '../plant/PlantV40';
 
 // ------------------------------------------------------------------------------------------------ scrap
-export function ScrapPage({ actions }: { actions: ActionSet }) {
+function ScrapPageBody({ actions }: { actions: ActionSet }) {
   const [status, setStatus] = useState('');
   const [adding, setAdding] = useState(false);
   const list = useLoad(() => mlist('/scrap-entries', { status }), [status]);
@@ -221,7 +222,7 @@ function ScrapForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
 }
 
 // ------------------------------------------------------------------------------------------------ rework
-export function ReworkPage({ actions }: { actions: ActionSet }) {
+function ReworkPageBody({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<'house' | 'challan'>('house');
   return (
     <>
@@ -334,7 +335,7 @@ function InHouseRework({ actions }: { actions: ActionSet }) {
 }
 
 // ------------------------------------------------------------------------------------------------ WIP and costing
-export function WipPage({ actions }: { actions: ActionSet }) {
+function WipPageBody({ actions }: { actions: ActionSet }) {
   const list = useLoad(() => mget('/reports/wip'), []);
   const rec = useLoad(() => mget('/reports/wip-reconciliation'), []);
   const r = rec.data;
@@ -383,7 +384,7 @@ export function WipPage({ actions }: { actions: ActionSet }) {
   );
 }
 
-export function CostingPage({ actions }: { actions: ActionSet }) {
+function CostingPageBody({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<'cost' | 'var' | 'yield'>('cost');
   const [q, setQ] = useState('');
   const [sheet, setSheet] = useState<string | null>(null);
@@ -510,3 +511,11 @@ function CostSheet({ id, onClose }: { id: string; onClose: () => void }) {
     </Dialog>
   );
 }
+
+export const ScrapPage = withPlantV40('mfg-scrap', ScrapPageBody);
+
+export const ReworkPage = withPlantV40('mfg-rework', ReworkPageBody);
+
+export const WipPage = withPlantV40('mfg-wip', WipPageBody);
+
+export const CostingPage = withPlantV40('mfg-costing', CostingPageBody);

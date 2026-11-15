@@ -341,6 +341,9 @@ export async function getUnreadCount(): Promise<number> {
 export const markNotificationRead = (id: string): Promise<NotificationItem> =>
   api<NotificationItem>(`/notifications/${encodeURIComponent(id)}/read`, { method: 'POST' });
 
+export const markNotificationUnread = (id: string): Promise<NotificationItem> =>
+  api<NotificationItem>(`/notifications/${encodeURIComponent(id)}/unread`, { method: 'POST' });
+
 export const markAllNotificationsRead = (): Promise<{ updated: number }> =>
   api<{ updated: number }>('/notifications/read-all', { method: 'POST' });
 

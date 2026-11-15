@@ -11,6 +11,7 @@ import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
 import { FormList } from './FormPages';
 import { RefPicker, Tabs, s } from './Shared';
+import { withPlantV40 } from '../plant/PlantV40';
 
 const thisMonth = (): string => todayIso().slice(0, 7);
 const DISP: Record<string, string> = {
@@ -590,7 +591,7 @@ function QualityCost({ actions }: { actions: ActionSet }) {
   );
 }
 
-export function NcrPage({ actions }: { actions: ActionSet }) {
+function NcrPageBody({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<'rej' | 'alert' | 'ppm' | 'cost'>('rej');
   return (
     <>
@@ -615,3 +616,5 @@ export function NcrPage({ actions }: { actions: ActionSet }) {
     </>
   );
 }
+
+export const NcrPage = withPlantV40('qms-ncr', NcrPageBody);

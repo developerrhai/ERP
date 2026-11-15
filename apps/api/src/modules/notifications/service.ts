@@ -655,6 +655,15 @@ export const notificationService = {
     return toDto(updated);
   },
 
+  async markUnread(userId: string, id: string): Promise<NotificationDto> {
+    const row = await prisma.notification.findFirst({ where: { id, userId } });
+    if (!row) throw Errors.notFound('Notification not found.');
+    if (!row.readAt) return toDto(row);
+    const updated = await prisma.notification.update({ where: { id }, data: { readAt: null } });
+    await emitRealtimeNotify(prisma, { u: [userId], k: 'r', ids: [id] });
+    return toDto(updated);
+  },
+
   async markSeen(userId: string, upToSeq?: string): Promise<number> {
     const seqBig = upToSeq && /^\d+$/.test(upToSeq) ? BigInt(upToSeq) : null;
     const res = await prisma.$executeRaw`

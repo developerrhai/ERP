@@ -26,9 +26,11 @@ export async function allocateStock(
   if (!item) throw Errors.notFound('Item not found.');
   // the warehouse asked for, or every warehouse of the caller's unit where this item has open demand
   const targets = warehouseId
+    // unpaginated: one warehouse by id
     ? await prisma.$queryRaw<{ id: string }[]>`
         SELECT w.id::text FROM warehouses w
         WHERE w.id = ${warehouseId}::uuid AND w.deleted_at IS NULL AND ${scopeSql(caller)}`
+    // unpaginated: the warehouses of one unit with open demand for one item
     : await prisma.$queryRaw<{ id: string }[]>`
         SELECT DISTINCT w.id::text FROM stock_reservations r JOIN warehouses w ON w.id = r.warehouse_id
         WHERE r.item_id = ${itemId}::uuid AND r.status IN ('Waiting','Partial') AND ${scopeSql(caller)}`;

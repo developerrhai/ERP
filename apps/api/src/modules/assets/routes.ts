@@ -24,6 +24,8 @@ import type { Caller } from '../records/service';
 import { ASSET_CLASSES, ASSET_KINDS, assetService } from './asset-service';
 import { faService } from './fa-service';
 import { maintService } from './maint-service';
+import { mountV40 } from '../v40-route';
+import { MAINT_V40_PAGES } from './v40-views';
 
 const num = z
   .union([z.number(), z.string()])
@@ -87,6 +89,8 @@ const ASSET_PAGES = [
 export function createAssetsRouter(): Router {
   const router = Router();
   router.use(['/maint', '/assets'], authenticate, requirePasswordChanged, resolveContext);
+  // V40 tab views of the maintenance pages (columns V40 shows, values from the real tables)
+  mountV40(router, '/maint', MAINT_V40_PAGES, g, h);
   const C = (req: Request): Caller => callerOf(req);
   const send = (res: Response, data: object, status = 200) => {
     const v = (data as { version?: number }).version;

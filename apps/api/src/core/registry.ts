@@ -61,6 +61,7 @@ export const PHASE_ADDED_PAGES: readonly {
   purpose: string;
   /** Seed value of the module control (Administration pages are normally 'no approval'). */
   approvalRequired?: boolean;
+  hidden?: boolean;
 }[] = [
   {
     id: 'admin-formats',
@@ -224,6 +225,7 @@ export const PHASE_ADDED_PAGES: readonly {
     title: 'Department Inbox',
     family: 'Executive',
     after: 'owner-console',
+    hidden: true,
     purpose: 'Work sent to your department: Received, Accepted, Return, History.',
   },
   {
@@ -231,182 +233,204 @@ export const PHASE_ADDED_PAGES: readonly {
     title: 'Department Work Center',
     family: 'Executive',
     after: 'dept-inbox',
+    hidden: true,
     purpose: 'Accepted work of your department, grouped by document type.',
-  },
-  {
-    id: 'dept-inbox-administration',
-    title: 'Administration Inbox',
-    family: 'Executive',
-    after: 'dept-work',
-    purpose: 'Department mailbox of Administration: documents, receipt, acceptance, work, approval and mail.',
   },
   {
     id: 'dept-inbox-sales',
     title: 'Sales Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-administration',
+    family: 'Sales',
+    after: '',
     purpose: 'Department mailbox of Sales: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-inbox-projects',
-    title: 'Projects Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-sales',
-    purpose: 'Department mailbox of Projects: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-inbox-engineering',
-    title: 'Engineering Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-projects',
-    purpose: 'Department mailbox of Engineering: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-inbox-purchase',
-    title: 'Purchase Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-engineering',
-    purpose: 'Department mailbox of Purchase: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-inbox-warehouse',
-    title: 'Warehouse Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-purchase',
-    purpose: 'Department mailbox of Warehouse: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-inbox-production',
-    title: 'Production Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-warehouse',
-    purpose: 'Department mailbox of Production: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-inbox-quality',
-    title: 'Quality Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-production',
-    purpose: 'Department mailbox of Quality: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-inbox-finance',
-    title: 'Finance Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-quality',
-    purpose: 'Department mailbox of Finance: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-inbox-service',
-    title: 'Service Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-finance',
-    purpose: 'Department mailbox of Service: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-inbox-maintenance',
-    title: 'Maintenance Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-service',
-    purpose: 'Department mailbox of Maintenance: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-inbox-hr',
-    title: 'HR Inbox',
-    family: 'Executive',
-    after: 'dept-inbox-maintenance',
-    purpose: 'Department mailbox of HR: documents, receipt, acceptance, work, approval and mail.',
-  },
-  {
-    id: 'dept-work-administration',
-    title: 'Administration Work Center',
-    family: 'Executive',
-    after: 'dept-inbox-hr',
-    purpose: 'Work Center of Administration: incoming work, routed documents, approvals and onward movement.',
   },
   {
     id: 'dept-work-sales',
     title: 'Sales Work Center',
-    family: 'Executive',
-    after: 'dept-work-administration',
+    family: 'Sales',
+    after: 'dept-inbox-sales',
     purpose: 'Work Center of Sales: incoming work, routed documents, approvals and onward movement.',
   },
   {
-    id: 'dept-work-projects',
-    title: 'Projects Work Center',
-    family: 'Executive',
-    after: 'dept-work-sales',
-    purpose: 'Work Center of Projects: incoming work, routed documents, approvals and onward movement.',
-  },
-  {
-    id: 'dept-work-engineering',
-    title: 'Engineering Work Center',
-    family: 'Executive',
-    after: 'dept-work-projects',
-    purpose: 'Work Center of Engineering: incoming work, routed documents, approvals and onward movement.',
+    id: 'dept-inbox-purchase',
+    title: 'Purchase Inbox',
+    family: 'Procurement / SCM',
+    after: '',
+    purpose: 'Department mailbox of Purchase: documents, receipt, acceptance, work, approval and mail.',
   },
   {
     id: 'dept-work-purchase',
     title: 'Purchase Work Center',
-    family: 'Executive',
-    after: 'dept-work-engineering',
+    family: 'Procurement / SCM',
+    after: 'dept-inbox-purchase',
     purpose: 'Work Center of Purchase: incoming work, routed documents, approvals and onward movement.',
   },
   {
-    id: 'dept-work-warehouse',
-    title: 'Warehouse Work Center',
-    family: 'Executive',
-    after: 'dept-work-purchase',
-    purpose: 'Work Center of Warehouse: incoming work, routed documents, approvals and onward movement.',
+    id: 'dept-inbox-production',
+    title: 'Production Inbox',
+    family: 'Manufacturing',
+    after: '',
+    purpose: 'Department mailbox of Production: documents, receipt, acceptance, work, approval and mail.',
   },
   {
     id: 'dept-work-production',
     title: 'Production Work Center',
-    family: 'Executive',
-    after: 'dept-work-warehouse',
+    family: 'Manufacturing',
+    after: 'dept-inbox-production',
     purpose: 'Work Center of Production: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
+    id: 'dept-inbox-engineering',
+    title: 'Engineering Inbox',
+    family: 'Manufacturing',
+    after: 'dept-work-production',
+    purpose: 'Department mailbox of Engineering: documents, receipt, acceptance, work, approval and mail.',
+  },
+  {
+    id: 'dept-work-engineering',
+    title: 'Engineering Work Center',
+    family: 'Manufacturing',
+    after: 'dept-inbox-engineering',
+    purpose: 'Work Center of Engineering: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
+    id: 'dept-inbox-quality',
+    title: 'Quality Inbox',
+    family: 'Quality / QMS',
+    after: '',
+    purpose: 'Department mailbox of Quality: documents, receipt, acceptance, work, approval and mail.',
   },
   {
     id: 'dept-work-quality',
     title: 'Quality Work Center',
-    family: 'Executive',
-    after: 'dept-work-production',
+    family: 'Quality / QMS',
+    after: 'dept-inbox-quality',
     purpose: 'Work Center of Quality: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
+    id: 'dept-inbox-warehouse',
+    title: 'Warehouse Inbox',
+    family: 'Warehouse / WMS',
+    after: '',
+    purpose: 'Department mailbox of Warehouse: documents, receipt, acceptance, work, approval and mail.',
+  },
+  {
+    id: 'dept-work-warehouse',
+    title: 'Warehouse Work Center',
+    family: 'Warehouse / WMS',
+    after: 'dept-inbox-warehouse',
+    purpose: 'Work Center of Warehouse: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
+    id: 'dept-inbox-finance',
+    title: 'Finance Inbox',
+    family: 'Finance & Accounts',
+    after: '',
+    purpose: 'Department mailbox of Finance: documents, receipt, acceptance, work, approval and mail.',
   },
   {
     id: 'dept-work-finance',
     title: 'Finance Work Center',
-    family: 'Executive',
-    after: 'dept-work-quality',
+    family: 'Finance & Accounts',
+    after: 'dept-inbox-finance',
     purpose: 'Work Center of Finance: incoming work, routed documents, approvals and onward movement.',
   },
   {
-    id: 'dept-work-service',
-    title: 'Service Work Center',
-    family: 'Executive',
-    after: 'dept-work-finance',
-    purpose: 'Work Center of Service: incoming work, routed documents, approvals and onward movement.',
-  },
-  {
-    id: 'dept-work-maintenance',
-    title: 'Maintenance Work Center',
-    family: 'Executive',
-    after: 'dept-work-service',
-    purpose: 'Work Center of Maintenance: incoming work, routed documents, approvals and onward movement.',
+    id: 'dept-inbox-hr',
+    title: 'HR Inbox',
+    family: 'HRMS',
+    after: '',
+    purpose: 'Department mailbox of HR: documents, receipt, acceptance, work, approval and mail.',
   },
   {
     id: 'dept-work-hr',
     title: 'HR Work Center',
-    family: 'Executive',
-    after: 'dept-work-maintenance',
+    family: 'HRMS',
+    after: 'dept-inbox-hr',
     purpose: 'Work Center of HR: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
+    id: 'dept-inbox-projects',
+    title: 'Projects Inbox',
+    family: 'Projects',
+    after: '',
+    purpose: 'Department mailbox of Projects: documents, receipt, acceptance, work, approval and mail.',
+  },
+  {
+    id: 'dept-work-projects',
+    title: 'Projects Work Center',
+    family: 'Projects',
+    after: 'dept-inbox-projects',
+    purpose: 'Work Center of Projects: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
+    id: 'dept-inbox-maintenance',
+    title: 'Maintenance Inbox',
+    family: 'Maintenance',
+    after: '',
+    purpose: 'Department mailbox of Maintenance: documents, receipt, acceptance, work, approval and mail.',
+  },
+  {
+    id: 'dept-work-maintenance',
+    title: 'Maintenance Work Center',
+    family: 'Maintenance',
+    after: 'dept-inbox-maintenance',
+    purpose: 'Work Center of Maintenance: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
+    id: 'dept-inbox-service',
+    title: 'Service Inbox',
+    family: 'Service / Support',
+    after: '',
+    purpose: 'Department mailbox of Service: documents, receipt, acceptance, work, approval and mail.',
+  },
+  {
+    id: 'dept-work-service',
+    title: 'Service Work Center',
+    family: 'Service / Support',
+    after: 'dept-inbox-service',
+    purpose: 'Work Center of Service: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
+    id: 'dept-inbox-administration',
+    title: 'Administration Inbox',
+    family: 'Administration',
+    after: '',
+    purpose: 'Department mailbox of Administration: documents, receipt, acceptance, work, approval and mail.',
+  },
+  {
+    id: 'dept-work-administration',
+    title: 'Administration Work Center',
+    family: 'Administration',
+    after: 'dept-inbox-administration',
+    purpose: 'Work Center of Administration: incoming work, routed documents, approvals and onward movement.',
   },
   {
     id: 'dept-movement-inbox',
     title: 'All Department Movements',
     family: 'Executive',
-    after: 'dept-work',
+    after: 'owner-console',
     purpose: 'Every department movement; Director, Admin and Owner.',
+  },
+  {
+    id: 'master-customers',
+    title: 'Customer Master',
+    family: 'CRM',
+    after: 'crm-customer360',
+    purpose: 'Customer master: contacts, GST, credit and addresses.',
+  },
+  {
+    id: 'master-products',
+    title: 'Product Master',
+    family: 'Inventory',
+    after: 'inv-items',
+    purpose: 'Finished products master with part, HSN, unit and cost.',
+  },
+  {
+    id: 'master-materials',
+    title: 'Material Master',
+    family: 'Inventory',
+    after: 'inv-items',
+    purpose: 'Raw material master with HSN, unit, reorder level and cost.',
   },
   {
     id: 'my-approvals',
@@ -763,13 +787,6 @@ export const PHASE_ADDED_PAGES: readonly {
 
 function addPhasePages(data: RegistryData): void {
   for (const extra of PHASE_ADDED_PAGES) {
-    const family = data.families.find((f) => f.name === extra.family);
-    if (!family || family.items.some((i) => i.id === extra.id)) continue;
-    const at = family.items.findIndex((i) => i.id === extra.after);
-    family.items.splice(at >= 0 ? at + 1 : family.items.length, 0, {
-      id: extra.id,
-      title: extra.title,
-    });
     data.profiles[extra.id] = {
       title: extra.title,
       family: extra.family,
@@ -777,6 +794,18 @@ function addPhasePages(data: RegistryData): void {
       tabs: ['Formats', 'Rule Sets', 'Changes'],
       fields: [],
     };
+    if (extra.hidden) continue;
+    const family = data.families.find((f) => f.name === extra.family);
+    if (!family || family.items.some((i) => i.id === extra.id)) continue;
+    const at = extra.after ? family.items.findIndex((i) => i.id === extra.after) : -1;
+    if (!extra.after) {
+      family.items.unshift({ id: extra.id, title: extra.title });
+    } else {
+      family.items.splice(at >= 0 ? at + 1 : family.items.length, 0, {
+        id: extra.id,
+        title: extra.title,
+      });
+    }
   }
 }
 
@@ -793,6 +822,11 @@ export function loadRegistry(file: string = process.env.REGISTRY_PATH ?? DEFAULT
     for (const item of family.items) {
       if (pages.has(item.id)) throw new Error(`Duplicate page id in registry: ${item.id}`);
       pages.set(item.id, { id: item.id, title: item.title, family: family.name, order: order++ });
+    }
+  }
+  for (const extra of PHASE_ADDED_PAGES) {
+    if (extra.hidden && !pages.has(extra.id)) {
+      pages.set(extra.id, { id: extra.id, title: extra.title, family: extra.family, order: order++ });
     }
   }
   const familyNames = data.families.map((f) => f.name);

@@ -1,0 +1,50 @@
+// The Warehouse / WMS, Logistics / Fleet / Gate and Assets pages whose V40 tabs are drawn by FamV40Body from GET /fam/v40/:pageId
+// (apps/api/src/modules/v40fam). The nouns feed the search box and the bulk bar of the shared V40 register.
+const NOUNS: Record<string, string> = {
+  'wms-warehouses': 'Warehouse Master',
+  'wms-zones': 'Zones',
+  'wms-racks': 'Racks',
+  'wms-shelves': 'Shelves',
+  'wms-bins': 'Bins',
+  'wms-pick': 'Pick Tasks',
+  'wms-packing': 'Pack Units',
+  'wms-cycle': 'Count Plans',
+  'wms-physical': 'Physical Counts',
+  'wms-transfer': 'Transfers',
+  'wms-barcode': 'Barcodes',
+  'wms-rfid': 'Tags',
+  'wms-putaway': 'Put-away Tasks',
+  'log-shipments': 'Shipments',
+  'log-tracking': 'Shipments',
+  'log-freight': 'Freight Calculations',
+  'log-routes': 'Routes',
+  'log-transporters': 'Transporters',
+  'log-pod': 'PODs',
+  'container-track': 'Containers',
+  'fleet-vehicles': 'Vehicles',
+  'fleet-drivers': 'Drivers',
+  'fleet-fuel': 'Fuel Entries',
+  'fleet-service': 'Service Jobs',
+  'fleet-documents': 'Vehicle Documents',
+  'gate-in': 'Gate Passes',
+  'gate-out': 'Gate Passes',
+  'gate-return': 'Gate Passes',
+  'gate-nonreturn': 'Gate Passes',
+  'asset-master': 'Assets',
+  'asset-capitalization': 'Capitalizations',
+  'asset-allocation': 'Allocations',
+  'asset-transfer': 'Transfers',
+  'asset-maintenance': 'Work Orders',
+  'asset-depreciation': 'Depreciation Runs',
+  'asset-disposal': 'Disposals',
+  'asset-qr': 'QR Labels',
+};
+
+export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
+
+export const FAM_PAGE_CFG: Record<string, { noun: string; print?: boolean }> = Object.fromEntries(
+  Object.entries(NOUNS).map(([id, noun]) => [
+    id,
+    id === 'gate-out' || id === 'log-shipments' ? { noun, print: true } : { noun },
+  ]),
+);

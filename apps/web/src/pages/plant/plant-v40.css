@@ -1,0 +1,19 @@
+/* V40 tab content of the Manufacturing, Quality and Maintenance pages (PlantV40.tsx). */
+.pv40 { display: flex; flex-direction: column; gap: 10px; }
+.pv40-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pv40-toolbar input:not([type]), .pv40-toolbar input[type='text'] { min-width: 220px; }
+.pv40-count { margin-left: auto; font-size: 12px; color: var(--muted, #667); }
+.pv40-bulk { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 10px; border: 1px solid var(--line, #dde); border-radius: 8px; background: var(--soft, #f6f7fb); }
+.pv40-table th, .pv40-table td { white-space: nowrap; }
+.pv40-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pv40-table .row-actions { display: flex; gap: 4px; flex-wrap: nowrap; }
+.pv40-table tr.selected td { background: var(--row-selected, #eef3ff); }
+.pv40-pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+.pv40-panel h3 { margin: 12px 0 6px; font-size: 14px; }
+.pv40-nosource { font-size: 12px; }
+.pv40-classic { margin-top: 8px; }
+.pv40-classic > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+@media (max-width: 480px) {
+  .pv40-toolbar > * { flex: 1 1 100%; }
+  .pv40-count { margin-left: 0; }
+}

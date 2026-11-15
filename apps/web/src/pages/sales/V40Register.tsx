@@ -27,6 +27,7 @@ import {
   type V40Panel,
   type V40Row,
 } from './salesV40Api';
+import { FAM_PAGE_CFG } from '../v40fam/famIds';
 import './sales-v40.css';
 
 interface PageCfg {
@@ -85,6 +86,7 @@ const PAGE_CFG: Record<string, PageCfg> = {
   'sales-delivery': { noun: 'Delivery Plans' },
   'sales-credit': { noun: 'Credit Profiles' },
   'sales-pricelist': { noun: 'Price Lists' },
+  ...FAM_PAGE_CFG,
 };
 const EDITABLE = new Set(['Draft', 'Rejected']);
 const PAGE_SIZE = 20;
@@ -122,7 +124,7 @@ function PanelTable({
   onAllocate,
 }: {
   panel: V40Panel;
-  onAllocate?: ((id: string) => void) | undefined;
+  onAllocate?: ((id: string, action?: string) => void) | undefined;
 }) {
   return (
     <section className="sv40-panel" aria-label={panel.title}>
@@ -144,13 +146,13 @@ function PanelTable({
                     <td key={c.key}>
                       {!r[c.key] ? (
                         '—'
-                      ) : onAllocate && r[c.key] === 'Allocate' && r.id ? (
+                      ) : onAllocate && (r[c.key] === 'Allocate' || r[c.key] === 'Reallocate') && r.id ? (
                         <button
                           type="button"
                           className="btn sm"
-                          onClick={() => onAllocate(r.id ?? '')}
+                          onClick={() => onAllocate(r.id ?? '', r[c.key] ?? '')}
                         >
-                          Allocate
+                          {r[c.key]}
                         </button>
                       ) : (
                         <span className="chip">{r[c.key]}</span>
@@ -243,7 +245,7 @@ export interface V40RegisterProps {
   /** the page's own list reloads (after Submit / Delete here) */
   onChanged?: () => void;
   /** the money panel's Allocate button: record a receipt against this invoice id */
-  onAllocate?: (invoiceId: string) => void;
+  onAllocate?: (id: string, action?: string) => void;
   /** page-specific row buttons (Qualify, Won, Lost ...) shown after the standard ones */
   rowExtra?: (row: V40Row, reload: () => void) => ReactNode;
 }
