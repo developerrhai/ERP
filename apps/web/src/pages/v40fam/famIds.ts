@@ -108,6 +108,25 @@ const NOUNS: Record<string, string> = {
   'pay-payslip': 'Payslips',
   'pay-bank': 'Bank Transfer File',
   'pay-register': 'Salary Register',
+  'fin-coa': 'Chart of Accounts',
+  'fin-gl': 'General Ledger',
+  'fin-journal': 'Journal Entries',
+  'fin-cashbook': 'Cash Book',
+  'fin-bankbook': 'Bank Book',
+  'fin-ap': 'Accounts Payable',
+  'fin-ar': 'Accounts Receivable',
+  'fin-creditnote': 'Credit Notes',
+  'fin-debitnote': 'Debit Notes',
+  'fin-bankreco': 'Bank Reconciliation',
+  'fin-costcenter': 'Cost Centers',
+  'fin-profitcenter': 'Profit Centers',
+  'fin-expenses': 'Expense Management',
+  'fin-budget': 'Budgeting',
+  'fin-trial': 'Trial Balance',
+  'fin-pnl': 'Profit & Loss',
+  'fin-bs': 'Balance Sheet',
+  'fin-cashflow': 'Cash Flow',
+  'fin-ageing': 'AR/AP Ageing',
 };
 
 export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
@@ -115,6 +134,6 @@ export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
 export const FAM_PAGE_CFG: Record<string, { noun: string; print?: boolean }> = Object.fromEntries(
   Object.entries(NOUNS).map(([id, noun]) => [
     id,
-    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') || id.startsWith('inv-') || id.startsWith('auto-') || id.startsWith('pay-') ? { noun, print: true } : { noun },
+    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') || id.startsWith('inv-') || id.startsWith('auto-') || id.startsWith('pay-') || id.startsWith('fin-') ? { noun, print: true } : { noun },
   ]),
 );

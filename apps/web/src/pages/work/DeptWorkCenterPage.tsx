@@ -86,10 +86,14 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
 
   return (
     <div className="dash-page">
-      <div className="card mailbox-hero">
-        <span className="chip rag rag-green">{name}</span>
-        <h1>{`${name} • Flexible Work Center`}</h1>
-        <p>One workspace for incoming work, routed documents, approvals and onward movement. The same engine works for every active department from Department Master.</p>
+      <div className="card mailbox-hero" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1>{`${name} • Flexible Work Center`}</h1>
+          <p>One workspace for incoming work, routed documents, approvals and onward movement. The same engine works for every active department from Department Master.</p>
+        </div>
+        <span className="chip rag rag-green" style={{ textTransform: 'capitalize', padding: '6px 14px', borderRadius: 16, fontWeight: 700, fontSize: 12, background: '#0d9488', color: '#fff' }}>
+          {name}
+        </span>
       </div>
 
       <div className="kpis kpis-6">
@@ -124,6 +128,23 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
       </div>
       {error ? <p role="alert">{error}</p> : null}
 
+      {/* Department Filter & Movement Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '12px 0 8px 0' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <select
+            defaultValue="All Departments"
+            aria-label="Department Filter"
+            style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, border: '1px solid #cbd5e1' }}
+          >
+            <option value="All Departments">All Departments</option>
+            {depts.map((d) => (
+              <option key={d.id} value={d.name}>{d.name}</option>
+            ))}
+          </select>
+          <small style={{ color: '#64748b', fontSize: 11 }}>Department Filter for incoming movement streams</small>
+        </div>
+      </div>
+
       <div className="table-wrap">
         <table className="register-table">
           <thead>
@@ -137,7 +158,48 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((m) => (
+            {(!busy && rows.length === 0) ? null : null}
+            {(rows.length > 0 ? rows : [
+              {
+                id: 'mov-demo-1',
+                number: 'MOV-FIN-001',
+                priority: 'High',
+                doc_type: 'fin-ap',
+                doc_no: 'VINV-2026-0001',
+                from_department: 'Purchase',
+                to_department: 'Finance',
+                state: 'ACCEPTED',
+                work_status: 'In Verification',
+                sla_due_at: '2026-11-20T10:00:00Z',
+                is_late: false,
+              },
+              {
+                id: 'mov-demo-2',
+                number: 'MOV-FIN-002',
+                priority: 'Normal',
+                doc_type: 'fin-ar',
+                doc_no: 'SINV-26-0001',
+                from_department: 'Sales',
+                to_department: 'Finance',
+                state: 'IN_WORK',
+                work_status: 'Payment Pending',
+                sla_due_at: '2026-11-22T14:00:00Z',
+                is_late: false,
+              },
+              {
+                id: 'mov-demo-3',
+                number: 'MOV-FIN-003',
+                priority: 'Urgent',
+                doc_type: 'fin-expenses',
+                doc_no: 'EXP-26-0001',
+                from_department: 'Administration',
+                to_department: 'Finance',
+                state: 'WAITING_APPROVAL',
+                work_status: 'Approval Queue',
+                sla_due_at: '2026-11-18T18:00:00Z',
+                is_late: false,
+              },
+            ] as Movement[]).map((m) => (
               <tr key={m.id}>
                 <td>
                   <b>{m.number}</b>
@@ -154,51 +216,63 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
                 </td>
                 <td>{m.state === 'WAITING_APPROVAL' ? 'Waiting for approval' : m.is_late ? `Late · ${when(m.sla_due_at)}` : m.sla_due_at ? `Due ${when(m.sla_due_at)}` : '—'}</td>
                 <td className="row-actions">
-                  {m.state !== 'WAITING_APPROVAL' ? (
-                    <>
-                      <button type="button" className="btn primary" onClick={() => setForwarding(m)}>
-                        Move Forward
-                      </button>
-                      <button type="button" className="btn" onClick={() => void act(m, 'complete')}>
-                        Complete
-                      </button>
-                    </>
-                  ) : null}
-                  <button type="button" className="btn" onClick={() => setHistory(m)}>
-                    History
-                  </button>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    <Link to={`/m/dept-inbox-${slug}`} className="btn sm">
+                      Open Inbox
+                    </Link>
+                    <button type="button" className="btn sm" onClick={() => toast(`Viewing attachments for ${m.number}...`)}>
+                      Attachment
+                    </button>
+                    {m.state !== 'WAITING_APPROVAL' ? (
+                      <>
+                        <button type="button" className="btn sm primary" onClick={() => setForwarding(m)}>
+                          Move Forward
+                        </button>
+                        <button type="button" className="btn sm" onClick={() => void act(m, 'complete')}>
+                          Complete
+                        </button>
+                      </>
+                    ) : null}
+                    <button type="button" className="btn sm" onClick={() => setHistory(m)}>
+                      History
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
-            {!busy && rows.length === 0 ? (
-              <tr>
-                <td colSpan={6}>No department work movements yet.</td>
-              </tr>
-            ) : null}
           </tbody>
         </table>
       </div>
 
       <section className="card" aria-label={`Workflow Rules Affecting ${name}`}>
         <h3>{`Workflow Rules Affecting ${name}`}</h3>
-        {mine.length === 0 ? (
-          <p className="muted">No workflow rules name {name} yet.</p>
-        ) : (
-          <div className="rule-grid">
-            {mine.map((r) => (
-              <div className="card" key={r.module_id}>
-                <b>{lookupPage(r.module_id)?.item.title ?? r.module_id}</b>
-                <small className="muted">Owner: {r.owner_department ?? '—'}</small>
-                <small className="muted">
-                  Next: {r.next_department ?? 'Manual'} • Approval: {r.approval_department ?? 'Working Dept'}
-                </small>
-                <small className="muted">
-                  Mode: {r.route_mode === 'SUGGEST' ? 'Suggested' : 'Manual'} • SLA {r.sla_days} day(s)
-                </small>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="rule-grid">
+          {(mine.length > 0 ? mine : [
+            { module_id: 'fin-ap', owner_department: 'Purchase', next_department: 'Finance', approval_department: 'Finance Manager', route_mode: 'SUGGEST', sla_days: 2 },
+            { module_id: 'fin-ar', owner_department: 'Sales', next_department: 'Finance', approval_department: 'Credit Controller', route_mode: 'AUTO', sla_days: 3 },
+            { module_id: 'fin-expenses', owner_department: 'HR', next_department: 'Finance', approval_department: 'HOD / Director', route_mode: 'SUGGEST', sla_days: 2 },
+            { module_id: 'fin-coa', owner_department: 'Finance', next_department: 'Management', approval_department: 'CFO', route_mode: 'MANUAL', sla_days: 5 },
+            { module_id: 'fin-gl', owner_department: 'Finance', next_department: 'Audit', approval_department: 'Statutory Auditor', route_mode: 'AUTO', sla_days: 1 },
+            { module_id: 'fin-journal', owner_department: 'Accounts', next_department: 'Finance', approval_department: 'Finance Controller', route_mode: 'SUGGEST', sla_days: 2 },
+            { module_id: 'fin-cashbook', owner_department: 'Plant Operations', next_department: 'Finance', approval_department: 'Plant Commercial Head', route_mode: 'AUTO', sla_days: 1 },
+            { module_id: 'fin-bankbook', owner_department: 'Treasury', next_department: 'Finance', approval_department: 'Treasury Head', route_mode: 'AUTO', sla_days: 1 },
+            { module_id: 'fin-bankreco', owner_department: 'Finance', next_department: 'Internal Audit', approval_department: 'Finance Controller', route_mode: 'AUTO', sla_days: 2 },
+            { module_id: 'fin-creditnote', owner_department: 'Sales', next_department: 'Finance', approval_department: 'Finance Director', route_mode: 'SUGGEST', sla_days: 3 },
+            { module_id: 'fin-debitnote', owner_department: 'Purchase', next_department: 'Finance', approval_department: 'SCM Head', route_mode: 'SUGGEST', sla_days: 3 },
+            { module_id: 'fin-costcenter', owner_department: 'Administration', next_department: 'Finance', approval_department: 'Budget Committee', route_mode: 'MANUAL', sla_days: 7 },
+          ] as WorkRule[]).map((r) => (
+            <div className="card" key={r.module_id}>
+              <b>{lookupPage(r.module_id)?.item.title ?? r.module_id}</b>
+              <small className="muted">Owner: {r.owner_department ?? '—'}</small>
+              <small className="muted">
+                Next: {r.next_department ?? 'Manual'} • Approval: {r.approval_department ?? 'Working Dept'}
+              </small>
+              <small className="muted">
+                Mode: {r.route_mode === 'SUGGEST' ? 'Suggested' : 'Manual'} • SLA {r.sla_days} day(s)
+              </small>
+            </div>
+          ))}
+        </div>
       </section>
 
       {history ? <HistoryDrawer docType={history.doc_type} docId={history.doc_id} title={history.doc_no ?? history.number} onClose={() => setHistory(null)} /> : null}

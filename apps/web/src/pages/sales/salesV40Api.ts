@@ -76,6 +76,11 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
     return getPayrollV40(pageId, p);
   }
 
+  // If this is a finance module, return complete V40 structure
+  if (pageId.startsWith('fin-')) {
+    return getFinanceV40(pageId, p);
+  }
+
   // If this is an inventory module, /inventory/v40 returns { data: { columns, statuses, rows }, meta: { total, ... } }
   // where each row has { id, status, cells: { ... } }. We normalize it to V40Page (columns + flat row records).
   if (pageId.startsWith('inv-') || pageId === 'master-products' || pageId === 'master-materials') {
@@ -833,6 +838,686 @@ function getPayrollV40(pageId: string, p: V40Params): V40Page {
 
   return {
     rows: filtered,
+    columns,
+    total: filtered.length,
+    panel: null,
+    audit: false,
+    noSource: [],
+  };
+}
+
+function getFinanceV40(pageId: string, p: V40Params): V40Page {
+  let columns: V40Column[] = [];
+  let allRows: V40Row[] = [];
+
+  const parties = [
+    { code: 'CUST-001', name: 'Apex Engineering Ltd', type: 'Customer' },
+    { code: 'CUST-002', name: 'Tata Motors Commercial', type: 'Customer' },
+    { code: 'CUST-003', name: 'Bharat Forge Precision', type: 'Customer' },
+    { code: 'CUST-004', name: 'Mahindra Heavy Engines', type: 'Customer' },
+    { code: 'CUST-005', name: 'Bajaj Auto Components', type: 'Customer' },
+    { code: 'SUPP-001', name: 'Tata Steel Tubes Ltd', type: 'Vendor' },
+    { code: 'SUPP-002', name: 'Hindalco Metal Supplies', type: 'Vendor' },
+    { code: 'SUPP-003', name: 'JSW Coated Sheets', type: 'Vendor' },
+    { code: 'SUPP-004', name: 'Schneider Electric Components', type: 'Vendor' },
+    { code: 'SUPP-005', name: 'SKF India Bearings', type: 'Vendor' },
+    { code: 'CUST-006', name: 'Thermax Boilers & Systems', type: 'Customer' },
+    { code: 'SUPP-006', name: 'Bosch Industrial Rexroth', type: 'Vendor' },
+    { code: 'CUST-007', name: 'Godrej Process Equipment', type: 'Customer' },
+    { code: 'SUPP-007', name: 'L&T Heavy Engineering', type: 'Vendor' },
+    { code: 'CUST-008', name: 'Kirloskar Oil Engines', type: 'Customer' },
+    { code: 'SUPP-008', name: 'Praj Industries Biofuels', type: 'Vendor' },
+    { code: 'CUST-009', name: 'Siemens Mobility India', type: 'Customer' },
+    { code: 'SUPP-009', name: 'ABB Power Grids Systems', type: 'Vendor' },
+    { code: 'CUST-010', name: 'Cummins India Generator', type: 'Customer' },
+    { code: 'SUPP-010', name: 'Endress+Hauser Flowtech', type: 'Vendor' },
+    { code: 'CUST-011', name: 'Danfoss Drives & Controls', type: 'Customer' },
+    { code: 'SUPP-011', name: 'Festo Pneumatics India', type: 'Vendor' },
+    { code: 'CUST-012', name: 'Atlas Copco Compressors', type: 'Customer' },
+    { code: 'SUPP-012', name: 'Sandvik Coromant Tools', type: 'Vendor' },
+    { code: 'CUST-013', name: 'Konecranes Material Handling', type: 'Customer' },
+  ];
+
+  const depts = ['Finance', 'Accounts', 'Sales', 'Purchase', 'Production', 'Quality', 'Logistics', 'Administration'];
+  const costCenters = ['CC-CORP-01', 'CC-MFG-PL1', 'CC-MFG-PL2', 'CC-SCM-01', 'CC-ENG-RND', 'CC-SAL-DOM', 'CC-ADM-01'];
+  const profitCenters = ['PC-IND-MACH', 'PC-AUTO-COMP', 'PC-EXP-DIV', 'PC-SERV-ENG', 'PC-FAB-PL2'];
+  const banks = ['HDFC Bank Current A/c - 502000123456', 'ICICI Bank CC A/c - 001205001234', 'SBI Cash Credit A/c - 30200098765', 'Kotak Mahindra Escrow - 9011002345'];
+
+  if (pageId === 'fin-coa') {
+    columns = [
+      { key: 'Account Code', label: 'Account Code', type: 'text', source: true },
+      { key: 'Account Name', label: 'Account Name', type: 'text', source: true },
+      { key: 'Account Type', label: 'Account Type', type: 'pill', source: true },
+      { key: 'Parent Group', label: 'Parent Group', type: 'text', source: true },
+      { key: 'Normal Balance', label: 'Normal Balance', type: 'pill', source: true },
+      { key: 'Posting Allowed', label: 'Posting Allowed', type: 'pill', source: true },
+      { key: 'Cost Center Required', label: 'Cost Center Required', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const coaList = [
+      { code: '1000', name: 'Current Assets', type: 'Asset', parent: 'Root Asset', bal: 'Debit', post: 'No', cc: 'No' },
+      { code: '1010', name: 'Cash in Hand', type: 'Asset', parent: 'Current Assets', bal: 'Debit', post: 'Yes', cc: 'No' },
+      { code: '1020', name: 'HDFC Current A/c 5020', type: 'Asset', parent: 'Current Assets', bal: 'Debit', post: 'Yes', cc: 'No' },
+      { code: '1030', name: 'ICICI Bank Current A/c', type: 'Asset', parent: 'Current Assets', bal: 'Debit', post: 'Yes', cc: 'No' },
+      { code: '1100', name: 'Trade Receivables (Debtors)', type: 'Asset', parent: 'Current Assets', bal: 'Debit', post: 'Yes', cc: 'No' },
+      { code: '1200', name: 'Raw Material Inventory', type: 'Asset', parent: 'Inventories', bal: 'Debit', post: 'Yes', cc: 'Yes' },
+      { code: '1210', name: 'Work in Progress (WIP)', type: 'Asset', parent: 'Inventories', bal: 'Debit', post: 'Yes', cc: 'Yes' },
+      { code: '1220', name: 'Finished Goods Inventory', type: 'Asset', parent: 'Inventories', bal: 'Debit', post: 'Yes', cc: 'Yes' },
+      { code: '1300', name: 'Input CGST Control A/c', type: 'Asset', parent: 'Duties & Taxes', bal: 'Debit', post: 'Yes', cc: 'No' },
+      { code: '1310', name: 'Input SGST Control A/c', type: 'Asset', parent: 'Duties & Taxes', bal: 'Debit', post: 'Yes', cc: 'No' },
+      { code: '1320', name: 'Input IGST Control A/c', type: 'Asset', parent: 'Duties & Taxes', bal: 'Debit', post: 'Yes', cc: 'No' },
+      { code: '1500', name: 'Plant & Machinery', type: 'Asset', parent: 'Fixed Assets', bal: 'Debit', post: 'Yes', cc: 'Yes' },
+      { code: '2000', name: 'Current Liabilities', type: 'Liability', parent: 'Root Liability', bal: 'Credit', post: 'No', cc: 'No' },
+      { code: '2100', name: 'Trade Payables (Creditors)', type: 'Liability', parent: 'Current Liabilities', bal: 'Credit', post: 'Yes', cc: 'No' },
+      { code: '2200', name: 'Output CGST Control A/c', type: 'Liability', parent: 'Duties & Taxes', bal: 'Credit', post: 'Yes', cc: 'No' },
+      { code: '2210', name: 'Output SGST Control A/c', type: 'Liability', parent: 'Duties & Taxes', bal: 'Credit', post: 'Yes', cc: 'No' },
+      { code: '2220', name: 'Output IGST Control A/c', type: 'Liability', parent: 'Duties & Taxes', bal: 'Credit', post: 'Yes', cc: 'No' },
+      { code: '2300', name: 'TDS Payable (Section 194C)', type: 'Liability', parent: 'Current Liabilities', bal: 'Credit', post: 'Yes', cc: 'No' },
+      { code: '3000', name: 'Equity & Share Capital', type: 'Equity', parent: 'Net Worth', bal: 'Credit', post: 'No', cc: 'No' },
+      { code: '4000', name: 'Domestic Sales Revenue', type: 'Revenue', parent: 'Income', bal: 'Credit', post: 'Yes', cc: 'Yes' },
+      { code: '4100', name: 'Export Sales Revenue', type: 'Revenue', parent: 'Income', bal: 'Credit', post: 'Yes', cc: 'Yes' },
+      { code: '5000', name: 'Raw Material Consumption', type: 'Expense', parent: 'Direct Expenses', bal: 'Debit', post: 'Yes', cc: 'Yes' },
+      { code: '5100', name: 'Direct Factory Labour', type: 'Expense', parent: 'Direct Expenses', bal: 'Debit', post: 'Yes', cc: 'Yes' },
+      { code: '5200', name: 'Power & Fuel Expense', type: 'Expense', parent: 'Manufacturing Overhead', bal: 'Debit', post: 'Yes', cc: 'Yes' },
+      { code: '5300', name: 'Administrative Salaries', type: 'Expense', parent: 'Indirect Expenses', bal: 'Debit', post: 'Yes', cc: 'Yes' },
+    ];
+    allRows = coaList.map((c, i) => ({
+      id: `coa-${i + 1}`,
+      number: `CHA-26-${String(i + 1).padStart(4, '0')}`,
+      'Account Code': c.code,
+      'Account Name': c.name,
+      'Account Type': c.type,
+      'Parent Group': c.parent,
+      'Normal Balance': c.bal,
+      'Posting Allowed': c.post,
+      'Cost Center Required': c.cc,
+      Status: 'Active',
+      status: 'Active',
+    }));
+  } else if (pageId === 'fin-gl') {
+    columns = [
+      { key: 'Posting Date', label: 'Posting Date', type: 'date', source: true },
+      { key: 'Voucher No', label: 'Voucher No', type: 'text', source: true },
+      { key: 'Voucher Type', label: 'Voucher Type', type: 'pill', source: true },
+      { key: 'Account', label: 'Account', type: 'text', source: true },
+      { key: 'Narration', label: 'Narration', type: 'text', source: true },
+      { key: 'Debit', label: 'Debit', type: 'inr', source: true },
+      { key: 'Credit', label: 'Credit', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const vtypes = ['Journal', 'Payment', 'Receipt', 'Sales Inv', 'Purchase Inv', 'Bank Entry'];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const vtype = vtypes[i % vtypes.length] ?? 'Journal';
+      const isDebit = i % 2 === 0;
+      const amtVal = 25000 + (i * 18500);
+      const party = parties[i % parties.length]!;
+      return {
+        id: `gl-${i + 1}`,
+        number: `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Posting Date': `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Voucher No': `GLV-26-${String(i + 1).padStart(4, '0')}`,
+        'Voucher Type': vtype,
+        Account: party.name,
+        Narration: `Ledger entry for ${vtype} settlement - Plant Talwade Unit-1`,
+        Debit: isDebit ? String(amtVal) : '0',
+        Credit: !isDebit ? String(amtVal) : '0',
+        Status: 'Posted',
+        status: 'Posted',
+      };
+    });
+  } else if (pageId === 'fin-journal') {
+    columns = [
+      { key: 'JV No', label: 'JV No', type: 'text', source: true },
+      { key: 'Date', label: 'Date', type: 'date', source: true },
+      { key: 'Debit Total', label: 'Debit Total', type: 'inr', source: true },
+      { key: 'Credit Total', label: 'Credit Total', type: 'inr', source: true },
+      { key: 'Balance', label: 'Balance', type: 'inr', source: true },
+      { key: 'Cost Center', label: 'Cost Center', type: 'text', source: true },
+      { key: 'Narration', label: 'Narration', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const totalAmt = 45000 + (i * 24000);
+      const cc = costCenters[i % costCenters.length] ?? 'CC-CORP-01';
+      return {
+        id: `jou-${i + 1}`,
+        number: `JOU-26-${String(i + 1).padStart(4, '0')}`,
+        'JV No': `JOU-26-${String(i + 1).padStart(4, '0')}`,
+        Date: `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Debit Total': String(totalAmt),
+        'Credit Total': String(totalAmt),
+        Balance: '0',
+        'Cost Center': cc,
+        Narration: `Monthly rectification & cost center allocation entry #${i + 1}`,
+        Status: i % 4 === 0 ? 'Pending' : 'Posted',
+        status: i % 4 === 0 ? 'Pending' : 'Posted',
+      };
+    });
+  } else if (pageId === 'fin-cashbook') {
+    columns = [
+      { key: 'Voucher No', label: 'Voucher No', type: 'text', source: true },
+      { key: 'Date', label: 'Date', type: 'date', source: true },
+      { key: 'Party', label: 'Party', type: 'text', source: true },
+      { key: 'Receipt / Payment', label: 'Receipt / Payment', type: 'pill', source: true },
+      { key: 'Cash In', label: 'Cash In', type: 'inr', source: true },
+      { key: 'Cash Out', label: 'Cash Out', type: 'inr', source: true },
+      { key: 'Balance', label: 'Balance', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const isRcpt = i % 2 === 0;
+      const amtVal = 8000 + (i * 4500);
+      const party = parties[i % parties.length]!;
+      return {
+        id: `csh-${i + 1}`,
+        number: `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Voucher No': `CSH-26-${String(i + 1).padStart(4, '0')}`,
+        Date: `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        Party: party.name,
+        'Receipt / Payment': isRcpt ? 'Receipt' : 'Payment',
+        'Cash In': isRcpt ? String(amtVal) : '0',
+        'Cash Out': !isRcpt ? String(amtVal) : '0',
+        Balance: String(145000 + (i * 2000)),
+        Status: 'Approved',
+        status: 'Approved',
+      };
+    });
+  } else if (pageId === 'fin-bankbook') {
+    columns = [
+      { key: 'Voucher No', label: 'Voucher No', type: 'text', source: true },
+      { key: 'Date', label: 'Date', type: 'date', source: true },
+      { key: 'Bank Account', label: 'Bank Account', type: 'text', source: true },
+      { key: 'Party', label: 'Party', type: 'text', source: true },
+      { key: 'Receipt / Payment', label: 'Receipt / Payment', type: 'pill', source: true },
+      { key: 'Amount', label: 'Amount', type: 'inr', source: true },
+      { key: 'Clearing Status', label: 'Clearing Status', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const isRcpt = i % 2 === 0;
+      const party = parties[i % parties.length]!;
+      const bank = banks[i % banks.length] ?? 'HDFC Bank';
+      return {
+        id: `bnk-${i + 1}`,
+        number: `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Voucher No': `BNK-26-${String(i + 1).padStart(4, '0')}`,
+        Date: `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Bank Account': bank.split(' - ')[0] ?? 'HDFC Bank',
+        Party: party.name,
+        'Receipt / Payment': isRcpt ? 'Receipt' : 'Payment',
+        Amount: String(180000 + (i * 65000)),
+        'Clearing Status': i % 3 === 0 ? 'Uncleared' : 'Cleared',
+        Status: 'Reconciled',
+        status: 'Reconciled',
+      };
+    });
+  } else if (pageId === 'fin-ap') {
+    columns = [
+      { key: 'Vendor Invoice', label: 'Vendor Invoice', type: 'text', source: true },
+      { key: 'Vendor', label: 'Vendor', type: 'text', source: true },
+      { key: 'Invoice Date', label: 'Invoice Date', type: 'date', source: true },
+      { key: 'Due Date', label: 'Due Date', type: 'date', source: true },
+      { key: 'Invoice Amount', label: 'Invoice Amount', type: 'inr', source: true },
+      { key: 'Paid', label: 'Paid', type: 'inr', source: true },
+      { key: 'Outstanding', label: 'Outstanding', type: 'inr', source: true },
+      { key: 'Project Number', label: 'Project Number', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const invAmt = 240000 + (i * 85000);
+      const paid = i % 3 === 0 ? invAmt : Math.round(invAmt * 0.4);
+      const party = parties[(i + 5) % parties.length]!;
+      return {
+        id: `ap-${i + 1}`,
+        number: `Vendor Invoice ${i + 1}`,
+        'Vendor Invoice': `VINV-2026-${String(i + 1).padStart(4, '0')}`,
+        Vendor: party.name,
+        'Invoice Date': `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Due Date': `2026-11-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Invoice Amount': String(invAmt),
+        Paid: String(paid),
+        Outstanding: String(invAmt - paid),
+        'Project Number': `PRJ-AUTO-0${(i % 5) + 1}`,
+        Status: paid === invAmt ? 'Paid' : 'Due',
+        status: paid === invAmt ? 'Paid' : 'Due',
+      };
+    });
+  } else if (pageId === 'fin-ar') {
+    columns = [
+      { key: 'Invoice No', label: 'Invoice No', type: 'text', source: true },
+      { key: 'Customer', label: 'Customer', type: 'text', source: true },
+      { key: 'Invoice Date', label: 'Invoice Date', type: 'date', source: true },
+      { key: 'Due Date', label: 'Due Date', type: 'date', source: true },
+      { key: 'Invoice Amount', label: 'Invoice Amount', type: 'inr', source: true },
+      { key: 'Received', label: 'Received', type: 'inr', source: true },
+      { key: 'Outstanding', label: 'Outstanding', type: 'inr', source: true },
+      { key: 'Age Days', label: 'Age Days', type: 'num', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const invAmt = 350000 + (i * 110000);
+      const rcvd = i % 2 === 0 ? Math.round(invAmt * 0.6) : invAmt;
+      const party = parties[i % 5]!;
+      return {
+        id: `ar-${i + 1}`,
+        number: `ACC-26-${String(i + 1).padStart(4, '0')}`,
+        'Invoice No': `SINV-26-${String(i + 1).padStart(4, '0')}`,
+        Customer: party.name,
+        'Invoice Date': `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Due Date': `2026-11-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Invoice Amount': String(invAmt),
+        Received: String(rcvd),
+        Outstanding: String(invAmt - rcvd),
+        'Age Days': String((i * 4) + 12),
+        Status: rcvd === invAmt ? 'Paid' : 'Overdue',
+        status: rcvd === invAmt ? 'Paid' : 'Overdue',
+      };
+    });
+  } else if (pageId === 'fin-creditnote') {
+    columns = [
+      { key: 'Credit Note No', label: 'Credit Note No', type: 'text', source: true },
+      { key: 'Customer', label: 'Customer', type: 'text', source: true },
+      { key: 'Invoice Ref', label: 'Invoice Ref', type: 'text', source: true },
+      { key: 'Note Date', label: 'Note Date', type: 'date', source: true },
+      { key: 'Amount', label: 'Amount', type: 'inr', source: true },
+      { key: 'Reason', label: 'Reason', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const party = parties[i % 5]!;
+      return {
+        id: `crn-${i + 1}`,
+        number: `CRN-26-${String(i + 1).padStart(4, '0')}`,
+        'Credit Note No': `CRN-26-${String(i + 1).padStart(4, '0')}`,
+        Customer: party.name,
+        'Invoice Ref': `SINV-26-00${(i % 12) + 1}`,
+        'Note Date': `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        Amount: String(15000 + (i * 6500)),
+        Reason: i % 2 === 0 ? 'Volume Discount Adjustment' : 'Quality Return Deduction',
+        Status: 'Approved',
+        status: 'Approved',
+      };
+    });
+  } else if (pageId === 'fin-debitnote') {
+    columns = [
+      { key: 'Debit Note No', label: 'Debit Note No', type: 'text', source: true },
+      { key: 'Vendor', label: 'Vendor', type: 'text', source: true },
+      { key: 'Bill Ref', label: 'Bill Ref', type: 'text', source: true },
+      { key: 'Note Date', label: 'Note Date', type: 'date', source: true },
+      { key: 'Amount', label: 'Amount', type: 'inr', source: true },
+      { key: 'Reason', label: 'Reason', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const party = parties[(i + 5) % parties.length]!;
+      return {
+        id: `dbn-${i + 1}`,
+        number: `DBN-26-${String(i + 1).padStart(4, '0')}`,
+        'Debit Note No': `DBN-26-${String(i + 1).padStart(4, '0')}`,
+        Vendor: party.name,
+        'Bill Ref': `VINV-2026-00${(i % 12) + 1}`,
+        'Note Date': `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        Amount: String(22000 + (i * 7500)),
+        Reason: i % 2 === 0 ? 'Material Rejection Debit' : 'Rate Difference Debit Note',
+        Status: 'Approved',
+        status: 'Approved',
+      };
+    });
+  } else if (pageId === 'fin-bankreco') {
+    columns = [
+      { key: 'Statement Date', label: 'Statement Date', type: 'date', source: true },
+      { key: 'Bank Account', label: 'Bank Account', type: 'text', source: true },
+      { key: 'Book Balance', label: 'Book Balance', type: 'inr', source: true },
+      { key: 'Statement Balance', label: 'Statement Balance', type: 'inr', source: true },
+      { key: 'Unreconciled Diff', label: 'Unreconciled Diff', type: 'inr', source: true },
+      { key: 'Cleared Items', label: 'Cleared Items', type: 'num', source: true },
+      { key: 'Pending Items', label: 'Pending Items', type: 'num', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const book = 14500000 + (i * 850000);
+      const diff = i % 4 === 0 ? 0 : 25000 + (i * 1200);
+      const bank = banks[i % banks.length] ?? 'HDFC Bank';
+      return {
+        id: `rec-${i + 1}`,
+        number: `REC-26-${String(i + 1).padStart(4, '0')}`,
+        'Statement Date': `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        'Bank Account': bank.split(' - ')[0] ?? 'HDFC Bank',
+        'Book Balance': String(book),
+        'Statement Balance': String(book - diff),
+        'Unreconciled Diff': String(diff),
+        'Cleared Items': String(84 + (i * 2)),
+        'Pending Items': String(diff === 0 ? 0 : (i % 3) + 1),
+        Status: diff === 0 ? 'Reconciled' : 'In Progress',
+        status: diff === 0 ? 'Reconciled' : 'In Progress',
+      };
+    });
+  } else if (pageId === 'fin-costcenter') {
+    columns = [
+      { key: 'Cost Center Code', label: 'Cost Center Code', type: 'text', source: true },
+      { key: 'Cost Center Name', label: 'Cost Center Name', type: 'text', source: true },
+      { key: 'Department', label: 'Department', type: 'text', source: true },
+      { key: 'Manager', label: 'Manager', type: 'text', source: true },
+      { key: 'Budget Limit', label: 'Budget Limit', type: 'inr', source: true },
+      { key: 'Actual Spent', label: 'Actual Spent', type: 'inr', source: true },
+      { key: 'Variance', label: 'Variance', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const mgrs = ['Sunil Verma', 'Rajesh Sawant', 'Amit Shinde', 'Pooja Sharma', 'Kiran Joshi'];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const budget = 2500000 + (i * 500000);
+      const spent = Math.round(budget * (0.75 + ((i % 5) * 0.04)));
+      const dept = depts[i % depts.length] ?? 'Finance';
+      const mgr = mgrs[i % mgrs.length] ?? 'Sunil Verma';
+      return {
+        id: `cos-${i + 1}`,
+        number: `COS-26-${String(i + 1).padStart(4, '0')}`,
+        'Cost Center Code': `CC-${String(i + 101).padStart(4, '0')}`,
+        'Cost Center Name': `${dept} Operations Plant-${(i % 3) + 1}`,
+        Department: dept,
+        Manager: mgr,
+        'Budget Limit': String(budget),
+        'Actual Spent': String(spent),
+        Variance: String(budget - spent),
+        Status: 'Active',
+        status: 'Active',
+      };
+    });
+  } else if (pageId === 'fin-profitcenter') {
+    columns = [
+      { key: 'Profit Center Code', label: 'Profit Center Code', type: 'text', source: true },
+      { key: 'Profit Center Name', label: 'Profit Center Name', type: 'text', source: true },
+      { key: 'Branch / Unit', label: 'Branch / Unit', type: 'text', source: true },
+      { key: 'Head', label: 'Head', type: 'text', source: true },
+      { key: 'Revenue', label: 'Revenue', type: 'inr', source: true },
+      { key: 'Target Margin', label: 'Target Margin', type: 'text', source: true },
+      { key: 'Actual Margin', label: 'Actual Margin', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const pc = profitCenters[i % profitCenters.length] ?? 'PC-IND-MACH';
+      return {
+        id: `prc-${i + 1}`,
+        number: `PRC-26-${String(i + 1).padStart(4, '0')}`,
+        'Profit Center Code': `${pc}-${i + 1}`,
+        'Profit Center Name': `Business Unit ${(i % 5) + 1} - Line ${i + 1}`,
+        'Branch / Unit': `Plant Talwade Unit-${(i % 3) + 1}`,
+        Head: 'Rajesh Sawant',
+        Revenue: String(12000000 + (i * 1500000)),
+        'Target Margin': '24.5%',
+        'Actual Margin': `${22 + (i % 6)}.%`,
+        Status: 'Active',
+        status: 'Active',
+      };
+    });
+  } else if (pageId === 'fin-expenses') {
+    columns = [
+      { key: 'Expense No', label: 'Expense No', type: 'text', source: true },
+      { key: 'Date', label: 'Date', type: 'date', source: true },
+      { key: 'Employee', label: 'Employee', type: 'text', source: true },
+      { key: 'Department', label: 'Department', type: 'text', source: true },
+      { key: 'Cost Center', label: 'Cost Center', type: 'text', source: true },
+      { key: 'Category', label: 'Category', type: 'text', source: true },
+      { key: 'Amount', label: 'Amount', type: 'inr', source: true },
+      { key: 'GST', label: 'GST', type: 'inr', source: true },
+      { key: 'Policy Result', label: 'Policy Result', type: 'pill', source: true },
+      { key: 'Approver', label: 'Approver', type: 'text', source: true },
+      { key: 'Payment Status', label: 'Payment Status', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const expCats = ['Travel & Conveyance', 'Client Entertainment', 'Office Supplies', 'Technical Training', 'Factory Welfare'];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const amtVal = 4500 + (i * 1250);
+      const dept = depts[i % depts.length] ?? 'Finance';
+      const cc = costCenters[i % costCenters.length] ?? 'CC-CORP-01';
+      const cat = expCats[i % expCats.length] ?? 'Travel & Conveyance';
+      return {
+        id: `exp-${i + 1}`,
+        number: `EXP-26-${String(i + 1).padStart(4, '0')}`,
+        'Expense No': `EXP-26-${String(i + 1).padStart(4, '0')}`,
+        Date: `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+        Employee: 'Vikram Shinde',
+        Department: dept,
+        'Cost Center': cc,
+        Category: cat,
+        Amount: String(amtVal),
+        GST: String(Math.round(amtVal * 0.18)),
+        'Policy Result': i % 5 === 0 ? 'Warning' : 'Compliant',
+        Approver: 'Sunil Verma',
+        'Payment Status': i % 3 === 0 ? 'Paid' : 'Pending',
+        Status: 'Approved',
+        status: 'Approved',
+      };
+    });
+  } else if (pageId === 'fin-budget') {
+    columns = [
+      { key: 'Budget No', label: 'Budget No', type: 'text', source: true },
+      { key: 'Financial Year', label: 'Financial Year', type: 'text', source: true },
+      { key: 'Department', label: 'Department', type: 'text', source: true },
+      { key: 'Cost Center', label: 'Cost Center', type: 'text', source: true },
+      { key: 'Budget Amount', label: 'Budget Amount', type: 'inr', source: true },
+      { key: 'Committed', label: 'Committed', type: 'inr', source: true },
+      { key: 'Actual Spent', label: 'Actual Spent', type: 'inr', source: true },
+      { key: 'Available', label: 'Available', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const bAmt = 5000000 + (i * 1200000);
+      const committed = Math.round(bAmt * 0.35);
+      const spent = Math.round(bAmt * 0.45);
+      const dept = depts[i % depts.length] ?? 'Finance';
+      const cc = costCenters[i % costCenters.length] ?? 'CC-CORP-01';
+      return {
+        id: `bud-${i + 1}`,
+        number: `BUD-26-${String(i + 1).padStart(4, '0')}`,
+        'Budget No': `BUD-26-${String(i + 1).padStart(4, '0')}`,
+        'Financial Year': 'FY 2026-27',
+        Department: dept,
+        'Cost Center': cc,
+        'Budget Amount': String(bAmt),
+        Committed: String(committed),
+        'Actual Spent': String(spent),
+        Available: String(bAmt - (committed + spent)),
+        Status: 'Active',
+        status: 'Active',
+      };
+    });
+  } else if (pageId === 'fin-trial') {
+    columns = [
+      { key: 'Line Code', label: 'Line Code', type: 'text', source: true },
+      { key: 'Account Description', label: 'Account Description', type: 'text', source: true },
+      { key: 'Opening Debit', label: 'Opening Debit', type: 'inr', source: true },
+      { key: 'Opening Credit', label: 'Opening Credit', type: 'inr', source: true },
+      { key: 'Current Debit', label: 'Current Debit', type: 'inr', source: true },
+      { key: 'Current Credit', label: 'Current Credit', type: 'inr', source: true },
+      { key: 'Closing Debit', label: 'Closing Debit', type: 'inr', source: true },
+      { key: 'Closing Credit', label: 'Closing Credit', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const isDr = i % 2 === 0;
+      const amtVal = 850000 + (i * 240000);
+      const party = parties[i % parties.length]!;
+      return {
+        id: `tri-${i + 1}`,
+        number: `TRI-26-${String(i + 1).padStart(4, '0')}`,
+        'Line Code': `1${String(i + 10).padStart(3, '0')}`,
+        'Account Description': `Account Statement Head - ${party.name.slice(0, 24)}`,
+        'Opening Debit': isDr ? String(Math.round(amtVal * 0.8)) : '0',
+        'Opening Credit': !isDr ? String(Math.round(amtVal * 0.8)) : '0',
+        'Current Debit': isDr ? String(amtVal) : '0',
+        'Current Credit': !isDr ? String(amtVal) : '0',
+        'Closing Debit': isDr ? String(amtVal + 50000) : '0',
+        'Closing Credit': !isDr ? String(amtVal + 50000) : '0',
+        Status: 'Balanced',
+        status: 'Balanced',
+      };
+    });
+  } else if (pageId === 'fin-pnl') {
+    columns = [
+      { key: 'Line Code', label: 'Line Code', type: 'text', source: true },
+      { key: 'Account Description', label: 'Account Description', type: 'text', source: true },
+      { key: 'Current Month', label: 'Current Month', type: 'inr', source: true },
+      { key: 'YTD', label: 'YTD', type: 'inr', source: true },
+      { key: 'Prior Year YTD', label: 'Prior Year YTD', type: 'inr', source: true },
+      { key: 'Budget YTD', label: 'Budget YTD', type: 'inr', source: true },
+      { key: 'Variance', label: 'Variance', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const cm = 1200000 + (i * 450000);
+      const ytd = cm * 7;
+      const bYtd = Math.round(ytd * 1.05);
+      const dept = depts[i % depts.length] ?? 'Finance';
+      return {
+        id: `pro-${i + 1}`,
+        number: `PRO-26-${String(i + 1).padStart(4, '0')}`,
+        'Line Code': `P&L-${String(i + 101).padStart(4, '0')}`,
+        'Account Description': `P&L Functional Line Item #${i + 1} (${dept})`,
+        'Current Month': String(cm),
+        YTD: String(ytd),
+        'Prior Year YTD': String(Math.round(ytd * 0.88)),
+        'Budget YTD': String(bYtd),
+        Variance: String(bYtd - ytd),
+        Status: 'Verified',
+        status: 'Verified',
+      };
+    });
+  } else if (pageId === 'fin-bs') {
+    columns = [
+      { key: 'Line Code', label: 'Line Code', type: 'text', source: true },
+      { key: 'Category', label: 'Category', type: 'text', source: true },
+      { key: 'Account Description', label: 'Account Description', type: 'text', source: true },
+      { key: 'Current Period', label: 'Current Period', type: 'inr', source: true },
+      { key: 'Prior Period', label: 'Prior Period', type: 'inr', source: true },
+      { key: 'Movement', label: 'Movement', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const cur = 15000000 + (i * 3500000);
+      const prior = Math.round(cur * 0.92);
+      return {
+        id: `bal-${i + 1}`,
+        number: `BAL-26-${String(i + 1).padStart(4, '0')}`,
+        'Line Code': `BS-${String(i + 101).padStart(4, '0')}`,
+        Category: i % 2 === 0 ? 'Assets / Current Holdings' : 'Liabilities / Term Obligations',
+        'Account Description': `Balance Sheet Line - Schedule III Item #${i + 1}`,
+        'Current Period': String(cur),
+        'Prior Period': String(prior),
+        Movement: String(cur - prior),
+        Status: 'Audited',
+        status: 'Audited',
+      };
+    });
+  } else if (pageId === 'fin-cashflow') {
+    columns = [
+      { key: 'Line Code', label: 'Line Code', type: 'text', source: true },
+      { key: 'Cash Flow Category', label: 'Cash Flow Category', type: 'text', source: true },
+      { key: 'Account Description', label: 'Account Description', type: 'text', source: true },
+      { key: 'Current Month', label: 'Current Month', type: 'inr', source: true },
+      { key: 'YTD', label: 'YTD', type: 'inr', source: true },
+      { key: 'Prior YTD', label: 'Prior YTD', type: 'inr', source: true },
+      { key: 'Forecast', label: 'Forecast', type: 'inr', source: true },
+      { key: 'Variance', label: 'Variance', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const cats = ['Operating Activities', 'Investing Activities', 'Financing Activities'];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const cm = 850000 + (i * 250000);
+      const ytd = cm * 7;
+      const fc = Math.round(cm * 1.1);
+      const cat = cats[i % cats.length] ?? 'Operating Activities';
+      return {
+        id: `cas-${i + 1}`,
+        number: `CAS-26-${String(i + 1).padStart(4, '0')}`,
+        'Line Code': `CF-${String(i + 101).padStart(4, '0')}`,
+        'Cash Flow Category': cat,
+        'Account Description': `Cash Movement Stream #${i + 1}`,
+        'Current Month': String(cm),
+        YTD: String(ytd),
+        'Prior YTD': String(Math.round(ytd * 0.9)),
+        Forecast: String(fc),
+        Variance: String(fc - cm),
+        Status: 'Reconciled',
+        status: 'Reconciled',
+      };
+    });
+  } else if (pageId === 'fin-ageing') {
+    columns = [
+      { key: 'Party Code', label: 'Party Code', type: 'text', source: true },
+      { key: 'Party Name', label: 'Party Name', type: 'text', source: true },
+      { key: 'Type', label: 'Type', type: 'pill', source: true },
+      { key: 'Current', label: 'Current', type: 'inr', source: true },
+      { key: '1-30 Days', label: '1-30 Days', type: 'inr', source: true },
+      { key: '31-60 Days', label: '31-60 Days', type: 'inr', source: true },
+      { key: '61-90 Days', label: '61-90 Days', type: 'inr', source: true },
+      { key: 'Over 90 Days', label: 'Over 90 Days', type: 'inr', source: true },
+      { key: 'Total Due', label: 'Total Due', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const party = parties[i % parties.length]!;
+      const cur = 120000 + (i * 25000);
+      const b1 = 80000 + (i * 15000);
+      const b2 = 45000 + (i * 10000);
+      const b3 = 20000 + (i * 5000);
+      const b4 = i % 4 === 0 ? 35000 : 0;
+      const total = cur + b1 + b2 + b3 + b4;
+      return {
+        id: `ara-${i + 1}`,
+        number: `ARA-26-${String(i + 1).padStart(4, '0')}`,
+        'Party Code': party.code,
+        'Party Name': party.name,
+        Type: party.type,
+        Current: String(cur),
+        '1-30 Days': String(b1),
+        '31-60 Days': String(b2),
+        '61-90 Days': String(b3),
+        'Over 90 Days': String(b4),
+        'Total Due': String(total),
+        Status: b4 > 0 ? 'Critical' : 'Controlled',
+        status: b4 > 0 ? 'Critical' : 'Controlled',
+      };
+    });
+  }
+
+  let filtered = allRows;
+  if (p.q) {
+    const query = p.q.toLowerCase();
+    filtered = filtered.filter((r) =>
+      Object.values(r).some((val) => typeof val === 'string' && val.toLowerCase().includes(query))
+    );
+  }
+  if (p.status) {
+    filtered = filtered.filter((r) => (r.status ?? '').toLowerCase() === p.status?.toLowerCase());
+  }
+
+  const pageIndex = Math.max(1, p.page || 1);
+  const pageSize = p.size || 25;
+  const start = (pageIndex - 1) * pageSize;
+  const pagedRows = filtered.slice(start, start + pageSize);
+
+  return {
+    rows: pagedRows,
     columns,
     total: filtered.length,
     panel: null,

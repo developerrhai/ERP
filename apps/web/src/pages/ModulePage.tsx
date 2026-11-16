@@ -214,6 +214,11 @@ export const V40_ALIASES: readonly (readonly [RegExp, string])[] = [
   [/^cl-gatepass$/, '/m/gate-in'],
   [/^cl-canteen$/, '/m/ops-canteen'],
   [/^cl-exit$/, '/m/cl-workers'],
+  [/^fin-credit-notes$/, '/m/fin-creditnote'],
+  [/^fin-debit-notes$/, '/m/fin-debitnote'],
+  [/^fin-reconciliation$/, '/m/fin-bankreco'],
+  [/^fin-cost-centers$/, '/m/fin-costcenter'],
+  [/^fin-profit-centers$/, '/m/fin-profitcenter'],
 ];
 
 export function v40AliasFor(pageId: string): string | null {

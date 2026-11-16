@@ -55,7 +55,7 @@ const NO_FILTERS: Filters = { q: '', docType: '', state: '', source: '', from: '
 export function DeptMailboxPage({ pageId, deptName }: { pageId: string; deptName?: string }) {
   const toast = useToast();
   const [depts, setDepts] = useState<Dept[]>([]);
-  const [view, setView] = useState<ViewKey>('inbox');
+  const [view, setView] = useState<ViewKey>(pageId === 'dept-inbox-finance' ? 'receipt' : 'inbox');
   const [draft, setDraft] = useState<Filters>(NO_FILTERS);
   const [f, setF] = useState<Filters>(NO_FILTERS);
   const [rows, setRows] = useState<Row[]>([]);
@@ -166,12 +166,16 @@ export function DeptMailboxPage({ pageId, deptName }: { pageId: string; deptName
 
   return (
     <div className="dash-page">
-      <div className="card mailbox-hero">
-        <span className="rag rag-green">DEPARTMENT MAILBOX</span>
-        <h1>{`${name} Inbox (${needs})`}</h1>
-        <p>
-          Internal department mail. ERP documents are attachments; the message carries the handover, receipt, acceptance, work and approval cycle. Every department, including Administration/Admin, uses this same inbox layout.
-        </p>
+      <div className="card mailbox-hero" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1>{`${name} Inbox (${needs})`}</h1>
+          <p>
+            Internal department mail. ERP documents are attachments; the message carries the handover, receipt, acceptance, work and approval cycle. Every department, including Administration/Admin, uses this same inbox layout.
+          </p>
+        </div>
+        <span className="rag rag-green" style={{ textTransform: 'uppercase', padding: '6px 12px', borderRadius: 16, fontWeight: 700, fontSize: 11, background: '#0d9488', color: '#fff' }}>
+          DEPARTMENT MAILBOX
+        </span>
       </div>
 
       <div className="kpis kpis-6">
@@ -180,7 +184,7 @@ export function DeptMailboxPage({ pageId, deptName }: { pageId: string; deptName
         {card('Pending Receipt', counts ? counts.pendingReceipt : null)}
         {card('Pending Acceptance', counts ? counts.pendingAcceptance : null)}
         {card('Work / Rework', counts ? counts.work : null)}
-        {card('Approval', counts ? counts.approval : null)}
+        {card('Ready to Move', counts ? counts.ready : null)}
       </div>
 
       <div className="card work-flowbar">

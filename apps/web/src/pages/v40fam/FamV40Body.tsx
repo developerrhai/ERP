@@ -106,6 +106,25 @@ const WMS_TITLES: Record<string, string> = {
   'pay-payslip': 'Payslip Register – Detailed Table',
   'pay-bank': 'Bank Transfer Batches – Detailed Table',
   'pay-register': 'Salary Register – Detailed Table',
+  'fin-coa': 'Account Tree – Detailed Table',
+  'fin-gl': 'General Ledger – Detailed Table',
+  'fin-journal': 'Journal Register – Detailed Table',
+  'fin-cashbook': 'Cash Book – Detailed Table',
+  'fin-bankbook': 'Bank Book – Detailed Table',
+  'fin-ap': 'Vendor Payables – Detailed Table',
+  'fin-ar': 'Customer Receivables – Detailed Table',
+  'fin-creditnote': 'Credit Notes – Detailed Table',
+  'fin-debitnote': 'Debit Notes – Detailed Table',
+  'fin-bankreco': 'Bank Reconciliation – Detailed Table',
+  'fin-costcenter': 'Cost Centers – Detailed Table',
+  'fin-profitcenter': 'Profit Centers – Detailed Table',
+  'fin-expenses': 'Expense Register – Detailed Table',
+  'fin-budget': 'Budget Register – Detailed Table',
+  'fin-trial': 'Trial Balance – Detailed Table',
+  'fin-pnl': 'Profit & Loss – Detailed Table',
+  'fin-bs': 'Balance Sheet – Detailed Table',
+  'fin-cashflow': 'Cash Flow – Detailed Table',
+  'fin-ageing': 'Ageing Summary – Detailed Table',
 };
 
 const DEPARTMENTS = [
@@ -259,7 +278,7 @@ function RecordControlsBar({
         <option value="">{`Record: [Select ${title}]`}</option>
         {rows.map((r) => (
           <option key={r.id} value={r.id}>
-            {`Record: [${r['Record ID'] || r['Rule ID'] || r['Job ID'] || r['Webhook ID'] || r['Model Rule'] || r['Rule Name'] || r['Job Name'] || r.Event || r['Item Code'] || r['itemCode'] || r['Batch No'] || r['batchNo'] || r['Serial No'] || r['serialNo'] || r['Voucher No'] || r['txnId'] || r['Opening Ref'] || r['openingRef'] || r['Adjustment No'] || r['adjNo'] || r['Transfer No'] || r['transferNo'] || r['Reservation No'] || r['resNo'] || r['Reconciliation No'] || r['reconNo'] || r['Vendor Invoice'] || r['Invoice No'] || r['GSTIN'] || r['TDS Entry No'] || r['TCS Entry No'] || r['HSN SAC'] || r['EWB No'] || r['Return Period'] || r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r['Structure Code'] || r['OT No'] || r['Incentive No'] || r['Loan No'] || r['UAN'] || r['IP Number'] || r['PAN'] || r['Employee ID'] || r['Batch No'] || r['Payroll Month'] || r['Employee'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
+            {`Record: [${r['Record ID'] || r['Rule ID'] || r['Job ID'] || r['Webhook ID'] || r['Model Rule'] || r['Rule Name'] || r['Job Name'] || r.Event || r['Item Code'] || r['itemCode'] || r['Batch No'] || r['batchNo'] || r['Serial No'] || r['serialNo'] || r['Voucher No'] || r['txnId'] || r['Opening Ref'] || r['openingRef'] || r['Adjustment No'] || r['adjNo'] || r['Transfer No'] || r['transferNo'] || r['Reservation No'] || r['resNo'] || r['Reconciliation No'] || r['reconNo'] || r['Vendor Invoice'] || r['Invoice No'] || r['GSTIN'] || r['TDS Entry No'] || r['TCS Entry No'] || r['HSN SAC'] || r['EWB No'] || r['Return Period'] || r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r['Structure Code'] || r['OT No'] || r['Incentive No'] || r['Loan No'] || r['UAN'] || r['IP Number'] || r['PAN'] || r['Employee ID'] || r['Batch No'] || r['Payroll Month'] || r['Employee'] || r['Account Code'] || r['JV No'] || r['Credit Note No'] || r['Debit Note No'] || r['Cost Center Code'] || r['Profit Center Code'] || r['Expense No'] || r['Budget No'] || r['Line Code'] || r['Party Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
           </option>
         ))}
       </select>
@@ -831,6 +850,25 @@ export function FamV40Body({
       case 'pay-payslip': return { label: 'Payslips Distributed', value: '100%' };
       case 'pay-bank': return { label: 'Salary Disbursed', value: '100%' };
       case 'pay-register': return { label: 'Total Gross', value: '₹ 48,60,000' };
+      case 'fin-coa': return { label: 'Active Accounts', value: `${total}` };
+      case 'fin-gl': return { label: 'Total Postings', value: '₹ 2.85 Cr' };
+      case 'fin-journal': return { label: 'Journal Total', value: '₹ 48,50,000' };
+      case 'fin-cashbook': return { label: 'Cash Balance', value: '₹ 1,45,000' };
+      case 'fin-bankbook': return { label: 'Bank Position', value: '₹ 1.84 Cr' };
+      case 'fin-ap': return { label: 'Total Payables', value: '₹ 64,20,000' };
+      case 'fin-ar': return { label: 'Total Receivables', value: '₹ 82,40,000' };
+      case 'fin-creditnote': return { label: 'Credit Notes Value', value: '₹ 4,80,000' };
+      case 'fin-debitnote': return { label: 'Debit Notes Value', value: '₹ 3,60,000' };
+      case 'fin-bankreco': return { label: 'Reconciled Rate', value: '99.4%' };
+      case 'fin-costcenter': return { label: 'Active Cost Centers', value: `${total}` };
+      case 'fin-profitcenter': return { label: 'Active Profit Centers', value: `${total}` };
+      case 'fin-expenses': return { label: 'Total Expenses', value: '₹ 14,25,000' };
+      case 'fin-budget': return { label: 'Budget Utilization', value: '82.4%' };
+      case 'fin-trial': return { label: 'Trial Balance Status', value: '100% Balanced' };
+      case 'fin-pnl': return { label: 'Operating Margin', value: '24.2%' };
+      case 'fin-bs': return { label: 'Net Asset Value', value: '₹ 18.4 Cr' };
+      case 'fin-cashflow': return { label: 'Operating Cash Flow', value: '₹ 42,50,000' };
+      case 'fin-ageing': return { label: 'Healthy Collections (<30d)', value: '92.5%' };
       default: return { label: 'Active Units', value: `${total}` };
     }
   }, [pageId, totalCount, filteredRows.length]);
@@ -883,7 +921,7 @@ export function FamV40Body({
         </div>
         <div className="v8-mini">
           <small>{pageId === 'auto-jobs' ? 'AI Risk Score' : 'At Risk'}</small>
-          <b style={{ color: '#16a34a' }}>{pageId === 'pay-register' ? '21/100 Controlled' : pageId.startsWith('pay-') ? '14/100 Controlled' : pageId.startsWith('asset-') ? '21/100 Controlled' : '0 Low'}</b>
+          <b style={{ color: '#16a34a' }}>{pageId.startsWith('fin-') ? '14/100 Controlled' : pageId === 'pay-register' ? '21/100 Controlled' : pageId.startsWith('pay-') ? '14/100 Controlled' : pageId.startsWith('asset-') ? '21/100 Controlled' : '0 Low'}</b>
         </div>
         <div className="v8-mini">
           <small>{pageId === 'auto-jobs' ? 'Primary Metric' : fifthMetric.label}</small>
@@ -2299,6 +2337,204 @@ export function FamV40Body({
             </div>
             <div className="notice" style={{ marginTop: 12 }}>
               {totalCount || filteredRows.length} payroll records in scope. 0 compliance deviations detected. All statutory wage caps and minimum wage thresholds conform to 2026 regulations.
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.15 Finance & Accounts Workspace Panel (Interactive Simulator, Ageing & Reconcile Panels) */}
+      {pageId.startsWith('fin-') ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>{`${title} Workspace`}</h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  General ledger compliance, fiscal periods, double-entry audit trail, and automated financial statements.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● Working
+              </span>
+            </div>
+
+            {/* Stepper Tiles */}
+            <div
+              className="v9-stepper"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              {[
+                { label: 'Document Entry', status: 'Passed', active: true },
+                { label: 'GL Validation', status: 'Passed', active: true },
+                { label: 'Ledger Posting', status: 'Posted', active: true },
+                { label: 'Reconciliation', status: 'Verified', active: true },
+                { label: 'Period Close', status: 'Open', active: false },
+              ].map((st) => (
+                <div
+                  key={st.label}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    background: st.active ? 'var(--muted-bg, #f1f5f9)' : '#fff',
+                    border: `1px solid ${st.status === 'Posted' ? '#3b82f6' : st.active ? '#10b981' : 'var(--line, #cbd5e1)'}`,
+                    textAlign: 'center',
+                  }}
+                >
+                  <b style={{ fontSize: 11, display: 'block' }}>{st.label}</b>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: st.status === 'Passed' || st.status === 'Verified' ? '#16a34a' : st.status === 'Posted' ? '#2563eb' : '#64748b',
+                    }}
+                  >
+                    {st.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Financial Parameters or Margin Simulator (for fin-budget) or Ageing Bar Chart (for fin-ageing) */}
+            {pageId === 'fin-budget' ? (
+              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1px solid #e2e8f0', marginBottom: 12 }}>
+                <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8, color: '#1e293b' }}>
+                  Interactive Margin Simulator & Commercial Guardrails
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Base Amount</label>
+                    <input type="text" readOnly value="₹ 50,00,000" style={{ width: '100%', padding: '4px 6px', fontSize: 12, borderRadius: 4, border: '1px solid #cbd5e1' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Discount %</label>
+                    <input type="text" readOnly value="5.0%" style={{ width: '100%', padding: '4px 6px', fontSize: 12, borderRadius: 4, border: '1px solid #cbd5e1' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Tax Rate</label>
+                    <input type="text" readOnly value="18.0% GST" style={{ width: '100%', padding: '4px 6px', fontSize: 12, borderRadius: 4, border: '1px solid #cbd5e1' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Target Margin %</label>
+                    <input type="text" readOnly value="24.5%" style={{ width: '100%', padding: '4px 6px', fontSize: 12, borderRadius: 4, border: '1px solid #cbd5e1' }} />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn sm primary"
+                  onClick={() => toast('Approved Budget & Margin Simulation.')}
+                >
+                  Approve Simulation
+                </button>
+              </div>
+            ) : pageId === 'fin-ageing' ? (
+              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1px solid #e2e8f0', marginBottom: 12 }}>
+                <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8, color: '#1e293b' }}>
+                  Visual Ageing Buckets Distribution
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, textAlign: 'center' }}>
+                  <div style={{ background: '#ecfdf5', padding: 6, borderRadius: 4, border: '1px solid #10b981' }}>
+                    <small style={{ fontSize: 10, color: '#047857' }}>Current</small>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#065f46' }}>₹ 42,50,000</div>
+                  </div>
+                  <div style={{ background: '#f0fdf4', padding: 6, borderRadius: 4, border: '1px solid #22c55e' }}>
+                    <small style={{ fontSize: 10, color: '#15803d' }}>1-30 Days</small>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#166534' }}>₹ 24,10,000</div>
+                  </div>
+                  <div style={{ background: '#fefce8', padding: 6, borderRadius: 4, border: '1px solid #eab308' }}>
+                    <small style={{ fontSize: 10, color: '#a16207' }}>31-60 Days</small>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#854d0e' }}>₹ 12,40,000</div>
+                  </div>
+                  <div style={{ background: '#fff7ed', padding: 6, borderRadius: 4, border: '1px solid #f97316' }}>
+                    <small style={{ fontSize: 10, color: '#c2410c' }}>61-90 Days</small>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#9a3412' }}>₹ 6,80,000</div>
+                  </div>
+                  <div style={{ background: '#fef2f2', padding: 6, borderRadius: 4, border: '1px solid #ef4444' }}>
+                    <small style={{ fontSize: 10, color: '#b91c1c' }}>&gt; 90 Days</small>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#991b1b' }}>₹ 2,40,000</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="detail-grid"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                  gap: 8,
+                  padding: '10px 12px',
+                  background: 'var(--muted-bg, #f8fafc)',
+                  borderRadius: 6,
+                }}
+              >
+                {[
+                  { key: 'Debit/Credit Check', val: 'Balanced', ok: true },
+                  { key: 'Cost Center Split', val: '100% Allocated', ok: true },
+                  { key: 'Posting Rights', val: 'Authorized', ok: true },
+                  { key: 'Period Status', val: 'FY 2026-27 Open', ok: true },
+                  { key: 'Tax Alignment', val: 'Matched (18% / 12%)', ok: true },
+                  { key: 'Audit Hash', val: 'SHA-256 Valid', ok: true },
+                ].map((v) => (
+                  <div key={v.key} className="detail">
+                    <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>{v.key}</small>
+                    <div style={{ fontWeight: 600, color: v.ok ? '#16a34a' : '#ea580c' }}>{v.val}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 10px 0' }}>Finance Actions</h3>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {pageId === 'fin-coa' || pageId === 'fin-gl' || pageId === 'fin-journal' ? (
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => toast(`Ledger integrity check completed for ${title}. Debit and credit balance verified.`)}
+                >
+                  Verify Ledger Integrity
+                </button>
+              ) : null}
+              {pageId === 'fin-bankreco' ? (
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => toast('Auto Bank Statement reconciliation executed. 99.4% matched.')}
+                >
+                  Auto-Reconcile Statement
+                </button>
+              ) : null}
+              {pageId === 'fin-ageing' ? (
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => toast('Collection escalation task dispatched to regional finance manager.')}
+                >
+                  Create Escalation
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="btn"
+                onClick={() => toast(`Exporting official finance statement letterhead PDF for ${title}...`)}
+              >
+                Statement Letterhead PDF
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => toast(`Re-calculating financial metrics for ${title}...`)}
+              >
+                Recalculate Totals
+              </button>
+            </div>
+            <div className="notice" style={{ marginTop: 12 }}>
+              {totalCount || filteredRows.length} finance ledger records verified. Double-entry validation passed. No out-of-balance vouchers or unposted journal exceptions found.
             </div>
           </div>
         </div>
