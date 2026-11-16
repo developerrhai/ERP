@@ -71,6 +71,11 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
     return getAutoV40(pageId, p);
   }
 
+  // If this is a payroll module, return complete V40 structure
+  if (pageId.startsWith('pay-')) {
+    return getPayrollV40(pageId, p);
+  }
+
   // If this is an inventory module, /inventory/v40 returns { data: { columns, statuses, rows }, meta: { total, ... } }
   // where each row has { id, status, cells: { ... } }. We normalize it to V40Page (columns + flat row records).
   if (pageId.startsWith('inv-') || pageId === 'master-products' || pageId === 'master-materials') {
@@ -311,6 +316,505 @@ function getAutoV40(pageId: string, p: V40Params): V40Page {
         Timeout: item.to,
         'Max Retries': String(item.ret),
         'Last Delivery': `2026-11-15 ${String(12 + (i % 12)).padStart(2, '0')}:${String(10 + (i % 45)).padStart(2, '0')}`,
+        status,
+        Status: status,
+      };
+    });
+  }
+
+  // Filter by query and status
+  let filtered = allRows;
+  if (p.q) {
+    const ql = p.q.toLowerCase();
+    filtered = filtered.filter((r) => Object.values(r).some((v) => String(v ?? '').toLowerCase().includes(ql)));
+  }
+  if (p.status) {
+    filtered = filtered.filter((r) => r.status.toLowerCase() === p.status!.toLowerCase());
+  }
+
+  return {
+    rows: filtered,
+    columns,
+    total: filtered.length,
+    panel: null,
+    audit: false,
+    noSource: [],
+  };
+}
+
+function getPayrollV40(pageId: string, p: V40Params): V40Page {
+  let columns: V40Column[] = [];
+  let allRows: V40Row[] = [];
+
+  const empNames = [
+    'Amit Shinde', 'Pooja Sharma', 'Rajesh Sawant', 'Sunil Verma', 'Kavita Patil',
+    'Vikram Shinde', 'Suresh Nair', 'Ananya Joshi', 'Ramesh Jadhav', 'Santosh Yadav',
+    'Ganesh Pawar', 'Vikas More', 'Rahul Deshmukh', 'Sneha Kulkarni', 'Amit Roy',
+    'Kiran Joshi', 'Deepak Bhosale', 'Priyanka Mane', 'Sachin Kadam', 'Meena Salunkhe',
+    'Nitin Chavan', 'Swati Gaikwad', 'Sandip Thorat', 'Pravin Rane', 'Monika Shinde',
+  ];
+  const depts = ['Production', 'Sales', 'Finance', 'Management', 'Logistics', 'Quality', 'Engineering', 'HR'];
+
+  if (pageId === 'pay-structure') {
+    columns = [
+      { key: 'Structure Code', label: 'Structure Code', type: 'text', source: true },
+      { key: 'Structure Name', label: 'Structure Name', type: 'text', source: true },
+      { key: 'Grade', label: 'Grade', type: 'pill', source: true },
+      { key: 'Basic %', label: 'Basic %', type: 'text', source: true },
+      { key: 'HRA %', label: 'HRA %', type: 'text', source: true },
+      { key: 'Allowances', label: 'Allowances', type: 'inr', source: true },
+      { key: 'Employer PF', label: 'Employer PF', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const defs = [
+      { name: 'Standard Staff Structure', grade: 'L1', b: '50%', h: '20%', al: '12000', epf: '12%', st: 'Active' },
+      { name: 'Executive Leadership', grade: 'E1', b: '40%', h: '25%', al: '35000', epf: '12%', st: 'Active' },
+      { name: 'Factory Floor Operator', grade: 'O1', b: '55%', h: '15%', al: '6000', epf: '12%', st: 'Active' },
+      { name: 'Technical Specialist', grade: 'L2', b: '45%', h: '20%', al: '18000', epf: '12%', st: 'Active' },
+      { name: 'Middle Management', grade: 'M1', b: '45%', h: '20%', al: '24000', epf: '12%', st: 'Active' },
+      { name: 'Junior Associate', grade: 'L0', b: '50%', h: '20%', al: '8000', epf: '12%', st: 'Active' },
+      { name: 'Senior Consultant', grade: 'M2', b: '40%', h: '25%', al: '28000', epf: '12%', st: 'Active' },
+      { name: 'Quality Inspector', grade: 'O2', b: '50%', h: '20%', al: '9500', epf: '12%', st: 'Active' },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const item = defs[i % defs.length]!;
+      const code = `SAL-26-${String(i + 1).padStart(4, '0')}`;
+      const status = i === 7 ? 'Draft' : item.st;
+      return {
+        id: code,
+        number: code,
+        'Structure Code': code,
+        'Structure Name': `${item.name} v${1 + (i % 2)}`,
+        Grade: item.grade,
+        'Basic %': item.b,
+        'HRA %': item.h,
+        Allowances: item.al,
+        'Employer PF': item.epf,
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-processing') {
+    columns = [
+      { key: 'Employee ID', label: 'Employee ID', type: 'text', source: true },
+      { key: 'Employee', label: 'Employee', type: 'text', source: true },
+      { key: 'Department', label: 'Department', type: 'text', source: true },
+      { key: 'Paid Days', label: 'Paid Days', type: 'num', source: true },
+      { key: 'Gross Salary', label: 'Gross Salary', type: 'inr', source: true },
+      { key: 'PF', label: 'PF', type: 'inr', source: true },
+      { key: 'ESIC', label: 'ESIC', type: 'inr', source: true },
+      { key: 'PT', label: 'PT', type: 'inr', source: true },
+      { key: 'TDS', label: 'TDS', type: 'inr', source: true },
+      { key: 'Net Pay', label: 'Net Pay', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const emp = empNames[i % empNames.length]!;
+      const dept = depts[i % depts.length]!;
+      const empId = `EMP-1${String(i + 1).padStart(2, '0')}`;
+      const gross = 35000 + (i % 8) * 8000;
+      const pf = 1800;
+      const esic = gross <= 21000 ? Math.round(gross * 0.0075) : 0;
+      const pt = 200;
+      const tds = gross > 50000 ? Math.round((gross - 50000) * 0.1) : 0;
+      const net = gross - pf - esic - pt - tds;
+      const status = i < 5 ? 'Approved' : i < 20 ? 'Calculated' : 'Posted';
+      return {
+        id: empId,
+        number: empId,
+        'Employee ID': empId,
+        Employee: emp,
+        Department: dept,
+        'Paid Days': String(30 - (i % 3)),
+        'Gross Salary': String(gross),
+        PF: String(pf),
+        ESIC: String(esic),
+        PT: String(pt),
+        TDS: String(tds),
+        'Net Pay': String(net),
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-overtime') {
+    columns = [
+      { key: 'OT No', label: 'OT No', type: 'text', source: true },
+      { key: 'Employee', label: 'Employee', type: 'text', source: true },
+      { key: 'Date', label: 'Date', type: 'date', source: true },
+      { key: 'Shift', label: 'Shift', type: 'text', source: true },
+      { key: 'Eligible Hours', label: 'Eligible Hours', type: 'num', source: true },
+      { key: 'Approved Hours', label: 'Approved Hours', type: 'num', source: true },
+      { key: 'Rate Multiplier', label: 'Rate Multiplier', type: 'text', source: true },
+      { key: 'OT Amount', label: 'OT Amount', type: 'inr', source: true },
+      { key: 'Approval Status', label: 'Approval Status', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const otNo = `OT-26-${String(i + 1).padStart(4, '0')}`;
+      const emp = empNames[i % empNames.length]!;
+      const hours = 2 + (i % 6);
+      const appHours = i % 5 === 0 ? hours - 1 : hours;
+      const amount = appHours * 350 * 2;
+      const appSt = i % 4 === 0 ? 'Pending' : 'Approved';
+      const status = appSt === 'Approved' ? 'Active' : 'Pending';
+      return {
+        id: otNo,
+        number: otNo,
+        'OT No': otNo,
+        Employee: emp,
+        Date: `2026-11-${String(1 + (i % 14)).padStart(2, '0')}`,
+        Shift: i % 2 === 0 ? 'Day Shift' : 'Night Shift',
+        'Eligible Hours': String(hours),
+        'Approved Hours': String(appHours),
+        'Rate Multiplier': '2x',
+        'OT Amount': String(amount),
+        'Approval Status': appSt,
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-incentive') {
+    columns = [
+      { key: 'Incentive No', label: 'Incentive No', type: 'text', source: true },
+      { key: 'Employee', label: 'Employee', type: 'text', source: true },
+      { key: 'Scheme', label: 'Scheme', type: 'text', source: true },
+      { key: 'Period', label: 'Period', type: 'text', source: true },
+      { key: 'Target Amount', label: 'Target Amount', type: 'inr', source: true },
+      { key: 'Achieved Amount', label: 'Achieved Amount', type: 'inr', source: true },
+      { key: 'Incentive %', label: 'Incentive %', type: 'text', source: true },
+      { key: 'Payable Amount', label: 'Payable Amount', type: 'inr', source: true },
+      { key: 'Approval Status', label: 'Approval Status', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const incNo = `INC-26-${String(i + 1).padStart(4, '0')}`;
+      const emp = empNames[i % empNames.length]!;
+      const schemes = ['Quarterly Sales Bonus', 'Production Target Achiever', 'Operational Excellence', 'Project Milestone Award'];
+      const target = 500000 + (i % 5) * 200000;
+      const achieved = Math.round(target * (1.05 + (i % 3) * 0.05));
+      const payable = Math.round((achieved - target) * 0.15 + 5000);
+      const appSt = i % 4 === 0 ? 'Pending' : 'Approved';
+      const status = appSt === 'Approved' ? 'Active' : 'Draft';
+      return {
+        id: incNo,
+        number: incNo,
+        'Incentive No': incNo,
+        Employee: emp,
+        Scheme: schemes[i % schemes.length]!,
+        Period: 'Q3 FY26',
+        'Target Amount': String(target),
+        'Achieved Amount': String(achieved),
+        'Incentive %': `${5 + (i % 3)}%`,
+        'Payable Amount': String(payable),
+        'Approval Status': appSt,
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-loan') {
+    columns = [
+      { key: 'Loan No', label: 'Loan No', type: 'text', source: true },
+      { key: 'Employee', label: 'Employee', type: 'text', source: true },
+      { key: 'Loan Type', label: 'Loan Type', type: 'text', source: true },
+      { key: 'Disbursement Date', label: 'Disbursement Date', type: 'date', source: true },
+      { key: 'Principal Amount', label: 'Principal Amount', type: 'inr', source: true },
+      { key: 'Tenure (Months)', label: 'Tenure (Months)', type: 'num', source: true },
+      { key: 'EMI Amount', label: 'EMI Amount', type: 'inr', source: true },
+      { key: 'Recovered Amount', label: 'Recovered Amount', type: 'inr', source: true },
+      { key: 'Balance Amount', label: 'Balance Amount', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const loanNo = `LOA-26-${String(i + 1).padStart(4, '0')}`;
+      const emp = empNames[i % empNames.length]!;
+      const types = ['Salary Advance', 'Personal Loan', 'Emergency Medical', 'Festival Advance'];
+      const tenure = 6 + (i % 7) * 2;
+      const principal = tenure * 5000;
+      const emi = 5000;
+      const recovered = (i % 5) * 5000;
+      const balance = principal - recovered;
+      const status = balance === 0 ? 'Closed' : 'Active';
+      return {
+        id: loanNo,
+        number: loanNo,
+        'Loan No': loanNo,
+        Employee: emp,
+        'Loan Type': types[i % types.length]!,
+        'Disbursement Date': `2026-0${1 + (i % 8)}-15`,
+        'Principal Amount': String(principal),
+        'Tenure (Months)': String(tenure),
+        'EMI Amount': String(emi),
+        'Recovered Amount': String(recovered),
+        'Balance Amount': String(balance),
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-pf') {
+    columns = [
+      { key: 'Payroll Month', label: 'Payroll Month', type: 'text', source: true },
+      { key: 'Employee', label: 'Employee', type: 'text', source: true },
+      { key: 'UAN', label: 'UAN', type: 'text', source: true },
+      { key: 'PF Wage', label: 'PF Wage', type: 'inr', source: true },
+      { key: 'Employee PF', label: 'Employee PF', type: 'inr', source: true },
+      { key: 'Employer PF', label: 'Employer PF', type: 'inr', source: true },
+      { key: 'EPS', label: 'EPS', type: 'inr', source: true },
+      { key: 'Total PF', label: 'Total PF', type: 'inr', source: true },
+      { key: 'Challan Status', label: 'Challan Status', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const emp = empNames[i % empNames.length]!;
+      const recId = `PF-26-${String(i + 1).padStart(4, '0')}`;
+      const uan = `100${String(74829103 + i * 37)}`;
+      const pfWage = 15000;
+      const empPf = 1800;
+      const eps = 1250;
+      const emplyrPf = 550;
+      const totalPf = empPf + emplyrPf + eps;
+      const challan = i < 15 ? 'Generated' : 'Paid';
+      const status = 'Active';
+      return {
+        id: recId,
+        number: recId,
+        'Payroll Month': '2026-11',
+        Employee: emp,
+        UAN: uan,
+        'PF Wage': String(pfWage),
+        'Employee PF': String(empPf),
+        'Employer PF': String(emplyrPf),
+        EPS: String(eps),
+        'Total PF': String(totalPf),
+        'Challan Status': challan,
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-esic') {
+    columns = [
+      { key: 'Payroll Month', label: 'Payroll Month', type: 'text', source: true },
+      { key: 'Employee', label: 'Employee', type: 'text', source: true },
+      { key: 'IP Number', label: 'IP Number', type: 'text', source: true },
+      { key: 'ESIC Wage', label: 'ESIC Wage', type: 'inr', source: true },
+      { key: 'Employee ESIC', label: 'Employee ESIC', type: 'inr', source: true },
+      { key: 'Employer ESIC', label: 'Employer ESIC', type: 'inr', source: true },
+      { key: 'Total ESIC', label: 'Total ESIC', type: 'inr', source: true },
+      { key: 'Challan Status', label: 'Challan Status', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const emp = empNames[i % empNames.length]!;
+      const recId = `ESI-26-${String(i + 1).padStart(4, '0')}`;
+      const ip = `312${String(8475920 + i * 29)}`;
+      const esicWage = 16000 + (i % 5) * 1000;
+      const empEsic = Math.round(esicWage * 0.0075);
+      const emplyrEsic = Math.round(esicWage * 0.0325);
+      const totalEsic = empEsic + emplyrEsic;
+      const challan = i < 15 ? 'Generated' : 'Paid';
+      const status = 'Active';
+      return {
+        id: recId,
+        number: recId,
+        'Payroll Month': '2026-11',
+        Employee: emp,
+        'IP Number': ip,
+        'ESIC Wage': String(esicWage),
+        'Employee ESIC': String(empEsic),
+        'Employer ESIC': String(emplyrEsic),
+        'Total ESIC': String(totalEsic),
+        'Challan Status': challan,
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-pt') {
+    columns = [
+      { key: 'Payroll Month', label: 'Payroll Month', type: 'text', source: true },
+      { key: 'Employee', label: 'Employee', type: 'text', source: true },
+      { key: 'State', label: 'State', type: 'text', source: true },
+      { key: 'Gross Wage', label: 'Gross Wage', type: 'inr', source: true },
+      { key: 'PT Slab', label: 'PT Slab', type: 'text', source: true },
+      { key: 'PT Amount', label: 'PT Amount', type: 'inr', source: true },
+      { key: 'Challan Status', label: 'Challan Status', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const emp = empNames[i % empNames.length]!;
+      const recId = `PT-26-${String(i + 1).padStart(4, '0')}`;
+      const states = ['Maharashtra', 'Gujarat', 'Karnataka', 'Tamil Nadu'];
+      const gross = 30000 + (i % 6) * 10000;
+      const ptAmt = 200;
+      const challan = i < 15 ? 'Generated' : 'Paid';
+      const status = 'Active';
+      return {
+        id: recId,
+        number: recId,
+        'Payroll Month': '2026-11',
+        Employee: emp,
+        State: states[i % states.length]!,
+        'Gross Wage': String(gross),
+        'PT Slab': '> ₹ 10,000 (₹ 200)',
+        'PT Amount': String(ptAmt),
+        'Challan Status': challan,
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-tds') {
+    columns = [
+      { key: 'Payroll Month', label: 'Payroll Month', type: 'text', source: true },
+      { key: 'Employee', label: 'Employee', type: 'text', source: true },
+      { key: 'PAN', label: 'PAN', type: 'text', source: true },
+      { key: 'Tax Regime', label: 'Tax Regime', type: 'text', source: true },
+      { key: 'Projected Income', label: 'Projected Income', type: 'inr', source: true },
+      { key: 'Exemptions', label: 'Exemptions', type: 'inr', source: true },
+      { key: 'Total Tax', label: 'Total Tax', type: 'inr', source: true },
+      { key: 'Monthly TDS', label: 'Monthly TDS', type: 'inr', source: true },
+      { key: 'Challan Status', label: 'Challan Status', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const emp = empNames[i % empNames.length]!;
+      const recId = `TDS-26-${String(i + 1).padStart(4, '0')}`;
+      const pan = `ABCPS${String(1000 + i * 17)}F`;
+      const proj = 600000 + (i % 6) * 150000;
+      const exemptions = i % 2 === 0 ? 50000 : 150000;
+      const tax = Math.max(0, Math.round((proj - exemptions - 300000) * 0.1));
+      const monthly = Math.round(tax / 12);
+      const challan = i < 15 ? 'Generated' : 'Paid';
+      const status = 'Active';
+      return {
+        id: recId,
+        number: recId,
+        'Payroll Month': '2026-11',
+        Employee: emp,
+        PAN: pan,
+        'Tax Regime': i % 3 === 0 ? 'Old Regime' : 'New Regime (Sec 115BAC)',
+        'Projected Income': String(proj),
+        Exemptions: String(exemptions),
+        'Total Tax': String(tax),
+        'Monthly TDS': String(monthly),
+        'Challan Status': challan,
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-payslip') {
+    columns = [
+      { key: 'Payroll Month', label: 'Payroll Month', type: 'text', source: true },
+      { key: 'Employee ID', label: 'Employee ID', type: 'text', source: true },
+      { key: 'Employee', label: 'Employee', type: 'text', source: true },
+      { key: 'Department', label: 'Department', type: 'text', source: true },
+      { key: 'Gross', label: 'Gross', type: 'inr', source: true },
+      { key: 'Total Deductions', label: 'Total Deductions', type: 'inr', source: true },
+      { key: 'Net Pay', label: 'Net Pay', type: 'inr', source: true },
+      { key: 'Sent Date', label: 'Sent Date', type: 'date', source: true },
+      { key: 'View Count', label: 'View Count', type: 'num', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const emp = empNames[i % empNames.length]!;
+      const dept = depts[i % depts.length]!;
+      const pslId = `PSL-26-${String(i + 1).padStart(4, '0')}`;
+      const empId = `EMP-1${String(i + 1).padStart(2, '0')}`;
+      const gross = 45000 + (i % 6) * 10000;
+      const ded = 2000 + (i % 4) * 800;
+      const net = gross - ded;
+      const status = 'Distributed';
+      return {
+        id: pslId,
+        number: pslId,
+        'Payroll Month': '2026-11',
+        'Employee ID': empId,
+        Employee: emp,
+        Department: dept,
+        Gross: String(gross),
+        'Total Deductions': String(ded),
+        'Net Pay': String(net),
+        'Sent Date': '2026-11-01',
+        'View Count': String(1 + (i % 3)),
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-bank') {
+    columns = [
+      { key: 'Batch No', label: 'Batch No', type: 'text', source: true },
+      { key: 'Payroll Month', label: 'Payroll Month', type: 'text', source: true },
+      { key: 'Bank', label: 'Bank', type: 'text', source: true },
+      { key: 'Account No', label: 'Account No', type: 'text', source: true },
+      { key: 'Employee Count', label: 'Employee Count', type: 'num', source: true },
+      { key: 'Gross Transfer', label: 'Gross Transfer', type: 'inr', source: true },
+      { key: 'Bank Ref', label: 'Bank Ref', type: 'text', source: true },
+      { key: 'Payment Date', label: 'Payment Date', type: 'date', source: true },
+      { key: 'Acknowledgement', label: 'Acknowledgement', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const banks = ['HDFC Bank Ltd', 'State Bank of India', 'ICICI Bank Ltd', 'Axis Bank Ltd'];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const batchNo = `BAN-26-${String(i + 1).padStart(4, '0')}`;
+      const bank = banks[i % banks.length]!;
+      const count = 15 + (i % 5) * 8;
+      const gross = count * 45000;
+      const status = 'Processed';
+      return {
+        id: batchNo,
+        number: batchNo,
+        'Batch No': batchNo,
+        'Payroll Month': '2026-11',
+        Bank: bank,
+        'Account No': `502000${String(1827461 + i * 93)}`,
+        'Employee Count': String(count),
+        'Gross Transfer': String(gross),
+        'Bank Ref': `CMS-20261101-${String(i + 1).padStart(3, '0')}`,
+        'Payment Date': '2026-11-01',
+        Acknowledgement: 'Processed 200 OK',
+        status,
+        Status: status,
+      };
+    });
+  } else if (pageId === 'pay-register') {
+    columns = [
+      { key: 'Payroll Month', label: 'Payroll Month', type: 'text', source: true },
+      { key: 'Department', label: 'Department', type: 'text', source: true },
+      { key: 'Employee Count', label: 'Employee Count', type: 'num', source: true },
+      { key: 'Gross Salary', label: 'Gross Salary', type: 'inr', source: true },
+      { key: 'Employee Deductions', label: 'Employee Deductions', type: 'inr', source: true },
+      { key: 'Employer Contributions', label: 'Employer Contributions', type: 'inr', source: true },
+      { key: 'Net Salary', label: 'Net Salary', type: 'inr', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const regId = `REG-26-${String(i + 1).padStart(4, '0')}`;
+      const dept = depts[i % depts.length]!;
+      const count = 12 + (i % 6) * 4;
+      const gross = count * 48000;
+      const ded = Math.round(gross * 0.08);
+      const contrib = Math.round(gross * 0.09);
+      const net = gross - ded;
+      const status = 'Posted';
+      return {
+        id: regId,
+        number: regId,
+        'Payroll Month': '2026-11',
+        Department: `${dept} Division`,
+        'Employee Count': String(count),
+        'Gross Salary': String(gross),
+        'Employee Deductions': String(ded),
+        'Employer Contributions': String(contrib),
+        'Net Salary': String(net),
         status,
         Status: status,
       };

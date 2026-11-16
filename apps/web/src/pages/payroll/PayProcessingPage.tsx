@@ -31,9 +31,11 @@ export function PayProcessingPage() {
         setSelectedPeriodId(p[0].id);
         const r = await getPayrollRuns({ period_id: p[0].id });
         if (r.length > 0 && r[0]) {
-          const full = await getPayrollRun(r[0].id);
-          setActiveRun(full);
-          setStep(full.status === 'POSTED' ? 5 : full.status === 'LOCKED' ? 4 : full.status === 'CALCULATED' ? 3 : 2);
+          const full = await getPayrollRun(r[0].id).catch(() => null);
+          const active = full || r[0];
+          setActiveRun(active);
+          const st = active?.status || 'DRAFT';
+          setStep(st === 'POSTED' ? 5 : st === 'LOCKED' ? 4 : st === 'CALCULATED' ? 3 : 2);
         } else {
           setActiveRun(null);
           setStep(1);
@@ -55,9 +57,11 @@ export function PayProcessingPage() {
     try {
       const r = await getPayrollRuns({ period_id: pId });
       if (r.length > 0 && r[0]) {
-        const full = await getPayrollRun(r[0].id);
-        setActiveRun(full);
-        setStep(full.status === 'POSTED' ? 5 : full.status === 'LOCKED' ? 4 : full.status === 'CALCULATED' ? 3 : 2);
+        const full = await getPayrollRun(r[0].id).catch(() => null);
+        const active = full || r[0];
+        setActiveRun(active);
+        const st = active?.status || 'DRAFT';
+        setStep(st === 'POSTED' ? 5 : st === 'LOCKED' ? 4 : st === 'CALCULATED' ? 3 : 2);
       } else {
         setActiveRun(null);
         setStep(1);

@@ -96,6 +96,18 @@ const NOUNS: Record<string, string> = {
   'auto-rules': 'Automation Rules',
   'auto-jobs': 'Background Jobs',
   'auto-webhooks': 'Webhooks',
+  'pay-structure': 'Salary Structure',
+  'pay-processing': 'Payroll Processing',
+  'pay-overtime': 'Overtime',
+  'pay-incentive': 'Incentives / Bonus',
+  'pay-loan': 'Loans / Advances',
+  'pay-pf': 'PF',
+  'pay-esic': 'ESIC',
+  'pay-pt': 'Professional Tax',
+  'pay-tds': 'Payroll TDS',
+  'pay-payslip': 'Payslips',
+  'pay-bank': 'Bank Transfer File',
+  'pay-register': 'Salary Register',
 };
 
 export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
@@ -103,6 +115,6 @@ export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
 export const FAM_PAGE_CFG: Record<string, { noun: string; print?: boolean }> = Object.fromEntries(
   Object.entries(NOUNS).map(([id, noun]) => [
     id,
-    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') || id.startsWith('inv-') || id.startsWith('auto-') ? { noun, print: true } : { noun },
+    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') || id.startsWith('inv-') || id.startsWith('auto-') || id.startsWith('pay-') ? { noun, print: true } : { noun },
   ]),
 );

@@ -656,7 +656,7 @@ function PageBody({
     case 'hr-ess':
       return <HrEssPage />;
 
-    // Phase 16 Payroll screens
+    // Phase 16 Payroll screens - drawer fallback
     case 'pay-processing':
     case 'pay-register':
       return <PayProcessingPage />;

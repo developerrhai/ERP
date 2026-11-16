@@ -190,7 +190,7 @@ payrollRouter.get(
   '/runs/:id',
   asyncHandler(async (req: Request, res: Response) => {
     const run = await PayrollService.getRun(prisma, req.params.id!);
-    res.json(run);
+    res.json({ data: run, ...(run || {}) });
   }),
 );
 
@@ -207,7 +207,7 @@ payrollRouter.post(
     const caller = callerOf(req);
     const body = CreateRunSchema.parse(req.body);
     const id = await PayrollService.createRun(prisma, body, caller);
-    res.status(201).json({ id });
+    res.status(201).json({ data: { id }, id });
   }),
 );
 
@@ -216,7 +216,7 @@ payrollRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const caller = callerOf(req);
     const result = await PayrollService.calculateRun(prisma, req.params.id!, caller);
-    res.json(result);
+    res.json({ data: result, ...(result || {}) });
   }),
 );
 
@@ -225,7 +225,7 @@ payrollRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const caller = callerOf(req);
     const result = await PayrollService.lockRun(prisma, req.params.id!, caller);
-    res.json(result);
+    res.json({ data: result, ...(result || {}) });
   }),
 );
 
@@ -234,7 +234,7 @@ payrollRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const caller = callerOf(req);
     const result = await PayrollService.postRun(prisma, req.params.id!, caller);
-    res.json(result);
+    res.json({ data: result, ...(result || {}) });
   }),
 );
 
@@ -300,7 +300,7 @@ payrollRouter.get(
   '/runs/:id/pt-summary',
   asyncHandler(async (req: Request, res: Response) => {
     const summary = await StatutoryExportService.getPtStatement(prisma, req.params.id!);
-    res.json(summary);
+    res.json({ data: summary, ...(summary || {}) });
   }),
 );
 
@@ -311,7 +311,7 @@ payrollRouter.get(
   '/payslips/:runEmployeeId',
   asyncHandler(async (req: Request, res: Response) => {
     const slip = await PayslipService.getPayslip(prisma, req.params.runEmployeeId!);
-    res.json(slip);
+    res.json({ data: slip, ...(slip || {}) });
   }),
 );
 
@@ -320,6 +320,6 @@ payrollRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const caller = callerOf(req);
     const result = await PayslipService.releasePayslips(prisma, req.params.id!, caller);
-    res.json(result);
+    res.json({ data: result, ...(result || {}) });
   }),
 );

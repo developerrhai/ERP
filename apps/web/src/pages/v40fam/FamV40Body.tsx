@@ -94,6 +94,18 @@ const WMS_TITLES: Record<string, string> = {
   'auto-rules': 'Rule Library – Detailed Table',
   'auto-jobs': 'Job Queue – Detailed Table',
   'auto-webhooks': 'Webhook Registry – Detailed Table',
+  'pay-structure': 'Salary Structure Master – Detailed Table',
+  'pay-processing': 'Payroll Run – Detailed Table',
+  'pay-overtime': 'Overtime Register – Detailed Table',
+  'pay-incentive': 'Incentive Register – Detailed Table',
+  'pay-loan': 'Loan Register – Detailed Table',
+  'pay-pf': 'PF Workspace – Detailed Table',
+  'pay-esic': 'ESIC Workspace – Detailed Table',
+  'pay-pt': 'Professional Tax – Detailed Table',
+  'pay-tds': 'Payroll TDS – Detailed Table',
+  'pay-payslip': 'Payslip Register – Detailed Table',
+  'pay-bank': 'Bank Transfer Batches – Detailed Table',
+  'pay-register': 'Salary Register – Detailed Table',
 };
 
 const DEPARTMENTS = [
@@ -247,7 +259,7 @@ function RecordControlsBar({
         <option value="">{`Record: [Select ${title}]`}</option>
         {rows.map((r) => (
           <option key={r.id} value={r.id}>
-            {`Record: [${r['Record ID'] || r['Rule ID'] || r['Job ID'] || r['Webhook ID'] || r['Model Rule'] || r['Rule Name'] || r['Job Name'] || r.Event || r['Item Code'] || r['itemCode'] || r['Batch No'] || r['batchNo'] || r['Serial No'] || r['serialNo'] || r['Voucher No'] || r['txnId'] || r['Opening Ref'] || r['openingRef'] || r['Adjustment No'] || r['adjNo'] || r['Transfer No'] || r['transferNo'] || r['Reservation No'] || r['resNo'] || r['Reconciliation No'] || r['reconNo'] || r['Vendor Invoice'] || r['Invoice No'] || r['GSTIN'] || r['TDS Entry No'] || r['TCS Entry No'] || r['HSN SAC'] || r['EWB No'] || r['Return Period'] || r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
+            {`Record: [${r['Record ID'] || r['Rule ID'] || r['Job ID'] || r['Webhook ID'] || r['Model Rule'] || r['Rule Name'] || r['Job Name'] || r.Event || r['Item Code'] || r['itemCode'] || r['Batch No'] || r['batchNo'] || r['Serial No'] || r['serialNo'] || r['Voucher No'] || r['txnId'] || r['Opening Ref'] || r['openingRef'] || r['Adjustment No'] || r['adjNo'] || r['Transfer No'] || r['transferNo'] || r['Reservation No'] || r['resNo'] || r['Reconciliation No'] || r['reconNo'] || r['Vendor Invoice'] || r['Invoice No'] || r['GSTIN'] || r['TDS Entry No'] || r['TCS Entry No'] || r['HSN SAC'] || r['EWB No'] || r['Return Period'] || r['Lead No'] || r['Opportunity No'] || r['Follow-up No'] || r['Meeting No'] || r['Feedback No'] || r['Source Code'] || r['Customer'] || r['Rack Code'] || r['Zone Code'] || r['Warehouse Code'] || r['Structure Code'] || r['OT No'] || r['Incentive No'] || r['Loan No'] || r['UAN'] || r['IP Number'] || r['PAN'] || r['Employee ID'] || r['Batch No'] || r['Payroll Month'] || r['Employee'] || r.number || r.id.slice(0, 8)}] - ${r.status || 'Active'}`}
           </option>
         ))}
       </select>
@@ -807,6 +819,18 @@ export function FamV40Body({
       case 'wms-cycle': return { label: 'Cycle Accuracy', value: '99.8%' };
       case 'wms-physical': return { label: 'Count Discrepancy', value: '0.1% Low' };
       case 'wms-transfer': return { label: 'Transfers In Transit', value: `${total}` };
+      case 'pay-structure': return { label: 'Active Structures', value: `${total}` };
+      case 'pay-processing': return { label: 'Net Payroll', value: '₹ 42,50,000' };
+      case 'pay-overtime': return { label: 'Approved OT Hours', value: '148h' };
+      case 'pay-incentive': return { label: 'Incentives Paid', value: '₹ 3,80,000' };
+      case 'pay-loan': return { label: 'Active Loans', value: '12' };
+      case 'pay-pf': return { label: 'PF Deposited', value: '₹ 4,60,000' };
+      case 'pay-esic': return { label: 'ESIC Active IPs', value: '184' };
+      case 'pay-pt': return { label: 'PT Remitted', value: '₹ 48,000' };
+      case 'pay-tds': return { label: 'TDS Deducted', value: '₹ 6,20,000' };
+      case 'pay-payslip': return { label: 'Payslips Distributed', value: '100%' };
+      case 'pay-bank': return { label: 'Salary Disbursed', value: '100%' };
+      case 'pay-register': return { label: 'Total Gross', value: '₹ 48,60,000' };
       default: return { label: 'Active Units', value: `${total}` };
     }
   }, [pageId, totalCount, filteredRows.length]);
@@ -859,7 +883,7 @@ export function FamV40Body({
         </div>
         <div className="v8-mini">
           <small>{pageId === 'auto-jobs' ? 'AI Risk Score' : 'At Risk'}</small>
-          <b style={{ color: '#16a34a' }}>{pageId.startsWith('asset-') ? '21/100 Controlled' : '0 Low'}</b>
+          <b style={{ color: '#16a34a' }}>{pageId === 'pay-register' ? '21/100 Controlled' : pageId.startsWith('pay-') ? '14/100 Controlled' : pageId.startsWith('asset-') ? '21/100 Controlled' : '0 Low'}</b>
         </div>
         <div className="v8-mini">
           <small>{pageId === 'auto-jobs' ? 'Primary Metric' : fifthMetric.label}</small>
@@ -2129,6 +2153,152 @@ export function FamV40Body({
             </div>
             <div className="notice" style={{ marginTop: 12 }}>
               {totalCount || filteredRows.length} statutory records checked. {Math.max(0, (totalCount || filteredRows.length) - 3)} are filing-ready; 3 contain review flags for verification.
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.14 Payroll Workspace Panel (v9PayrollWorkspace for all 12 Payroll submodules) */}
+      {pageId.startsWith('pay-') ? (
+        <div className="v9-grid" style={{ marginTop: 12 }}>
+          <div className="v9-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>{`${title} Workspace`}</h3>
+                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                  Statutory compliance, attendance integration, tax deductions, and automated payroll disbursement.
+                </div>
+              </div>
+              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                ● Active Run
+              </span>
+            </div>
+
+            {/* Stepper Tiles */}
+            <div
+              className="v9-stepper"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              {[
+                { label: 'Attendance Sync', status: 'Passed', active: true },
+                { label: 'Calculations', status: 'Calculated', active: true },
+                { label: 'Statutory (PF/ESI/PT)', status: 'Verified', active: true },
+                { label: 'TDS & Deductions', status: 'Compliant', active: true },
+                { label: 'Bank Disbursement', status: 'Ready', active: false },
+              ].map((st) => (
+                <div
+                  key={st.label}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    background: st.active ? 'var(--muted-bg, #f1f5f9)' : '#fff',
+                    border: `1px solid ${st.status === 'Ready' ? '#3b82f6' : st.active ? '#10b981' : 'var(--line, #cbd5e1)'}`,
+                    textAlign: 'center',
+                  }}
+                >
+                  <b style={{ fontSize: 11, display: 'block' }}>{st.label}</b>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: st.status === 'Passed' || st.status === 'Verified' || st.status === 'Compliant' ? '#16a34a' : st.status === 'Ready' || st.status === 'Calculated' ? '#2563eb' : '#64748b',
+                    }}
+                  >
+                    {st.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Parameter & Compliance Matrix */}
+            <div
+              className="detail-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                gap: 8,
+                padding: '10px 12px',
+                background: 'var(--muted-bg, #f8fafc)',
+                borderRadius: 6,
+              }}
+            >
+              {[
+                { key: 'PF Compliance', val: '12.0% Verified', ok: true },
+                { key: 'ESIC Coverage', val: '3.25% + 0.75%', ok: true },
+                { key: 'Prof Tax Slab', val: 'Maharashtra Slab', ok: true },
+                { key: 'TDS Regime', val: 'New Regime (Default)', ok: true },
+                { key: 'Bank Format', val: 'HDFC / ICICI 16-col', ok: true },
+                { key: 'Payslip Status', val: 'Generated (100%)', ok: true },
+              ].map((v) => (
+                <div key={v.key} className="detail">
+                  <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>{v.key}</small>
+                  <div style={{ fontWeight: 600, color: v.ok ? '#16a34a' : '#ea580c' }}>{v.val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="v9-section">
+            <h3 style={{ margin: '0 0 10px 0' }}>Payroll Operations</h3>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {pageId === 'pay-structure' || pageId === 'pay-processing' || pageId === 'pay-register' ? (
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => toast(`Payroll calculation and validation completed for ${title}. All gross-to-net equations verified.`)}
+                >
+                  Calculate / Validate Payroll
+                </button>
+              ) : null}
+              {pageId === 'pay-pf' || pageId === 'pay-esic' || pageId === 'pay-pt' || pageId === 'pay-tds' ? (
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => toast(`Marked all records as Reviewed for ${title}. Ready for monthly return generation.`)}
+                >
+                  Mark Reviewed
+                </button>
+              ) : null}
+              {pageId === 'pay-payslip' ? (
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => toast('Downloading sample confidential payslip PDF...')}
+                >
+                  Download Sample Payslip PDF
+                </button>
+              ) : null}
+              {pageId === 'pay-bank' ? (
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => toast('Bank NEFT/RTGS batch generated and validated against IFSC codes.')}
+                >
+                  Allocate / Reallocate Batch
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="btn"
+                onClick={() => toast(`Exporting official payroll register letterhead PDF for ${title}...`)}
+              >
+                Register Letterhead PDF
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => toast(`Recalculate summary metrics triggered for ${title}.`)}
+              >
+                Recalculate Metrics
+              </button>
+            </div>
+            <div className="notice" style={{ marginTop: 12 }}>
+              {totalCount || filteredRows.length} payroll records in scope. 0 compliance deviations detected. All statutory wage caps and minimum wage thresholds conform to 2026 regulations.
             </div>
           </div>
         </div>

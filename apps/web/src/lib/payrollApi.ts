@@ -116,7 +116,7 @@ export async function getPayrollRuns(params: { period_id?: string; unit_id?: str
 
 export async function getPayrollRun(id: string) {
   const res = await request<any>(`/payroll/runs/${id}`);
-  return res.data;
+  return (res as any)?.data ?? res;
 }
 
 export async function createPayrollRun(data: any) {
