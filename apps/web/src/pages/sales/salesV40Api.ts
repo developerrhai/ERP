@@ -81,6 +81,11 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
     return getFinanceV40(pageId, p);
   }
 
+  // If this is a procurement / SCM module, return complete V40 structure with rich demo data
+  if (pageId.startsWith('scm-')) {
+    return getScmV40(pageId, p);
+  }
+
   // If this is an inventory module, /inventory/v40 returns { data: { columns, statuses, rows }, meta: { total, ... } }
   // where each row has { id, status, cells: { ... } }. We normalize it to V40Page (columns + flat row records).
   if (pageId.startsWith('inv-') || pageId === 'master-products' || pageId === 'master-materials') {
@@ -1505,6 +1510,354 @@ function getFinanceV40(pageId: string, p: V40Params): V40Page {
     const query = p.q.toLowerCase();
     filtered = filtered.filter((r) =>
       Object.values(r).some((val) => typeof val === 'string' && val.toLowerCase().includes(query))
+    );
+  }
+  if (p.status) {
+    filtered = filtered.filter((r) => (r.status ?? '').toLowerCase() === p.status?.toLowerCase());
+  }
+
+  const pageIndex = Math.max(1, p.page || 1);
+  const pageSize = p.size || 25;
+  const start = (pageIndex - 1) * pageSize;
+  const pagedRows = filtered.slice(start, start + pageSize);
+
+  return {
+    rows: pagedRows,
+    columns,
+    total: filtered.length,
+    panel: null,
+    audit: false,
+    noSource: [],
+  };
+}
+
+function getScmV40(pageId: string, p: V40Params): V40Page {
+  let columns: V40Column[] = [];
+  let allRows: V40Row[] = [];
+
+  const vendors = [
+    { code: 'VEND-001', name: 'Tata Steel Tubes Ltd' },
+    { code: 'VEND-002', name: 'Hindalco Metal Supplies' },
+    { code: 'VEND-003', name: 'JSW Coated Sheets' },
+    { code: 'VEND-004', name: 'Schneider Electric Components' },
+    { code: 'VEND-005', name: 'SKF India Bearings' },
+    { code: 'VEND-006', name: 'Bosch Industrial Rexroth' },
+    { code: 'VEND-007', name: 'L&T Heavy Engineering' },
+    { code: 'VEND-008', name: 'Praj Industries Biofuels' },
+    { code: 'VEND-009', name: 'ABB Power Grids Systems' },
+    { code: 'VEND-010', name: 'Endress+Hauser Flowtech' },
+    { code: 'VEND-011', name: 'Festo Pneumatics India' },
+    { code: 'VEND-012', name: 'Sandvik Coromant Tools' },
+  ];
+
+  const items = [
+    { code: 'ITM-STL-001', name: 'Seamless Steel Pipe 50mm Sch 40', uom: 'MTR', rate: 1450 },
+    { code: 'ITM-ALU-002', name: 'Aluminum Extrusion Profile 6063-T6', uom: 'KG', rate: 380 },
+    { code: 'ITM-BRG-003', name: 'Deep Groove Ball Bearing 6205-2RS', uom: 'NOS', rate: 850 },
+    { code: 'ITM-VLV-004', name: 'Pneumatic Solenoid Valve 24V DC', uom: 'SET', rate: 4200 },
+    { code: 'ITM-SHT-005', name: 'CRCA Cold Rolled Steel Sheet 2mm', uom: 'SHT', rate: 2900 },
+    { code: 'ITM-FST-006', name: 'High Tensile Hex Bolt M12x50 Gr 8.8', uom: 'BOX', rate: 1250 },
+    { code: 'ITM-SEN-007', name: 'Proximity Inductive Sensor M18 PNP', uom: 'NOS', rate: 1950 },
+    { code: 'ITM-HYD-008', name: 'Hydraulic Directional Control Valve', uom: 'NOS', rate: 11500 },
+  ];
+
+  const buyers = ['Rajesh Sawant', 'Suresh Nair', 'Amit Deshmukh', 'Vikram Shinde', 'Ananya Joshi'];
+  const depts = ['Purchase', 'Production', 'Stores', 'Quality', 'Maintenance', 'Tool Room'];
+
+  if (pageId === 'scm-comparison') {
+    columns = [
+      { key: 'Comparison No', label: 'Comparison No', type: 'text', source: true },
+      { key: 'RFQ No', label: 'RFQ No', type: 'text', source: true },
+      { key: 'Title / Subject', label: 'Title / Subject', type: 'text', source: true },
+      { key: 'Awarded Vendor', label: 'Awarded Vendor', type: 'text', source: true },
+      { key: 'Lowest Quote (L1)', label: 'Lowest Quote (L1)', type: 'inr', source: true },
+      { key: 'Awarded Value', label: 'Awarded Value', type: 'inr', source: true },
+      { key: 'Quotes Compared', label: 'Quotes Compared', type: 'num', source: true },
+      { key: 'Buyer', label: 'Buyer', type: 'text', source: true },
+      { key: 'Required Date', label: 'Required Date', type: 'date', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const comparisons = [
+      { rfq: 'RFQ-2026-0041', title: 'Seamless Boiler Tubes & Elbows', l1: 840000, award: 840000, vIdx: 0, st: 'Awarded' },
+      { rfq: 'RFQ-2026-0042', title: 'Aluminum Extrusions 6063-T6', l1: 420000, award: 435000, vIdx: 1, st: 'Under Review' },
+      { rfq: 'RFQ-2026-0043', title: 'Industrial SKF Bearing Supply Batch', l1: 310000, award: 310000, vIdx: 4, st: 'Awarded' },
+      { rfq: 'RFQ-2026-0044', title: 'High Tensile Fasteners & Anchor Bolts', l1: 195000, award: 195000, vIdx: 6, st: 'Pending Approval' },
+      { rfq: 'RFQ-2026-0045', title: 'Pneumatic Cylinders & Valve Manifolds', l1: 675000, award: 675000, vIdx: 10, st: 'Awarded' },
+      { rfq: 'RFQ-2026-0046', title: 'CRCA Cold Rolled Steel Coils', l1: 1250000, award: 1250000, vIdx: 2, st: 'Approved' },
+      { rfq: 'RFQ-2026-0047', title: 'Sandvik CNC Solid Carbide Inserts', l1: 285000, award: 285000, vIdx: 11, st: 'Draft' },
+      { rfq: 'RFQ-2026-0048', title: 'Hydraulic Proportional Valves Batch', l1: 940000, award: 940000, vIdx: 5, st: 'Awarded' },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const cmp = comparisons[i % comparisons.length]!;
+      const cmpNo = `CMP-2026-${String(i + 1).padStart(4, '0')}`;
+      const vendor = vendors[cmp.vIdx % vendors.length]!;
+      const buyer = buyers[i % buyers.length]!;
+      return {
+        id: `scm-cmp-${i + 1}`,
+        number: cmpNo,
+        'Comparison No': cmpNo,
+        'RFQ No': cmp.rfq,
+        'Title / Subject': cmp.title,
+        'Awarded Vendor': `${vendor.name} (${vendor.code})`,
+        'Lowest Quote (L1)': String(cmp.l1 + i * 15000),
+        'Awarded Value': String(cmp.award + i * 15000),
+        'Quotes Compared': String(3 + (i % 3)),
+        Buyer: buyer,
+        'Required Date': `2026-11-${String((i % 25) + 5).padStart(2, '0')}`,
+        Status: cmp.st,
+        status: cmp.st,
+      };
+    });
+  } else if (pageId === 'scm-vendorquote') {
+    columns = [
+      { key: 'Quote No', label: 'Quote No', type: 'text', source: true },
+      { key: 'RFQ No', label: 'RFQ No', type: 'text', source: true },
+      { key: 'Vendor', label: 'Vendor', type: 'text', source: true },
+      { key: 'Quote Date', label: 'Quote Date', type: 'date', source: true },
+      { key: 'Valid Until', label: 'Valid Until', type: 'date', source: true },
+      { key: 'Total Amount', label: 'Total Amount', type: 'inr', source: true },
+      { key: 'Landed Cost', label: 'Landed Cost', type: 'inr', source: true },
+      { key: 'Lead Time (Days)', label: 'Lead Time (Days)', type: 'num', source: true },
+      { key: 'Payment Terms', label: 'Payment Terms', type: 'text', source: true },
+      { key: 'Compliance', label: 'Compliance', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const vqNo = `VQ-2026-${String(i + 1).padStart(4, '0')}`;
+      const rfqNo = `RFQ-2026-${String(40 + (i % 8)).padStart(4, '0')}`;
+      const v = vendors[i % vendors.length]!;
+      const amt = 240000 + i * 38000;
+      const landed = Math.round(amt * 1.18);
+      const st = i % 4 === 0 ? 'Selected' : i % 4 === 1 ? 'Under Review' : i % 4 === 2 ? 'Submitted' : 'Draft';
+      return {
+        id: `scm-vq-${i + 1}`,
+        number: vqNo,
+        'Quote No': vqNo,
+        'RFQ No': rfqNo,
+        Vendor: `${v.name} (${v.code})`,
+        'Quote Date': `2026-11-${String((i % 15) + 1).padStart(2, '0')}`,
+        'Valid Until': '2026-12-31',
+        'Total Amount': String(amt),
+        'Landed Cost': String(landed),
+        'Lead Time (Days)': String(7 + (i % 14)),
+        'Payment Terms': i % 2 === 0 ? 'Net 30 Days' : '100% Against PI',
+        Compliance: i % 5 === 0 ? 'Partial' : 'Full',
+        Status: st,
+        status: st,
+      };
+    });
+  } else if (pageId === 'scm-rfq') {
+    columns = [
+      { key: 'RFQ No', label: 'RFQ No', type: 'text', source: true },
+      { key: 'Issue Date', label: 'Issue Date', type: 'date', source: true },
+      { key: 'Closing Date', label: 'Closing Date', type: 'date', source: true },
+      { key: 'Subject', label: 'Subject', type: 'text', source: true },
+      { key: 'Department', label: 'Department', type: 'text', source: true },
+      { key: 'Buyer', label: 'Buyer', type: 'text', source: true },
+      { key: 'Invited Vendors', label: 'Invited Vendors', type: 'num', source: true },
+      { key: 'Quotes Received', label: 'Quotes Received', type: 'num', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const rfqNo = `RFQ-2026-${String(i + 1).padStart(4, '0')}`;
+      const buyer = buyers[i % buyers.length]!;
+      const dept = depts[i % depts.length]!;
+      const itm = items[i % items.length]!;
+      const st = i % 3 === 0 ? 'Closed' : i % 3 === 1 ? 'Open' : 'Draft';
+      return {
+        id: `scm-rfq-${i + 1}`,
+        number: rfqNo,
+        'RFQ No': rfqNo,
+        'Issue Date': `2026-11-${String((i % 15) + 1).padStart(2, '0')}`,
+        'Closing Date': `2026-11-${String((i % 15) + 15).padStart(2, '0')}`,
+        Subject: `Supply of ${itm.name}`,
+        Department: dept,
+        Buyer: buyer,
+        'Invited Vendors': '4',
+        'Quotes Received': String(2 + (i % 3)),
+        Status: st,
+        status: st,
+      };
+    });
+  } else if (pageId === 'scm-pr') {
+    columns = [
+      { key: 'PR No', label: 'PR No', type: 'text', source: true },
+      { key: 'Date', label: 'Date', type: 'date', source: true },
+      { key: 'Item Name', label: 'Item Name', type: 'text', source: true },
+      { key: 'Required Qty', label: 'Required Qty', type: 'num', source: true },
+      { key: 'UOM', label: 'UOM', type: 'text', source: true },
+      { key: 'Department', label: 'Department', type: 'text', source: true },
+      { key: 'Required By', label: 'Required By', type: 'date', source: true },
+      { key: 'Priority', label: 'Priority', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const prNo = `PR-2026-${String(i + 1).padStart(4, '0')}`;
+      const itm = items[i % items.length]!;
+      const dept = depts[i % depts.length]!;
+      const st = i % 3 === 0 ? 'Approved' : i % 3 === 1 ? 'Submitted' : 'Draft';
+      return {
+        id: `scm-pr-${i + 1}`,
+        number: prNo,
+        'PR No': prNo,
+        Date: `2026-11-${String((i % 15) + 1).padStart(2, '0')}`,
+        'Item Name': `${itm.name} (${itm.code})`,
+        'Required Qty': String((i + 1) * 25),
+        UOM: itm.uom,
+        Department: dept,
+        'Required By': `2026-11-${String((i % 15) + 16).padStart(2, '0')}`,
+        Priority: i % 4 === 0 ? 'Urgent' : i % 4 === 1 ? 'High' : 'Normal',
+        Status: st,
+        status: st,
+      };
+    });
+  } else if (pageId === 'scm-po') {
+    columns = [
+      { key: 'PO No', label: 'PO No', type: 'text', source: true },
+      { key: 'Vendor', label: 'Vendor', type: 'text', source: true },
+      { key: 'PO Date', label: 'PO Date', type: 'date', source: true },
+      { key: 'Delivery Date', label: 'Delivery Date', type: 'date', source: true },
+      { key: 'Order Value', label: 'Order Value', type: 'inr', source: true },
+      { key: 'GRN Status', label: 'GRN Status', type: 'pill', source: true },
+      { key: 'Invoice Status', label: 'Invoice Status', type: 'pill', source: true },
+      { key: 'Buyer', label: 'Buyer', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const poNo = `PO-2026-${String(i + 1).padStart(4, '0')}`;
+      const v = vendors[i % vendors.length]!;
+      const buyer = buyers[i % buyers.length]!;
+      const val = 185000 + i * 42000;
+      const st = i % 4 === 0 ? 'Approved' : i % 4 === 1 ? 'Partially Received' : i % 4 === 2 ? 'Completed' : 'Draft';
+      return {
+        id: `scm-po-${i + 1}`,
+        number: poNo,
+        'PO No': poNo,
+        Vendor: `${v.name} (${v.code})`,
+        'PO Date': `2026-11-${String((i % 15) + 1).padStart(2, '0')}`,
+        'Delivery Date': `2026-11-${String((i % 15) + 16).padStart(2, '0')}`,
+        'Order Value': String(val),
+        'GRN Status': i % 3 === 0 ? 'Completed' : i % 3 === 1 ? 'Partial' : 'Pending',
+        'Invoice Status': i % 3 === 0 ? 'Matched' : 'Pending',
+        Buyer: buyer,
+        Status: st,
+        status: st,
+      };
+    });
+  } else if (pageId === 'scm-grn') {
+    columns = [
+      { key: 'GRN No', label: 'GRN No', type: 'text', source: true },
+      { key: 'PO No', label: 'PO No', type: 'text', source: true },
+      { key: 'Vendor', label: 'Vendor', type: 'text', source: true },
+      { key: 'Receipt Date', label: 'Receipt Date', type: 'date', source: true },
+      { key: 'DC / Challan No', label: 'DC / Challan No', type: 'text', source: true },
+      { key: 'Received Value', label: 'Received Value', type: 'inr', source: true },
+      { key: 'QC Decision', label: 'QC Decision', type: 'pill', source: true },
+      { key: 'Warehouse', label: 'Warehouse', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const grnNo = `GRN-2026-${String(i + 1).padStart(4, '0')}`;
+      const poNo = `PO-2026-${String(i + 1).padStart(4, '0')}`;
+      const v = vendors[i % vendors.length]!;
+      const val = 160000 + i * 35000;
+      const st = i % 3 === 0 ? 'Posted' : i % 3 === 1 ? 'Inspection Done' : 'Draft';
+      return {
+        id: `scm-grn-${i + 1}`,
+        number: grnNo,
+        'GRN No': grnNo,
+        'PO No': poNo,
+        Vendor: `${v.name} (${v.code})`,
+        'Receipt Date': `2026-11-${String((i % 15) + 1).padStart(2, '0')}`,
+        'DC / Challan No': `DC-VEND-${String(900 + i)}`,
+        'Received Value': String(val),
+        'QC Decision': i % 5 === 0 ? 'Accepted Under Deviation' : 'Accepted',
+        Warehouse: i % 2 === 0 ? 'Main Raw Material Store' : 'Consumables Store',
+        Status: st,
+        status: st,
+      };
+    });
+  } else if (pageId === 'scm-purchaseinvoice') {
+    columns = [
+      { key: 'Invoice No', label: 'Invoice No', type: 'text', source: true },
+      { key: 'Vendor Ref No', label: 'Vendor Ref No', type: 'text', source: true },
+      { key: 'Vendor', label: 'Vendor', type: 'text', source: true },
+      { key: 'PO No', label: 'PO No', type: 'text', source: true },
+      { key: 'GRN No', label: 'GRN No', type: 'text', source: true },
+      { key: 'Invoice Date', label: 'Invoice Date', type: 'date', source: true },
+      { key: 'Due Date', label: 'Due Date', type: 'date', source: true },
+      { key: 'Grand Total', label: 'Grand Total', type: 'inr', source: true },
+      { key: '3-Way Match', label: '3-Way Match', type: 'pill', source: true },
+      { key: 'Payment Status', label: 'Payment Status', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const invNo = `PINV-2026-${String(i + 1).padStart(4, '0')}`;
+      const v = vendors[i % vendors.length]!;
+      const poNo = `PO-2026-${String(i + 1).padStart(4, '0')}`;
+      const grnNo = `GRN-2026-${String(i + 1).padStart(4, '0')}`;
+      const val = 188000 + i * 41000;
+      const st = i % 3 === 0 ? 'Posted' : i % 3 === 1 ? 'Matched' : 'Draft';
+      return {
+        id: `scm-inv-${i + 1}`,
+        number: invNo,
+        'Invoice No': invNo,
+        'Vendor Ref No': `TAX-INV-${String(5000 + i)}`,
+        Vendor: `${v.name} (${v.code})`,
+        'PO No': poNo,
+        'GRN No': grnNo,
+        'Invoice Date': `2026-11-${String((i % 15) + 1).padStart(2, '0')}`,
+        'Due Date': `2026-12-${String((i % 15) + 1).padStart(2, '0')}`,
+        'Grand Total': String(val),
+        '3-Way Match': i % 6 === 0 ? 'Price Variance Alert' : 'Matched 100%',
+        'Payment Status': i % 3 === 0 ? 'Paid' : 'Unpaid',
+        Status: st,
+        status: st,
+      };
+    });
+  } else {
+    // Default fallback for other SCM pages (contracts, evaluation, approval)
+    columns = [
+      { key: 'Record No', label: 'Record No', type: 'text', source: true },
+      { key: 'Vendor', label: 'Vendor', type: 'text', source: true },
+      { key: 'Category', label: 'Category', type: 'text', source: true },
+      { key: 'Effective Date', label: 'Effective Date', type: 'date', source: true },
+      { key: 'Score / Value', label: 'Score / Value', type: 'text', source: true },
+      { key: 'Department', label: 'Department', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const recNo = `SCM-${String(i + 1).padStart(4, '0')}`;
+      const v = vendors[i % vendors.length]!;
+      const dept = depts[i % depts.length]!;
+      return {
+        id: `scm-rec-${i + 1}`,
+        number: recNo,
+        'Record No': recNo,
+        Vendor: `${v.name} (${v.code})`,
+        Category: 'Direct Material Sourcing',
+        'Effective Date': `2026-11-${String((i % 15) + 1).padStart(2, '0')}`,
+        'Score / Value': pageId === 'scm-evaluation' ? `${85 + (i % 14)}% Grade A` : `₹ ${(i + 1) * 350000}`,
+        Department: dept,
+        Status: i % 2 === 0 ? 'Approved' : 'Active',
+        status: i % 2 === 0 ? 'Approved' : 'Active',
+      };
+    });
+  }
+
+  let filtered = allRows;
+  if (p.q) {
+    const qLower = p.q.toLowerCase();
+    filtered = filtered.filter((r) =>
+      Object.values(r).some((v) => typeof v === 'string' && v.toLowerCase().includes(qLower)),
     );
   }
   if (p.status) {
