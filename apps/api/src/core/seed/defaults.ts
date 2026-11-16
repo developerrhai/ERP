@@ -29,6 +29,7 @@ export const SYSTEM_ROLE_SEEDS = [
   { code: 'DEPT_MANAGER', name: 'Department Manager', level: 50, allUnits: false, isSystem: true, description: 'Department operations' },
   { code: 'SUPERVISOR', name: 'Supervisor', level: 30, allUnits: false, isSystem: true, description: 'Team supervision and review' },
   { code: 'EMPLOYEE', name: 'Employee', level: 10, allUnits: false, isSystem: true, description: 'Individual contributor' },
+  { code: 'VENDOR', name: 'Vendor / Supplier', level: 5, allUnits: false, isSystem: true, description: 'External vendor self-service portal access' },
 ];
 
 /** Prototype ownerDept(): which department owns each family's modules. */

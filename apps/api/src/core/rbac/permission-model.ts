@@ -128,6 +128,15 @@ export const DEFAULT_ROLE_ROWS: Record<string, ActionFlags & { scope: Scope }> =
     print: true,
     scope: 'OWN',
   },
+  VENDOR: {
+    ...noActions(),
+    view: true,
+    add: true,
+    edit: true,
+    submit: true,
+    print: true,
+    scope: 'OWN',
+  },
   // Legacy aliases
   get ADMIN() {
     return this.ADMINISTRATOR!;

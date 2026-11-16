@@ -2421,6 +2421,45 @@
       "ownerPhase": null
     },
     {
+      "id": "scm-vendorportal",
+      "title": "Vendor Portal",
+      "family": "Procurement / SCM",
+      "tabs": [
+        "Vendor Dashboard",
+        "Open Purchase Orders",
+        "RFQs & Bidding",
+        "My Quotations",
+        "Advance Shipment (ASN)",
+        "Invoices & Payments",
+        "Compliance & Profile"
+      ],
+      "fields": [
+        "Document No",
+        "Document Date",
+        "Reference / PO",
+        "Order Value",
+        "Delivery Due Date",
+        "Shipment Status",
+        "Payment Status",
+        "Status"
+      ],
+      "buttons": [
+        "Excel",
+        "Industry PDF",
+        "Print",
+        "＋ Add New",
+        "Load Selected",
+        "Documents",
+        "Submit Approval",
+        "Approval Queue",
+        "Move Forward",
+        "Project History"
+      ],
+      "dynamic": false,
+      "status": "built",
+      "ownerPhase": null
+    },
+    {
       "id": "inv-items",
       "title": "Item / SKU Master",
       "family": "Inventory",

@@ -1822,6 +1822,49 @@ function getScmV40(pageId: string, p: V40Params): V40Page {
         status: st,
       };
     });
+  } else if (pageId === 'scm-vendorportal') {
+    columns = [
+      { key: 'Document No', label: 'Document No', type: 'text', source: true },
+      { key: 'Document Type', label: 'Document Type', type: 'pill', source: true },
+      { key: 'Reference / PO', label: 'Reference / PO', type: 'text', source: true },
+      { key: 'Document Date', label: 'Document Date', type: 'date', source: true },
+      { key: 'Due Date', label: 'Due Date', type: 'date', source: true },
+      { key: 'Total Amount', label: 'Total Amount', type: 'inr', source: true },
+      { key: 'Shipment (ASN)', label: 'Shipment (ASN)', type: 'pill', source: true },
+      { key: 'Payment Status', label: 'Payment Status', type: 'pill', source: true },
+      { key: 'Buyer Contact', label: 'Buyer Contact', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const portalDocs = [
+      { type: 'Purchase Order', ref: 'PO-2026-0041', due: '2026-11-28', amt: 840000, asn: 'ASN-2026-0012', pay: 'Payment Scheduled', buyer: 'Rajesh Sawant', st: 'Acknowledged' },
+      { type: 'RFQ Invitation', ref: 'RFQ-2026-0042', due: '2026-11-25', amt: 420000, asn: '—', pay: 'N/A', buyer: 'Suresh Nair', st: 'Bid Submitted' },
+      { type: 'Purchase Order', ref: 'PO-2026-0043', due: '2026-11-30', amt: 310000, asn: 'ASN-2026-0015', pay: 'Advance Paid', buyer: 'Amit Deshmukh', st: 'In Transit' },
+      { type: 'Vendor Invoice', ref: 'TAX-INV-5012', due: '2026-12-15', amt: 675000, asn: 'ASN-2026-0016', pay: 'Approved for Pay', buyer: 'Vikram Shinde', st: '3-Way Matched' },
+      { type: 'Quotation', ref: 'VQ-2026-0019', due: '2026-12-31', amt: 1250000, asn: '—', pay: 'N/A', buyer: 'Rajesh Sawant', st: 'Selected' },
+      { type: 'Purchase Order', ref: 'PO-2026-0046', due: '2026-12-05', amt: 940000, asn: 'ASN-Pending', pay: 'Pending Delivery', buyer: 'Ananya Joshi', st: 'Open' },
+      { type: 'Debit Note', ref: 'DN-2026-0004', due: '2026-11-20', amt: 45000, asn: '—', pay: 'Settled', buyer: 'Sunil Verma', st: 'Accepted' },
+      { type: 'Advance Shipment', ref: 'ASN-2026-0020', due: '2026-11-26', amt: 520000, asn: 'ASN-2026-0020', pay: 'Pending GRN', buyer: 'Amit Deshmukh', st: 'Dispatched' },
+    ];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const doc = portalDocs[i % portalDocs.length]!;
+      const docNo = `VP-2026-${String(i + 1).padStart(4, '0')}`;
+      return {
+        id: `scm-vp-${i + 1}`,
+        number: docNo,
+        'Document No': docNo,
+        'Document Type': doc.type,
+        'Reference / PO': doc.ref,
+        'Document Date': `2026-11-${String((i % 15) + 1).padStart(2, '0')}`,
+        'Due Date': doc.due,
+        'Total Amount': String(doc.amt + i * 12000),
+        'Shipment (ASN)': doc.asn,
+        'Payment Status': doc.pay,
+        'Buyer Contact': doc.buyer,
+        Status: doc.st,
+        status: doc.st,
+      };
+    });
   } else {
     // Default fallback for other SCM pages (contracts, evaluation, approval)
     columns = [

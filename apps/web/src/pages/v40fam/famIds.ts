@@ -133,6 +133,7 @@ const NOUNS: Record<string, string> = {
   'scm-comparison': 'Vendor Comparison',
   'scm-po': 'Purchase Orders',
   'scm-contracts': 'Purchase Contracts',
+  'scm-vendorportal': 'Vendor Portal',
   'scm-grn': 'Goods Receipt / GRN',
   'scm-purchaseinvoice': 'Purchase Invoices',
   'scm-evaluation': 'Vendor Evaluation',

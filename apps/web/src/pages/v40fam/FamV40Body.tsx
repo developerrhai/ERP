@@ -131,6 +131,7 @@ const WMS_TITLES: Record<string, string> = {
   'scm-comparison': 'Vendor Comparison – Detailed Table',
   'scm-po': 'Purchase Order – Detailed Table',
   'scm-contracts': 'Purchase Contract – Detailed Table',
+  'scm-vendorportal': 'Vendor Portal & Bidding – Detailed Table',
   'scm-grn': 'Goods Receipt / GRN – Detailed Table',
   'scm-purchaseinvoice': 'Purchase Invoice – Detailed Table',
   'scm-evaluation': 'Vendor Evaluation – Detailed Table',
@@ -885,6 +886,7 @@ export function FamV40Body({
       case 'scm-comparison': return { label: 'Awarded Rate', value: '92.4%' };
       case 'scm-po': return { label: 'PO Commitment', value: '₹ 86,40,000' };
       case 'scm-contracts': return { label: 'Active Contracts', value: `${total}` };
+      case 'scm-vendorportal': return { label: 'Active Quotations / POs', value: `${total}` };
       case 'scm-grn': return { label: 'GRN Receipts', value: `${total}` };
       case 'scm-purchaseinvoice': return { label: '3-Way Match Rate', value: '98.5%' };
       case 'scm-evaluation': return { label: 'Avg Vendor Score', value: '88.2%' };

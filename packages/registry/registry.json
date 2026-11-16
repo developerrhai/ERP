@@ -159,6 +159,10 @@
         {
           "id": "scm-contracts",
           "title": "Rate / Blanket Contracts"
+        },
+        {
+          "id": "scm-vendorportal",
+          "title": "Vendor Portal"
         }
       ]
     },
@@ -1969,6 +1973,30 @@
         "Balance Value",
         "Release Orders",
         "Renewal Date",
+        "Status"
+      ]
+    },
+    "scm-vendorportal": {
+      "title": "Vendor Portal",
+      "family": "Procurement / SCM",
+      "purpose": "Self-service supplier collaboration: RFQ bids, purchase orders, ASN dispatch notices, invoice submission and payment status.",
+      "tabs": [
+        "Vendor Dashboard",
+        "Open Purchase Orders",
+        "RFQs & Bidding",
+        "My Quotations",
+        "Advance Shipment (ASN)",
+        "Invoices & Payments",
+        "Compliance & Profile"
+      ],
+      "fields": [
+        "Document No",
+        "Document Date",
+        "Reference / PO",
+        "Order Value",
+        "Delivery Due Date",
+        "Shipment Status",
+        "Payment Status",
         "Status"
       ]
     },
