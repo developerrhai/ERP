@@ -52,9 +52,23 @@ interface Filters {
 }
 const NO_FILTERS: Filters = { q: '', docType: '', state: '', source: '', from: '', to: '' };
 
+const DEFAULT_DEPTS: Dept[] = [
+  { id: '104622ff-4b72-4a29-871a-6d62aed627ca', name: 'HR' },
+  { id: '35ff78b7-38ed-456d-a688-c6906ce39bf6', name: 'Sales' },
+  { id: '8c5d408c-2206-42b9-a7c8-1a78ff1bf3d8', name: 'Purchase' },
+  { id: '30c92298-f813-4c26-ae24-dd51f88b3bf5', name: 'Finance' },
+  { id: '0a1b29f1-b827-4541-9dc9-94f399df0225', name: 'Production' },
+  { id: 'c9c99787-4196-4a42-a48f-d78978569c85', name: 'Quality' },
+  { id: '72677b70-e14d-407b-81fe-1f1ecdb7328f', name: 'Maintenance' },
+  { id: 'd5cdf7d1-3c6e-4cc6-9010-b97bb119ad76', name: 'Warehouse' },
+  { id: 'ffb8a261-7dc8-479a-a51e-23f9947cabd4', name: 'Projects' },
+  { id: '47784339-05db-48b8-91ad-3b15b8f88afd', name: 'Service' },
+  { id: 'f8559bc9-12e1-4d54-a764-6726fc91c301', name: 'Administration' },
+];
+
 export function DeptMailboxPage({ pageId, deptName }: { pageId: string; deptName?: string }) {
   const toast = useToast();
-  const [depts, setDepts] = useState<Dept[]>([]);
+  const [depts, setDepts] = useState<Dept[]>(DEFAULT_DEPTS);
   const [view, setView] = useState<ViewKey>(pageId === 'dept-inbox-finance' ? 'receipt' : 'inbox');
   const [draft, setDraft] = useState<Filters>(NO_FILTERS);
   const [f, setF] = useState<Filters>(NO_FILTERS);

@@ -13,6 +13,7 @@ import { seedApprovalDefaults } from './core/seed/approval-defaults';
 import { seedPhase2Defaults } from './core/seed/defaults';
 import { seedPhase3Defaults } from './core/seed/phase3-defaults';
 import { seedPhase5Defaults } from './core/seed/phase5-defaults';
+import { seedWorkMovementsDefaults } from './core/seed/work-movements-seed';
 import { syncRegistrySnapshot } from './modules/page-health/registry-v2';
 import { registerApprovalJobHandlers } from './modules/approvals/register-jobs';
 import { registerDataJobHandlers } from './modules/data-jobs/worker';
@@ -31,9 +32,10 @@ async function ensureDefaults(): Promise<void> {
       const phase3 = await seedPhase3Defaults(prisma);
       const phase5 = await seedPhase5Defaults(prisma);
       await seedApprovalDefaults(prisma);
+      const seededWork = await seedWorkMovementsDefaults(prisma);
       const registryVersion = await syncRegistrySnapshot();
       logger.info(
-        { inserted, phase3, phase5, registryVersion },
+        { inserted, phase3, phase5, registryVersion, seededWork },
         'Boot: Phase 2/3 defaults checked under advisory lock (missing rows inserted only)',
       );
     });
