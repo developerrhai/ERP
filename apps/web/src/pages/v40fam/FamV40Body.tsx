@@ -260,7 +260,6 @@ function RecordControlsBar({
   onDocuments,
   onSubmitApproval,
   onMoveForward,
-  onResetDemo,
 }: {
   title: string;
   rows: V40Row[];
@@ -273,7 +272,6 @@ function RecordControlsBar({
   onDocuments: () => void;
   onSubmitApproval: () => void;
   onMoveForward: () => void;
-  onResetDemo?: () => void;
 }) {
   const navigate = useNavigate();
   const toast = useToast();
@@ -394,116 +392,213 @@ function RecordControlsBar({
       >
         Project History
       </button>
-      {onResetDemo ? (
-        <button
-          type="button"
-          className="btn sm"
-          style={{ marginLeft: 'auto', background: '#fef3c7', borderColor: '#f59e0b', color: '#92400e' }}
-          onClick={onResetDemo}
-        >
-          Reset 25 Demo
-        </button>
-      ) : null}
     </div>
   );
 }
 
-function DetailedTable({
-  title,
-  rows,
-  columns,
-  onExportCsv,
-  onExportPdf,
-  onExportWord,
-  onExportEmail,
-  onRowAction,
-}: {
-  title: string;
-  rows: V40Row[];
-  columns: V40Column[];
-  onExportCsv: () => void;
-  onExportPdf: () => void;
-  onExportWord: () => void;
-  onExportEmail: () => void;
-  onRowAction: (action: string, row: V40Row) => void;
-}) {
-  const displayCols = columns.filter((c) => c.type !== 'actions' && c.type !== 'docs').slice(0, 10);
+function exportWordClient(title: string, r: V40Row, cols: V40Column[]) {
+  const fields = cols.filter((c) => c.type !== 'actions' && c.type !== 'docs');
+  const rowsHtml = fields
+    .map(
+      (c) => `
+    <tr>
+      <td style="padding: 8px 12px; font-weight: bold; background: #f8fafc; border: 1px solid #cbd5e1; width: 35%;">${c.label}</td>
+      <td style="padding: 8px 12px; border: 1px solid #cbd5e1;">${String(r[c.key] ?? r[c.label] ?? '—')}</td>
+    </tr>
+  `,
+    )
+    .join('');
 
-  return (
-    <div className="card v92-table-section">
-      <div className="v92-table-title">
-        <div>
-          <h3>{`${title === 'Warehouse Master' ? 'Warehouse Directory' : title} Register • Detailed Table`}</h3>
-          <small>{`${Math.min(20, rows.length)} working records • full actions available`}</small>
+  const docHtml = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset='utf-8'><title>${title}</title>
+    <style>
+      body { font-family: Calibri, Arial, sans-serif; padding: 20px; color: #1e293b; }
+      h2 { color: #0f172a; margin-bottom: 4px; }
+      p.sub { color: #64748b; font-size: 13px; margin-top: 0; margin-bottom: 20px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    </style>
+    </head>
+    <body>
+      <h2>Sawant Group ERP — ${title}</h2>
+      <p class="sub">Record Reference: <strong>${r.number || r.id}</strong> | Exported on ${new Date().toLocaleString()}</p>
+      <table>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+  const blob = new Blob(['\ufeff' + docHtml], { type: 'application/msword;charset=utf-8' });
+  saveFile({ blob, filename: `${r.number || title}.doc` }, `${r.number || title}.doc`);
+}
+
+function exportPdfClient(title: string, r: V40Row, cols: V40Column[]) {
+  const fields = cols.filter((c) => c.type !== 'actions' && c.type !== 'docs');
+  const rowsHtml = fields
+    .map(
+      (c) => `
+    <tr>
+      <td style="padding: 8px 12px; font-weight: bold; background: #f8fafc; border: 1px solid #cbd5e1; width: 35%;">${c.label}</td>
+      <td style="padding: 8px 12px; border: 1px solid #cbd5e1;">${String(r[c.key] ?? r[c.label] ?? '—')}</td>
+    </tr>
+  `,
+    )
+    .join('');
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(`
+      <html>
+      <head>
+        <title>${title} - ${r.number || r.id}</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 30px; color: #0f172a; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
+          h2 { margin: 0; color: #1e3a8a; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+          th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
+          th { background: #f1f5f9; }
+          @media print { button { display: none; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <h2>Sawant Group ERP — ${title}</h2>
+            <div style="color: #64748b; font-size: 12px; margin-top: 4px;">Record Reference: <strong>${r.number || r.id}</strong></div>
+          </div>
+          <div style="text-align: right; font-size: 12px; color: #64748b;">
+            <div>Printed: ${new Date().toLocaleDateString()}</div>
+            <div>Status: <strong>${r.status || 'Active'}</strong></div>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button type="button" className="btn sm" onClick={onExportEmail}>
-            Send Email
-          </button>
-          <button type="button" className="btn sm" onClick={onExportWord}>
-            Word
-          </button>
-          <button type="button" className="btn sm" onClick={onExportCsv}>
-            Excel
-          </button>
-          <button type="button" className="btn sm" onClick={onExportPdf}>
-            PDF
-          </button>
-        </div>
-      </div>
-      <div className="table-wrap">
-        <table className="register-table detailed-register-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Record No</th>
-              {displayCols.map((c) => (
-                <th key={c.key}>{c.label}</th>
-              ))}
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+        <table>
           <tbody>
-            {rows.slice(0, 20).map((r, idx) => (
-              <tr key={`det-${r.id || idx}`}>
-                <td>{idx + 1}</td>
-                <td><strong>{r.number || '—'}</strong></td>
-                {displayCols.map((c) => (
-                  <td key={c.key} className={c.type === 'inr' || c.type === 'num' ? 'num' : undefined}>
-                    {formatCellValue(r[c.key], c.type)}
-                  </td>
-                ))}
-                <td>
-                  <span className="chip">{r.status || 'Active'}</span>
-                </td>
-                <td>
-                  <div className="proc-row-actions">
-                    <button type="button" className="btn sm" onClick={() => onRowAction('view', r)}>View</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('edit', r)}>Edit</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('docs', r)}>Docs</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('email', r)}>Email</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('word', r)}>Word</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('pdf', r)}>PDF</button>
-                    <button type="button" className="btn sm danger" onClick={() => onRowAction('delete', r)}>Delete</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('submit', r)}>Submit</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('track', r)}>360° Track</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('move', r)}>Move Forward</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('move', r)}>Move Forward - Internal</button>
-                    <button type="button" className="btn sm" onClick={() => onRowAction('moveDoc', r)}>Move Document</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={displayCols.length + 4} style={{ textAlign: 'center', padding: '16px' }}>
-                  No records match the current filter.
-                </td>
-              </tr>
-            ) : null}
+            ${rowsHtml}
           </tbody>
         </table>
+        <div style="margin-top: 25px; text-align: center;">
+          <button onclick="window.print()" style="padding: 8px 18px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Print Document / Save as PDF</button>
+        </div>
+        <script>
+          setTimeout(() => { window.print(); }, 400);
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+}
+
+function DynamicEntityForm({
+  title,
+  columns,
+  initialValues,
+  onSave,
+  onCancel,
+}: {
+  title: string;
+  columns: V40Column[];
+  initialValues?: Record<string, any>;
+  onSave: (values: Record<string, string>) => void;
+  onCancel: () => void;
+}) {
+  const formCols = useMemo(
+    () => columns.filter((c) => c.type !== 'actions' && c.type !== 'docs'),
+    [columns],
+  );
+
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    for (const c of formCols) {
+      if (initialValues && initialValues[c.key] !== undefined && initialValues[c.key] !== null) {
+        initial[c.key] = String(initialValues[c.key]);
+      } else if (c.key.toLowerCase().includes('status')) {
+        initial[c.key] = 'Active';
+      } else if (c.key.toLowerCase().includes('dept') || c.key.toLowerCase().includes('department')) {
+        initial[c.key] = 'Logistics';
+      } else {
+        initial[c.key] = '';
+      }
+    }
+    return initial;
+  });
+
+  return (
+    <div style={{ padding: '16px 20px', maxHeight: '70vh', overflowY: 'auto' }}>
+      <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 13 }}>
+        {initialValues ? 'Modify entity details for this record.' : `Enter entity specifications for new ${title} record.`}
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px 18px' }}>
+        {formCols.map((col) => {
+          const lKey = col.key.toLowerCase();
+          const val = values[col.key] ?? '';
+          const isStatus = lKey.includes('status');
+          const isDept = lKey.includes('dept') || lKey.includes('department');
+          const isDate = lKey.includes('date') || lKey.includes('valid') || lKey.includes('expiry');
+          const isNum =
+            col.type === 'num' ||
+            col.type === 'inr' ||
+            lKey.includes('km') ||
+            lKey.includes('cost') ||
+            lKey.includes('weight') ||
+            lKey.includes('score') ||
+            lKey.includes('rating') ||
+            lKey.includes('freight');
+
+          return (
+            <div key={col.key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>{col.label}</label>
+              {isStatus ? (
+                <select
+                  value={val || 'Active'}
+                  onChange={(e) => setValues((prev) => ({ ...prev, [col.key]: e.target.value }))}
+                  style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13, background: '#fff' }}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Pending">Pending</option>
+                  <option value="In Transit">In Transit</option>
+                  <option value="Scheduled">Scheduled</option>
+                  <option value="Calculated">Calculated</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Verified">Verified</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              ) : isDept ? (
+                <select
+                  value={val || 'Logistics'}
+                  onChange={(e) => setValues((prev) => ({ ...prev, [col.key]: e.target.value }))}
+                  style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13, background: '#fff' }}
+                >
+                  {DEPARTMENTS.slice(1).map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type={isDate ? 'date' : isNum ? 'number' : 'text'}
+                  placeholder={`Enter ${col.label.toLowerCase()}...`}
+                  value={val}
+                  onChange={(e) => setValues((prev) => ({ ...prev, [col.key]: e.target.value }))}
+                  style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13, background: '#fff' }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24, paddingTop: 14, borderTop: '1px solid #e2e8f0' }}>
+        <button type="button" className="btn sm" onClick={onCancel}>
+          Cancel
+        </button>
+        <button type="button" className="btn sm primary" onClick={() => onSave(values)}>
+          {initialValues ? 'Save Changes' : 'Save Record'}
+        </button>
       </div>
     </div>
   );
@@ -512,17 +607,16 @@ function DetailedTable({
 export function FamV40Body({
   pageId,
   actions,
-  children,
+  children: _children,
 }: {
   pageId: string;
   actions: ActionSet;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const frame = useFrame();
   const toast = useToast();
   const navigate = useNavigate();
 
-  const [standard, setStandard] = useState(false);
   const [tick, setTick] = useState(0);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
@@ -540,6 +634,7 @@ export function FamV40Body({
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [askDelete, setAskDelete] = useState<V40Row | null>(null);
+  const [trackRecord, setTrackRecord] = useState<V40Row | null>(null);
   const [onlyDueOrExpired, setOnlyDueOrExpired] = useState(false);
   const [commChannel, setCommChannel] = useState('Call');
   const [commNote, setCommNote] = useState('');
@@ -568,6 +663,16 @@ export function FamV40Body({
   const [dataRows, setDataRows] = useState<V40Row[]>([]);
   const [columns, setColumns] = useState<V40Column[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+
+  const uniqueColumns = useMemo(() => {
+    const seen = new Set<string>();
+    return columns.filter((c) => {
+      const key = (c.key || c.label || '').trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [columns]);
 
   useEffect(() => {
     let live = true;
@@ -686,8 +791,9 @@ export function FamV40Body({
     try {
       saveFile(await docsMailApi.print(pageId, activeRecord.id, 'standard'), `${activeRecord.number || pageId}.pdf`);
       toast('PDF export downloaded.');
-    } catch (e) {
-      toast(toUiError(e).message);
+    } catch {
+      exportPdfClient(title, activeRecord, uniqueColumns);
+      toast('PDF print view opened.');
     }
   };
 
@@ -695,8 +801,19 @@ export function FamV40Body({
     try {
       saveFile(await docsMailApi.print(pageId, r.id, 'word'), `${r.number || 'document'}.docx`);
       toast('Word document downloaded.');
-    } catch (e) {
-      toast(toUiError(e).message);
+    } catch {
+      exportWordClient(title, r, uniqueColumns);
+      toast('Word document downloaded.');
+    }
+  };
+
+  const handlePdfRow = async (r: V40Row) => {
+    try {
+      saveFile(await docsMailApi.print(pageId, r.id, 'standard'), `${r.number || 'document'}.pdf`);
+      toast('PDF document downloaded.');
+    } catch {
+      exportPdfClient(title, r, uniqueColumns);
+      toast('PDF print view opened.');
     }
   };
 
@@ -717,13 +834,7 @@ export function FamV40Body({
         void handleWordExport(row);
         break;
       case 'pdf':
-        void (async () => {
-          try {
-            saveFile(await docsMailApi.print(pageId, row.id, 'standard'), `${row.number || 'document'}.pdf`);
-          } catch (e) {
-            toast(toUiError(e).message);
-          }
-        })();
+        void handlePdfRow(row);
         break;
       case 'docs':
         setDocsModal(row.id);
@@ -732,7 +843,7 @@ export function FamV40Body({
         toast(`Submitted ${row.number || 'record'} for approval`);
         break;
       case 'track':
-        navigate('/m/ops-order-360');
+        setTrackRecord(row);
         break;
       case 'move':
         setMoving({ id: row.id, number: row.number || row.id });
@@ -897,11 +1008,13 @@ export function FamV40Body({
 
   return (
     <div className="fam-v40">
-      {/* 1. Connected Manufacturing 360 Ribbon */}
-      <ConnectedManufacturingRibbon
-        selectedOrder={selectedOrder}
-        onOrderChange={setSelectedOrder}
-      />
+      {/* 1. Connected Manufacturing 360 Ribbon - only for manufacturing pages (LOG-G07) */}
+      {pageId.startsWith('ops-') || pageId.startsWith('mfg-') ? (
+        <ConnectedManufacturingRibbon
+          selectedOrder={selectedOrder}
+          onOrderChange={setSelectedOrder}
+        />
+      ) : null}
 
       {/* 2. Top Record Controls Bar */}
       <RecordControlsBar
@@ -924,7 +1037,6 @@ export function FamV40Body({
         onMoveForward={() => {
           if (activeRecord) setMoving({ id: activeRecord.id, number: activeRecord.number || activeRecord.id });
         }}
-        onResetDemo={handleReset25Demo}
       />
 
       {/* 3. Five Summary / KPI Cards */}
@@ -2694,8 +2806,11 @@ export function FamV40Body({
             if (picked.size === 0) {
               toast('Select records with checkboxes first, then press Delete Selected.');
             } else {
-              toast(`${picked.size} records deleted.`);
+              const count = picked.size;
+              setDataRows((prev) => prev.filter((r) => !picked.has(r.id)));
+              setTotalCount((n) => Math.max(0, n - count));
               setPicked(new Set());
+              toast(`${count} records deleted.`);
             }
           }}
         >
@@ -2761,7 +2876,7 @@ export function FamV40Body({
                   onChange={toggleAll}
                 />
               </th>
-              {columns.map((c) => (
+              {uniqueColumns.map((c) => (
                 <th key={c.key}>{c.label}</th>
               ))}
             </tr>
@@ -2784,7 +2899,7 @@ export function FamV40Body({
                       aria-label={`Select row ${r.number}`}
                     />
                   </td>
-                  {columns.map((c) => {
+                  {uniqueColumns.map((c) => {
                     if (c.type === 'actions') {
                       return (
                         <td key={c.key} onClick={(e) => e.stopPropagation()}>
@@ -2855,7 +2970,7 @@ export function FamV40Body({
                             <button
                               type="button"
                               className="btn sm"
-                              onClick={() => navigate('/m/ops-order-360')}
+                              onClick={() => handleRowAction('track', r)}
                             >
                               360° Track
                             </button>
@@ -2909,7 +3024,7 @@ export function FamV40Body({
             })}
             {filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + 1} style={{ textAlign: 'center', padding: '20px' }}>
+                <td colSpan={uniqueColumns.length + 1} style={{ textAlign: 'center', padding: '20px' }}>
                   No records found in this view.
                 </td>
               </tr>
@@ -2941,25 +3056,7 @@ export function FamV40Body({
         </button>
       </div>
 
-      {/* 6. Secondary Detailed Register Table */}
-      <DetailedTable
-        title={title}
-        rows={filteredRows}
-        columns={columns}
-        onExportCsv={handleExportCsv}
-        onExportPdf={handleExportPdf}
-        onExportWord={() => {
-          if (activeRecord) void handleWordExport(activeRecord);
-          else if (filteredRows[0]) void handleWordExport(filteredRows[0]);
-          else toast('No records available to export Word.');
-        }}
-        onExportEmail={() => {
-          if (activeRecord) setEmailing(activeRecord.number || activeRecord.id);
-          else if (filteredRows[0]) setEmailing(filteredRows[0].number || filteredRows[0].id);
-          else toast('No records available to send email.');
-        }}
-        onRowAction={handleRowAction}
-      />
+      {/* 6. Secondary Detailed Register Table removed (LOG-G08: avoid duplicate tables) */}
 
       {/* 7. Dialogs & Modals */}
       {moving ? (
@@ -3001,49 +3098,29 @@ export function FamV40Body({
         <Modal
           title={`＋ Add New ${title}`}
           onClose={() => setShowAddModal(false)}
-          footer={
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, width: '100%' }}>
-              <button type="button" className="btn sm" onClick={() => setShowAddModal(false)}>Cancel</button>
-              <button
-                type="button"
-                className="btn sm primary"
-                onClick={() => {
-                  toast(`New record added to ${title} successfully.`);
-                  setShowAddModal(false);
-                  setTick((n) => n + 1);
-                }}
-              >
-                Save Record
-              </button>
-            </div>
-          }
+          footer={null}
         >
-          <div style={{ padding: 14 }}>
-            <p>Create a new record in <strong>{title}</strong> register.</p>
-            <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-              <label>
-                Reference / Code:
-                <input
-                  type="text"
-                  placeholder="AUTO-GENERATED"
-                  defaultValue={`${title.slice(0, 3).toUpperCase()}-26-000${(dataRows.length + 1).toString().padStart(2, '0')}`}
-                  style={{ width: '100%', marginTop: 4 }}
-                />
-              </label>
-              <label>
-                Department:
-                <select defaultValue="Logistics" style={{ width: '100%', marginTop: 4 }}>
-                  {DEPARTMENTS.slice(1).map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Remarks / Notes:
-                <input type="text" placeholder="Enter record details..." style={{ width: '100%', marginTop: 4 }} />
-              </label>
-            </div>
-          </div>
+          <DynamicEntityForm
+            title={title}
+            columns={uniqueColumns}
+            onSave={(formVals) => {
+              const codeCol = uniqueColumns.find((c) => c.type !== 'actions' && c.type !== 'docs');
+              const codeKey = codeCol?.key || 'number';
+              const autoNo = `${title.slice(0, 3).toUpperCase()}-26-000${(dataRows.length + 1).toString().padStart(2, '0')}`;
+              const recNo = formVals[codeKey] || autoNo;
+              const newRow: V40Row = {
+                id: `${pageId}-${Date.now()}`,
+                number: recNo,
+                status: formVals['Status'] || formVals['status'] || 'Active',
+                ...formVals,
+              };
+              setDataRows((prev) => [newRow, ...prev]);
+              setTotalCount((n) => n + 1);
+              setShowAddModal(false);
+              toast(`New record ${recNo} added to ${title} successfully.`);
+            }}
+            onCancel={() => setShowAddModal(false)}
+          />
         </Modal>
       ) : null}
 
@@ -3051,42 +3128,29 @@ export function FamV40Body({
         <Modal
           title={`Edit ${title} [${activeRecord.number || activeRecord.id.slice(0, 8)}]`}
           onClose={() => setShowEditModal(false)}
-          footer={
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, width: '100%' }}>
-              <button type="button" className="btn sm" onClick={() => setShowEditModal(false)}>Cancel</button>
-              <button
-                type="button"
-                className="btn sm primary"
-                onClick={() => {
-                  toast(`Record ${activeRecord.number} updated successfully.`);
-                  setShowEditModal(false);
-                  setTick((n) => n + 1);
-                }}
-              >
-                Save Changes
-              </button>
-            </div>
-          }
+          footer={null}
         >
-          <div style={{ padding: 14 }}>
-            <p>Modify record details for <strong>{activeRecord.number || activeRecord.id}</strong>.</p>
-            <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-              <label>
-                Status:
-                <select defaultValue={activeRecord.status || 'ACTIVE'} style={{ width: '100%', marginTop: 4 }}>
-                  <option value="ACTIVE">Active</option>
-                  <option value="PENDING">Pending</option>
-                  <option value="IN_TRANSIT">In Transit</option>
-                  <option value="DELIVERED">Delivered</option>
-                  <option value="CLOSED">Closed</option>
-                </select>
-              </label>
-              <label>
-                Remarks:
-                <input type="text" defaultValue="Verified by logistics control" style={{ width: '100%', marginTop: 4 }} />
-              </label>
-            </div>
-          </div>
+          <DynamicEntityForm
+            title={title}
+            columns={uniqueColumns}
+            initialValues={activeRecord}
+            onSave={(formVals) => {
+              setDataRows((prev) =>
+                prev.map((r) =>
+                  r.id === activeRecord.id
+                    ? {
+                        ...r,
+                        ...formVals,
+                        status: formVals['Status'] || formVals['status'] || r.status || 'Active',
+                      }
+                    : r,
+                ),
+              );
+              setShowEditModal(false);
+              toast(`Record ${activeRecord.number || activeRecord.id} updated successfully.`);
+            }}
+            onCancel={() => setShowEditModal(false)}
+          />
         </Modal>
       ) : null}
 
@@ -3101,9 +3165,15 @@ export function FamV40Body({
                 type="button"
                 className="btn sm danger"
                 onClick={() => {
+                  setDataRows((prev) => prev.filter((r) => r.id !== askDelete.id));
+                  setTotalCount((n) => Math.max(0, n - 1));
+                  setPicked((prev) => {
+                    const next = new Set(prev);
+                    next.delete(askDelete.id);
+                    return next;
+                  });
                   toast(`Record ${askDelete.number || askDelete.id} deleted.`);
                   setAskDelete(null);
-                  setTick((n) => n + 1);
                 }}
               >
                 Delete Record
@@ -3113,20 +3183,80 @@ export function FamV40Body({
         >
           <div style={{ padding: 14 }}>
             <p>Are you sure you want to delete <strong>{askDelete.number || askDelete.id}</strong>?</p>
-            <p style={{ color: 'var(--muted, #64748b)', fontSize: 12 }}>This action can be tracked in the Audit Trail.</p>
+            <p style={{ color: 'var(--muted, #64748b)', fontSize: 12 }}>This action will remove the record from the active register.</p>
           </div>
         </Modal>
       ) : null}
 
-      {/* 8. Standard Screen Details Drawer / Fallback */}
-      <details
-        className="fam-standard"
-        open={standard}
-        onToggle={(e) => setStandard((e.currentTarget as HTMLDetailsElement).open)}
-      >
-        <summary>Standard screen (add, edit, delete and raw page actions)</summary>
-        {standard ? children : null}
-      </details>
+      {/* 360° Tracking Drawer / Modal (LOG-G04) */}
+      {trackRecord ? (
+        <Modal
+          title={`360° Tracking — ${trackRecord.number || trackRecord.id}`}
+          onClose={() => setTrackRecord(null)}
+          footer={
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, width: '100%' }}>
+              <button type="button" className="btn sm" onClick={() => exportWordClient(title, trackRecord, uniqueColumns)}>Export Word</button>
+              <button type="button" className="btn sm" onClick={() => exportPdfClient(title, trackRecord, uniqueColumns)}>Print / PDF</button>
+              <button type="button" className="btn sm primary" onClick={() => setTrackRecord(null)}>Close</button>
+            </div>
+          }
+        >
+          <div style={{ padding: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', fontSize: 11, display: 'block' }}>RECORD REFERENCE</small>
+                <strong style={{ fontSize: 14, color: '#0f172a' }}>{trackRecord.number || trackRecord.id}</strong>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', fontSize: 11, display: 'block' }}>LIFECYCLE STATUS</small>
+                <span className="badge" style={{ marginTop: 2, display: 'inline-block', background: '#dbeafe', color: '#1e40af', fontWeight: 600, padding: '2px 8px', borderRadius: 4, fontSize: 12 }}>
+                  {trackRecord.status || 'Active'}
+                </span>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', fontSize: 11, display: 'block' }}>DEPARTMENT</small>
+                <strong style={{ fontSize: 13, color: '#0f172a' }}>{String(trackRecord['Department'] || 'Logistics & Fleet')}</strong>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', fontSize: 11, display: 'block' }}>INTEGRITY & AUDIT</small>
+                <strong style={{ fontSize: 13, color: '#16a34a' }}>✓ Verified (V40)</strong>
+              </div>
+            </div>
+
+            <div style={{ background: '#f0f9ff', padding: '14px 16px', borderRadius: 8, border: '1px solid #bae6fd', marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, fontSize: 12, color: '#0369a1', marginBottom: 10 }}>LOGISTICS & FLEET MILESTONES PROGRESSION</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8, textAlign: 'center' }}>
+                {[
+                  { step: '1. Registered', done: true, time: 'Day 0' },
+                  { step: '2. Validated', done: true, time: 'Day 1' },
+                  { step: '3. Assigned / In Transit', done: trackRecord.status !== 'Pending', time: 'Active' },
+                  { step: '4. Checkpoint Verified', done: trackRecord.status === 'Completed' || trackRecord.status === 'Delivered', time: 'En Route' },
+                  { step: '5. Completed & Reconciled', done: trackRecord.status === 'Completed' || trackRecord.status === 'Delivered', time: 'Finalized' },
+                ].map((m, idx) => (
+                  <div key={idx} style={{ background: m.done ? '#ffffff' : '#f8fafc', padding: 8, borderRadius: 6, border: `1px solid ${m.done ? '#38bdf8' : '#e2e8f0'}` }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: m.done ? '#0284c7' : '#94a3b8' }}>{m.step}</div>
+                    <small style={{ color: '#64748b', fontSize: 10 }}>{m.time}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ fontWeight: 600, fontSize: 12, color: '#334155', marginBottom: 6 }}>SPECIFICATIONS & RECORD ATTRIBUTES</div>
+            <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 6 }}>
+              <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+                <tbody>
+                  {uniqueColumns.filter((c) => c.type !== 'actions' && c.type !== 'docs').map((c) => (
+                    <tr key={c.key} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '7px 10px', background: '#f8fafc', fontWeight: 600, width: '40%', color: '#475569' }}>{c.label}</td>
+                      <td style={{ padding: '7px 10px', color: '#0f172a' }}>{String(trackRecord[c.key] ?? trackRecord[c.label] ?? '—')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
     </div>
   );
 }

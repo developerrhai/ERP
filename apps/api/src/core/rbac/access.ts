@@ -183,9 +183,10 @@ export function decide(
   const isKitTestPage = process.env.KIT_ALLOW_TEST_PAGES === 'true' && pageId.startsWith('kit-');
 
   // 2. Disabled module: hidden from everyone; SUPER_USER keeps only controls.
+  const isInboxPage = page.family === 'Department Inboxes' || pageId.startsWith('dept-inbox-') || pageId.startsWith('dept-work-');
   const control =
     data.controls.get(pageId) ??
-    (isKitTestPage
+    (isKitTestPage || isInboxPage
       ? { enabled: true, allowAdd: true, allowEdit: true, allowDelete: true, allowExport: true }
       : undefined);
   if (!control || !control.enabled) {
@@ -214,6 +215,11 @@ export function decide(
     const userDepts = user.departments.map((d) => d.toLowerCase().replace(/[^a-z0-9]/g, ''));
     const matches = userDepts.some((d) => d.includes(pageDeptSlug) || pageDeptSlug.includes(d));
     if (!matches) return false;
+  }
+
+  // 5d. Department Inboxes: allowed for administrator and matching department members
+  if (isInboxPage) {
+    return action === 'view' || action === 'add' || action === 'edit';
   }
 
   // 6 & 7. Resolve permission cells and scope.
@@ -251,9 +257,10 @@ export function explain(
   }
 
   const isKitTestPage = process.env.KIT_ALLOW_TEST_PAGES === 'true' && pageId.startsWith('kit-');
+  const isInboxPage = page.family === 'Department Inboxes' || pageId.startsWith('dept-inbox-') || pageId.startsWith('dept-work-');
   const control =
     data.controls.get(pageId) ??
-    (isKitTestPage
+    (isKitTestPage || isInboxPage
       ? { enabled: true, allowAdd: true, allowEdit: true, allowDelete: true, allowExport: true }
       : undefined);
 
@@ -313,6 +320,12 @@ export function explain(
         reasons.push(`${action}: Department page is restricted to members of ${deptPageMatch[1]}`);
         continue;
       }
+    }
+
+    if (isInboxPage) {
+      actions[action] = action === 'view' || action === 'add' || action === 'edit';
+      reasons.push(`${action}: Department Inbox default access`);
+      continue;
     }
 
     if (!resolved.hasRow) {

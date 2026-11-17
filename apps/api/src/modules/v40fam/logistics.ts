@@ -158,7 +158,7 @@ const FREIGHT: PageDef = {
 };
 
 // ---------------------------------------------------------------------------------------------- routes, transporters
-const ROUTE_REG = ['Route Code', 'Route Name', 'Origin', 'Destination', 'Stops', 'Distance KM', 'Standard Transit Hrs', 'Status', 'Actions'];
+const ROUTE_REG = ['Route Code', 'Route Name', 'Department', 'Origin', 'Destination', 'Stops', 'Distance KM', 'Standard Transit Hrs', 'Status', 'Actions'];
 const ROUTES: PageDef = {
   from: `routes t ${apJoin('log-routes')}`,
   unit: 't.origin_unit_id',
@@ -171,6 +171,7 @@ const ROUTES: PageDef = {
   cols: {
     'Route Code': t('t.code'),
     'Route Name': t('t.name'),
+    Department: t(`'Logistics'`),
     Origin: t('t.origin_place'),
     Destination: t('t.destination_place'),
     Stops: n(`(SELECT count(*) FROM route_stops rs WHERE rs.route_id = t.id)`),

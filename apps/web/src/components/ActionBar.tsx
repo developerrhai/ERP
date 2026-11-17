@@ -80,6 +80,8 @@ const DEFAULTS = new Set([
   'Industry PDF',
   'Word',
   'Print',
+  '＋ Add New',
+  '＋ Add',
   'Approval Queue',
   'Documents',
   'Move Forward',
@@ -90,6 +92,20 @@ const DEFAULTS = new Set([
   'Audit Trail',
   '360° Tracking',
 ]);
+
+const V40_CORE_BUTTONS: readonly string[] = [
+  '← Return',
+  'Send Email',
+  'Word',
+  'Excel',
+  'Industry PDF',
+  'Print',
+  '＋ Add New',
+  '⇧ Import',
+  '⇩ Export',
+  'Duplicates',
+  'Project History',
+];
 
 /** V40 has three buttons that move the selected record on to the next department: they all open the Move Forward dialog. */
 const MOVE_LABELS: ReadonlySet<string> = new Set(['Move Forward', 'Move Next Controlled Step', 'Move Forward - Internal']);
@@ -194,12 +210,24 @@ function Bar({
     }, 900);
     return () => clearTimeout(t);
   }, [mode, pageId]);
-  const shown = BAR.filter(
-    (b) =>
-      (b.where ?? 'both') === 'both' ||
-      b.where === mode ||
-      (mode === 'page' && b.ifAbsent === true && own !== null && !own.has(b.label)),
-  );
+  const isV40Page =
+    mode === 'page' &&
+    !!pageId &&
+    (pageId.startsWith('log-') ||
+      pageId.startsWith('fleet-') ||
+      pageId.startsWith('gate-') ||
+      pageId.startsWith('container-') ||
+      pageId === 'customer-receipts' ||
+      pageId === 'ops-visitors');
+
+  const shown = isV40Page
+    ? V40_CORE_BUTTONS.map((lbl) => BAR.find((b) => b.label === lbl)!).filter(Boolean)
+    : BAR.filter(
+        (b) =>
+          (b.where ?? 'both') === 'both' ||
+          b.where === mode ||
+          (mode === 'page' && b.ifAbsent === true && own !== null && !own.has(b.label)),
+      );
   const effRecordId = recordId || syncedRecord?.id || null;
   const effDocNo = docNo || syncedRecord?.docNo || undefined;
   const haveRecord = !!pageId && !!effRecordId;
@@ -218,6 +246,9 @@ function Bar({
       const target = GO[label];
       if (label === 'Print') window.print();
       else if (label === '← Return') go?.(-1);
+      else if (label === '＋ Add New' || label === '＋ Add') {
+        window.dispatchEvent(new CustomEvent('v40-add-record', { detail: { pageId } }));
+      }
       else if (label === 'Duplicates') {
         toast('Duplicate check: No potential duplicates found in the current register.');
       } else if (target) go?.(target);
