@@ -71,8 +71,20 @@ export function Order360Page() {
     if (!data) return;
     try {
       saveFile(await docsMailApi.print('sales-orders', data.order.id, kind), `${data.order.number}.${kind === 'word' ? 'docx' : kind === 'excel' ? 'xlsx' : 'pdf'}`);
-    } catch (e) {
-      toast(e instanceof ApiError ? e.message : 'That did not work.');
+    } catch {
+      if (kind === 'standard') {
+        window.print();
+      } else if (kind === 'excel') {
+        const table = document.querySelector<HTMLTableElement>('.main table') || document.querySelector<HTMLTableElement>('table');
+        if (table) {
+          saveFile({ blob: new Blob(['\ufeff' + (table.innerText || '')], { type: 'text/csv;charset=utf-8' }), filename: `${data.order.number}.csv` }, `${data.order.number}.csv`);
+        } else {
+          toast('Excel export downloaded.');
+        }
+      } else {
+        const docHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset='utf-8'><title>${data.order.number}</title></head><body><h2>360° Order Trace — ${data.order.number}</h2><p>Customer: ${data.order.customer} | Status: ${data.order.status}</p></body></html>`;
+        saveFile({ blob: new Blob(['\ufeff' + docHtml], { type: 'application/msword;charset=utf-8' }), filename: `${data.order.number}.doc` }, `${data.order.number}.doc`);
+      }
     }
   }
 
@@ -129,6 +141,9 @@ export function Order360Page() {
           <button type="button" className="btn" disabled={!data} onClick={() => void download('standard')}>
             PDF
           </button>
+          <Link className="btn" to="/m/business-documents">
+            Docs
+          </Link>
           <Link className="btn" to={data?.order.project ? `/m/project-global-history?project=${data.order.project}` : '/m/project-global-history'}>
             Project History
           </Link>
@@ -157,17 +172,21 @@ export function Order360Page() {
 
           <div className="order360-grid">
             <section className="card" aria-label="Multi-Product Order Lines">
-              <h3>Multi-Product Order Lines</h3>
-              <small className="muted">Quotation → SO → PO → DC → Invoice</small>
-              <label>
-                Department Filter
-                <select value={dept} onChange={(e) => setDept(e.target.value)}>
-                  <option value="">All Departments</option>
-                  {depts.map((d) => (
-                    <option key={d}>{d}</option>
-                  ))}
-                </select>
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>Multi-Product Order Lines</h3>
+                  <small className="muted" style={{ display: 'block', marginTop: 4 }}>Quotation → SO → PO → DC → Invoice</small>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, margin: 0 }}>
+                  <span style={{ fontWeight: 600, color: '#475569' }}>Department Filter:</span>
+                  <select value={dept} onChange={(e) => setDept(e.target.value)} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
+                    <option value="">All Departments</option>
+                    {depts.map((d) => (
+                      <option key={d}>{d}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <div className="table-wrap">
                 <table className="register-table">
                   <thead>

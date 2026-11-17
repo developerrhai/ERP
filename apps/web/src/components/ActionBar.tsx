@@ -93,6 +93,21 @@ const DEFAULTS = new Set([
   '360° Tracking',
 ]);
 
+const BUTTON_CLASS: Record<string, string> = {
+  '← Return': 'btn-return',
+  'Send Email': 'btn-email',
+  Word: 'btn-word',
+  Excel: 'btn-excel',
+  'Industry PDF': 'btn-pdf',
+  Print: 'btn-print',
+  '＋ Add New': 'primary btn-add',
+  '＋ Add': 'primary btn-add',
+  '⇧ Import': 'btn-import',
+  '⇩ Export': 'btn-export',
+  Duplicates: 'btn-duplicates',
+  'Project History': 'btn-history',
+};
+
 const V40_CORE_BUTTONS: readonly string[] = [
   '← Return',
   'Send Email',
@@ -213,12 +228,8 @@ function Bar({
   const isV40Page =
     mode === 'page' &&
     !!pageId &&
-    (pageId.startsWith('log-') ||
-      pageId.startsWith('fleet-') ||
-      pageId.startsWith('gate-') ||
-      pageId.startsWith('container-') ||
-      pageId === 'customer-receipts' ||
-      pageId === 'ops-visitors');
+    !pageId.includes('dashboard') &&
+    !pageId.includes('settings');
 
   const shown = isV40Page
     ? V40_CORE_BUTTONS.map((lbl) => BAR.find((b) => b.label === lbl)!).filter(Boolean)
@@ -285,7 +296,16 @@ function Bar({
             // fall back
           }
         }
+        if (label === 'Word') {
+          const table = document.querySelector<HTMLTableElement>('.main table') || document.querySelector<HTMLTableElement>('table');
+          const docHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset='utf-8'><title>${effDocNo ?? pageId}</title></head><body><h2>Sawant Group ERP — ${pageId}</h2><p>Reference: ${effDocNo ?? 'Register Export'}</p>${table ? table.outerHTML : ''}</body></html>`;
+          saveFile({ blob: new Blob(['\ufeff' + docHtml], { type: 'application/msword;charset=utf-8' }), filename: `${effDocNo ?? pageId}.doc` }, `${effDocNo ?? pageId}.doc`);
+          return;
+        }
         window.print();
+      } else if (label === 'Full 360°') {
+        window.dispatchEvent(new CustomEvent('v40-open-360', { detail: { pageId } }));
+        if (target) go?.(target);
       } else if (label === 'Documents') {
         toast(`Opening documents repository for ${effDocNo || pageId}.`);
         go?.('/m/business-documents');
@@ -308,7 +328,7 @@ function Bar({
   return (
     <div className="actionbar" role="toolbar" aria-label="Page actions" data-testid="actionbar">
       {shown.map((b) => {
-        if (!actions[b.need]) return null; // no permission: hidden
+        if (isV40Page ? !actions.view : !actions[b.need]) return null; // no permission: hidden
         let reason: string | null = blocked?.[b.label] ?? null;
         if (reason !== null) {
           // the screen's own reason wins
@@ -322,11 +342,13 @@ function Bar({
         // A button stays clickable (the client's QA lists greyed buttons as defects): the click says what to do
         const needsPick = reason === PICK_FIRST;
         const disabled = false;
+        const extraClass = BUTTON_CLASS[b.label] ?? '';
+        const btnClassName = b.primary ? `btn primary ${extraClass}`.trim() : `btn ${extraClass}`.trim();
         return (
           <span key={b.label} className="actionbar-item" title={reason ?? undefined}>
             <button
               type="button"
-              className={b.primary ? 'btn primary' : 'btn'}
+              className={btnClassName}
               disabled={disabled}
               aria-disabled={disabled}
               onClick={() => {

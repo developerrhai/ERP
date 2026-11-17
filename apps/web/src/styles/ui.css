@@ -599,6 +599,84 @@ body {
 .actionbar .btn.primary:hover {
   background: #1d4ed8;
 }
+
+/* V40 Core Buttons - Color Tints (AST-G07) */
+.actionbar .btn.btn-excel {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #86efac !important;
+  font-weight: 500;
+}
+.actionbar .btn.btn-excel:hover {
+  background: #bbf7d0 !important;
+  border-color: #4ade80 !important;
+}
+
+.actionbar .btn.btn-word {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #7dd3fc !important;
+  font-weight: 500;
+}
+.actionbar .btn.btn-word:hover {
+  background: #bae6fd !important;
+  border-color: #38bdf8 !important;
+}
+
+.actionbar .btn.btn-pdf {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #fca5a5 !important;
+  font-weight: 500;
+}
+.actionbar .btn.btn-pdf:hover {
+  background: #fecaca !important;
+  border-color: #f87171 !important;
+}
+
+.actionbar .btn.btn-import {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+  font-weight: 500;
+}
+.actionbar .btn.btn-import:hover {
+  background: #d1fae5 !important;
+  border-color: #6ee7b7 !important;
+}
+
+.actionbar .btn.btn-export {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+  font-weight: 500;
+}
+.actionbar .btn.btn-export:hover {
+  background: #fde68a !important;
+  border-color: #fcd34d !important;
+}
+
+.actionbar .btn.btn-duplicates {
+  background: #f3e8ff !important;
+  color: #7e22ce !important;
+  border-color: #e9d5ff !important;
+  font-weight: 500;
+}
+.actionbar .btn.btn-duplicates:hover {
+  background: #e9d5ff !important;
+  border-color: #d8b4fe !important;
+}
+
+.actionbar .btn.btn-email {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+  border-color: #bbf7d0 !important;
+  font-weight: 500;
+}
+.actionbar .btn.btn-email:hover {
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+}
 @media (max-width: 1100px) {
   .main table {
     display: block;
