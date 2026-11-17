@@ -253,12 +253,6 @@ export function DeptMailboxPage({ pageId, deptName }: { pageId: string; deptName
   }, [unread, rows]);
 
   const needs = effectiveCounts.needsAction;
-  const card = (label: string, n: number | null) => (
-    <div className="card kpi">
-      <small>{label}</small>
-      <b>{n === null ? '…' : n}</b>
-    </div>
-  );
 
   if (depts.length > 0 && !dept) {
     return (
@@ -271,102 +265,140 @@ export function DeptMailboxPage({ pageId, deptName }: { pageId: string; deptName
 
   return (
     <div className="dash-page">
-      <div className="card mailbox-hero" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="v28-mail-hero">
         <div>
-          <h1>{`${name} Inbox (${needs})`}</h1>
+          <h2>{`${name} Inbox (${needs})`}</h2>
           <p>
             Internal department mail. ERP documents are attachments; the message carries the handover, receipt, acceptance, work and approval cycle. Every department, including Administration/Admin, uses this same inbox layout.
           </p>
         </div>
-        <span className="rag rag-green" style={{ textTransform: 'uppercase', padding: '6px 12px', borderRadius: 16, fontWeight: 700, fontSize: 11, background: '#0d9488', color: '#fff' }}>
-          DEPARTMENT MAILBOX
+        <span className="mailtag">DEPARTMENT MAILBOX</span>
+      </div>
+
+      <div className="v28-admin-same">
+        <b>Interconnected:</b> Invoice, PO, BOM, GRN, DC, quotation, quality records, project documents and other ERP documents stay linked to one movement ID, department route, timestamps and approval history.
+      </div>
+
+      <div className="v28-mail-kpis">
+        <div>
+          <small>Needs Action</small>
+          <b>{effectiveCounts.needsAction}</b>
+        </div>
+        <div>
+          <small>Unread</small>
+          <b>{effectiveUnread}</b>
+        </div>
+        <div>
+          <small>Pending Receipt</small>
+          <b>{effectiveCounts.pendingReceipt}</b>
+        </div>
+        <div>
+          <small>Pending Acceptance</small>
+          <b>{effectiveCounts.pendingAcceptance}</b>
+        </div>
+        <div>
+          <small>Work / Rework</small>
+          <b>{effectiveCounts.work}</b>
+        </div>
+        <div>
+          <small>Ready to Move</small>
+          <b>{effectiveCounts.ready}</b>
+        </div>
+      </div>
+
+      <div className="card work-flowbar" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 12, marginBottom: 12 }}>
+        <span className="chip rag rag-green" style={{ padding: '6px 12px', borderRadius: 999, fontWeight: 700, fontSize: 11, background: '#d1fae5', color: '#065f46', border: '1px solid #a7f3d0' }}>
+          {name} mailbox
         </span>
-      </div>
-
-      <div className="kpis kpis-6">
-        {card('Needs Action', effectiveCounts.needsAction)}
-        {card('Unread', effectiveUnread)}
-        {card('Pending Receipt', effectiveCounts.pendingReceipt)}
-        {card('Pending Acceptance', effectiveCounts.pendingAcceptance)}
-        {card('Work / Rework', effectiveCounts.work)}
-        {card('Ready to Move', effectiveCounts.ready)}
-      </div>
-
-      <div className="card work-flowbar">
-        <span className="chip rag rag-green">{name} mailbox</span>
-        <Link className="btn primary" to="/m/dept-mail">
+        <Link className="btn primary" to="/m/dept-mail" style={{ borderRadius: 8 }}>
           + New Message / Attach Document
         </Link>
-        <Link className="btn" to="/m/my-approvals">
+        <Link className="btn" to="/m/my-approvals" style={{ borderRadius: 8 }}>
           Detailed Approvals
         </Link>
-        <Link className="btn" to="/m/plant-flow-command">
+        <Link className="btn" to="/m/plant-flow-command" style={{ borderRadius: 8 }}>
           Integrated Plant Flow
         </Link>
-        <Link className="btn" to="/m/ops-order-360">
+        <Link className="btn" to="/m/ops-order-360" style={{ borderRadius: 8 }}>
           360° Tracking
         </Link>
       </div>
 
       <form
-        className="card inline-form"
+        className="v27-filter-card"
         onSubmit={(e) => {
           e.preventDefault();
           setF(draft);
         }}
       >
-        <label>
-          Search Document / PO / SO / MO / Project
-          <input value={draft.q} placeholder="Search document number or reference..." onChange={(e) => setDraft({ ...draft, q: e.target.value })} />
-        </label>
-        <label>
-          Document Type
-          <select value={draft.docType} onChange={(e) => setDraft({ ...draft, docType: e.target.value })}>
-            <option value="">All</option>
-            {docTypes.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Workflow Status
-          <select value={draft.state} onChange={(e) => setDraft({ ...draft, state: e.target.value })}>
-            <option value="">All</option>
-            {STATES.map((s) => (
-              <option key={s} value={s}>
-                {pretty(s)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Source Department
-          <select value={draft.source} onChange={(e) => setDraft({ ...draft, source: e.target.value })}>
-            <option value="">All</option>
-            {depts.map((d) => (
-              <option key={d.id} value={d.name}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Sent Date
-          <input type="date" aria-label="Sent date from" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} />
-        </label>
-        <label>
-          To
-          <input type="date" aria-label="Sent date to" value={draft.to} onChange={(e) => setDraft({ ...draft, to: e.target.value })} />
-        </label>
-        <div className="actions">
-          <button type="submit" className="btn primary">
+        <div className="v27-filter-grid">
+          <label>
+            Search Document / PO / SO / MO / Project
+            <input
+              value={draft.q}
+              placeholder="Search document number or reference..."
+              onChange={(e) => setDraft({ ...draft, q: e.target.value })}
+            />
+          </label>
+          <label>
+            Document Type
+            <select value={draft.docType} onChange={(e) => setDraft({ ...draft, docType: e.target.value })}>
+              <option value="">All</option>
+              {docTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Workflow Status
+            <select value={draft.state} onChange={(e) => setDraft({ ...draft, state: e.target.value })}>
+              <option value="">All</option>
+              {STATES.map((s) => (
+                <option key={s} value={s}>
+                  {pretty(s)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Source Department
+            <select value={draft.source} onChange={(e) => setDraft({ ...draft, source: e.target.value })}>
+              <option value="">All</option>
+              {depts.map((d) => (
+                <option key={d.id} value={d.name}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Sent Date
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              <input
+                type="date"
+                aria-label="Sent date from"
+                value={draft.from}
+                onChange={(e) => setDraft({ ...draft, from: e.target.value })}
+              />
+              <input
+                type="date"
+                aria-label="Sent date to"
+                value={draft.to}
+                onChange={(e) => setDraft({ ...draft, to: e.target.value })}
+              />
+            </div>
+          </label>
+        </div>
+        <div className="v27-filter-actions">
+          <button type="submit" className="btn primary" style={{ borderRadius: 8 }}>
             Apply Filters
           </button>
           <button
             type="button"
             className="btn"
+            style={{ borderRadius: 8 }}
             onClick={() => {
               setDraft(NO_FILTERS);
               setF(NO_FILTERS);
@@ -374,15 +406,22 @@ export function DeptMailboxPage({ pageId, deptName }: { pageId: string; deptName
           >
             Reset
           </button>
-          <Link className="btn" to="/m/document-movement-center">
+          <Link className="btn" to="/m/document-movement-center" style={{ borderRadius: 8 }}>
             Move a Document
           </Link>
         </div>
       </form>
 
-      <div role="tablist" className="tabs-row">
+      <div role="tablist" className="v28-mail-tabs">
         {VIEWS.map((v) => (
-          <button key={v.key} type="button" role="tab" aria-selected={view === v.key} className={`btn${view === v.key ? ' primary' : ''}`} onClick={() => setView(v.key)}>
+          <button
+            key={v.key}
+            type="button"
+            role="tab"
+            aria-selected={view === v.key}
+            className={`btn${view === v.key ? ' active' : ''}`}
+            onClick={() => setView(v.key)}
+          >
             {v.label}
           </button>
         ))}
@@ -468,70 +507,88 @@ function MovementRow({
   onForward: (m: Movement) => void;
 }) {
   const working = m.state === 'ACCEPTED' || m.state === 'IN_WORK';
+  const stateClass =
+    m.state === 'ACCEPTED' || m.state === 'COMPLETED' ? 'rag-green' :
+    m.state === 'IN_WORK' || m.state === 'SENT' || m.state === 'RECEIVED' ? 'rag-blue' :
+    m.state === 'WAITING_APPROVAL' ? 'rag-amber' :
+    m.state === 'RETURNED' ? 'rag-red' : 'rag-gray';
+
   return (
     <tr>
       <td>
-        {m.from_department}
-        <div className="muted">{when(m.sent_at)}</div>
+        <b>{m.from_department}</b>
+        <div className="v28-mail-from">
+          {when(m.sent_at)}
+          <br />
+          Cycle {(m as any).cycle_no ?? 1}
+        </div>
       </td>
       <td>
-        <b>{m.doc_no ?? m.doc_type}</b> <span className="muted">({m.doc_type})</span>
-        {m.handover_note ? <div className="muted">{m.handover_note}</div> : null}
-        <div className="muted">{m.number}</div>
+        <div className="v28-mail-subject">{m.doc_no ?? m.doc_type}</div>
+        {m.handover_note ? <div className="v28-message-preview">{m.handover_note}</div> : null}
+        <small style={{ color: '#64748b' }}>{m.number}</small>
       </td>
       <td>
-        <Link to={`/m/${m.doc_type}`}>1 document</Link>
+        <span className="v28-attach">
+          <Link to={`/m/${m.doc_type}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+            {m.doc_type} • {m.doc_no ?? 'Doc'}
+          </Link>
+        </span>
       </td>
       <td>
-        {m.to_department}
-        <div className="muted">{m.route_type}</div>
+        <b>{m.to_department}</b>
+        <div className="v28-mail-from">{m.route_type}</div>
       </td>
       <td>
-        {m.received_at ? `Received ${when(m.received_at)}` : '—'}
-        {m.accepted_at ? <div>Accepted {when(m.accepted_at)}</div> : null}
+        <small style={{ display: 'block' }}>Received: {m.received_at ? when(m.received_at) : 'Pending'}</small>
+        <small style={{ display: 'block' }}>Accepted: {m.accepted_at ? when(m.accepted_at) : 'Pending'}</small>
       </td>
       <td>
-        {m.work_status}
-        <div className={m.is_late ? 'rag rag-red' : 'muted'}>{m.sla_due_at ? `${m.is_late ? 'Late · ' : 'Due '}${when(m.sla_due_at)}` : m.priority}</div>
+        <b>{m.work_status}</b>
+        <div className={m.is_late ? 'rag rag-red' : 'v28-mail-from'}>{m.sla_due_at ? `${m.is_late ? 'Late · ' : 'Due '}${when(m.sla_due_at)}` : m.priority}</div>
       </td>
-      <td>{pretty(m.state)}</td>
-      <td className="row-actions">
-        {m.state === 'SENT' ? (
-          <>
-            <button type="button" className="btn" onClick={() => void act(m, 'receive')}>
-              Received
-            </button>
-            <button type="button" className="btn" onClick={() => void act(m, 'recall')}>
-              Recall
-            </button>
-          </>
-        ) : null}
-        {m.state === 'RECEIVED' ? (
-          <>
-            <button type="button" className="btn primary" onClick={() => void act(m, 'accept')}>
-              Accepted
-            </button>
-            <button type="button" className="btn" onClick={() => onReturn(m)}>
-              Return
-            </button>
-          </>
-        ) : null}
-        {working ? (
-          <>
-            <button type="button" className="btn primary" onClick={() => onForward(m)}>
-              Move Forward
-            </button>
-            <button type="button" className="btn" onClick={() => void act(m, 'complete')}>
-              Complete
-            </button>
-            <button type="button" className="btn" onClick={() => onReturn(m)}>
-              Return
-            </button>
-          </>
-        ) : null}
-        <button type="button" className="btn" onClick={() => onHistory(m)}>
-          History
-        </button>
+      <td>
+        <span className={`rag ${stateClass}`}>{pretty(m.state)}</span>
+      </td>
+      <td>
+        <div className="v28-mail-actions">
+          {m.state === 'SENT' ? (
+            <>
+              <button type="button" className="btn success" onClick={() => void act(m, 'receive')}>
+                Received
+              </button>
+              <button type="button" className="btn" onClick={() => void act(m, 'recall')}>
+                Recall
+              </button>
+            </>
+          ) : null}
+          {m.state === 'RECEIVED' ? (
+            <>
+              <button type="button" className="btn primary" onClick={() => void act(m, 'accept')}>
+                Accepted
+              </button>
+              <button type="button" className="btn danger" onClick={() => onReturn(m)}>
+                Return
+              </button>
+            </>
+          ) : null}
+          {working ? (
+            <>
+              <button type="button" className="btn primary" onClick={() => onForward(m)}>
+                Move Forward
+              </button>
+              <button type="button" className="btn success" onClick={() => void act(m, 'complete')}>
+                Complete
+              </button>
+              <button type="button" className="btn danger" onClick={() => onReturn(m)}>
+                Return
+              </button>
+            </>
+          ) : null}
+          <button type="button" className="btn" onClick={() => onHistory(m)}>
+            History
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -540,24 +597,39 @@ function MovementRow({
 function MailRowView({ row }: { row: MailRow }) {
   const n = attachmentCount(row);
   return (
-    <tr>
+    <tr className={!row.read ? 'v28-unread-row' : ''}>
       <td>
-        {row.from_name ?? '—'}
-        <div className="muted">{row.from_department ?? ''} · {when(row.created_at)}</div>
+        {!row.read ? <span className="v28-unread-dot" /> : null}
+        <b>{row.from_name ?? '—'}</b>
+        <div className="v28-mail-from">{row.from_department ?? ''} · {when(row.created_at)}</div>
       </td>
       <td>
-        <b>{row.subject}</b>
-        {row.body ? <div className="muted">{row.body.slice(0, 120)}</div> : null}
+        <div className="v28-mail-subject">{row.subject}</div>
+        {row.body ? <div className="v28-message-preview">{row.body.slice(0, 120)}</div> : null}
       </td>
-      <td>{n > 0 ? `${n} attached` : '—'}</td>
-      <td>Mail</td>
-      <td>{row.read ? 'Read' : 'Unread'}</td>
+      <td>
+        {n > 0 ? (
+          <span className="v28-attach">{n} attached</span>
+        ) : (
+          <small style={{ color: '#94a3b8' }}>No attachment</small>
+        )}
+      </td>
+      <td>
+        <b>Mail</b>
+      </td>
+      <td>
+        <small>{row.read ? 'Read' : 'Unread'}</small>
+      </td>
       <td>—</td>
-      <td>{row.read ? 'Read' : 'Unread'}</td>
-      <td className="row-actions">
-        <Link className="btn" to="/m/dept-mail">
-          Open
-        </Link>
+      <td>
+        <span className={`rag ${row.read ? 'rag-gray' : 'rag-blue'}`}>{row.read ? 'Read' : 'Unread'}</span>
+      </td>
+      <td>
+        <div className="v28-mail-actions">
+          <Link className="btn" to="/m/dept-mail">
+            Open
+          </Link>
+        </div>
       </td>
     </tr>
   );

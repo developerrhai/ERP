@@ -68,12 +68,6 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
   const name = dept?.name ?? pageId.replace(/^dept-work-/, '');
   const slug = pageId.replace(/^dept-work-/, '');
   const mine = rules.filter((r) => dept && [r.owner_department_id, r.next_department_id, r.approval_department_id].includes(dept.id));
-  const card = (label: string, n: number | null) => (
-    <div className="card kpi">
-      <small>{label}</small>
-      <b>{n === null ? '…' : n}</b>
-    </div>
-  );
 
   if (depts.length > 0 && !dept) {
     return (
@@ -86,40 +80,71 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
 
   return (
     <div className="dash-page">
-      <div className="card mailbox-hero" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="v39-dash-hero">
         <div>
-          <h1>{`${name} • Flexible Work Center`}</h1>
-          <p>One workspace for incoming work, routed documents, approvals and onward movement. The same engine works for every active department from Department Master.</p>
+          <small>{name} Department Workspace</small>
+          <h1>Welcome, {name} Team</h1>
+          <p>
+            A simple working dashboard for documents, approvals, employee activity and project history. Only the department's operational queue is shown here.
+          </p>
         </div>
-        <span className="chip rag rag-green" style={{ textTransform: 'capitalize', padding: '6px 14px', borderRadius: 16, fontWeight: 700, fontSize: 12, background: '#0d9488', color: '#fff' }}>
-          {name}
-        </span>
+        <div className="v39-user-box">
+          <b>{name} Workspace</b>
+          <span>{name} • Company RHAI</span>
+          <span>Project, import/export and workflow controls ready</span>
+        </div>
       </div>
 
-      <div className="kpis kpis-6">
-        {card('Pending Receipt', counts ? counts.pendingReceipt : null)}
-        {card('Pending Acceptance', counts ? counts.pendingAcceptance : null)}
-        {card('Work / Rework', counts ? counts.work : null)}
-        {card('Approval', counts ? counts.approval : null)}
-        {card('Ready to Move', counts ? counts.ready : null)}
-        {card('Sent / Waiting', counts ? counts.sentWaiting : null)}
+      <div className="v39-metrics">
+        <div className="v39-metric danger">
+          <div>
+            <small>Pending Receipt</small>
+            <b>{counts ? counts.pendingReceipt : 0}</b>
+          </div>
+          <i>↓</i>
+        </div>
+        <div className="v39-metric warn">
+          <div>
+            <small>Pending Acceptance</small>
+            <b>{counts ? counts.pendingAcceptance : 0}</b>
+          </div>
+          <i>✓</i>
+        </div>
+        <div className="v39-metric">
+          <div>
+            <small>Active Department Work</small>
+            <b>{counts ? counts.work : 0}</b>
+          </div>
+          <i>⚙</i>
+        </div>
+        <div className="v39-metric good">
+          <div>
+            <small>Approval Inbox</small>
+            <b>{counts ? counts.approval : 0}</b>
+          </div>
+          <i>◎</i>
+        </div>
       </div>
 
-      <div className="card work-flowbar">
+      <div className="v39-quick">
+        <b>Quick Actions</b>
         <Link className="btn primary" to={`/m/dept-inbox-${slug}`}>
-          {`Open ${name} Inbox`}
-        </Link>
-        <Link className="btn" to="/m/dept-mail">
-          New Message / Attach Document
+          Department Inbox
         </Link>
         <Link className="btn" to="/m/my-approvals">
           Approvals
         </Link>
-        <Link className="btn" to="/m/plant-flow-command">
-          Plant Flow
+        <Link className="btn" to="/m/project-history">
+          Project History
         </Link>
-        <Link className="btn" to="/m/admin-workflow">
-          Workflow Matrix
+        <Link className="btn" to="/m/ops-order-360">
+          360° Tracking
+        </Link>
+        <Link className="btn" to="/m/ops-tasks">
+          Tasks
+        </Link>
+        <Link className="btn" to="/m/ops-shift-roster">
+          Shifts
         </Link>
       </div>
 
