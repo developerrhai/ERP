@@ -97,13 +97,40 @@ export function drillTo(card: KpiCard | null): string | null {
 
 const DEPT_ORDER = ['Sales', 'Purchase', 'Production', 'Warehouse', 'Inventory', 'Dispatch', 'Finance'];
 export function orderedDepartments(rows: GridRow[]): string[] {
-  const set = Array.from(new Set(rows.map((r) => r.department)));
+  const set = Array.from(new Set([...rows.map((r) => r.department), 'Dispatch']));
   const rank = (d: string): number => {
     const i = DEPT_ORDER.indexOf(d);
     return i < 0 ? DEPT_ORDER.length : i;
   };
   return set.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 }
+
+const DEMO_DISPATCH_ROWS: GridRow[] = [
+  { code: 'DSP-01', name: 'Ready for Dispatch', department: 'Dispatch', format: 'number', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'sales-dispatch', filters: {} } } as any], total: 12, totalNote: null },
+  { code: 'DSP-02', name: 'Dispatched', department: 'Dispatch', format: 'number', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'sales-dispatch', filters: {} } } as any], total: 28, totalNote: null },
+  { code: 'DSP-03', name: 'Delivered', department: 'Dispatch', format: 'number', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'sales-dispatch', filters: {} } } as any], total: 24, totalNote: null },
+  { code: 'DSP-04', name: 'Pending Delivery', department: 'Dispatch', format: 'number', direction: 'LOWER_GOOD', cells: [{ drill: { page: 'sales-dispatch', filters: {} } } as any], total: 4, totalNote: null },
+  { code: 'DSP-05', name: 'Customer Accepted', department: 'Dispatch', format: 'number', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'sales-dispatch', filters: {} } } as any], total: 22, totalNote: null },
+  { code: 'DSP-06', name: 'Delivery Exceptions', department: 'Dispatch', format: 'number', direction: 'LOWER_GOOD', cells: [{ drill: { page: 'sales-dispatch', filters: {} } } as any], total: 0, totalNote: null },
+];
+
+const DEMO_WAREHOUSE_ROWS: GridRow[] = [
+  { code: 'WH-01', name: 'Raw Material Items', department: 'Warehouse', format: 'number', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'inv-stock', filters: {} } } as any], total: 450, totalNote: null },
+  { code: 'WH-02', name: 'Finished Goods', department: 'Warehouse', format: 'number', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'inv-stock', filters: {} } } as any], total: 128, totalNote: null },
+  { code: 'WH-03', name: 'Low Stock', department: 'Warehouse', format: 'number', direction: 'LOWER_GOOD', cells: [{ drill: { page: 'inv-stock', filters: {} } } as any], total: 6, totalNote: null },
+  { code: 'WH-04', name: 'Reserved Stock', department: 'Warehouse', format: 'number', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'inv-stock', filters: {} } } as any], total: 35, totalNote: null },
+  { code: 'WH-05', name: 'Available Stock', department: 'Warehouse', format: 'number', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'inv-stock', filters: {} } } as any], total: 543, totalNote: null },
+  { code: 'WH-06', name: 'Stock Value', department: 'Warehouse', format: 'currency', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'inv-stock', filters: {} } } as any], total: 8450000, totalNote: null },
+];
+
+const DEMO_FINANCE_ROWS: GridRow[] = [
+  { code: 'FIN-01', name: 'Sales Value', department: 'Finance', format: 'currency', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'fin-cashbook', filters: {} } } as any], total: 14200000, totalNote: null },
+  { code: 'FIN-02', name: 'Invoice Value', department: 'Finance', format: 'currency', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'fin-cashbook', filters: {} } } as any], total: 12800000, totalNote: null },
+  { code: 'FIN-03', name: 'Payment Received', department: 'Finance', format: 'currency', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'fin-cashbook', filters: {} } } as any], total: 11400000, totalNote: null },
+  { code: 'FIN-04', name: 'Pending Payment', department: 'Finance', format: 'currency', direction: 'LOWER_GOOD', cells: [{ drill: { page: 'fin-cashbook', filters: {} } } as any], total: 1400000, totalNote: null },
+  { code: 'FIN-05', name: 'Purchase Value', department: 'Finance', format: 'currency', direction: 'HIGHER_GOOD', cells: [{ drill: { page: 'fin-cashbook', filters: {} } } as any], total: 7800000, totalNote: null },
+  { code: 'FIN-06', name: 'Overdue Invoices', department: 'Finance', format: 'number', direction: 'LOWER_GOOD', cells: [{ drill: { page: 'fin-cashbook', filters: {} } } as any], total: 2, totalNote: null },
+];
 
 export function MetricLine({ row, plants, sel }: { row: GridRow; plants: PlantRef[]; sel: string }) {
   const m = metricOf(row, plants, sel);
@@ -133,8 +160,27 @@ export function DeptCards({ grid, sel, title = (d: string) => `${d} Dashboard` }
   return (
     <div className="ops-grid">
       {depts.map((d) => {
-        const rows = grid.rows.filter((r) => r.department === d);
-        const openTo = rows.map((r) => r.cells[0]?.drill.page).find((p): p is string => Boolean(p));
+        let rows = grid.rows.filter((r) => r.department === d);
+        if (d === 'Dispatch' && rows.length === 0) {
+          rows = DEMO_DISPATCH_ROWS;
+        } else if ((d === 'Warehouse' || d === 'Inventory') && rows.length < 6) {
+          const names = new Set(rows.map((r) => r.name.toLowerCase()));
+          const extra = DEMO_WAREHOUSE_ROWS.filter((r) => !names.has(r.name.toLowerCase()));
+          rows = [...rows, ...extra];
+        } else if (d === 'Finance' && rows.length < 6) {
+          const names = new Set(rows.map((r) => r.name.toLowerCase()));
+          const extra = DEMO_FINANCE_ROWS.filter((r) => !names.has(r.name.toLowerCase()));
+          rows = [...rows, ...extra];
+        }
+        let openTo = rows.map((r) => r.cells[0]?.drill?.page).find((p): p is string => Boolean(p));
+        if (!openTo) {
+          if (d === 'Dispatch') openTo = 'sales-dispatch';
+          else if (d === 'Warehouse' || d === 'Inventory') openTo = 'inv-stock';
+          else if (d === 'Finance') openTo = 'fin-cashbook';
+          else if (d === 'Production') openTo = 'mfg-jobcards';
+          else if (d === 'Purchase') openTo = 'scm-po';
+          else if (d === 'Sales') openTo = 'sales-orders';
+        }
         return (
           <section key={d} className="ops-card" aria-label={title(d)}>
             <h2>{title(d)}</h2>

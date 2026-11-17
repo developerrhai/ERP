@@ -29,6 +29,14 @@ export function NotificationCenterPage() {
           <h1>Notification Center</h1>
           <p>Live ERP alerts with search, filters, read state and direct record links.</p>
         </div>
+        <div className="actions">
+          <button className="btn" type="button" onClick={() => window.history.back()} title="Return">← Return</button>
+          <button className="btn" type="button" onClick={() => void markAllNotificationsRead().then(() => { window.dispatchEvent(new Event(BELL_REFRESH_EVENT)); })}>Mark All Read</button>
+          <button className="btn" type="button" onClick={() => alert('Import records')} title="Import">⇧ Import</button>
+          <button className="btn" type="button" onClick={() => alert('Export records')} title="Export">⇩ Export</button>
+          <button className="btn" type="button" onClick={() => alert('Check duplicates')}>Duplicates</button>
+          <a className="btn" href="/m/project-global-history">Project History</a>
+        </div>
       </div>
       <div className="tabs" role="tablist" aria-label="Notification views">
         <button

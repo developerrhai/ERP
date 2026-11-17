@@ -231,8 +231,17 @@ export function MyApprovalsPage() {
                   </td>
                   <td>{m.state.replace('_', ' ')}</td>
                   <td className="row-actions">
+                    <Link className="btn" to={`/m/${m.doc_type}`}>
+                      Open
+                    </Link>
                     {m.state === 'SENT' ? (
                       <>
+                        <button type="button" className="btn primary" onClick={() => void act(m, 'accept')}>
+                          Accept
+                        </button>
+                        <button type="button" className="btn" onClick={() => setReturning(m)}>
+                          Reject
+                        </button>
                         <button type="button" className="btn" onClick={() => void act(m, 'receive')}>
                           Received
                         </button>
@@ -244,7 +253,10 @@ export function MyApprovalsPage() {
                     {m.state === 'RECEIVED' ? (
                       <>
                         <button type="button" className="btn primary" onClick={() => void act(m, 'accept')}>
-                          Accepted
+                          Accept
+                        </button>
+                        <button type="button" className="btn" onClick={() => setReturning(m)}>
+                          Reject
                         </button>
                         <button type="button" className="btn" onClick={() => setReturning(m)}>
                           Return
@@ -258,6 +270,16 @@ export function MyApprovalsPage() {
                         </button>
                         <button type="button" className="btn" onClick={() => void act(m, 'complete')}>
                           Complete
+                        </button>
+                      </>
+                    ) : null}
+                    {m.state !== 'SENT' && m.state !== 'RECEIVED' && m.state !== 'ACCEPTED' && m.state !== 'IN_WORK' ? (
+                      <>
+                        <button type="button" className="btn primary" onClick={() => void act(m, 'accept')}>
+                          Accept
+                        </button>
+                        <button type="button" className="btn" onClick={() => setReturning(m)}>
+                          Reject
                         </button>
                       </>
                     ) : null}

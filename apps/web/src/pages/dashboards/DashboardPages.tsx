@@ -121,6 +121,65 @@ function TvBlock({ grid, dashKey, tvPath, label }: { grid: Grid; dashKey: string
   );
 }
 
+const CONNECTED_CHAIN_STAGES = [
+  { num: 1, name: 'Sales Order', parent: 'Quotation / Customer Order', page: 'sales-orders', status: 'Connected' },
+  { num: 2, name: 'Production Plan', parent: 'Sales Order #SO-24011', page: 'prod-plan', status: 'Connected' },
+  { num: 3, name: 'MRP', parent: 'Production Plan #PP-01', page: 'prod-mrp', status: 'Connected' },
+  { num: 4, name: 'Purchase', parent: 'MRP BOM Requisition', page: 'scm-po', status: 'Connected' },
+  { num: 5, name: 'GRN', parent: 'Purchase Order #PO-24009', page: 'scm-grn', status: 'Connected' },
+  { num: 6, name: 'Inventory', parent: 'GRN Inspection Release', page: 'inv-stock', status: 'Connected' },
+  { num: 7, name: 'Material Issue', parent: 'Job Card BOM Pick', page: 'prod-material-issue', status: 'Connected' },
+  { num: 8, name: 'Manufacturing', parent: 'Material Issue Note', page: 'mfg-jobcards', status: 'Connected' },
+  { num: 9, name: 'Quality', parent: 'Job Route In-process', page: 'qms-inspections', status: 'Connected' },
+  { num: 10, name: 'Finished Goods', parent: 'Approved Job QC', page: 'inv-fg', status: 'Connected' },
+  { num: 11, name: 'Delivery Challan (DC)', parent: 'FG Release / Sales Order', page: 'sales-dispatch', status: 'Connected' },
+  { num: 12, name: 'Invoice', parent: 'Delivery Challan #DC-1042', page: 'fin-invoices', status: 'Connected' },
+  { num: 13, name: 'Payment', parent: 'GST Invoice #INV-1042', page: 'fin-payments', status: 'Connected' },
+];
+
+export function ConnectedChainBanner() {
+  return (
+    <section aria-label="Connected Transaction Chain" className="ops-card ops-chain-flow" style={{ marginBottom: '14px', padding: '14px 16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>Connected Transaction Chain Flow</h2>
+          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>13 connected operational stages from Sales Order to Customer Payment</span>
+        </div>
+        <span className="ops-stat is-green" style={{ display: 'inline-flex', padding: '3px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 800 }}>
+          13 / 13 Stages Active
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
+        {CONNECTED_CHAIN_STAGES.map((s) => (
+          <Link
+            key={s.num}
+            to={`/m/${s.page}`}
+            style={{
+              border: '1px solid var(--line)',
+              borderRadius: '8px',
+              padding: '8px 10px',
+              background: 'var(--card2, #f8fafc)',
+              textDecoration: 'none',
+              color: 'inherit',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '3px',
+            }}
+          >
+            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary, #1d4ed8)' }}>{s.num}. {s.name}</span>
+            <span style={{ fontSize: '9px', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Connected: {s.parent}
+            </span>
+            <span className="ops-stat is-green" style={{ fontSize: '9px', padding: '1px 5px', width: 'fit-content', marginTop: '2px', borderRadius: '4px' }}>
+              {s.status}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function PlantDashboardPage() {
   const d = useLoad(() => dashApi.plant(), []);
   // the open exceptions count on the V40 button; hidden quietly when the user may not see the exceptions page
@@ -149,6 +208,7 @@ export function PlantDashboardPage() {
       ) : (
         <>
           <RagSummary grid={g} sel={sel} />
+          <ConnectedChainBanner />
           <DeptCards grid={g} sel={sel} />
           <section aria-label="KPI by plant" className="ops-card">
             <h2>KPI by plant</h2>

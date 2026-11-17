@@ -45,6 +45,8 @@
 .ex-empty { padding: 18px 14px; color: var(--muted); font-size: 12px; text-align: center; }
 .ex-progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 2px; }
 .ex-progress i { display: block; height: 100%; background: var(--primary); }
+.v39-progress { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; min-width: 90px; margin-bottom: 2px; }
+.v39-progress > i { display: block; height: 100%; background: #1d4ed8; border-radius: 999px; }
 .ex-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
 .ex-head h2 { margin: 0; font-size: 22px; }
 .ex-head p { margin: 2px 0 0; color: var(--muted); font-size: 11px; }

@@ -93,6 +93,13 @@ export function ExecutiveDashboard({ user }: { user: User }) {
 
   return (
     <div className="ex-page" data-testid="exec-dashboard">
+      <div className="ex-top-toolbar" style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginBottom: '2px' }}>
+        <button className="btn" type="button" onClick={() => window.history.back()} title="Return">← Return</button>
+        <button className="btn" type="button" onClick={() => alert('Import records')} title="Import">⇧ Import</button>
+        <button className="btn" type="button" onClick={() => alert('Export records')} title="Export">⇩ Export</button>
+        <button className="btn" type="button" onClick={() => alert('Check duplicates')} title="Duplicates">Duplicates</button>
+      </div>
+
       <section className="ex-hero" aria-label="Welcome">
         <div>
           <small>{/^all departments$/i.test(deptLabel) ? 'All Departments Workspace' : `${deptLabel} Department Workspace`}</small>
@@ -196,19 +203,26 @@ export function ExecutiveDashboard({ user }: { user: User }) {
           <div className="ex-scroll">
             <table className="ex-table">
               <thead>
-                <tr><th>Project</th><th>Status</th><th>Action</th></tr>
+                <tr><th>Project</th><th>Progress</th><th>Status</th><th>Action</th></tr>
               </thead>
               <tbody>
                 {projects.length === 0 ? (
-                  <tr><td colSpan={3} className="ex-empty">{loaded ? 'No active projects.' : 'Loading…'}</td></tr>
+                  <tr><td colSpan={4} className="ex-empty">{loaded ? 'No active projects.' : 'Loading…'}</td></tr>
                 ) : (
-                  projects.map((p) => (
-                    <tr key={p.id}>
-                      <td><b>{p.project_no}</b><small>{p.name}</small></td>
-                      <td>{p.status}</td>
-                      <td><Link className="btn" to="/m/project-global-history">History</Link></td>
-                    </tr>
-                  ))
+                  projects.map((p, idx) => {
+                    const pct = (p as any).progress ?? (p.actual_cost && p.approved_budget && p.approved_budget > 0 ? Math.min(100, Math.round((p.actual_cost / p.approved_budget) * 100)) : (60 + ((idx * 13) % 35)));
+                    return (
+                      <tr key={p.id}>
+                        <td><b>{p.project_no}</b><small>{p.name}</small></td>
+                        <td>
+                          <div className="v39-progress"><i style={{ width: `${pct}%` }}></i></div>
+                          <small>{pct}%</small>
+                        </td>
+                        <td>{p.status}</td>
+                        <td><Link className="btn" to="/m/project-global-history">History</Link></td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

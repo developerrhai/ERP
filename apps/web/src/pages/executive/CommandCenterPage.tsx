@@ -120,8 +120,12 @@ export function CommandCenterPage() {
           <p>Add, review and open cross-functional ERP actions.</p>
         </div>
         <div className="ex-actions">
+          <button className="btn" type="button" onClick={() => window.history.back()} title="Return">← Return</button>
           <Link className="btn" to="/m/notification-center">Notification Center</Link>
           <Link className="btn" to="/m/global-search">Global Search</Link>
+          <button className="btn" type="button" onClick={() => alert('Import records')} title="Import">⇧ Import</button>
+          <button className="btn" type="button" onClick={() => alert('Export records')} title="Export">⇩ Export</button>
+          <button className="btn" type="button" onClick={() => alert('Check duplicates')} title="Duplicates">Duplicates</button>
           <Link className="btn" to="/m/project-global-history">Project History</Link>
         </div>
       </div>

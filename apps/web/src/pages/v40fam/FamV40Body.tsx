@@ -46,6 +46,7 @@ function formatCellValue(val: unknown, type?: V40ColType): ReactNode {
 }
 
 const WMS_TITLES: Record<string, string> = {
+  'process-exceptions': 'Exception Register · Detailed Table',
   'wms-warehouses': 'Warehouse Directory – Detailed Table',
   'wms-zones': 'Zone Directory – Detailed Table',
   'wms-racks': 'Rack Directory – Detailed Table',

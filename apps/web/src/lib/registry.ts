@@ -485,14 +485,14 @@ const PHASE_ADDED_PAGES = [
   },
   {
     id: 'project-global-history',
-    title: 'Project History',
+    title: 'Global Project History',
     family: 'Executive',
     after: 'ops-order-360',
     purpose: 'Every event of a project across departments.',
   },
   {
     id: 'process-exceptions',
-    title: 'Process Exceptions',
+    title: 'Process Exceptions & Disputes',
     family: 'Executive',
     after: 'project-global-history',
     purpose: 'Delays found automatically, grouped by the department that owns them.',
