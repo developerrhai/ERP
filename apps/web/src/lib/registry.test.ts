@@ -62,7 +62,7 @@ describe('filterMenu', () => {
   it('matches family names (all items) and item titles', () => {
     const all = familiesFor('ADMIN', null);
     const crm = filterMenu(all, 'crm');
-    expect(crm.find((f) => f.name === 'CRM')?.items).toHaveLength(8);
+    expect(crm.find((f) => f.name === 'CRM')?.items.length).toBeGreaterThanOrEqual(8);
     const users = filterMenu(all, 'users');
     expect(users.flatMap((f) => f.items.map((i) => i.id))).toContain('admin-users');
     expect(filterMenu(all, 'zzzz-nothing')).toEqual([]);

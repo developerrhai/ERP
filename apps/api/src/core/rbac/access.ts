@@ -202,8 +202,8 @@ export function decide(
   // 5. Administration family hard rule: role level below 95 -> false.
   if (page.family === ADMIN_FAMILY && u.level < ADMIN_LEVEL) return false;
 
-  // 5b. Cross-department movements and generic department inbox: only for Administrator and Super User
-  if ((pageId === 'dept-movement-inbox' || pageId === 'dept-inbox' || pageId === 'dept-work') && u.level < ADMIN_LEVEL) {
+  // 5b. Cross-department movements: only for Administrator and Super User
+  if ((pageId === 'dept-movement-inbox' || pageId === 'dept-work') && u.level < ADMIN_LEVEL) {
     return false;
   }
 
@@ -212,7 +212,8 @@ export function decide(
   if (deptPageMatch && u.level < ADMIN_LEVEL) {
     const pageDeptSlug = deptPageMatch[1]!.toLowerCase().replace(/[^a-z0-9]/g, '');
     const userDepts = user.departments.map((d) => d.toLowerCase().replace(/[^a-z0-9]/g, ''));
-    if (!userDepts.includes(pageDeptSlug)) return false;
+    const matches = userDepts.some((d) => d.includes(pageDeptSlug) || pageDeptSlug.includes(d));
+    if (!matches) return false;
   }
 
   // 6 & 7. Resolve permission cells and scope.
@@ -402,7 +403,7 @@ export async function loadAccessData(user: AccessUser): Promise<AccessData> {
   return {
     controls: new Map(controls.map((c) => [c.pageId, c])),
     rows: new Map(rows.map((r) => [r.resource, r as PermissionRow])),
-    departmentFamilies: new Set(families.map((f) => f.family)),
+    departmentFamilies: new Set([...families.map((f) => f.family), 'Department Inboxes']),
     roleVersion: roleRow?.version ?? 1,
     unitIds,
   };
