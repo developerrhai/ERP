@@ -301,7 +301,7 @@ function PageBody({
       />
     );
   }
-  if (/^dept-inbox-.+$/.test(pageId)) return <DeptMailboxPage pageId={pageId} />;
+  if (/^dept-inbox-.+$/.test(pageId)) return <DeptMailboxPage pageId={pageId} user={user} />;
   if (/^dept-work-.+$/.test(pageId)) return <DeptWorkCenterPage pageId={pageId} />;
   switch (pageId) {
     case 'dashboard':
@@ -945,7 +945,7 @@ function PageBody({
     case 'my-approvals':
       return <MyApprovalsPage />;
     case 'dept-movement-inbox':
-      return <DeptMailboxPage pageId="dept-movement-inbox" deptName={user.department ?? 'Administration'} />;
+      return <DeptMailboxPage pageId="dept-movement-inbox" deptName={user.department ?? 'Administration'} user={user} />;
     case 'admin-workflow':
       return <WorkflowMatrixPage actions={actions} />;
     case 'my-dashboard':

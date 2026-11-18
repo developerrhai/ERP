@@ -22,16 +22,30 @@ export function Sidebar({ user, open, onNavigate }: SidebarProps) {
     return () => resetMenu();
   }, [user.id, user.role, user.department]);
   const families = useMemo(() => {
-    const labeled = withRegistryLabels(menu.families);
-    if (!labeled.some((f: RegistryFamily) => f.name === 'Department Inboxes')) {
+    const raw = menu.status === 'ready' ? menu.families : registry.families;
+    const labeled = withRegistryLabels(raw);
+    const execIdx = labeled.findIndex((f: RegistryFamily) => f.name === 'Executive');
+    if (execIdx >= 0) {
       const regDept = registry.families.find((f: RegistryFamily) => f.name === 'Department Inboxes');
+      const existingIdx = labeled.findIndex((f: RegistryFamily) => f.name === 'Department Inboxes');
       if (regDept && regDept.items.length > 0) {
-        const execIdx = labeled.findIndex((f: RegistryFamily) => f.name === 'Executive');
-        labeled.splice(execIdx >= 0 ? execIdx + 1 : 1, 0, {
-          name: 'Department Inboxes',
-          icon: 'INBOX',
-          items: regDept.items.map((i: { id: string; title: string }) => ({ id: i.id, title: i.title })),
-        });
+        if (existingIdx >= 0) {
+          const existing = labeled[existingIdx];
+          if (existing && existing.items.length < regDept.items.length) {
+            labeled[existingIdx] = {
+              ...existing,
+              name: 'Department Inboxes',
+              icon: 'INBOX',
+              items: regDept.items.map((i: { id: string; title: string }) => ({ id: i.id, title: i.title })),
+            };
+          }
+        } else {
+          labeled.splice(execIdx + 1, 0, {
+            name: 'Department Inboxes',
+            icon: 'INBOX',
+            items: regDept.items.map((i: { id: string; title: string }) => ({ id: i.id, title: i.title })),
+          });
+        }
       }
     }
     return labeled;
@@ -70,7 +84,7 @@ export function Sidebar({ user, open, onNavigate }: SidebarProps) {
       </div>
       <nav className="menu">
         {visible.map((fam) => {
-          const isCollapsed = collapsed.has(fam.name);
+          const isCollapsed = filter.trim().length > 0 ? false : collapsed.has(fam.name);
           const listId = `menu-${fam.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`;
           return (
             <div className="menu-section" key={fam.name}>

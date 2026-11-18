@@ -8,6 +8,7 @@ import { HistoryDrawer, MoveForwardDialog, ReturnDialog } from '../../components
 import { useToast } from '../../components/Toast';
 import { docsMailApi, type MailRow } from '../../lib/docsMailApi';
 import { workApi, type Dept, type InboxCounts, type Movement, type MovementState } from '../../lib/workApi';
+import type { User } from '../../types';
 import { generateDeptInboxFallback } from './deptInboxFallback';
 
 type ViewKey = 'inbox' | 'unread' | 'attachments' | 'receipt' | 'acceptance' | 'work' | 'approval' | 'ready' | 'sent' | 'returned' | 'completed' | 'all';
@@ -66,7 +67,7 @@ const DEFAULT_DEPTS: Dept[] = [
   { id: 'f8559bc9-12e1-4d54-a764-6726fc91c301', name: 'Administration' },
 ];
 
-export function DeptMailboxPage({ pageId, deptName }: { pageId: string; deptName?: string }) {
+export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; deptName?: string; user?: User }) {
   const toast = useToast();
   const [depts, setDepts] = useState<Dept[]>(DEFAULT_DEPTS);
   const [view, setView] = useState<ViewKey>(pageId === 'dept-inbox-finance' ? 'receipt' : 'inbox');
@@ -265,63 +266,217 @@ export function DeptMailboxPage({ pageId, deptName }: { pageId: string; deptName
 
   return (
     <div className="dash-page">
-      <div className="v28-mail-hero">
+      <div className="v40-top-toolbar" style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 8 }}>
+        <button className="btn" type="button" onClick={() => window.history.back()} title="Return">← Return</button>
+        <button className="btn" type="button" onClick={() => toast('Import records')} title="Import">⇧ Import</button>
+        <button className="btn" type="button" onClick={() => toast('Export records')} title="Export">⇩ Export</button>
+        <button className="btn" type="button" onClick={() => toast('Duplicate check: No potential duplicates found in current mailbox.')} title="Duplicates">Duplicates</button>
+      </div>
+
+      <section className="v39-dash-hero" aria-label="Department Workspace">
         <div>
-          <h2>{`${name} Inbox (${needs})`}</h2>
+          <small>{name.toUpperCase()} DEPARTMENT WORKSPACE</small>
+          <h1>Welcome, {user?.name || 'ERP Administrator'}</h1>
+          <h2 style={{ fontSize: 16, margin: '2px 0 6px', color: '#93c5fd' }}>{`${name} Inbox (${needs})`}</h2>
           <p>
-            Internal department mail. ERP documents are attachments; the message carries the handover, receipt, acceptance, work and approval cycle. Every department, including Administration/Admin, uses this same inbox layout.
+            A simple working dashboard for documents, approvals, employee activity and project history. Only the department&apos;s operational queue is shown here.
           </p>
         </div>
-        <span className="mailtag">DEPARTMENT MAILBOX</span>
+        <div className="v39-user-box">
+          <b>{user?.roleLabel || 'Super User'}</b>
+          <span>{name} • Company: RHAI</span>
+          <span>Project, import/export and workflow controls ready</span>
+        </div>
+      </section>
+
+      <div className="v39-metrics">
+        <div className="v39-metric danger" onClick={() => setView('receipt')} style={{ cursor: 'pointer' }} title="View Pending Receipt">
+          <div>
+            <small>Pending Receipt</small>
+            <b>{effectiveCounts.pendingReceipt}</b>
+          </div>
+          <i aria-hidden="true">↓</i>
+        </div>
+        <div className="v39-metric warn" onClick={() => setView('acceptance')} style={{ cursor: 'pointer' }} title="View Pending Acceptance">
+          <div>
+            <small>Pending Acceptance</small>
+            <b>{effectiveCounts.pendingAcceptance}</b>
+          </div>
+          <i aria-hidden="true">✓</i>
+        </div>
+        <div className="v39-metric" onClick={() => setView('work')} style={{ cursor: 'pointer' }} title="View Active Department Work">
+          <div>
+            <small>Active Department Work</small>
+            <b>{effectiveCounts.work}</b>
+          </div>
+          <i aria-hidden="true">⚙</i>
+        </div>
+        <div className="v39-metric good" onClick={() => setView('approval')} style={{ cursor: 'pointer' }} title="View Approval Inbox">
+          <div>
+            <small>Approval Inbox</small>
+            <b>{effectiveCounts.approval}</b>
+          </div>
+          <i aria-hidden="true">◎</i>
+        </div>
       </div>
 
-      <div className="v28-admin-same">
+      <div className="v39-quick">
+        <b>Quick Actions</b>
+        <button
+          type="button"
+          className={`btn${view === 'inbox' ? ' primary' : ''}`}
+          onClick={() => setView('inbox')}
+        >
+          Department Inbox
+        </button>
+        <Link className="btn" to="/m/my-approvals">Approvals</Link>
+        <Link className="btn" to="/m/project-global-history">Project History</Link>
+        <Link className="btn" to="/m/ops-order-360">360° Tracking</Link>
+        <Link className="btn" to="/m/ops-tasks">Tasks</Link>
+        <Link className="btn" to="/m/ops-shift-roster">Shifts</Link>
+        <Link className="btn primary" to="/m/dept-mail">+ New Message / Attach Document</Link>
+        <Link className="btn" to="/m/plant-flow-command">Integrated Plant Flow</Link>
+      </div>
+
+      <div className="v39-two-tables" style={{ display: 'grid', gridTemplateColumns: '1.25fr 0.75fr', gap: 12, marginBottom: 12 }}>
+        <div className="card table-wrap" style={{ margin: 0 }}>
+          <div className="v39-simple-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid #e2e8f0' }}>
+            <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Department Work Queue</h3>
+            <span style={{ fontSize: 10, color: '#64748b' }}>Receive → Accept → Work → Approve / Move</span>
+          </div>
+          <table className="v39-compact-table" style={{ width: '100%' }}>
+            <thead>
+              <tr>
+                <th>Work</th>
+                <th style={{ textAlign: 'right' }}>Count</th>
+                <th>Priority</th>
+                <th style={{ textAlign: 'right' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <b>Receive Documents</b>
+                  <small style={{ display: 'block', color: '#64748b' }}>Sent to {name} and waiting for receipt</small>
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>{effectiveCounts.pendingReceipt}</td>
+                <td><span className="rag rag-red" style={{ fontSize: 9, padding: '2px 6px' }}>High</span></td>
+                <td style={{ textAlign: 'right' }}>
+                  <button type="button" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }} onClick={() => setView('receipt')}>Open Details</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <b>Accept Responsibility</b>
+                  <small style={{ display: 'block', color: '#64748b' }}>Received records waiting for acceptance</small>
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>{effectiveCounts.pendingAcceptance}</td>
+                <td><span className="rag rag-amber" style={{ fontSize: 9, padding: '2px 6px' }}>High</span></td>
+                <td style={{ textAlign: 'right' }}>
+                  <button type="button" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }} onClick={() => setView('acceptance')}>Open Details</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <b>Complete Department Work</b>
+                  <small style={{ display: 'block', color: '#64748b' }}>Accepted documents currently under work</small>
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>{effectiveCounts.work}</td>
+                <td><span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>Normal</span></td>
+                <td style={{ textAlign: 'right' }}>
+                  <button type="button" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }} onClick={() => setView('work')}>Open Details</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <b>Approval Required</b>
+                  <small style={{ display: 'block', color: '#64748b' }}>Department approvals waiting for decision</small>
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>{effectiveCounts.approval}</td>
+                <td><span className="rag rag-red" style={{ fontSize: 9, padding: '2px 6px' }}>High</span></td>
+                <td style={{ textAlign: 'right' }}>
+                  <button type="button" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }} onClick={() => setView('approval')}>Open Details</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <b>Employee Tasks</b>
+                  <small style={{ display: 'block', color: '#64748b' }}>Open tasks assigned to department employees</small>
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>13</td>
+                <td><span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>Normal</span></td>
+                <td style={{ textAlign: 'right' }}>
+                  <Link to="/m/ops-tasks" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }}>Open Details</Link>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <b>Shift & Handover</b>
+                  <small style={{ display: 'block', color: '#64748b' }}>Current master rotation and handover</small>
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>11</td>
+                <td><span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>Normal</span></td>
+                <td style={{ textAlign: 'right' }}>
+                  <Link to="/m/ops-shift-roster" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }}>Open Details</Link>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="card table-wrap" style={{ margin: 0 }}>
+          <div className="v39-simple-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid #e2e8f0' }}>
+            <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Department Quick Filter</h3>
+            <span style={{ fontSize: 10, color: '#64748b' }}>Scope: {name}</span>
+          </div>
+          <div style={{ padding: '16px 14px' }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>
+              Department Filter
+            </label>
+            <select
+              style={{ width: '100%', padding: '8px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #cbd5e1', marginBottom: 8 }}
+              value={dept?.id || ''}
+              onChange={(e) => {
+                const targetDept = depts.find((d) => d.id === e.target.value);
+                if (targetDept) {
+                  window.location.hash = `#/m/dept-inbox-${targetDept.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+                }
+              }}
+            >
+              <option value="">{name} (Active)</option>
+              {depts.map((d) => (
+                <option key={d.id} value={d.id}>{d.name} Inbox</option>
+              ))}
+            </select>
+            <span style={{ display: 'block', fontSize: 10, color: '#64748b', marginBottom: 16 }}>
+              Quick filter for department-wise records on this page.
+            </span>
+            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, color: '#64748b' }}>Internal Mail:</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: effectiveUnread > 0 ? '#dc2626' : '#16a34a' }}>
+                  {effectiveUnread} Unread
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, color: '#64748b' }}>Ready to Move:</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8' }}>
+                  {effectiveCounts.ready}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: '#64748b' }}>Returned / Rework:</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: effectiveCounts.returned > 0 ? '#dc2626' : '#64748b' }}>
+                  {effectiveCounts.returned}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="v28-admin-same" style={{ marginBottom: 12 }}>
         <b>Interconnected:</b> Invoice, PO, BOM, GRN, DC, quotation, quality records, project documents and other ERP documents stay linked to one movement ID, department route, timestamps and approval history.
-      </div>
-
-      <div className="v28-mail-kpis">
-        <div>
-          <small>Needs Action</small>
-          <b>{effectiveCounts.needsAction}</b>
-        </div>
-        <div>
-          <small>Unread</small>
-          <b>{effectiveUnread}</b>
-        </div>
-        <div>
-          <small>Pending Receipt</small>
-          <b>{effectiveCounts.pendingReceipt}</b>
-        </div>
-        <div>
-          <small>Pending Acceptance</small>
-          <b>{effectiveCounts.pendingAcceptance}</b>
-        </div>
-        <div>
-          <small>Work / Rework</small>
-          <b>{effectiveCounts.work}</b>
-        </div>
-        <div>
-          <small>Ready to Move</small>
-          <b>{effectiveCounts.ready}</b>
-        </div>
-      </div>
-
-      <div className="card work-flowbar" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 12, marginBottom: 12 }}>
-        <span className="chip rag rag-green" style={{ padding: '6px 12px', borderRadius: 999, fontWeight: 700, fontSize: 11, background: '#d1fae5', color: '#065f46', border: '1px solid #a7f3d0' }}>
-          {name} mailbox
-        </span>
-        <Link className="btn primary" to="/m/dept-mail" style={{ borderRadius: 8 }}>
-          + New Message / Attach Document
-        </Link>
-        <Link className="btn" to="/m/my-approvals" style={{ borderRadius: 8 }}>
-          Detailed Approvals
-        </Link>
-        <Link className="btn" to="/m/plant-flow-command" style={{ borderRadius: 8 }}>
-          Integrated Plant Flow
-        </Link>
-        <Link className="btn" to="/m/ops-order-360" style={{ borderRadius: 8 }}>
-          360° Tracking
-        </Link>
       </div>
 
       <form
