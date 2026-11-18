@@ -22,6 +22,17 @@ import {
 
 const PAGE_SIZE = 20;
 
+function approvalLimitForRole(roleCode?: string, roleLabel?: string): string {
+  const text = `${roleCode ?? ''} ${roleLabel ?? ''}`.toUpperCase();
+  if (text.includes('SUPER') || text.includes('OWNER')) return 'Unlimited';
+  if (text.includes('DIRECTOR') || text.includes('CFO') || text.includes('CEO')) return '₹ 50,00,000';
+  if (text.includes('GM') || text.includes('GENERAL')) return '₹ 25,00,000';
+  if (text.includes('HEAD') || text.includes('HOD')) return '₹ 10,00,000';
+  if (text.includes('MANAGER')) return '₹ 5,00,000';
+  if (text.includes('SUPERVISOR')) return '₹ 1,00,000';
+  return '₹ 25,000';
+}
+
 type Dialog =
   | { kind: 'add' }
   | { kind: 'edit'; user: User }
@@ -208,6 +219,7 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
                 <th scope="col">Email</th>
                 <th scope="col">Department</th>
                 <th scope="col">Role</th>
+                <th scope="col">Approval Limit</th>
                 <th scope="col">Units</th>
                 <th scope="col">Status</th>
                 <th scope="col">Last Login</th>
@@ -226,6 +238,9 @@ export function UserMasterPage({ currentUser, actions = { add: true, edit: true 
                     <td>{u.email ?? '—'}</td>
                     <td>{u.department ?? '—'}</td>
                     <td>{u.roleLabel}</td>
+                    <td>
+                      <strong style={{ color: '#1e40af' }}>{approvalLimitForRole(u.role, u.roleLabel)}</strong>
+                    </td>
                     <td>{unitsLabel(u, units, roles)}</td>
                     <td>
                       <span className={`status ${u.status.toLowerCase()}`}>

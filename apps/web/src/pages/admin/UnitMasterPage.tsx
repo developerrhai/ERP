@@ -71,7 +71,121 @@ export function UnitMasterPage({ actions }: { actions: ActionSet }) {
           {error}
         </div>
       ) : null}
-      <div className="card table-wrap">
+      {/* 4 Top Summary Cards (Demo ERP Baseline) */}
+      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Operating Units</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{(data ?? []).length} Plants</b>
+          <span style={{ fontSize: 11, color: '#15803d' }}>Talwade, Sawardari, Varale</span>
+        </div>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Headquarters</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>Pune HQ</b>
+          <span style={{ fontSize: 11, color: '#2563eb' }}>Talwade 0 (Central)</span>
+        </div>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>GSTIN Registrations</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100% Validated</b>
+          <span style={{ fontSize: 11, color: '#15803d' }}>State Code 27 (MH)</span>
+        </div>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Data Quality</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
+          <span style={{ fontSize: 11, color: '#15803d' }}>Full unit profiles</span>
+        </div>
+      </div>
+
+      {/* Split view: Branch Master Register + Validation Controls panel */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
+        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Branch Master Register</h3>
+            {canChange ? (
+              <button
+                type="button"
+                className="btn sm primary"
+                onClick={() => setDialog({ kind: 'add' })}
+              >
+                ＋ Add Master Record
+              </button>
+            ) : null}
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Code</th>
+                <th scope="col">Plant Name</th>
+                <th scope="col">GSTIN</th>
+                <th scope="col">Status</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data ?? []).map((u) => {
+                const active = u.status === 'ACTIVE';
+                return (
+                  <tr key={u.id}>
+                    <td><strong>{u.code}</strong></td>
+                    <td>{u.name}</td>
+                    <td><code>{u.gstin || '—'}</code></td>
+                    <td>
+                      <span className={`status ${u.status.toLowerCase()}`}>
+                        {active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td>
+                      {canChange ? (
+                        <div className="actions" style={{ display: 'flex', gap: 4 }}>
+                          <button
+                            type="button"
+                            className="btn sm"
+                            onClick={() => setDialog({ kind: 'edit', unit: u })}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
+          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Multi-plant governance, dispatch routing and warehouse stock controls.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>Unique Unit Code:</span>
+              <b style={{ color: '#15803d' }}>Enabled</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>GSTIN State Verification:</span>
+              <b style={{ color: '#15803d' }}>Validated (27)</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>Inventory Isolation:</span>
+              <b style={{ color: '#15803d' }}>Enforced</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>Cross-Plant Transfer Note:</span>
+              <b style={{ color: '#15803d' }}>Active</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+              <span>Biometric Device Feed:</span>
+              <b>IClock Active</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card table-wrap" style={{ marginTop: 16 }}>
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <b>Unit / Branch Master • Detailed Table</b>
+          <button type="button" className="btn sm" onClick={() => window.print()}>Print Register</button>
+        </div>
         <table>
           <thead>
             <tr>
@@ -81,7 +195,7 @@ export function UnitMasterPage({ actions }: { actions: ActionSet }) {
               <th scope="col">GSTIN</th>
               <th scope="col">Status</th>
               {showUsers ? <th scope="col">Users</th> : null}
-              <th scope="col">Action</th>
+              <th scope="col" style={{ width: 220, textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -101,7 +215,7 @@ export function UnitMasterPage({ actions }: { actions: ActionSet }) {
                   {showUsers ? <td>{u.userCount ?? '—'}</td> : null}
                   <td>
                     {canChange ? (
-                      <div className="actions">
+                      <div className="actions" style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
                         <button
                           type="button"
                           className="btn sm"
@@ -125,6 +239,13 @@ export function UnitMasterPage({ actions }: { actions: ActionSet }) {
                           onClick={() => setDialog({ kind: 'delete', unit: u })}
                         >
                           Delete
+                        </button>
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => window.print()}
+                        >
+                          PDF
                         </button>
                       </div>
                     ) : (

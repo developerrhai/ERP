@@ -122,6 +122,20 @@ const V40_CORE_BUTTONS: readonly string[] = [
   'Project History',
 ];
 
+const ADMIN_CORE_BUTTONS: readonly string[] = [
+  '← Return',
+  '⇧ Import',
+  '⇩ Export',
+  'Duplicates',
+];
+
+const BI_CORE_BUTTONS: readonly string[] = [
+  '← Return',
+  'Excel',
+  'Industry PDF',
+  'Print',
+];
+
 /** V40 has three buttons that move the selected record on to the next department: they all open the Move Forward dialog. */
 const MOVE_LABELS: ReadonlySet<string> = new Set(['Move Forward', 'Move Next Controlled Step', 'Move Forward - Internal']);
 
@@ -226,13 +240,17 @@ function Bar({
     return () => clearTimeout(t);
   }, [mode, pageId]);
   const isV40Page =
-    mode === 'page' &&
     !!pageId &&
     !pageId.includes('dashboard') &&
     !pageId.includes('settings');
 
   const shown = isV40Page
-    ? V40_CORE_BUTTONS.map((lbl) => BAR.find((b) => b.label === lbl)!).filter(Boolean)
+    ? (pageId?.startsWith('admin-')
+        ? ADMIN_CORE_BUTTONS
+        : pageId?.startsWith('bi-')
+          ? BI_CORE_BUTTONS
+          : V40_CORE_BUTTONS
+      ).map((lbl) => BAR.find((b) => b.label === lbl)!).filter(Boolean)
     : BAR.filter(
         (b) =>
           (b.where ?? 'both') === 'both' ||

@@ -95,7 +95,7 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
         </div>
       </div>
 
-      <div className="v39-metrics">
+      <div className="v39-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}>
         <div className="v39-metric danger">
           <div>
             <small>Pending Receipt</small>
@@ -124,15 +124,38 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
           </div>
           <i>◎</i>
         </div>
+        <div className="v39-metric">
+          <div>
+            <small>Ready to Move</small>
+            <b>{counts ? (counts as any).readyToMove ?? rows.filter((r) => (r as any).status === 'READY_TO_MOVE' || (r as any).status === 'ACCEPTED').length : 0}</b>
+          </div>
+          <i>→</i>
+        </div>
+        <div className="v39-metric warn">
+          <div>
+            <small>Sent / Waiting</small>
+            <b>{counts ? (counts as any).sentWaiting ?? 0 : 0}</b>
+          </div>
+          <i>⏳</i>
+        </div>
       </div>
 
-      <div className="v39-quick">
+      <div className="v39-quick" style={{ flexWrap: 'wrap', gap: 8 }}>
         <b>Quick Actions</b>
         <Link className="btn primary" to={`/m/dept-inbox-${slug}`}>
           Department Inbox
         </Link>
         <Link className="btn" to="/m/my-approvals">
           Approvals
+        </Link>
+        <Link className="btn" to={`/m/dept-inbox-${slug}?compose=true`}>
+          New Message / Attach Document
+        </Link>
+        <Link className="btn" to="/m/plant-flow">
+          Plant Flow
+        </Link>
+        <Link className="btn" to="/m/admin-workflow">
+          Workflow Matrix
         </Link>
         <Link className="btn" to="/m/project-history">
           Project History

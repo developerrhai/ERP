@@ -15,17 +15,17 @@ export const SETUP_TILES: readonly Tile[] = [
     text: 'Enable modules, owner department, approvals, edit/delete/export.',
     to: '/m/admin-settings/controls',
   },
-  { title: 'Company Master', text: 'Legal company setup.', to: '/m/admin-company' },
-  { title: 'Unit Master', text: 'Unit setup.', to: '/m/admin-branches' },
+  { title: 'Company Master', text: 'Legal company setup and registration.', to: '/m/admin-company' },
+  { title: 'Unit Master', text: 'Unit and plant setup across locations.', to: '/m/admin-branches' },
   { title: 'Department Master', text: 'Department login and routing.', to: '/m/admin-departments' },
   { title: 'User Master', text: 'Department users and roles.', to: '/m/admin-users' },
-  { title: 'Role Master', text: 'Authority hierarchy.', to: '/m/admin-roles' },
+  { title: 'Role Master', text: 'Authority hierarchy and access levels.', to: '/m/admin-roles' },
   {
     title: 'Permission Master',
     text: 'View/Add/Edit/Delete/Approve rights.',
     to: '/m/admin-permissions',
   },
-  { title: 'Approval Matrix', text: 'Department and amount thresholds.', phase: 'Phase 6' },
+  { title: 'Approval Matrix', text: 'Department and amount threshold rules.', to: '/m/admin-approval' },
   {
     title: 'Finance Approval Limits',
     text: 'Amounts from which journals and notes need approval.',
@@ -33,8 +33,28 @@ export const SETUP_TILES: readonly Tile[] = [
   },
   {
     title: 'Letterhead & PDF',
-    text: 'Company PDF template settings.',
+    text: 'Company PDF template settings and branding.',
     to: '/m/admin-settings/letterhead',
+  },
+  {
+    title: 'Document Numbering',
+    text: 'Prefixes, auto-numbering sequences and FY tokens.',
+    to: '/m/admin-numbering',
+  },
+  {
+    title: 'Tax Master',
+    text: 'GST rates, HSN/SAC codes, reverse charge and tax rules.',
+    to: '/m/admin-taxes',
+  },
+  {
+    title: 'UOM Master',
+    text: 'Units of measurement, precision and conversion multipliers.',
+    to: '/m/admin-uom',
+  },
+  {
+    title: 'Workflow Builder',
+    text: 'Cross-department handoffs, status rules and movement gates.',
+    to: '/m/admin-workflow',
   },
 ];
 

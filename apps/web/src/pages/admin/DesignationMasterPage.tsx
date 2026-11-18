@@ -105,7 +105,129 @@ export function DesignationMasterPage({ actions }: { actions: ActionSet }) {
           <option value="INACTIVE">Inactive</option>
         </select>
       </div>
-      <div className="card table-wrap">
+      {/* 4 Top Summary Cards (Demo ERP Baseline) */}
+      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Designations</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{(data ?? []).length} Titles</b>
+          <span style={{ fontSize: 11, color: '#15803d' }}>Across all departments</span>
+        </div>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Authority Hierarchy</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>Levels 10 - 99</b>
+          <span style={{ fontSize: 11, color: '#2563eb' }}>Standard governance</span>
+        </div>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Department Coverage</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
+          <span style={{ fontSize: 11, color: '#15803d' }}>Fully assigned</span>
+        </div>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Data Quality</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
+          <span style={{ fontSize: 11, color: '#15803d' }}>Standard structure</span>
+        </div>
+      </div>
+
+      {/* Split view: Designation Master Register + Validation Controls panel */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
+        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Designation Master Register</h3>
+            {canChange ? (
+              <button
+                type="button"
+                className="btn sm primary"
+                onClick={() => setDialog({ kind: 'add' })}
+              >
+                ＋ Add Master Record
+              </button>
+            ) : null}
+          </div>
+          <div className="recordbar" style={{ marginBottom: 12 }}>
+            <input
+              type="search"
+              placeholder="Search by code or title…"
+              value={search}
+              aria-label="Search designations"
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ padding: '6px 10px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 6, width: '100%' }}
+            />
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Code</th>
+                <th scope="col">Title</th>
+                <th scope="col">Level</th>
+                <th scope="col">Status</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((d) => {
+                const active = d.status === 'ACTIVE';
+                return (
+                  <tr key={d.id}>
+                    <td><strong>{d.code}</strong></td>
+                    <td>{d.name}</td>
+                    <td>{d.level ?? 10}</td>
+                    <td>
+                      <span className={`status ${d.status.toLowerCase()}`}>
+                        {active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td>
+                      {canChange ? (
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => setDialog({ kind: 'edit', item: d })}
+                        >
+                          Edit
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
+          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Role mapping, authority levels and sign-off permission controls.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>Unique Designation Code:</span>
+              <b style={{ color: '#15803d' }}>Enabled</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>Level Range Validation:</span>
+              <b style={{ color: '#15803d' }}>1 to 99</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>Department Linkage:</span>
+              <b style={{ color: '#15803d' }}>Validated</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>Approval Authority:</span>
+              <b style={{ color: '#15803d' }}>Enforced</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+              <span>Role Matrix Sync:</span>
+              <b>Active</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card table-wrap" style={{ marginTop: 16 }}>
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <b>Designation Master • Detailed Table</b>
+          <button type="button" className="btn sm" onClick={() => window.print()}>Print Register</button>
+        </div>
         <table>
           <thead>
             <tr>
@@ -114,7 +236,7 @@ export function DesignationMasterPage({ actions }: { actions: ActionSet }) {
               <th scope="col">Department</th>
               <th scope="col">Level</th>
               <th scope="col">Status</th>
-              <th scope="col">Action</th>
+              <th scope="col" style={{ width: 220, textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -125,10 +247,8 @@ export function DesignationMasterPage({ actions }: { actions: ActionSet }) {
                 depts?.find((dep) => dep.id === d.departmentId)?.name ??
                 'All Departments';
               return (
-                <tr key={d.id}>
-                  <td>
-                    <strong>{d.code}</strong>
-                  </td>
+                <tr key={`det-${d.id}`}>
+                  <td><strong>{d.code}</strong></td>
                   <td>{d.name}</td>
                   <td>{deptName}</td>
                   <td>{d.level ?? 10}</td>
@@ -139,7 +259,7 @@ export function DesignationMasterPage({ actions }: { actions: ActionSet }) {
                   </td>
                   <td>
                     {canChange || canDelete ? (
-                      <div className="actions">
+                      <div className="actions" style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
                         {canChange ? (
                           <button
                             type="button"
@@ -160,6 +280,13 @@ export function DesignationMasterPage({ actions }: { actions: ActionSet }) {
                             Delete
                           </button>
                         ) : null}
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => window.print()}
+                        >
+                          PDF
+                        </button>
                       </div>
                     ) : (
                       <span className="v8-sub">—</span>

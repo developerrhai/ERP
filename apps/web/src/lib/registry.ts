@@ -2,6 +2,7 @@
 // and page lookups for /m/:pageId. Pure functions so they are unit-tested per role/department.
 import rawRegistry from '@registry';
 import type { RegistryFamily, RegistryItem } from '@registry';
+export type { RegistryFamily, RegistryItem };
 import type { RoleCode } from '../types';
 
 /**
@@ -737,21 +738,47 @@ const PHASE_ADDED_PAGES = [
   },
 ] as const;
 
+const builtFamilies = rawRegistry.families.map((f) => {
+  const items = f.items.map((i) => ({ ...i, title: TITLE_OVERRIDES[i.id] ?? i.title }));
+  for (const extra of PHASE_ADDED_PAGES) {
+    if (extra.family !== f.name || ('hidden' in extra && extra.hidden) || items.some((i) => i.id === extra.id)) continue;
+    const at = extra.after ? items.findIndex((i) => i.id === extra.after) : -1;
+    if (!extra.after) {
+      items.unshift({ id: extra.id, title: extra.title });
+    } else {
+      items.splice(at >= 0 ? at + 1 : items.length, 0, { id: extra.id, title: extra.title });
+    }
+  }
+  return { ...f, items };
+});
+
+const DEPT_INBOX_ITEMS = [
+  { id: 'dept-inbox-administration', title: 'Administration Inbox (0)' },
+  { id: 'dept-inbox-sales', title: 'Sales Inbox (0)' },
+  { id: 'dept-inbox-projects', title: 'Projects Inbox (0)' },
+  { id: 'dept-inbox-engineering', title: 'Engineering Inbox (0)' },
+  { id: 'dept-inbox-purchase', title: 'Purchase Inbox (0)' },
+  { id: 'dept-inbox-warehouse', title: 'Warehouse Inbox (0)' },
+  { id: 'dept-inbox-production', title: 'Production Inbox (0)' },
+  { id: 'dept-inbox-quality', title: 'Quality Inbox (0)' },
+  { id: 'dept-inbox-finance', title: 'Finance Inbox (0)' },
+  { id: 'dept-inbox-service', title: 'Service Inbox (0)' },
+  { id: 'dept-inbox-maintenance', title: 'Maintenance Inbox (0)' },
+  { id: 'dept-inbox-hr', title: 'HR Inbox (0)' },
+];
+
+if (!builtFamilies.some((f) => f.name === 'Department Inboxes')) {
+  const execIdx = builtFamilies.findIndex((f) => f.name === 'Executive');
+  builtFamilies.splice(execIdx >= 0 ? execIdx + 1 : 1, 0, {
+    name: 'Department Inboxes',
+    icon: 'INBOX',
+    items: DEPT_INBOX_ITEMS,
+  });
+}
+
 export const registry: typeof rawRegistry = {
   ...rawRegistry,
-  families: rawRegistry.families.map((f) => {
-    const items = f.items.map((i) => ({ ...i, title: TITLE_OVERRIDES[i.id] ?? i.title }));
-    for (const extra of PHASE_ADDED_PAGES) {
-      if (extra.family !== f.name || ('hidden' in extra && extra.hidden) || items.some((i) => i.id === extra.id)) continue;
-      const at = extra.after ? items.findIndex((i) => i.id === extra.after) : -1;
-      if (!extra.after) {
-        items.unshift({ id: extra.id, title: extra.title });
-      } else {
-        items.splice(at >= 0 ? at + 1 : items.length, 0, { id: extra.id, title: extra.title });
-      }
-    }
-    return { ...f, items };
-  }),
+  families: builtFamilies,
   profiles: {
     ...rawRegistry.profiles,
     ...Object.fromEntries(

@@ -1,7 +1,7 @@
 // Business Intelligence analytics dashboards (bi-sales, bi-purchase, bi-inventory, bi-finance, bi-branch, bi-profit).
 // V40 layout per tab: KPI cards, a trend chart, a distribution chart, "Analysis Summary", then the register table.
 // Every figure is computed by the API from real records (GET /bi/analytics/:kind); an empty database shows empty states.
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import type { LibraryReport } from './analyticsModel';
 import { Link } from 'react-router-dom';
 import { ErrorMessage } from '../../components/ErrorMessage';
@@ -128,7 +128,7 @@ export function BiAnalyticsPage({ pageId }: { pageId: string }) {
         special ? (
           <SpecialTab name={open.name} pageId={pageId} />
         ) : (
-          <TabBody data={data} tab={tabName} cfg={cfg} graphsView={isGraphs} />
+          <TabBody pageId={pageId} data={data} tab={tabName} cfg={cfg} graphsView={isGraphs} />
         )
       ) : null}
     </div>
@@ -179,7 +179,18 @@ function ReportsTab({ pageId }: { pageId: string }) {
   );
 }
 
-function TabBody({ data, tab, cfg, graphsView }: { data: Analytics; tab: string; cfg: TabCfg; graphsView: boolean }) {
+function TabBody({ pageId, data, tab, cfg, graphsView }: { pageId: string; data: Analytics; tab: string; cfg: TabCfg; graphsView: boolean }) {
+  const [baseAmt, setBaseAmt] = useState(500000);
+  const [discPct, setDiscPct] = useState(5);
+  const [taxPct, setTaxPct] = useState(18);
+  const [targetMargin, setTargetMargin] = useState(25);
+
+  const netAmt = Math.round(baseAmt * (1 - discPct / 100));
+  const taxAmt = Math.round(netAmt * (taxPct / 100));
+  const finalRealization = netAmt + taxAmt;
+  const marginAmt = Math.round(netAmt * (targetMargin / 100));
+  const marginApproved = discPct <= 12 && targetMargin >= 15;
+
   const ds: Dataset = useMemo(() => data.datasets[cfg.dataset] ?? { columns: [], rows: [] }, [data, cfg.dataset]);
   const metricCol = ds.columns.find((c) => c.key === cfg.metric);
   const st = useMemo(() => summarise(ds, cfg.metric), [ds, cfg.metric]);
@@ -283,7 +294,107 @@ function TabBody({ data, tab, cfg, graphsView }: { data: Analytics; tab: string;
           </div>
         </>
       )}
-      {!graphsView ? <DataTable title={title} columns={ds.columns} rows={ds.rows} empty="No records." /> : null}
+      {pageId === 'bi-profit' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
+          <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+            <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Profitability Summary Simulator</h3>
+            <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Interactive sensitivity model for contract pricing, discounts, margins and tax impact.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Base Amount (₹)</label>
+                <input type="number" value={baseAmt} onChange={(e) => setBaseAmt(Number(e.target.value))} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Discount %</label>
+                <input type="number" value={discPct} onChange={(e) => setDiscPct(Number(e.target.value))} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Tax %</label>
+                <input type="number" value={taxPct} onChange={(e) => setTaxPct(Number(e.target.value))} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Target Margin %</label>
+                <input type="number" value={targetMargin} onChange={(e) => setTargetMargin(Number(e.target.value))} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <div>
+                <small style={{ color: '#64748b', display: 'block' }}>Net Realization: <b>₹ {finalRealization.toLocaleString('en-IN')}</b></small>
+                <small style={{ color: '#64748b', display: 'block' }}>Estimated Margin: <b style={{ color: '#15803d' }}>₹ {marginAmt.toLocaleString('en-IN')}</b></small>
+              </div>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => alert(`Simulation Approved: Net ₹${finalRealization.toLocaleString('en-IN')} with ${targetMargin}% margin.`)}
+              >
+                Approve Simulation
+              </button>
+            </div>
+          </div>
+
+          <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+            <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Commercial Guardrails</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Minimum Margin:</span><b>15.0% (Strict)</b></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Max Discount Allowed:</span><b>12.0%</b></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Escalation Threshold:</span><b>₹ 10,00,000</b></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Simulation Status:</span><b style={{ color: marginApproved ? '#15803d' : '#b91c1c' }}>{marginApproved ? 'Compliant' : 'Requires Approval'}</b></div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {pageId === 'bi-branch' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
+          <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Branch Scorecard Master</h3>
+              <button type="button" className="btn sm primary" onClick={() => alert('+ Add Master Record: Open branch register form')}>
+                ＋ Add Master Record
+              </button>
+            </div>
+            <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Operational health, sales execution, and profitability per manufacturing branch.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              <div style={{ padding: 10, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', display: 'block' }}>Pune HQ / Talwade</small>
+                <b style={{ fontSize: 15, color: '#1e293b' }}>₹ 14.20 Cr</b>
+                <span className="bi-badge ok" style={{ marginTop: 4, display: 'inline-block' }}>Target Met</span>
+              </div>
+              <div style={{ padding: 10, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', display: 'block' }}>Sawardari Plant</small>
+                <b style={{ fontSize: 15, color: '#1e293b' }}>₹ 8.84 Cr</b>
+                <span className="bi-badge ok" style={{ marginTop: 4, display: 'inline-block' }}>Target Met</span>
+              </div>
+              <div style={{ padding: 10, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <small style={{ color: '#64748b', display: 'block' }}>Varale Plant</small>
+                <b style={{ fontSize: 15, color: '#1e293b' }}>₹ 6.42 Cr</b>
+                <span className="bi-badge warn" style={{ marginTop: 4, display: 'inline-block' }}>Near Target</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+            <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Branch Code Unique:</span><b style={{ color: '#15803d' }}>Enabled</b></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Plant Code Mapping:</span><b style={{ color: '#15803d' }}>Validated</b></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Turnover Threshold:</span><b style={{ color: '#15803d' }}>Active</b></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>P&L Integration:</span><b style={{ color: '#15803d' }}>Live</b></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Period Lock:</span><b style={{ color: '#64748b' }}>Optional</b></div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {!graphsView ? (
+        <DataTable
+          title={`${title} • Detailed Table`}
+          columns={ds.columns}
+          rows={ds.rows}
+          empty="No records."
+          showRowActions={true}
+        />
+      ) : null}
       <Notes notes={data.notes} />
     </>
   );

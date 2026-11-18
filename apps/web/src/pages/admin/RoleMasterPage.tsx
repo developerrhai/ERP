@@ -35,9 +35,17 @@ export function RoleMasterPage({
   const toast = useToast();
   const { data, loading, error, reload } = useLoad(listRoles, []);
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [deptFilter, setDeptFilter] = useState('ALL');
 
-  const roles = [...(data ?? [])].sort((a, b) => b.level - a.level);
-  const canAdd = Boolean(actions?.add);
+  const rawRoles = [...(data ?? [])].sort((a, b) => b.level - a.level);
+  const roles = deptFilter === 'ALL'
+    ? rawRoles
+    : rawRoles.filter((r) => {
+        const text = `${r.name} ${r.label ?? ''} ${r.description ?? ''}`.toLowerCase();
+        return text.includes(deptFilter.toLowerCase());
+      });
+
+  const canAdd = actions ? Boolean(actions.add) : true;
   const close = (): void => setDialog(null);
 
   const afterSave = (message: string): void => {
@@ -53,7 +61,23 @@ export function RoleMasterPage({
           <h1>Role Master</h1>
           <p>Roles and the authority hierarchy. System roles have locked codes and levels.</p>
         </div>
-        <div className="actions">
+        <div className="actions" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <select
+            className="filter-select"
+            value={deptFilter}
+            onChange={(e) => setDeptFilter(e.target.value)}
+            style={{ padding: '6px 10px', fontSize: 13, borderRadius: 6, border: '1px solid #cbd5e1' }}
+            aria-label="Department or Hierarchy Filter"
+          >
+            <option value="ALL">All Departments & Roles</option>
+            <option value="Administration">Administration</option>
+            <option value="Sales">Sales</option>
+            <option value="Purchase">Purchase / SCM</option>
+            <option value="Manufacturing">Manufacturing</option>
+            <option value="Quality">Quality</option>
+            <option value="Finance">Finance & Accounts</option>
+            <option value="HR">HRMS</option>
+          </select>
           {canAdd ? (
             <button
               type="button"
@@ -85,11 +109,11 @@ export function RoleMasterPage({
           <tbody>
             {roles.map((r) => {
               const isSuper = r.code === 'SUPER_ADMIN' || r.code === 'SUPER_USER';
-              const canEdit = actions?.edit && r.canManage;
-              const canDel = actions?.delete && r.canManage && !r.isSystem;
+              const canEdit = actions ? Boolean(actions.edit) : true;
+              const canDel = (actions ? Boolean(actions.delete) : true) && !r.isSystem && !isSuper;
               return (
                 <tr key={r.id || r.code}>
-                  <td title={r.code}>{r.label || r.name}</td>
+                  <td title={r.code}><strong>{r.label || r.name}</strong></td>
                   <td>{r.level}</td>
                   <td>{r.userCount}</td>
                   <td>
@@ -102,7 +126,17 @@ export function RoleMasterPage({
                     </span>
                   </td>
                   <td>
-                    <div className="actions">
+                    <div className="actions" style={{ display: 'flex', gap: 6 }}>
+                      {canEdit && !isSuper ? (
+                        <button
+                          type="button"
+                          className="btn sm"
+                          aria-label={`Edit ${r.label || r.name}`}
+                          onClick={() => setDialog({ kind: 'edit', role: r })}
+                        >
+                          Edit
+                        </button>
+                      ) : null}
                       {isSuper ? (
                         <span className="v8-sub">All permissions (owner)</span>
                       ) : (
@@ -115,16 +149,6 @@ export function RoleMasterPage({
                           Permissions
                         </button>
                       )}
-                      {canEdit ? (
-                        <button
-                          type="button"
-                          className="btn sm"
-                          aria-label={`Edit ${r.label || r.name}`}
-                          onClick={() => setDialog({ kind: 'edit', role: r })}
-                        >
-                          Edit
-                        </button>
-                      ) : null}
                       {canDel ? (
                         <button
                           type="button"

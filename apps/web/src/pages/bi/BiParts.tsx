@@ -59,6 +59,8 @@ export function DataTable({
   empty,
   aside,
   wrapKeys = [],
+  showRowActions = true,
+  onRowAction,
 }: {
   title: string;
   columns: Col[];
@@ -66,11 +68,26 @@ export function DataTable({
   empty: string;
   aside?: ReactNode;
   wrapKeys?: string[];
+  showRowActions?: boolean;
+  onRowAction?: (action: string, row: Record<string, Cell>) => void;
 }) {
+  const handleAction = (action: string, row: Record<string, Cell>) => {
+    if (onRowAction) {
+      onRowAction(action, row);
+      return;
+    }
+    const label = String(row.name || row.code || row.title || row.id || 'record');
+    if (action === 'PDF' || action === 'Word') {
+      window.print();
+    } else {
+      alert(`${action}: ${label}`);
+    }
+  };
+
   return (
     <div className="card table-wrap bi-table-card">
-      <div className="toolbar">
-        <b>{title}</b>
+      <div className="toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid #e2e8f0' }}>
+        <b style={{ fontSize: 14, color: '#1e293b' }}>{title}</b>
         {aside}
       </div>
       <div className="table-wrap">
@@ -82,6 +99,7 @@ export function DataTable({
                   {c.label}
                 </th>
               ))}
+              {showRowActions ? <th scope="col" style={{ width: 180, textAlign: 'center' }}>Actions</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -97,11 +115,49 @@ export function DataTable({
                     </td>
                   );
                 })}
+                {showRowActions ? (
+                  <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'inline-flex', gap: 4 }}>
+                      <button
+                        type="button"
+                        className="btn sm"
+                        style={{ padding: '2px 6px', fontSize: 11 }}
+                        onClick={() => handleAction('View', r)}
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        className="btn sm"
+                        style={{ padding: '2px 6px', fontSize: 11 }}
+                        onClick={() => handleAction('Edit', r)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="btn sm"
+                        style={{ padding: '2px 6px', fontSize: 11 }}
+                        onClick={() => handleAction('Docs', r)}
+                      >
+                        Docs
+                      </button>
+                      <button
+                        type="button"
+                        className="btn sm"
+                        style={{ padding: '2px 6px', fontSize: 11 }}
+                        onClick={() => handleAction('PDF', r)}
+                      >
+                        PDF
+                      </button>
+                    </div>
+                  </td>
+                ) : null}
               </tr>
             ))}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length}>{empty}</td>
+                <td colSpan={columns.length + (showRowActions ? 1 : 0)}>{empty}</td>
               </tr>
             ) : null}
           </tbody>

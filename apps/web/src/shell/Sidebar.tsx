@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { refreshMenu, resetMenu, useMenu } from '../lib/menu';
-import { filterMenu, withRegistryLabels } from '../lib/registry';
+import { filterMenu, registry, withRegistryLabels, type RegistryFamily } from '../lib/registry';
 import type { User } from '../types';
 
 interface SidebarProps {
@@ -21,7 +21,21 @@ export function Sidebar({ user, open, onNavigate }: SidebarProps) {
     void refreshMenu();
     return () => resetMenu();
   }, [user.id, user.role, user.department]);
-  const families = useMemo(() => withRegistryLabels(menu.families), [menu.families]);
+  const families = useMemo(() => {
+    const labeled = withRegistryLabels(menu.families);
+    if (!labeled.some((f: RegistryFamily) => f.name === 'Department Inboxes')) {
+      const regDept = registry.families.find((f: RegistryFamily) => f.name === 'Department Inboxes');
+      if (regDept && regDept.items.length > 0) {
+        const execIdx = labeled.findIndex((f: RegistryFamily) => f.name === 'Executive');
+        labeled.splice(execIdx >= 0 ? execIdx + 1 : 1, 0, {
+          name: 'Department Inboxes',
+          icon: 'INBOX',
+          items: regDept.items.map((i: { id: string; title: string }) => ({ id: i.id, title: i.title })),
+        });
+      }
+    }
+    return labeled;
+  }, [menu.families]);
   const visible = useMemo(() => filterMenu(families, filter), [families, filter]);
 
   const toggle = (name: string): void => {

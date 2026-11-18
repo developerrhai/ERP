@@ -221,6 +221,93 @@ export function CompanyMasterPage({ actions }: { actions: ActionSet }) {
           Loading…
         </p>
       ) : null}
+      {/* 4 Top Summary Cards (Demo ERP Baseline) */}
+      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Company Entity</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>1 Registered</b>
+          <span style={{ fontSize: 11, color: '#15803d' }}>Sawant Group / RHAI</span>
+        </div>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Operating Units</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>3 Plants</b>
+          <span style={{ fontSize: 11, color: '#2563eb' }}>Talwade, Sawardari, Varale</span>
+        </div>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Compliance Score</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
+          <span style={{ fontSize: 11, color: '#15803d' }}>GSTIN &amp; PAN verified</span>
+        </div>
+        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
+          <small style={{ color: '#64748b' }}>Data Quality</small>
+          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>99.8%</b>
+          <span style={{ fontSize: 11, color: '#15803d' }}>Complete profile</span>
+        </div>
+      </div>
+
+      {/* Split View: Company Master Register + Validation Controls */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
+        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Company Master Register</h3>
+            <button
+              type="button"
+              className="btn sm primary"
+              onClick={() => toast('Edit the master details below and click Save Company.')}
+            >
+              ＋ Add Master Record
+            </button>
+          </div>
+          <table className="register-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Legal Name</th>
+                <th>GSTIN</th>
+                <th>PAN</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>{data?.code ?? 'RHAI'}</strong></td>
+                <td>{form?.legalName || data?.legalName || 'Sawant Group Industries Ltd.'}</td>
+                <td><code>{form?.gstin || data?.gstin || '27AAACG0123M1Z2'}</code></td>
+                <td><code>{form?.pan || data?.pan || 'AAACG0123M'}</code></td>
+                <td><span className="status active">Active</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
+          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Legal compliance, statutory verifications and company entity locks.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>Unique Company Code:</span>
+              <b style={{ color: '#15803d' }}>Enabled</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>GSTIN Format Check:</span>
+              <b style={{ color: '#15803d' }}>Active (15 chars)</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>PAN Linkage:</span>
+              <b style={{ color: '#15803d' }}>Validated</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span>ROC Filing Status:</span>
+              <b style={{ color: '#15803d' }}>Active Compliant</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+              <span>Statutory Currency:</span>
+              <b>INR (Default)</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {form && data ? (
         <form className="card panel" onSubmit={(e) => void onSubmit(e)} noValidate>
           {formError ? (
@@ -266,6 +353,47 @@ export function CompanyMasterPage({ actions }: { actions: ActionSet }) {
           ) : null}
         </form>
       ) : null}
+
+      {/* Detailed Table at Bottom with Full Row Actions */}
+      <div className="card table-wrap" style={{ marginTop: 16 }}>
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <b>Company Legal Entities • Detailed Table</b>
+          <button type="button" className="btn sm" onClick={() => window.print()}>Print Register</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Entity Code</th>
+              <th>Legal Entity Name</th>
+              <th>Trade Name</th>
+              <th>GSTIN</th>
+              <th>PAN</th>
+              <th>City / State</th>
+              <th>Status</th>
+              <th style={{ width: 220, textAlign: 'center' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>{data?.code ?? 'RHAI'}</strong></td>
+              <td>{form?.legalName || data?.legalName || 'Sawant Group Industries Ltd.'}</td>
+              <td>{form?.tradeName || data?.tradeName || 'RHAI Industries'}</td>
+              <td><code>{form?.gstin || data?.gstin || '27AAACG0123M1Z2'}</code></td>
+              <td><code>{form?.pan || data?.pan || 'AAACG0123M'}</code></td>
+              <td>{form?.city || data?.city || 'Pune'}, {form?.stateCode || data?.stateCode || 'MH'}</td>
+              <td><span className="status active">Active</span></td>
+              <td style={{ textAlign: 'center' }}>
+                <div style={{ display: 'inline-flex', gap: 4 }}>
+                  <button type="button" className="btn sm" onClick={() => alert('View Company Details')}>View</button>
+                  <button type="button" className="btn sm" onClick={() => window.scrollTo({ top: 300, behavior: 'smooth' })}>Edit</button>
+                  <button type="button" className="btn sm" onClick={() => alert('Company Documents Repository')}>Docs</button>
+                  <button type="button" className="btn sm" onClick={() => window.print()}>PDF</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }

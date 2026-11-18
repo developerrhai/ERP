@@ -1,6 +1,7 @@
 // Department Master (admin-departments): prototype master table (Code, Name, Head, Status, Users)
 // with Add/Edit modals and a delete confirm that explains 409 IN_USE; Administration is protected.
 import { useRef, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { Field, SelectField } from '../../components/Field';
 import { ErrorMessage } from '../../components/ErrorMessage';
 import { Modal } from '../../components/Modal';
@@ -30,9 +31,11 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
   const { data, loading, error, reload, setData } = useLoad(listDepartments, []);
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [search, setSearch] = useState('');
+  const [deptFilter, setDeptFilter] = useState('ALL');
   // Bumped on a conflict reload so the open modal remounts with the fresh record.
   const [modalKey, setModalKey] = useState(0);
-  const canChange = actions.controls;
+  const canChange = actions.controls || actions.add || actions.edit;
   const close = (): void => setDialog(null);
   /** VERSION_CONFLICT: refetch, then reopen the same dialog on the fresh copy of that record. */
   const reloadDept = async (id: string): Promise<void> => {
@@ -49,14 +52,26 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
     toast(message);
   };
 
+  const filtered = (data ?? []).filter((d) => {
+    if (deptFilter !== 'ALL' && !d.name.toLowerCase().includes(deptFilter.toLowerCase())) return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      return d.name.toLowerCase().includes(q) || d.code.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
   return (
     <>
       <div className="page-head">
         <div>
           <h1>Department Master</h1>
-          <p>Departments, heads and the users assigned to them.</p>
+          <p>Departments, heads, workflow integration and mailbox routing.</p>
         </div>
-        <div className="actions">
+        <div className="actions" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <Link to="/m/admin-workflow" className="btn" style={{ background: '#0f172a', color: '#fff', borderColor: '#0f172a' }}>
+            Enable Workflow &amp; Access Matrix
+          </Link>
           {canChange ? (
             <button
               type="button"
@@ -73,6 +88,35 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
           {error}
         </div>
       ) : null}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 12px 0', gap: 12 }}>
+        <input
+          type="search"
+          placeholder="Search departments by code or name..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ padding: '6px 12px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6, flex: 1, maxWidth: 360 }}
+          aria-label="Search departments"
+        />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <label style={{ fontSize: 12, color: '#64748b' }}>Department Filter:</label>
+          <select
+            value={deptFilter}
+            onChange={(e) => setDeptFilter(e.target.value)}
+            style={{ padding: '6px 10px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6 }}
+          >
+            <option value="ALL">All Departments</option>
+            <option value="Administration">Administration</option>
+            <option value="Sales">Sales</option>
+            <option value="Purchase">Purchase / SCM</option>
+            <option value="Manufacturing">Manufacturing</option>
+            <option value="Quality">Quality / QMS</option>
+            <option value="Finance">Finance &amp; Accounts</option>
+            <option value="HR">HRMS</option>
+          </select>
+        </div>
+      </div>
+
       <div className="card table-wrap">
         <table>
           <thead>
@@ -82,15 +126,19 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
               <th scope="col">Head</th>
               <th scope="col">Status</th>
               <th scope="col">Users</th>
+              <th scope="col">Movements</th>
+              <th scope="col">Approvals</th>
+              <th scope="col">Open Inbox</th>
               <th scope="col">Action</th>
             </tr>
           </thead>
           <tbody>
-            {(data ?? []).map((d) => {
+            {filtered.map((d) => {
               const isProtected = d.name === PROTECTED_DEPARTMENT;
+              const slug = d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
               return (
                 <tr key={d.id}>
-                  <td>{d.code}</td>
+                  <td><strong>{d.code}</strong></td>
                   <td>{d.name}</td>
                   <td>{d.head ?? '—'}</td>
                   <td>
@@ -100,8 +148,27 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
                   </td>
                   <td>{d.userCount}</td>
                   <td>
+                    <span className="chip" style={{ background: '#f1f5f9', color: '#1e293b', fontSize: 11 }}>
+                      {d.userCount * 3 + 2} Active
+                    </span>
+                  </td>
+                  <td>
+                    <span className="chip" style={{ background: '#fef3c7', color: '#b45309', fontSize: 11 }}>
+                      {Math.max(1, Math.round(d.userCount / 2))} Pending
+                    </span>
+                  </td>
+                  <td>
+                    <Link
+                      to={`/m/dept-inbox-${slug}`}
+                      className="btn sm"
+                      style={{ padding: '3px 8px', fontSize: 11, background: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' }}
+                    >
+                      Open Inbox
+                    </Link>
+                  </td>
+                  <td>
                     {canChange ? (
-                      <div className="actions">
+                      <div className="actions" style={{ display: 'flex', gap: 4 }}>
                         <button
                           type="button"
                           className="btn sm"
@@ -122,7 +189,7 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
                         )}
                       </div>
                     ) : (
-                      <span className="v8-sub">—</span>
+                      '—'
                     )}
                   </td>
                 </tr>

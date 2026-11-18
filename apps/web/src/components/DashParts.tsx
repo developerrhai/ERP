@@ -107,23 +107,34 @@ export function CompareGrid({ grid, empty }: { grid: Grid; empty?: string | null
           </tr>
         </thead>
         <tbody>
-          {grid.rows.map((row) => (
-            <tr key={row.code}>
-              <th scope="row">{row.name}</th>
-              {row.cells.map((c) => {
-                const link = drillLink(c);
-                const body = c.noData ? '—' : formatKpi(c.value, c.format);
-                return (
-                  <td key={c.unitId ?? 'x'} className={`cell-${c.rag.toLowerCase()}`} title={RAG_LABEL[c.rag]}>
-                    {link ? <Link to={link}>{body}</Link> : body}
-                  </td>
-                );
-              })}
-              {multi ? (
-                <td title={row.totalNote ?? undefined}>{row.total === null ? '—' : formatKpi(row.total, row.format)}</td>
-              ) : null}
-            </tr>
-          ))}
+          {grid.rows.map((row) => {
+            const isSumFormat = row.format === 'int' || row.format === 'inr' || row.format === 'cur';
+            const numCells = row.cells.filter((c) => !c.noData && typeof c.value === 'number');
+            const computedSum = numCells.reduce((acc, c) => acc + (c.value as number), 0);
+            const computedAvg = numCells.length > 0 ? computedSum / numCells.length : null;
+            const displayTotal = isSumFormat && numCells.length > 0
+              ? computedSum
+              : row.format === 'pct' && numCells.length > 0
+                ? Math.round(computedAvg! * 10) / 10
+                : row.total;
+            return (
+              <tr key={row.code}>
+                <th scope="row">{row.name}</th>
+                {row.cells.map((c) => {
+                  const link = drillLink(c);
+                  const body = c.noData ? '—' : formatKpi(c.value, c.format);
+                  return (
+                    <td key={c.unitId ?? 'x'} className={`cell-${c.rag.toLowerCase()}`} title={RAG_LABEL[c.rag]}>
+                      {link ? <Link to={link}>{body}</Link> : body}
+                    </td>
+                  );
+                })}
+                {multi ? (
+                  <td title={row.totalNote ?? undefined}>{displayTotal === null ? '—' : formatKpi(displayTotal, row.format)}</td>
+                ) : null}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

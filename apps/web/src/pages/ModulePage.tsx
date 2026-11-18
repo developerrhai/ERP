@@ -21,7 +21,9 @@ import { AuditTrailPage } from './admin/AuditTrailPage';
 import { CompanyMasterPage } from './admin/CompanyMasterPage';
 import { ControlCenterPage } from './admin/ControlCenterPage';
 import { CurrencyMasterPage } from './admin/CurrencyMasterPage';
-import { HardeningPage } from './admin/HardeningPage';
+import { BackupRestorePage } from './admin/BackupRestorePage';
+import { ImportExportPage } from './admin/ImportExportPage';
+import { DuplicateDetectionPage } from './admin/DuplicateDetectionPage';
 import { DepartmentMasterPage } from './admin/DepartmentMasterPage';
 import { DesignationMasterPage } from './admin/DesignationMasterPage';
 import { FinancialYearsPage } from './admin/FinancialYearsPage';
@@ -32,6 +34,7 @@ import { SecurityCenterPage } from './admin/SecurityCenterPage';
 import { SystemSetupPage } from './admin/SystemSetupPage';
 import { UnitMasterPage } from './admin/UnitMasterPage';
 import { UomMasterPage } from './admin/UomMasterPage';
+import { TaxMasterPage } from './admin/TaxMasterPage';
 import { ApprovalLimitsPage } from './finance/ApprovalLimitsPage';
 import { BankRecoPage } from './finance/BankRecoPage';
 import { CashFlowPage } from './finance/CashFlowPage';
@@ -259,11 +262,15 @@ function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: 
       {SCREEN_PAGES.has(pageId) || pageId === 'dashboard' ? null : (
         <ActionBar actions={perms.actions} mode="page" pageId={pageId} />
       )}
-      {v40TabsFor(pageId).length > 0 ? (
+      {v40TabsFor(pageId).length > 0 && !pageId.startsWith('bi-') && !pageId.startsWith('admin-') ? (
         <V40TabFrame pageId={pageId} tabs={v40TabsFor(pageId)}>
           <FamV40Body pageId={pageId} actions={perms.actions}>
             <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
           </FamV40Body>
+        </V40TabFrame>
+      ) : v40TabsFor(pageId).length > 0 ? (
+        <V40TabFrame pageId={pageId} tabs={v40TabsFor(pageId)}>
+          <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
         </V40TabFrame>
       ) : (
         <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
@@ -311,7 +318,7 @@ function PageBody({
     case 'admin-departments':
       return <DepartmentMasterPage actions={actions} />;
     case 'admin-roles':
-      return <RoleMasterPage />;
+      return <RoleMasterPage actions={actions} />;
     case 'admin-permissions':
       return <PermissionMasterPage actions={actions} />;
     case 'admin-settings':
@@ -344,6 +351,8 @@ function PageBody({
       return <CurrencyMasterPage actions={actions} />;
     case 'admin-uom':
       return <UomMasterPage actions={actions} />;
+    case 'admin-taxes':
+      return <TaxMasterPage actions={actions} />;
     // Phase 7 finance screens
     case 'fin-coa':
       return <ChartOfAccountsPage actions={actions} />;
@@ -798,9 +807,13 @@ function PageBody({
     case 'comm-payment':
       return <CommCenterPage initialTab="PAYMENT" />;
 
-    // Phase 20 Hardening, Cut-over, Partitions & DPDP console
+    // Phase 20 Hardening, Cut-over, Partitions, Backup & DPDP console
     case 'admin-backup':
-      return <HardeningPage initialTab="partitions" />;
+      return <BackupRestorePage />;
+    case 'admin-import':
+      return <ImportExportPage />;
+    case 'admin-duplicates':
+      return <DuplicateDetectionPage />;
 
     // Phase 21 PWA, Realtime Notifications, Broadcasts & Email Automation
     case 'notif-center':
