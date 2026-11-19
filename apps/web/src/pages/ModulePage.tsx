@@ -264,7 +264,7 @@ function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: 
       )}
       {v40TabsFor(pageId).length > 0 && !pageId.startsWith('bi-') && !pageId.startsWith('admin-') ? (
         <V40TabFrame pageId={pageId} tabs={v40TabsFor(pageId)}>
-          <FamV40Body pageId={pageId} actions={perms.actions}>
+          <FamV40Body pageId={pageId} actions={perms.actions} user={user}>
             <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
           </FamV40Body>
         </V40TabFrame>
@@ -921,6 +921,7 @@ function PageBody({
     case 'dept-work':
       return <DeptWorkPage />;
     case 'document-movement-center':
+    case 'dms-movement-center':
       return <DocumentMovementCenterPage department={user.department} />;
     case 'plant-flow-command':
       return <PlantFlowCommandPage />;

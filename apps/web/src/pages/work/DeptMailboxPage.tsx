@@ -5,11 +5,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HistoryDrawer, MoveForwardDialog, ReturnDialog } from '../../components/MoveForward';
+import { TabStrip } from '../../components/TabStrip';
 import { useToast } from '../../components/Toast';
 import { docsMailApi, type MailRow } from '../../lib/docsMailApi';
 import { workApi, type Dept, type InboxCounts, type Movement, type MovementState } from '../../lib/workApi';
 import type { User } from '../../types';
 import { generateDeptInboxFallback } from './deptInboxFallback';
+import { duplicateMessage, scanDuplicates } from '../../components/dupScan';
+import { tableToCsv } from '../../components/ActionBar';
 
 type ViewKey = 'inbox' | 'unread' | 'attachments' | 'receipt' | 'acceptance' | 'work' | 'approval' | 'ready' | 'sent' | 'returned' | 'completed' | 'all';
 
@@ -33,10 +36,24 @@ const STATES = ['SENT', 'RECEIVED', 'ACCEPTED', 'IN_WORK', 'WAITING_APPROVAL', '
 const when = (iso: string | null): string => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
 const pretty = (s: string): string => s.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 
-/** Page id slug -> department: dept-inbox-hr -> "HR". */
+/** Assets and Logistics have their own Inbox / Work Center pages; their staff sit in the Maintenance and Warehouse departments. */
+const PAGE_DEPT_ALIAS: Readonly<Record<string, { dept: string; label: string }>> = {
+  assets: { dept: 'maintenance', label: 'Assets' },
+  logistics: { dept: 'warehouse', label: 'Logistics' },
+  hrms: { dept: 'hr', label: 'HRMS' },
+};
+
+/** Page id slug -> department: dept-inbox-hr -> "HR"; dept-inbox-assets -> Maintenance (shown as "Assets"). */
 export function deptFromPage(pageId: string, depts: Dept[]): Dept | undefined {
   const slug = pageId.replace(/^dept-(inbox|work)-/, '').toLowerCase();
-  return depts.find((d) => d.name.toLowerCase() === slug);
+  const target = PAGE_DEPT_ALIAS[slug]?.dept ?? slug;
+  return depts.find((d) => d.name.toLowerCase() === target);
+}
+
+/** The name a page shows for its department ("Assets" / "Logistics" for the two alias pages). */
+export function deptLabelFromPage(pageId: string, dept: Dept | undefined): string {
+  const slug = pageId.replace(/^dept-(inbox|work)-/, '').toLowerCase();
+  return PAGE_DEPT_ALIAS[slug]?.label ?? dept?.name ?? slug;
 }
 
 type Row =
@@ -221,7 +238,7 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
     }
   }, [toast]);
 
-  const name = dept?.name ?? pageId.replace(/^dept-inbox-/, '');
+  const name = deptLabelFromPage(pageId, dept);
 
   const effectiveCounts: InboxCounts = useMemo(() => {
     if (counts && (counts.needsAction > 0 || counts.pendingReceipt > 0 || counts.work > 0 || counts.ready > 0)) {
@@ -255,6 +272,21 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
 
   const needs = effectiveCounts.needsAction;
 
+  /** Export: the mailbox table on screen as a CSV file (opens in Excel). */
+  const exportCsv = (): void => {
+    const table = document.querySelector<HTMLTableElement>('.main table.register-table');
+    if (!table || shown.length === 0) {
+      toast('Nothing to export: this mailbox view has no rows.');
+      return;
+    }
+    const blob = new Blob(['﻿' + tableToCsv(table)], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${pageId}-${view}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   if (depts.length > 0 && !dept) {
     return (
       <div className="dash-page">
@@ -268,9 +300,9 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
     <div className="dash-page">
       <div className="v40-top-toolbar" style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 8 }}>
         <button className="btn" type="button" onClick={() => window.history.back()} title="Return">← Return</button>
-        <button className="btn" type="button" onClick={() => toast('Import records')} title="Import">⇧ Import</button>
-        <button className="btn" type="button" onClick={() => toast('Export records')} title="Export">⇩ Export</button>
-        <button className="btn" type="button" onClick={() => toast('Duplicate check: No potential duplicates found in current mailbox.')} title="Duplicates">Duplicates</button>
+        <Link className="btn" to="/m/admin-import" title="Import">⇧ Import</Link>
+        <button className="btn" type="button" onClick={exportCsv} title="Export">⇩ Export</button>
+        <button className="btn" type="button" onClick={() => toast(duplicateMessage(scanDuplicates()))} title="Duplicates">Duplicates</button>
       </div>
 
       <section className="v39-dash-hero" aria-label="Department Workspace">
@@ -334,7 +366,7 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
         <Link className="btn" to="/m/ops-order-360">360° Tracking</Link>
         <Link className="btn" to="/m/ops-tasks">Tasks</Link>
         <Link className="btn" to="/m/ops-shift-roster">Shifts</Link>
-        <Link className="btn primary" to="/m/dept-mail">+ New Message / Attach Document</Link>
+        <Link className="btn primary" to="/m/dept-mail?compose=1">+ New Message / Attach Document</Link>
         <Link className="btn" to="/m/plant-flow-command">Integrated Plant Flow</Link>
       </div>
 
@@ -567,7 +599,7 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
         </div>
       </form>
 
-      <div role="tablist" className="v28-mail-tabs">
+      <TabStrip className="v28-mail-tabs" label="Mailbox views" watch={view}>
         {VIEWS.map((v) => (
           <button
             key={v.key}
@@ -580,7 +612,7 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
             {v.label}
           </button>
         ))}
-      </div>
+      </TabStrip>
       {error ? <p role="alert">{error}</p> : null}
       {mailBlocked && !error ? <p className="muted">Internal mail is not switched on for your role, so only document movements are listed. Ask the Administrator to give your role the Department Mail page.</p> : null}
 

@@ -12,7 +12,7 @@ export interface Scanner {
   scan(buffer: Buffer, detectedType: AllowedKind): Promise<ScanResult>;
 }
 
-export type AllowedKind = 'pdf' | 'png' | 'jpg' | 'xlsx' | 'docx' | 'csv';
+export type AllowedKind = 'pdf' | 'png' | 'jpg' | 'xlsx' | 'docx' | 'csv' | 'xls' | 'doc' | 'txt';
 
 export interface KindInfo {
   mime: string;
@@ -32,12 +32,18 @@ export const ALLOWED_KINDS: Readonly<Record<AllowedKind, KindInfo>> = {
     extensions: ['docx'],
   },
   csv: { mime: 'text/csv', extensions: ['csv'] },
+  // QA ERP-DOC-01: every Add / Edit modal accepts Excel (.xlsx .xls .csv), Word (.docx .doc), PDF and Text (.txt)
+  xls: { mime: 'application/vnd.ms-excel', extensions: ['xls'] },
+  doc: { mime: 'application/msword', extensions: ['doc'] },
+  txt: { mime: 'text/plain', extensions: ['txt'] },
 };
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 export const MAX_DOCUMENTS_PER_RECORD = 20;
 
 const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+/** Legacy Office files (.xls / .doc) are OLE compound files. */
+const OLE_MAGIC = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
 
 /** The real type from the first bytes, or null when it is not an allowed type. */
 export function sniffKind(buffer: Buffer, extension: string): AllowedKind | null {
@@ -54,7 +60,13 @@ export function sniffKind(buffer: Buffer, extension: string): AllowedKind | null
     if (extension === 'docx' && head.includes('word/')) return 'docx';
     return null;
   }
+  if (buffer.subarray(0, 8).equals(OLE_MAGIC)) {
+    if (extension === 'xls') return 'xls';
+    if (extension === 'doc') return 'doc';
+    return null;
+  }
   if (extension === 'csv' && looksLikeText(buffer)) return 'csv';
+  if (extension === 'txt' && looksLikeText(buffer)) return 'txt';
   return null;
 }
 
@@ -93,6 +105,9 @@ export const builtInScanner: Scanner = {
       return Promise.resolve({ status: 'INFECTED', detail: 'PDF with active content' });
     }
     if ((kind === 'xlsx' || kind === 'docx') && text.includes('vbaProject.bin')) {
+      return Promise.resolve({ status: 'INFECTED', detail: 'Office file with macros' });
+    }
+    if ((kind === 'xls' || kind === 'doc') && text.includes('_VBA_PROJECT')) {
       return Promise.resolve({ status: 'INFECTED', detail: 'Office file with macros' });
     }
     return Promise.resolve({ status: 'CLEAN', detail: null });

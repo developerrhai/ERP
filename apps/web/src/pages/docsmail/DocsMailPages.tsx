@@ -9,7 +9,6 @@ import {
   type Automation,
   type CatalogEntry,
   type CatalogRecord,
-  type MailRow,
   type PrintKind,
 } from '../../lib/docsMailApi';
 import { useLoad } from '../../lib/useLoad';
@@ -134,79 +133,7 @@ export function DocumentCenterPage() {
 }
 
 // ---------------------------------------------------------------------------------------------- Department Mail
-export function DeptMailPage() {
-  const toast = useToast();
-  const [tab, setTab] = useState<'compose' | 'inbox' | 'sent'>('inbox');
-  const inbox = useLoad<MailRow[]>(() => docsMailApi.inbox(), []);
-  const sent = useLoad<MailRow[]>(() => docsMailApi.sent(), []);
-  const depts = useLoad(() => docsMailApi.departments(), []);
-  const [form, setForm] = useState({ toDept: '', external: '', subject: 'Department Document • Review / Action', body: 'Please review the attached ERP document(s) and complete the required action.' });
-  const [open, setOpen] = useState<MailRow | null>(null);
-
-  async function submit() {
-    try {
-      if (form.external.trim()) {
-        const r = await docsMailApi.sendExternal({ to: form.external.split(/[,;\s]+/).filter(Boolean), subject: form.subject, body: form.body });
-        toast(`Queued for ${r.queued} address(es).`);
-      } else {
-        await docsMailApi.sendInternal({ toDepartmentIds: form.toDept ? [form.toDept] : [], subject: form.subject, body: form.body });
-        toast('Sent.');
-      }
-      sent.reload();
-      setTab('sent');
-    } catch (e) {
-      toast(errText(e));
-    }
-  }
-  return (
-    <div className="dash-page">
-      <div className="page-head"><div><h1>Department Mail</h1><p className="muted">Mail between departments, and to outside addresses.</p></div></div>
-      <div role="tablist" className="tabs-row">
-        {(['inbox', 'sent', 'compose'] as const).map((t) => <button key={t} type="button" role="tab" aria-selected={tab === t} className={`btn${tab === t ? ' primary' : ''}`} onClick={() => setTab(t)}>{t === 'compose' ? 'Compose' : t === 'inbox' ? 'Inbox' : 'Sent'}</button>)}
-      </div>
-      {tab === 'compose' ? (
-        <div className="panel">
-          <label>To department
-            <select value={form.toDept} onChange={(e) => setForm({ ...form, toDept: e.target.value })}>
-              <option value="">Choose a department</option>
-              {(depts.data ?? []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
-          </label>
-          <label>Or outside email address(es)<input value={form.external} onChange={(e) => setForm({ ...form, external: e.target.value })} placeholder="name@company.com" /></label>
-          <label>Subject<input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></label>
-          <label>Message<textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></label>
-          <button type="button" className="btn primary" onClick={() => void submit()}>Send</button>
-        </div>
-      ) : (
-        <table className="register-table">
-          <thead><tr><th>{tab === 'inbox' ? 'From' : 'To'}</th><th>Subject</th><th>When</th><th>{tab === 'inbox' ? 'Files' : 'Read by'}</th></tr></thead>
-          <tbody>
-            {((tab === 'inbox' ? inbox.data : sent.data) ?? []).map((m) => (
-              <tr key={m.id} className={tab === 'inbox' && !m.read ? 'unread' : undefined} onClick={() => void docsMailApi.open(m.id).then((x) => { setOpen(x); inbox.reload(); }, (e: unknown) => toast(errText(e)))}>
-                <td>{tab === 'inbox' ? `${m.from_name ?? ''} ${m.from_department ? `(${m.from_department})` : ''}` : m.to_department}</td>
-                <td>{tab === 'inbox' && !m.read ? <strong>{m.subject}</strong> : m.subject}</td>
-                <td>{when(m.created_at)}</td>
-                <td>{tab === 'inbox' ? (typeof m.attachments === 'number' ? m.attachments : '') : `${m.read_by ?? 0} of ${m.recipients ?? 0}`}</td>
-              </tr>
-            ))}
-            {((tab === 'inbox' ? inbox.data : sent.data) ?? []).length === 0 ? <tr><td colSpan={4}>No mail.</td></tr> : null}
-          </tbody>
-        </table>
-      )}
-      {open ? (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Message">
-          <div className="modal">
-            <h2>{open.subject}</h2>
-            <p className="muted">{open.from_name} · {when(open.created_at)}</p>
-            <p style={{ whiteSpace: 'pre-wrap' }}>{open.body}</p>
-            {Array.isArray(open.attachments) && open.attachments.length > 0 ? <ul>{open.attachments.map((a, i) => <li key={i}>{a.label}</li>)}</ul> : null}
-            <div className="modal-actions"><button type="button" className="btn" onClick={() => setOpen(null)}>Close</button></div>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
+export { DeptMailPage } from './DeptMailPage';
 
 // ---------------------------------------------------------------------------------------------- Mail Automation
 export function MailAutomationPage() {

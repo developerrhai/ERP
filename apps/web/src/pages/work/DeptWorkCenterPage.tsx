@@ -8,7 +8,7 @@ import { useToast } from '../../components/Toast';
 import { ApiError } from '../../lib/api';
 import { lookupPage } from '../../lib/registry';
 import { workApi, type Dept, type InboxCounts, type Movement, type WorkRule } from '../../lib/workApi';
-import { deptFromPage } from './DeptMailboxPage';
+import { deptFromPage, deptLabelFromPage } from './DeptMailboxPage';
 
 const when = (iso: string | null): string => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
 const pretty = (s: string): string => s.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
@@ -65,7 +65,7 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
     }
   }
 
-  const name = dept?.name ?? pageId.replace(/^dept-work-/, '');
+  const name = deptLabelFromPage(pageId, dept);
   const slug = pageId.replace(/^dept-work-/, '');
   const mine = rules.filter((r) => dept && [r.owner_department_id, r.next_department_id, r.approval_department_id].includes(dept.id));
 
@@ -148,16 +148,16 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
         <Link className="btn" to="/m/my-approvals">
           Approvals
         </Link>
-        <Link className="btn" to={`/m/dept-inbox-${slug}?compose=true`}>
+        <Link className="btn" to="/m/dept-mail?compose=1">
           New Message / Attach Document
         </Link>
-        <Link className="btn" to="/m/plant-flow">
+        <Link className="btn" to="/m/plant-flow-command">
           Plant Flow
         </Link>
         <Link className="btn" to="/m/admin-workflow">
           Workflow Matrix
         </Link>
-        <Link className="btn" to="/m/project-history">
+        <Link className="btn" to="/m/project-global-history">
           Project History
         </Link>
         <Link className="btn" to="/m/ops-order-360">
@@ -169,6 +169,22 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
         <Link className="btn" to="/m/ops-shift-roster">
           Shifts
         </Link>
+        {slug === 'finance' ? (
+          <>
+            <Link className="btn" to="/m/fin-chart-of-accounts">
+              Chart of Accounts
+            </Link>
+            <Link className="btn" to="/m/fin-general-ledger">
+              General Ledger
+            </Link>
+            <Link className="btn" to="/m/tax-gst-setup">
+              GST Setup
+            </Link>
+            <Link className="btn" to="/m/tax-gstr3b">
+              GSTR-3B Return
+            </Link>
+          </>
+        ) : null}
       </div>
 
       <div className="card work-note">

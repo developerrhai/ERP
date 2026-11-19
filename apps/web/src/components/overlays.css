@@ -1,0 +1,51 @@
+/* Right-side slide-over (Import Data) and the duplicate highlight. */
+.slideover-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 1200;
+  display: flex;
+  justify-content: flex-end;
+}
+.slideover {
+  width: min(480px, 100vw);
+  height: 100%;
+  background: var(--card, #fff);
+  color: var(--text, #0f172a);
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.25);
+  display: flex;
+  flex-direction: column;
+  animation: slideover-in 0.18s ease-out;
+}
+@keyframes slideover-in {
+  from { transform: translateX(32px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.slideover-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line, #e2e8f0);
+}
+.slideover-head h2 { margin: 0; font-size: 18px; }
+.slideover-head p { margin: 2px 0 0; font-size: 12px; color: var(--muted, #64748b); }
+.slideover-body { padding: 16px 18px; display: grid; gap: 12px; overflow-y: auto; flex: 1; align-content: start; }
+.slideover-body label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; }
+.slideover-body select, .slideover-body input[type='file'] { width: 100%; }
+.slideover-actions { display: flex; gap: 8px; }
+.slideover-error { color: #b91c1c; font-size: 12px; margin: 0; }
+.slideover-preview { font-size: 12px; }
+.slideover-preview .table-wrap { max-height: 240px; overflow: auto; border: 1px solid var(--line, #e2e8f0); border-radius: 6px; }
+.slideover-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line, #e2e8f0); }
+
+/* Duplicates scanner: rows that share a reference number or the same date + party + amount. */
+tr[data-dup='1'] > td {
+  background: #fee2e2 !important;
+  color: #7f1d1d;
+}
+tr[data-dup='1'] > td:first-child,
+tr[data-dup='1'] > td:nth-child(2) {
+  box-shadow: inset 3px 0 0 #dc2626;
+}

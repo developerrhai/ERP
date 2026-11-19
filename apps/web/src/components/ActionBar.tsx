@@ -14,6 +14,8 @@ import { useToast } from './Toast';
 import { EmailDocDialog } from './EmailDocDialog';
 import { MoveForwardDialog } from './MoveForward';
 import { PickDocumentDialog } from './PickDocument';
+import { ImportDrawer } from './ImportDrawer';
+import { duplicateMessage, scanDuplicates } from './dupScan';
 
 const PICK_FIRST = 'Select a record first.';
 
@@ -95,6 +97,7 @@ const DEFAULTS = new Set([
 
 const BUTTON_CLASS: Record<string, string> = {
   '← Return': 'btn-return',
+  'Full 360°': 'btn-360',
   'Send Email': 'btn-email',
   Word: 'btn-word',
   Excel: 'btn-excel',
@@ -110,6 +113,7 @@ const BUTTON_CLASS: Record<string, string> = {
 
 const V40_CORE_BUTTONS: readonly string[] = [
   '← Return',
+  'Full 360°',
   'Send Email',
   'Word',
   'Excel',
@@ -129,11 +133,19 @@ const ADMIN_CORE_BUTTONS: readonly string[] = [
   'Duplicates',
 ];
 
+// QA report (BI-03): one standard toolbar on every BI screen, the same as the other modules.
 const BI_CORE_BUTTONS: readonly string[] = [
   '← Return',
+  'Send Email',
+  'Word',
   'Excel',
   'Industry PDF',
   'Print',
+  '＋ Add New',
+  '⇧ Import',
+  '⇩ Export',
+  'Duplicates',
+  'Project History',
 ];
 
 /** V40 has three buttons that move the selected record on to the next department: they all open the Move Forward dialog. */
@@ -144,8 +156,6 @@ const GO: Record<string, string> = {
   Dashboard: '/m/dashboard',
   'Full 360°': '/m/ops-order-360',
   'Move Document': '/m/document-movement-center',
-  '⇧ Import': '/m/admin-import',
-  Duplicates: '/m/admin-duplicates',
   'Project History': '/m/project-global-history',
   'Approval Queue': '/approvals',
   Documents: '/m/business-documents',
@@ -207,6 +217,7 @@ function Bar({
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<{ id: string; number: string } | null>(null);
   const [emailing, setEmailing] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [syncedRecord, setSyncedRecord] = useState<{ id: string; docNo: string } | null>(null);
 
   useEffect(() => {
@@ -278,8 +289,17 @@ function Bar({
       else if (label === '＋ Add New' || label === '＋ Add') {
         window.dispatchEvent(new CustomEvent('v40-add-record', { detail: { pageId } }));
       }
+      else if (label === '⇧ Import' || label === 'Import') {
+        setImporting(true);
+      }
       else if (label === 'Duplicates') {
-        toast('Duplicate check: No potential duplicates found in the current register.');
+        // QA ERP-DUP-01: really compare the rows of the register on screen and highlight the repeated ones
+        toast(duplicateMessage(scanDuplicates()));
+      } else if (label === 'Full 360°') {
+        // a register that owns the active record opens its 360° trace in place; any other page opens the order 360° screen
+        const detail = { pageId, handled: false };
+        window.dispatchEvent(new CustomEvent('v40-open-360', { detail }));
+        if (!detail.handled && target) go?.(target);
       } else if (target) go?.(target);
       else if (MOVE_LABELS.has(label)) {
         if (haveRecord && effRecordId) setMoving(true);
@@ -321,9 +341,6 @@ function Bar({
           return;
         }
         window.print();
-      } else if (label === 'Full 360°') {
-        window.dispatchEvent(new CustomEvent('v40-open-360', { detail: { pageId } }));
-        if (target) go?.(target);
       } else if (label === 'Documents') {
         toast(`Opening documents repository for ${effDocNo || pageId}.`);
         go?.('/m/business-documents');
@@ -395,6 +412,13 @@ function Bar({
           </span>
         );
       })}
+      {importing ? (
+        <ImportDrawer
+          pageId={pageId ?? ''}
+          onClose={() => setImporting(false)}
+          onOpenWorkspace={() => go?.('/m/admin-import')}
+        />
+      ) : null}
       {picking && pageId ? (
         <PickDocumentDialog
           pageId={pageId}

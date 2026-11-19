@@ -65,6 +65,9 @@ export interface PageAccess {
   reasons: string[];
 }
 
+/** Assets and Logistics have their own Inbox / Work Center pages; their staff belong to the Maintenance and Warehouse departments. */
+const DEPT_PAGE_ALIAS: Readonly<Record<string, string>> = { assets: 'maintenance', logistics: 'warehouse', hrms: 'hr' };
+
 /**
  * Page -> family -> "*", per cell.
  * Explicit deny wins: if page row OR family row has false, false wins.
@@ -183,7 +186,7 @@ export function decide(
   const isKitTestPage = process.env.KIT_ALLOW_TEST_PAGES === 'true' && pageId.startsWith('kit-');
 
   // 2. Disabled module: hidden from everyone; SUPER_USER keeps only controls.
-  const isInboxPage = page.family === 'Department Inboxes' || pageId.startsWith('dept-inbox-') || pageId.startsWith('dept-work-');
+  const isInboxPage = page.family === 'Department Inboxes' || pageId.startsWith('dept-inbox-') || pageId.startsWith('dept-work-') || pageId === 'dms-movement-center';
   const control =
     data.controls.get(pageId) ??
     (isKitTestPage || isInboxPage
@@ -211,7 +214,8 @@ export function decide(
   // 5c. Specific department mailbox and work center: only for members of that department or Administrator
   const deptPageMatch = pageId.match(/^dept-(?:inbox|work)-([a-z0-9_-]+)$/);
   if (deptPageMatch && u.level < ADMIN_LEVEL) {
-    const pageDeptSlug = deptPageMatch[1]!.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const rawSlug = deptPageMatch[1]!.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const pageDeptSlug = DEPT_PAGE_ALIAS[rawSlug] ?? rawSlug;
     const userDepts = user.departments.map((d) => d.toLowerCase().replace(/[^a-z0-9]/g, ''));
     const matches = userDepts.some((d) => d.includes(pageDeptSlug) || pageDeptSlug.includes(d));
     if (!matches) return false;
@@ -257,7 +261,7 @@ export function explain(
   }
 
   const isKitTestPage = process.env.KIT_ALLOW_TEST_PAGES === 'true' && pageId.startsWith('kit-');
-  const isInboxPage = page.family === 'Department Inboxes' || pageId.startsWith('dept-inbox-') || pageId.startsWith('dept-work-');
+  const isInboxPage = page.family === 'Department Inboxes' || pageId.startsWith('dept-inbox-') || pageId.startsWith('dept-work-') || pageId === 'dms-movement-center';
   const control =
     data.controls.get(pageId) ??
     (isKitTestPage || isInboxPage
@@ -312,7 +316,8 @@ export function explain(
     // Specific department mailbox and work center: only for members of that department or Administrator
     const deptPageMatch = pageId.match(/^dept-(?:inbox|work)-([a-z0-9_-]+)$/);
     if (deptPageMatch && u.level < ADMIN_LEVEL) {
-      const pageDeptSlug = deptPageMatch[1]!.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const rawSlug = deptPageMatch[1]!.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const pageDeptSlug = DEPT_PAGE_ALIAS[rawSlug] ?? rawSlug;
       const userDepts = user.departments.map((d) => d.toLowerCase().replace(/[^a-z0-9]/g, ''));
       const isMember = userDepts.includes(pageDeptSlug);
       if (!isMember) {

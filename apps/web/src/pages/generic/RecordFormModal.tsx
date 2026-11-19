@@ -3,9 +3,12 @@
 // server-computed read-only fields (preview) and a "Discard unsaved changes?" guard.
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ErrorMessage } from '../../components/ErrorMessage';
+import { AttachDocs } from '../../components/AttachDocs';
 import { Modal } from '../../components/Modal';
+import { uploadDocument } from './phase4Api';
 import { toUiError, type UiError } from '../../lib/errors';
 import { useUnsavedGuard } from '../../lib/unsaved';
+import { STATUS_OPTIONS } from '../../lib/validators';
 import { usePlants } from '../../lib/plants';
 import {
   createRecord,
@@ -92,10 +95,7 @@ const AFFIX: Record<string, string> = { money: '₹', pct: '%' };
 
 export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSaved }: Props) {
   const [row, setRow] = useState<RecordRow | undefined>(initialRow);
-  const editable = useMemo(
-    () => schema.fields.filter((f) => !systemManaged(f)),
-    [schema.fields],
-  );
+  const editable = useMemo(() => schema.fields.filter((f) => !systemManaged(f)), [schema.fields]);
   const initial = useMemo(() => toFormValues(schema.fields, row), [schema.fields, row]);
   const [values, setValues] = useState<Record<string, unknown>>(initial);
   const [labels, setLabels] = useState<Record<string, string>>({});
@@ -104,6 +104,8 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
   const [err, setErr] = useState<UiError | null>(null);
   const [pending, setPending] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  // QA ERP-DOC-01: supporting files picked in the form are uploaded to the record once it is saved
+  const [files, setFiles] = useState<File[]>([]);
   // Phase 23: with 2+ plants chosen, a new document asks which plant it belongs to (default plant if chosen, else the first).
   const plantsData = usePlants().data;
   const chosenPlants = plantsData?.allowed.filter((p) => plantsData.selected.includes(p.id)) ?? [];
@@ -120,7 +122,8 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
     if (!o || systemManaged(f)) return f;
     return { ...f, label: o.label ?? f.label, required: f.required || o.required === true };
   };
-  const hiddenByFormat = (f: FieldMeta): boolean => overrides[f.key]?.hidden === true && !f.required;
+  const hiddenByFormat = (f: FieldMeta): boolean =>
+    overrides[f.key]?.hidden === true && !f.required;
 
   const dirty = JSON.stringify(values) !== JSON.stringify(initial);
   useUnsavedGuard(dirty);
@@ -205,18 +208,33 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
     setPending(true);
     setErr(null);
     try {
+      const attach = async (saved: RecordRow): Promise<void> => {
+        for (const f of files)
+          await uploadDocument(schema.pageId, saved.id, f, { title: f.name, docType: 'GENERAL' });
+      };
       if (!row) {
-        onSaved(
-          await createRecord(schema.pageId, toPayload(schema.fields, values), askPlant ? plantId : undefined),
+        const created = await createRecord(
+          schema.pageId,
+          toPayload(schema.fields, values),
+          askPlant ? plantId : undefined,
         );
+        await attach(created);
+        onSaved(created);
         return;
       }
       const patch = changedPayload(schema.fields, values, row);
       if (Object.keys(patch).length === 0) {
+        if (files.length > 0) {
+          await attach(row);
+          onSaved(row);
+          return;
+        }
         onClose();
         return;
       }
-      onSaved(await updateRecord(schema.pageId, row, patch));
+      const updated = await updateRecord(schema.pageId, row, patch);
+      await attach(updated);
+      onSaved(updated);
     } catch (caught) {
       setErr(toUiError(caught));
     } finally {
@@ -282,6 +300,18 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
               );
             case 'enum':
               // An enum without a configured list is free text with suggestions, never an empty select.
+              if (!f.options?.length && /status/i.test(f.label)) {
+                return (
+                  <select {...c} value={text} onChange={(e) => set(f.key, e.target.value)}>
+                    <option value="">{f.required ? 'Select…' : '—'}</option>
+                    {STATUS_OPTIONS.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                );
+              }
               if (!f.options?.length) {
                 const listId = `${ids.id}-opts`;
                 return (
@@ -342,13 +372,7 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
                 </div>
               );
             case 'date':
-              return (
-                <DateField
-                  {...c}
-                  value={text}
-                  onChange={(e) => set(f.key, e.target.value)}
-                />
-              );
+              return <DateField {...c} value={text} onChange={(e) => set(f.key, e.target.value)} />;
             case 'datetime':
               return (
                 <input
@@ -466,24 +490,28 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
             </p>
           ) : null}
           <div className="form-grid">
-            {shown.filter((f) => !hiddenByFormat(f)).map(view).map((f) =>
-              systemManaged(f) || (f.type === 'code' && !!row) ? (
-                <Control key={f.key} label={f.label}>
-                  {(ids) =>
-                    f.type === 'ref' ? (
-                      <span id={ids.id} className="chip ref-chip" role="status">
-                        {row ? readOnlyValue(f) : 'Set from the current unit'}
-                      </span>
-                    ) : (
-                      <input id={ids.id} type="text" readOnly disabled value={readOnlyValue(f)} />
-                    )
-                  }
-                </Control>
-              ) : (
-                renderInput(f)
-              ),
-            )}
+            {shown
+              .filter((f) => !hiddenByFormat(f))
+              .map(view)
+              .map((f) =>
+                systemManaged(f) || (f.type === 'code' && !!row) ? (
+                  <Control key={f.key} label={f.label}>
+                    {(ids) =>
+                      f.type === 'ref' ? (
+                        <span id={ids.id} className="chip ref-chip" role="status">
+                          {row ? readOnlyValue(f) : 'Set from the current unit'}
+                        </span>
+                      ) : (
+                        <input id={ids.id} type="text" readOnly disabled value={readOnlyValue(f)} />
+                      )
+                    }
+                  </Control>
+                ) : (
+                  renderInput(f)
+                ),
+              )}
           </div>
+          <AttachDocs files={files} onChange={setFiles} />
         </form>
       </Modal>
       {confirmDiscard ? (

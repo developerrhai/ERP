@@ -785,3 +785,41 @@ body {
     display: none;
   }
 }
+
+.actionbar .btn.btn-360 {
+  background: #e0e7ff !important;
+  color: #3730a3 !important;
+  border-color: #c7d2fe !important;
+  font-weight: 600;
+}
+.actionbar .btn.btn-360:hover {
+  background: #c7d2fe !important;
+}
+
+/* Record bar: Demo ERP workflow colours (QA report ERP-BTN-01). */
+.recordbar .btn.btn-submit,
+.recordbar .btn.btn-move {
+  background: #2563eb !important;
+  border-color: #1d4ed8 !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+.recordbar .btn.btn-submit:hover,
+.recordbar .btn.btn-move:hover {
+  background: #1d4ed8 !important;
+}
+.recordbar .btn.btn-queue {
+  background: #16a34a !important;
+  border-color: #15803d !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+.recordbar .btn.btn-queue:hover {
+  background: #15803d !important;
+}
+
+/* DateField: typed dd-mm-yyyy plus a calendar button that opens the native picker (QA ERP-VAL-02) */
+.date-field { position: relative; display: inline-flex; align-items: center; width: 100%; }
+.date-field > input[type='text'] { width: 100%; padding-right: 30px; }
+.date-field-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; cursor: pointer; font-size: 14px; line-height: 1; padding: 2px; }
+.date-field-native { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }

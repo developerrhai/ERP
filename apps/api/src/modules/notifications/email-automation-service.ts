@@ -582,6 +582,56 @@ async function generatePdfBuffer(opts: {
   });
 }
 
+/** Word (.docx) or Excel (.xlsx) copy of the document's header facts, for the "Prepare Attachment" format choice of the email dialog. */
+async function buildFormatFile(
+  ctx: ResolvedDocumentContext,
+  format: 'word' | 'excel',
+): Promise<{ buffer: Buffer; filename: string; contentType: string }> {
+  const base = ctx.docNo.replace(/[^A-Za-z0-9_-]/g, '_');
+  const facts: [string, string][] = [
+    ['Document', ctx.docType],
+    ['Number', ctx.docNo],
+    ['Date', ctx.docDate],
+    ['Party', ctx.partyName],
+    ['Amount', ctx.amount],
+    ['Plant', ctx.unitName],
+  ];
+  if (format === 'excel') {
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Document');
+    ws.columns = [
+      { header: 'Field', key: 'k', width: 24 },
+      { header: 'Value', key: 'v', width: 56 },
+    ];
+    ws.addRows(facts.map(([k, v]) => ({ k, v })));
+    ws.getRow(1).font = { bold: true };
+    return {
+      buffer: Buffer.from(await wb.xlsx.writeBuffer()),
+      filename: `${base}.xlsx`,
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
+  }
+  // docx 8 is an ES module: loaded with a dynamic import() from this CommonJS build (same as the print service).
+  /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+  const { Document, HeadingLevel, Packer, Paragraph, TextRun } = (await import('docx')) as any;
+  const doc = new Document({
+    creator: 'ERP',
+    title: ctx.docNo,
+    sections: [
+      {
+        children: [
+          new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: `${ctx.docType} ${ctx.docNo}`, bold: true })] }),
+          ...facts.map(([k, v]) => new Paragraph({ children: [new TextRun({ text: `${k}: `, bold: true }), new TextRun(v)] })),
+        ],
+      },
+    ],
+  });
+  const buffer = Buffer.from(await Packer.toBuffer(doc));
+  /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+  return { buffer, filename: `${base}.docx`, contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
+}
+
 async function loadOrBuildDocumentPdf(
   ctx: ResolvedDocumentContext,
   attachmentKind: string,
@@ -956,6 +1006,12 @@ export const emailAutomationService = {
       templateCode?: string;
       ruleId?: string | null;
       attachMode?: 'ATTACH' | 'LINK' | 'AUTO';
+      /** Format of the prepared attachment: the default PDF, or a Word / Excel copy of the document facts. */
+      attachFormat?: 'pdf' | 'word' | 'excel';
+      /** Subject typed in the email dialog; the template subject is used when empty. */
+      subjectOverride?: string;
+      /** Supporting documents the user added (+ Add Doc). */
+      extraFiles?: { filename: string; contentType: string; content: Buffer }[];
       attachmentKind?: 'NONE' | 'DOC_PDF' | 'STATEMENT_PDF' | 'PAYSLIP_PDF';
       stream?: 'TRANSACTIONAL' | 'MARKETING';
       idempotencyKey?: string;
@@ -1021,9 +1077,11 @@ export const emailAutomationService = {
       periodLabel: ctx.payslipData?.periodLabel ?? ctx.docDate,
       body: opts.message ?? '',
     };
-    const subject = tpl?.subject_tpl
-      ? renderEscapedTemplate(tpl.subject_tpl, vars, false)
-      : `${ctx.unitName} — ${ctx.docType} ${ctx.docNo}`;
+    const subject = opts.subjectOverride?.trim()
+      ? opts.subjectOverride.trim().slice(0, 200)
+      : tpl?.subject_tpl
+        ? renderEscapedTemplate(tpl.subject_tpl, vars, false)
+        : `${ctx.unitName} — ${ctx.docType} ${ctx.docNo}`;
 
     const safeOutboundDocId = isUuid(ctx.docId) ? ctx.docId : null;
 
@@ -1075,7 +1133,12 @@ export const emailAutomationService = {
     const attachmentsMeta: { filename: string; sha256: string; sizeBytes: number; mode: 'ATTACH' | 'LINK'; shareLinkId?: string }[] = [];
     let shareLinkId: string | null = null;
 
-    if (attachmentKind !== 'NONE') {
+    const wantFormat = opts.attachFormat && opts.attachFormat !== 'pdf' && !isPayslip ? opts.attachFormat : null;
+    if (attachmentKind !== 'NONE' && wantFormat) {
+      const f = await buildFormatFile(ctx, wantFormat);
+      mimeAttachments.push({ filename: f.filename, content: f.buffer, contentType: f.contentType });
+      attachmentsMeta.push({ filename: f.filename, sha256: createHash('sha256').update(f.buffer).digest('hex'), sizeBytes: f.buffer.length, mode: 'ATTACH' });
+    } else if (attachmentKind !== 'NONE') {
       const pdf = opts.overridePdfBuffer
         ? {
             buffer: opts.overridePdfBuffer,
@@ -1114,6 +1177,16 @@ export const emailAutomationService = {
           mode: 'ATTACH',
         });
       }
+    }
+
+    // Supporting documents added by the sender (+ Add Doc)
+    const extraTotal = (opts.extraFiles ?? []).reduce((n, f) => n + f.content.length, 0);
+    if (extraTotal > MAX_ATTACH_BYTES * 3) {
+      throw Errors.validation({ attachments: 'The supporting documents together are larger than 21 MB.' });
+    }
+    for (const f of opts.extraFiles ?? []) {
+      mimeAttachments.push({ filename: f.filename, content: f.content, contentType: f.contentType });
+      attachmentsMeta.push({ filename: f.filename, sha256: createHash('sha256').update(f.content).digest('hex'), sizeBytes: f.content.length, mode: 'ATTACH' });
     }
 
     // Inline CID SVG letterhead badge (no remote images per §5.7)

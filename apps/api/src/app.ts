@@ -168,6 +168,8 @@ export function createApp(options: AppOptions = {}): Express {
     }),
   );
   app.use('/api/v1/webhooks/inbound', createInboundHooksRouter()); // Phase 34: signed hooks need the raw body, so they come before the JSON parser
+  // the email dialog sends its supporting documents (Excel / Word / PDF / Text, base64) with the request: that one route gets a larger limit
+  app.use(/^\/api\/v1\/documents\/[^/]+\/[^/]+\/email$/, express.json({ limit: '24mb' }));
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
 

@@ -3138,3 +3138,30 @@ progress { width: 100%; }
     grid-template-columns: 1fr;
   }
 }
+
+/* Cannot-save state of every Add / Edit form (QA ERP-VAL-01): the mandatory field that is blank turns red */
+.field input[aria-invalid='true'],
+.field select[aria-invalid='true'],
+.field textarea[aria-invalid='true'],
+input.is-invalid,
+select.is-invalid {
+  border-color: #dc2626 !important;
+  background: #fef2f2 !important;
+}
+
+/* Tab strip with left / right scroll arrows (QA ERP-UI-01) */
+.tab-strip { display: flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; margin: 8px 0; }
+.tab-strip > .tabs, .tab-strip > [role='tablist'] { flex: 1 1 auto; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; scroll-behavior: smooth; margin: 0; }
+.tab-strip > .tabs::-webkit-scrollbar, .tab-strip > [role='tablist']::-webkit-scrollbar { display: none; }
+.tab-strip .tab, .tab-strip [role='tab'] { white-space: nowrap; flex: 0 0 auto; }
+.tab-arrow { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; color: #0f243d; font-size: 20px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0 0 2px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12); }
+.tab-arrow:hover:not(:disabled) { background: #eff6ff; border-color: #2563eb; }
+.tab-arrow:disabled { opacity: 0.35; cursor: default; }
+.tab-arrow[hidden] { display: none; }
+.v40-tabbar { min-width: 0; max-width: 100%; }
+.v40-tabbar .tab-strip { flex: 1 1 auto; margin: 0; }
+.tab-strip > .v28-mail-tabs { flex-wrap: nowrap; }
+.tab-strip > .v28-mail-tabs > .btn { flex: 0 0 auto; white-space: nowrap; }
+@media (max-width: 900px) {
+  .dept-mail-layout { grid-template-columns: 1fr !important; }
+}

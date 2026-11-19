@@ -83,7 +83,7 @@ export interface DocumentRow {
 
 export const DOC_TYPES = ['GENERAL', 'INVOICE', 'CONTRACT', 'CERTIFICATE', 'DRAWING', 'OTHER'];
 export const MAX_FILE_MB = 10;
-export const ACCEPT = '.pdf,.png,.jpg,.jpeg,.xlsx,.docx,.csv';
+export const ACCEPT = '.pdf,.png,.jpg,.jpeg,.xlsx,.xls,.docx,.doc,.csv,.txt';
 
 const docsBase = (pageId: string, id: string) =>
   `${base(pageId)}/records/${encodeURIComponent(id)}/documents`;

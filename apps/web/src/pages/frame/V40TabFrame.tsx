@@ -2,10 +2,11 @@
 // the open tab is in the URL (?tab=<index>), ← → scroll the strip when it overflows. The first tab is the page's own register.
 // Tabs named Audit / History / Log show the real audit rows of the page; tabs named Approval(s) show the page's real
 // approval requests; every other tab shows the same register (a filtered view of the same data, never an invented number).
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import tabsMap from './tabs-map.json';
+import { TabStrip } from '../../components/TabStrip';
 import { getRequests, type ApprovalRequest } from '../../lib/approvalsApi';
 import { formatDateTime } from '../../lib/format';
 import { useLoad } from '../../lib/useLoad';
@@ -66,7 +67,7 @@ export function genericTabFor(name: string, index: number): 'register' | 'dashbo
 }
 
 /** Pages that own their V40 layout (built page by page) and must not get the strip on top. */
-const OWN_LAYOUT: ReadonlySet<string> = new Set(['my-approvals', 'document-movement-center', 'dept-movement-inbox', 'ops-order-360', 'project-global-history', 'dashboard']);
+const OWN_LAYOUT: ReadonlySet<string> = new Set(['my-approvals', 'document-movement-center', 'dms-movement-center', 'dept-movement-inbox', 'ops-order-360', 'project-global-history', 'dashboard']);
 
 const TABS = new Map<string, string[]>(Object.entries(tabsMap as Record<string, string[]>));
 
@@ -173,18 +174,6 @@ export function V40TabFrame({ pageId, tabs, children }: { pageId: string; tabs: 
   const [params, setParams] = useSearchParams();
   const raw = Number(params.get('tab') ?? 0);
   const active = Number.isInteger(raw) && raw >= 0 && raw < tabs.length ? raw : 0;
-  const strip = useRef<HTMLDivElement>(null);
-  const [overflow, setOverflow] = useState(false);
-
-  useEffect(() => {
-    const el = strip.current;
-    if (!el) return;
-    const check = (): void => setOverflow(el.scrollWidth > el.clientWidth + 2);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, [tabs]);
-
   const open = (i: number): void =>
     setParams((p) => {
       const n = new URLSearchParams(p);
@@ -192,7 +181,6 @@ export function V40TabFrame({ pageId, tabs, children }: { pageId: string; tabs: 
       else n.set('tab', String(i));
       return n;
     });
-  const scroll = (dir: number): void => strip.current?.scrollBy({ left: dir * 240, behavior: 'smooth' });
   const kind = tabKind(tabs[active] ?? '', active);
   // pages that always draw their own tab panels start claimed, so a deep link to Audit Trail works too
   const [claimed, setClaimed] = useState(() => pageWideClaimed.has(pageId));
@@ -206,33 +194,13 @@ export function V40TabFrame({ pageId, tabs, children }: { pageId: string; tabs: 
   return (
     <>
       <div className="v40-tabbar">
-        {overflow ? (
-          <button type="button" className="btn" aria-label="Scroll tabs left" onClick={() => scroll(-1)}>
-            ←
-          </button>
-        ) : null}
-        <div className="tabs" id="moduleTabs" role="tablist" ref={strip}>
+        <TabStrip id="moduleTabs" label="Module tabs" watch={`${pageId}:${active}:${tabs.length}`}>
           {tabs.map((t, i) => (
             <button key={`${t}-${i}`} type="button" role="tab" aria-selected={i === active} className={`tab${i === active ? ' active' : ''}`} data-tab-index={i} onClick={() => open(i)}>
               {t}
             </button>
           ))}
-        </div>
-        {overflow ? (
-          <button type="button" className="btn" aria-label="Scroll tabs right" onClick={() => scroll(1)}>
-            →
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className="btn sm primary v40-tab-add"
-          style={{ whiteSpace: 'nowrap', marginLeft: '6px' }}
-          onClick={() => {
-            window.dispatchEvent(new CustomEvent('v40-add-record', { detail: { pageId } }));
-          }}
-        >
-          ＋ Add
-        </button>
+        </TabStrip>
       </div>
       <FrameCtx.Provider value={frameState}>
         {!isClaimed && kind === 'audit' ? (

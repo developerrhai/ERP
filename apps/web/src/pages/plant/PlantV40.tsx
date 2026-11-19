@@ -181,7 +181,7 @@ export function withPlantV40<P extends object>(
 function Body({
   pageId,
   actions,
-  fallback,
+  fallback: _fallback,
   tabName,
   first,
   claim,
@@ -192,7 +192,6 @@ function Body({
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [classic, setClassic] = useState(false);
   const seen = useRef<Set<string>>(new Set());
   const claimRef = useRef(claim);
   claimRef.current = claim;
@@ -275,7 +274,7 @@ function Body({
       </div>
       <div className="pv40-bulk" role="group" aria-label="Selected records">
         <span>{picked.size} selected</span>
-        <button type="button" className="btn sm" disabled={picked.size === 0} onClick={() => setClassic(true)}>
+        <button type="button" className="btn sm" disabled={picked.size === 0} onClick={() => undefined}>
           Load Selected
         </button>
         <button type="button" className="btn sm" disabled={rows.length === 0} onClick={exportSelected}>
@@ -316,7 +315,7 @@ function Body({
                           className="btn sm"
                           onClick={() => {
                             setQ(r.number);
-                            setClassic(true);
+                            
                           }}
                         >
                           View
@@ -381,10 +380,6 @@ function Body({
           .
         </p>
       ) : null}
-      <details className="pv40-classic" open={classic} onToggle={(e) => setClassic(e.currentTarget.open)}>
-        <summary>Classic view: create, edit and action buttons</summary>
-        {classic ? fallback : null}
-      </details>
     </section>
   );
 }

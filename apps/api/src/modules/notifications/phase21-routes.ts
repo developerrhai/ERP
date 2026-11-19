@@ -78,12 +78,29 @@ const broadcastCreateSchema = z
   })
   .strict();
 
+const ALLOWED_EXTRA_EXT = /\.(xlsx|xls|csv|docx|doc|pdf|txt)$/i;
 const sendDocEmailSchema = z
   .object({
     to: z.array(z.string().email()).min(1).max(25).optional(),
     cc: z.array(z.string().email()).max(25).optional(),
+    bcc: z.array(z.string().email()).max(25).optional(),
+    subject: z.string().trim().max(200).optional(),
     message: z.string().max(4000).optional(),
     attachMode: z.enum(['ATTACH', 'LINK', 'AUTO']).optional(),
+    /** Prepare Attachment format: PDF (default), Word (.docx) or Excel (.xlsx). */
+    attachFormat: z.enum(['pdf', 'word', 'excel']).optional(),
+    /** + Add Doc: supporting files, base64 encoded (Excel / Word / PDF / Text only, up to 3 files of 5 MB). */
+    extraFiles: z
+      .array(
+        z
+          .object({
+            filename: z.string().trim().min(1).max(150).regex(ALLOWED_EXTRA_EXT, 'Only Excel, Word, PDF and Text files can be attached.'),
+            contentBase64: z.string().min(1).max(7_000_000),
+          })
+          .strict(),
+      )
+      .max(3)
+      .optional(),
   })
   .strict();
 
@@ -94,6 +111,20 @@ const resendEmailSchema = z
     reason: z.string().trim().min(5).max(400),
   })
   .strict();
+
+function extraContentType(name: string): string {
+  const ext = /\.([a-z]+)$/i.exec(name)?.[1]?.toLowerCase() ?? '';
+  const map: Record<string, string> = {
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    xls: 'application/vnd.ms-excel',
+    csv: 'text/csv',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    doc: 'application/msword',
+    pdf: 'application/pdf',
+    txt: 'text/plain',
+  };
+  return map[ext] ?? 'application/octet-stream';
+}
 
 function requireAdmin(req: Request) {
   const auth = requireAuth(req);
@@ -510,8 +541,20 @@ export function createPhase21Router(): Router {
         {
           to: body.to,
           cc: body.cc,
+          bcc: body.bcc,
+          ...(body.subject ? { subjectOverride: body.subject } : {}),
           message: body.message,
           attachMode: body.attachMode,
+          ...(body.attachFormat ? { attachFormat: body.attachFormat } : {}),
+          ...(body.extraFiles
+            ? {
+                extraFiles: body.extraFiles.map((f) => ({
+                  filename: f.filename.replace(/[^A-Za-z0-9._ -]/g, '_'),
+                  contentType: extraContentType(f.filename),
+                  content: Buffer.from(f.contentBase64, 'base64'),
+                })),
+              }
+            : {}),
         },
       );
       res.status(201).json({ data: sent });

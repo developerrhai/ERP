@@ -317,6 +317,34 @@ const PHASE_ADDED_PAGES = [
     purpose: 'Work Center of Warehouse: incoming work, routed documents, approvals and onward movement.',
   },
   {
+    id: 'dept-inbox-assets',
+    title: 'Assets Inbox',
+    family: 'Assets',
+    after: '',
+    purpose: 'Department mailbox of Assets: documents, receipt, acceptance, work, approval and mail.',
+  },
+  {
+    id: 'dept-work-assets',
+    title: 'Assets Work Center',
+    family: 'Assets',
+    after: 'dept-inbox-assets',
+    purpose: 'Work Center of Assets: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
+    id: 'dept-inbox-logistics',
+    title: 'Logistics Inbox',
+    family: 'Logistics / Fleet',
+    after: '',
+    purpose: 'Department mailbox of Logistics: documents, receipt, acceptance, work, approval and mail.',
+  },
+  {
+    id: 'dept-work-logistics',
+    title: 'Logistics Work Center',
+    family: 'Logistics / Fleet',
+    after: 'dept-inbox-logistics',
+    purpose: 'Work Center of Logistics: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
     id: 'dept-work-finance',
     title: 'Finance Work Center',
     family: 'Finance & Accounts',
@@ -325,10 +353,24 @@ const PHASE_ADDED_PAGES = [
   },
   {
     id: 'dept-work-hr',
-    title: 'HR Work Center',
+    title: 'HRMS Work Center',
     family: 'HRMS',
     after: '',
     purpose: 'Work Center of HR: incoming work, routed documents, approvals and onward movement.',
+  },
+  {
+    id: 'dept-inbox-hrms',
+    title: 'HRMS Inbox',
+    family: 'HRMS',
+    after: '',
+    purpose: 'HRMS and Payroll mailbox: documents, approvals and messages routed to HR and Payroll.',
+  },
+  {
+    id: 'dms-movement-center',
+    title: 'Document Movement Center',
+    family: 'Document Management',
+    after: '',
+    purpose: 'Send documents to a department inbox like email attachments; the record stays linked.',
   },
   {
     id: 'dept-work-projects',
@@ -503,6 +545,7 @@ const PHASE_ADDED_PAGES = [
     title: 'Document Center',
     family: 'Document Management',
     after: 'dms-search',
+    hidden: true,
     purpose: 'Every business document in 5 formats; send to a department or email it.',
   },
   {

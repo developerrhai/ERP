@@ -307,21 +307,62 @@ export function DateField({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
   const parsed = parseDMY(text);
+  const picker = useRef<HTMLInputElement>(null);
+  const pickIso = parsed !== null && inRange(parsed) ? parsed : '';
+  const openCalendar = (): void => {
+    const el = picker.current;
+    if (!el) return;
+    try {
+      if (typeof el.showPicker === 'function') el.showPicker();
+      else el.click();
+    } catch {
+      el.click();
+    }
+  };
+  // QA ERP-VAL-02: every date shows a calendar icon that opens the picker; typing dd-mm-yyyy still works, plain text is rejected
   return (
-    <input
-      {...rest}
-      type="text"
-      placeholder="dd-mm-yyyy"
-      inputMode="numeric"
-      maxLength={10}
-      value={text}
-      aria-invalid={text !== '' && !inRange(parsed)}
-      onChange={(e) => {
-        setText(e.target.value);
-        const iso = parseDMY(e.target.value);
-        onChange?.({ target: { value: iso !== null && inRange(iso) ? iso : '' } });
-      }}
-    />
+    <span className="date-field">
+      <input
+        {...rest}
+        type="text"
+        placeholder="dd-mm-yyyy"
+        inputMode="numeric"
+        maxLength={10}
+        value={text}
+        aria-invalid={rest['aria-invalid'] ?? (text !== '' && !inRange(parsed) ? true : false)}
+        onChange={(e) => {
+          setText(e.target.value);
+          const iso = parseDMY(e.target.value);
+          onChange?.({ target: { value: iso !== null && inRange(iso) ? iso : '' } });
+        }}
+      />
+      <button
+        type="button"
+        className="date-field-btn"
+        aria-label="Open calendar"
+        title="Pick a date"
+        tabIndex={-1}
+        disabled={rest.disabled}
+        onClick={openCalendar}
+      >
+        📅
+      </button>
+      <input
+        ref={picker}
+        className="date-field-native"
+        type="date"
+        tabIndex={-1}
+        aria-hidden="true"
+        value={pickIso}
+        {...(min ? { min } : {})}
+        {...(max ? { max } : {})}
+        onChange={(e) => {
+          const iso = e.target.value;
+          setText(iso ? shown(iso) : '');
+          onChange?.({ target: { value: iso } });
+        }}
+      />
+    </span>
   );
 }
 

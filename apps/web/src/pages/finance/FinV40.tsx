@@ -193,32 +193,13 @@ export function FinV40(props: FinV40Props) {
   return <Body {...props} tabName={frame.tabName} first={frame.index === 0} claim={frame.claim} />;
 }
 
-/** The page's own screen (add, edit, post, cancel ...) stays mounted under the V40 view so every existing button keeps working. */
-function Legacy({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <div className="actions fv40-legacy-bar">
-        <button
-          type="button"
-          className="btn sm"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? 'Hide' : 'Show'} existing screen (create, edit, post, cancel)
-        </button>
-      </div>
-      <div className={open ? 'fv40-legacy open' : 'fv40-legacy'}>{children}</div>
-    </>
-  );
-}
 
 const PAGE_SIZE = 20;
 
 function Body({
   pageId,
   actions,
-  fallback,
+  fallback: _fallback,
   onOpen,
   reloadKey,
   onAllocate,
@@ -466,7 +447,6 @@ function Body({
           .
         </p>
       ) : null}
-      <Legacy>{fallback}</Legacy>
       {detail ? (
         <Modal
           title={detail.number || 'Record'}

@@ -59,6 +59,11 @@ export interface ActiveBroadcastBanner {
   acked_at: string | null;
 }
 
+export interface EmailExtraFile {
+  filename: string;
+  contentBase64: string;
+}
+
 export const phase21Api = {
   listNotificationsCursor(params: {
     unread?: boolean;
@@ -232,7 +237,16 @@ export const phase21Api = {
   sendDocEmail(
     docType: string,
     docId: string,
-    body: { to: string[]; cc?: string[]; message?: string; attachMode?: 'ATTACH' | 'LINK' | 'AUTO' },
+    body: {
+      to: string[];
+      cc?: string[];
+      bcc?: string[];
+      subject?: string;
+      message?: string;
+      attachMode?: 'ATTACH' | 'LINK' | 'AUTO';
+      attachFormat?: 'pdf' | 'word' | 'excel';
+      extraFiles?: EmailExtraFile[];
+    },
   ) {
     return api(`/documents/${encodeURIComponent(docType)}/${encodeURIComponent(docId)}/email`, {
       method: 'POST',

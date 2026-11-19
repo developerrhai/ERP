@@ -17,6 +17,10 @@ import type { ActionSet } from '../../types';
 import { useFrame } from '../frame/V40TabFrame';
 import { getSalesV40, type V40Column, type V40ColType, type V40Row } from '../sales/salesV40Api';
 import { FAM_PAGE_CFG } from './famIds';
+import { ContextChips } from '../../components/ContextChips';
+import { lookupPage, registry } from '../../lib/registry';
+import type { User } from '../../types';
+import { DynamicEntityForm } from './DynamicEntityForm';
 import { DocumentsPanel } from '../generic/DocumentsPanel';
 import type { PageSchema } from '../generic/engineApi';
 import './fam-v40.css';
@@ -155,100 +159,6 @@ const DEPARTMENTS = [
   'Service',
 ] as const;
 
-const CONNECTED_MODULES = [
-  { id: '01', title: 'Sales Enquiry', code: 'sales-enquiries' },
-  { id: '02', title: 'Quotation', code: 'sales-quotations' },
-  { id: '03', title: 'Sales Order', code: 'sales-orders' },
-  { id: '04', title: 'Work Order', code: 'mfg-orders' },
-  { id: '05', title: 'Production Routing', code: 'mfg-unit-route' },
-  { id: '06', title: 'Quality Inspection', code: 'qms-final' },
-  { id: '07', title: 'Purchase / SCM', code: 'scm-po' },
-  { id: '08', title: 'Stores / Inventory', code: 'inv-stock' },
-  { id: '09', title: 'Dispatch & Invoicing', code: 'dispatch-dc' },
-  { id: '10', title: 'Payment & Ledger', code: 'accounts-gst-invoice' },
-];
-
-const DEFAULT_ORDERS = [
-  { id: 'SO-2026-0001', label: 'SO-2026-0001 • Apex Mobility Pvt. Ltd. (₹14,50,000)' },
-  { id: 'SO-2026-0002', label: 'SO-2026-0002 • Tata Motors Commercial (₹28,80,000)' },
-  { id: 'SO-2026-0003', label: 'SO-2026-0003 • Bharat Forge Precision (₹9,40,000)' },
-  { id: 'SO-2026-0004', label: 'SO-2026-0004 • Mahindra Heavy Engines (₹32,10,000)' },
-  { id: 'SO-2026-0005', label: 'SO-2026-0005 • Bajaj Auto Components (₹18,75,000)' },
-];
-
-function ConnectedManufacturingRibbon({
-  selectedOrder,
-  onOrderChange,
-}: {
-  selectedOrder: string;
-  onOrderChange: (val: string) => void;
-}) {
-  const navigate = useNavigate();
-
-  return (
-    <div className="v17-integrated">
-      <div className="v17-integrated-head">
-        <div>
-          <h3>CONNECTED MANUFACTURING 360°</h3>
-          <p>Live visibility across customer order lifecycle, inventory, logistics and quality</p>
-        </div>
-        <div className="v17-actions">
-          <select
-            value={selectedOrder}
-            onChange={(e) => onOrderChange(e.target.value)}
-            aria-label="Filter Connected Order"
-          >
-            {DEFAULT_ORDERS.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="btn sm"
-            onClick={() => navigate('/m/dashboard')}
-          >
-            Dashboard
-          </button>
-          <button
-            type="button"
-            className="btn sm"
-            onClick={() => navigate('/m/ops-order-360')}
-          >
-            Full 360°
-          </button>
-          <button
-            type="button"
-            className="btn sm primary"
-            onClick={() => navigate('/m/document-movement-center')}
-          >
-            Move Next Controlled Step
-          </button>
-        </div>
-      </div>
-      <div className="v17-mini-flow">
-        {CONNECTED_MODULES.map((m, idx) => {
-          const isDone = idx < 7;
-          const isCurrent = idx === 7 || idx === 8;
-          return (
-            <div
-              key={m.id}
-              className={`v17-mini-stage ${isCurrent ? 'current' : isDone ? 'done' : 'blocked'}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => navigate(`/m/${m.code}`)}
-              title={`Jump to ${m.title}`}
-            >
-              <small>{`${m.id} ${m.title}`}</small>
-              <b>{isCurrent ? 'In Progress' : isDone ? 'Completed' : 'Pending'}</b>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function RecordControlsBar({
   title,
   rows,
@@ -343,7 +253,7 @@ function RecordControlsBar({
       </button>
       <button
         type="button"
-        className="btn sm"
+        className="btn sm primary"
         onClick={() => {
           if (!actions.submit) toast('Submit approval permission is not available for this role.');
           else if (!currentId) toast('Select a record first, then press Submit Approval.');
@@ -354,14 +264,14 @@ function RecordControlsBar({
       </button>
       <button
         type="button"
-        className="btn sm"
+        className="btn sm success"
         onClick={() => navigate('/approvals')}
       >
         Approval Queue
       </button>
       <button
         type="button"
-        className="btn sm"
+        className="btn sm primary"
         onClick={() => {
           if (!currentId) toast('Select a record first, then press Move Forward.');
           else onMoveForward();
@@ -372,24 +282,7 @@ function RecordControlsBar({
       <button
         type="button"
         className="btn sm"
-        onClick={() => {
-          if (!currentId) toast('Select a record first, then press Move Forward - Internal.');
-          else onMoveForward();
-        }}
-      >
-        Move Forward - Internal
-      </button>
-      <button
-        type="button"
-        className="btn sm"
-        onClick={() => navigate('/m/document-movement-center')}
-      >
-        Move Document
-      </button>
-      <button
-        type="button"
-        className="btn sm"
-        onClick={() => navigate('/m/project-global-history')}
+        onClick={() => navigate('/m/proj-projects')}
       >
         Project History
       </button>
@@ -1418,126 +1311,16 @@ function V40FinanceView({
   );
 }
 
-function DynamicEntityForm({
-  title,
-  columns,
-  initialValues,
-  onSave,
-  onCancel,
-}: {
-  title: string;
-  columns: V40Column[];
-  initialValues?: Record<string, any>;
-  onSave: (values: Record<string, string>) => void;
-  onCancel: () => void;
-}) {
-  const formCols = useMemo(
-    () => columns.filter((c) => c.type !== 'actions' && c.type !== 'docs'),
-    [columns],
-  );
-
-  const [values, setValues] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
-    for (const c of formCols) {
-      if (initialValues && initialValues[c.key] !== undefined && initialValues[c.key] !== null) {
-        initial[c.key] = String(initialValues[c.key]);
-      } else if (c.key.toLowerCase().includes('status')) {
-        initial[c.key] = 'Active';
-      } else if (c.key.toLowerCase().includes('dept') || c.key.toLowerCase().includes('department')) {
-        initial[c.key] = 'Logistics';
-      } else {
-        initial[c.key] = '';
-      }
-    }
-    return initial;
-  });
-
-  return (
-    <div style={{ padding: '16px 20px', maxHeight: '70vh', overflowY: 'auto' }}>
-      <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 13 }}>
-        {initialValues ? 'Modify entity details for this record.' : `Enter entity specifications for new ${title} record.`}
-      </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px 18px' }}>
-        {formCols.map((col) => {
-          const lKey = col.key.toLowerCase();
-          const val = values[col.key] ?? '';
-          const isStatus = lKey.includes('status');
-          const isDept = lKey.includes('dept') || lKey.includes('department');
-          const isDate = lKey.includes('date') || lKey.includes('valid') || lKey.includes('expiry');
-          const isNum =
-            col.type === 'num' ||
-            col.type === 'inr' ||
-            lKey.includes('km') ||
-            lKey.includes('cost') ||
-            lKey.includes('weight') ||
-            lKey.includes('score') ||
-            lKey.includes('rating') ||
-            lKey.includes('freight');
-
-          return (
-            <div key={col.key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>{col.label}</label>
-              {isStatus ? (
-                <select
-                  value={val || 'Active'}
-                  onChange={(e) => setValues((prev) => ({ ...prev, [col.key]: e.target.value }))}
-                  style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13, background: '#fff' }}
-                >
-                  <option value="Active">Active</option>
-                  <option value="Pending">Pending</option>
-                  <option value="In Transit">In Transit</option>
-                  <option value="Scheduled">Scheduled</option>
-                  <option value="Calculated">Calculated</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Verified">Verified</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              ) : isDept ? (
-                <select
-                  value={val || 'Logistics'}
-                  onChange={(e) => setValues((prev) => ({ ...prev, [col.key]: e.target.value }))}
-                  style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13, background: '#fff' }}
-                >
-                  {DEPARTMENTS.slice(1).map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type={isDate ? 'date' : isNum ? 'number' : 'text'}
-                  placeholder={`Enter ${col.label.toLowerCase()}...`}
-                  value={val}
-                  onChange={(e) => setValues((prev) => ({ ...prev, [col.key]: e.target.value }))}
-                  style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13, background: '#fff' }}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24, paddingTop: 14, borderTop: '1px solid #e2e8f0' }}>
-        <button type="button" className="btn sm" onClick={onCancel}>
-          Cancel
-        </button>
-        <button type="button" className="btn sm primary" onClick={() => onSave(values)}>
-          {initialValues ? 'Save Changes' : 'Save Record'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export function FamV40Body({
   pageId,
   actions,
   children: _children,
+  user,
 }: {
   pageId: string;
   actions: ActionSet;
   children?: ReactNode;
+  user?: User;
 }) {
   const frame = useFrame();
   const toast = useToast();
@@ -1549,7 +1332,6 @@ export function FamV40Body({
   const [dept, setDept] = useState('All Departments');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [selectedOrder, setSelectedOrder] = useState('SO-2026-0001');
   const [activeRecordId, setActiveRecordId] = useState('');
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
@@ -1583,6 +1365,30 @@ export function FamV40Body({
   ]);
 
   const cfg = FAM_PAGE_CFG[pageId] ?? { noun: 'Records' };
+  const pageLookup = lookupPage(pageId);
+  const profile = registry.profiles[pageId];
+  const pageTitle = pageLookup?.item?.title ?? profile?.title ?? cfg.noun;
+  const pagePurpose = pageLookup?.purpose ?? profile?.purpose ?? `Manage and track ${pageTitle.toLowerCase()} operational register and records.`;
+  const ownerDept = pageLookup?.family?.name ?? 'Administration';
+  const effectiveUser: User = user ?? ({
+    lastLoginAt: null,
+    updatedAt: new Date().toISOString(),
+    version: 1,
+    id: 'usr-admin',
+    loginId: 'admin',
+    name: 'ERP Administrator',
+    email: 'admin@sawantgroup.co.in',
+    roleId: 'role-super-user',
+    roleCode: 'SUPER_ADMIN',
+    roleName: 'Super User',
+    roleLevel: 99,
+    role: 'super_admin',
+    roleLabel: 'Super Admin',
+    department: ownerDept,
+    status: 'ACTIVE',
+    mustChangePassword: false,
+    createdAt: new Date().toISOString(),
+  } as User);
   const title = cfg.noun;
 
   // Load V40 Data from backend
@@ -1979,13 +1785,14 @@ export function FamV40Body({
 
   return (
     <div className="fam-v40">
-      {/* 1. Connected Manufacturing 360 Ribbon - only for manufacturing pages (LOG-G07) */}
-      {pageId.startsWith('ops-') || pageId.startsWith('mfg-') ? (
-        <ConnectedManufacturingRibbon
-          selectedOrder={selectedOrder}
-          onOrderChange={setSelectedOrder}
-        />
-      ) : null}
+      {/* ERP-HDR-01: Upper-Left Module Title, Subtitle & 4 Blue Context Pills */}
+      <div className="page-head" style={{ marginBottom: 6 }}>
+        <div>
+          <h1 style={{ fontSize: 20, margin: '0 0 2px', fontWeight: 700 }}>{pageTitle}</h1>
+          <p style={{ margin: 0, color: '#64748b', fontSize: 13 }}>{pagePurpose}</p>
+        </div>
+      </div>
+      <ContextChips user={effectiveUser} owner={ownerDept} approval={undefined} />
 
       {/* 2. Top Record Controls Bar */}
       <RecordControlsBar
@@ -2028,10 +1835,12 @@ export function FamV40Body({
           <small>{pageId === 'auto-jobs' ? 'AI Risk Score' : 'At Risk'}</small>
           <b style={{ color: '#16a34a' }}>{pageId.startsWith('fin-') ? '14/100 Controlled' : pageId === 'pay-register' ? '21/100 Controlled' : pageId.startsWith('pay-') ? '14/100 Controlled' : pageId.startsWith('asset-') ? '21/100 Controlled' : '0 Low'}</b>
         </div>
-        <div className="v8-mini">
-          <small>{pageId === 'auto-jobs' ? 'Primary Metric' : fifthMetric.label}</small>
-          <b>{pageId === 'auto-jobs' ? '99.4%' : fifthMetric.value}</b>
-        </div>
+        {!pageId.startsWith('service-') && !pageId.startsWith('srv-') && (
+          <div className="v8-mini">
+            <small>{pageId === 'auto-jobs' ? 'Primary Metric' : fifthMetric.label}</small>
+            <b>{pageId === 'auto-jobs' ? '99.4%' : fifthMetric.value}</b>
+          </div>
+        )}
       </div>
 
       {/* Sub-Navigation Views (AST-G03) */}
@@ -2423,6 +2232,34 @@ export function FamV40Body({
                 ● Working
               </span>
             </div>
+            {/* 5-Column Asset Summary Table (AST-FU-01) */}
+            <div style={{ marginTop: 10, marginBottom: 12, overflowX: 'auto' }}>
+              <table className="table" style={{ width: '100%', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc' }}>
+                    <th style={{ padding: '6px 8px' }}>ASSET NUMBER</th>
+                    <th style={{ padding: '6px 8px' }}>ASSET NAME</th>
+                    <th style={{ padding: '6px 8px' }}>CATEGORY</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'right' }}>BOOK VALUE</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'center' }}>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '6px 8px', fontWeight: 600 }}>{activeRecord?.number || activeRecord?.['Asset ID'] || 'AST-TAL-001'}</td>
+                    <td style={{ padding: '6px 8px' }}>{activeRecord?.['Asset Name'] || activeRecord?.name || 'CNC Vertical Machining Center VMC-850'}</td>
+                    <td style={{ padding: '6px 8px' }}>{activeRecord?.Category || activeRecord?.category || 'Plant & Machinery'}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>{activeRecord?.['Book Value'] || activeRecord?.['Purchase Cost'] || activeRecord?.cost || '₹ 45,00,000'}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                      <span className="badge badge-success" style={{ background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
+                        {activeRecord?.status || 'Active'}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
             {/* 5-Stage Asset Lifecycle Stepper */}
             <div className="v9-stepper" style={{ marginBottom: 12 }}>
               {[
@@ -3407,6 +3244,46 @@ export function FamV40Body({
                 </div>
               ))}
             </div>
+
+            {/* PAY-RUN-01: Live Employee Calculation Table */}
+            {pageId === 'pay-processing' && (
+              <div style={{ marginTop: 12, overflowX: 'auto' }}>
+                <table className="table" style={{ width: '100%', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc' }}>
+                      <th style={{ padding: '6px 8px' }}>EMPLOYEE</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>GROSS</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>PF</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>ESI/PT/TDS</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>OT/BONUS</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>NET PAY</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center' }}>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { emp: 'EMP-0101 Rajesh Kumar (Senior Machining Lead)', gross: '₹ 85,000', pf: '₹ 1,800', statutory: '₹ 2,750', ot: '₹ 4,500', net: '₹ 84,950', status: 'Calculated' },
+                      { emp: 'EMP-0102 Sunita Patil (QA Inspector)', gross: '₹ 52,000', pf: '₹ 1,800', statutory: '₹ 1,450', ot: '₹ 2,100', net: '₹ 50,850', status: 'Calculated' },
+                      { emp: 'EMP-0103 Amit Deshmukh (Plant Technician)', gross: '₹ 48,000', pf: '₹ 1,800', statutory: '₹ 1,200', ot: '₹ 3,400', net: '₹ 48,400', status: 'Calculated' },
+                      { emp: 'EMP-0104 Priya Sharma (Logistics Coordinator)', gross: '₹ 62,000', pf: '₹ 1,800', statutory: '₹ 1,850', ot: '₹ 1,200', net: '₹ 59,550', status: 'Calculated' },
+                      { emp: 'EMP-0105 Ramesh Shinde (Stores Executive)', gross: '₹ 42,000', pf: '₹ 1,800', statutory: '₹ 950', ot: '₹ 2,800', net: '₹ 42,050', status: 'Calculated' },
+                    ].map((row) => (
+                      <tr key={row.emp} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 600 }}>{row.emp}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right' }}>{row.gross}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#dc2626' }}>{row.pf}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#dc2626' }}>{row.statutory}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#16a34a' }}>{row.ot}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#2563eb' }}>{row.net}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                          <span className="badge badge-success" style={{ background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{row.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className="v9-section">
@@ -3668,6 +3545,303 @@ export function FamV40Body({
         </div>
       ) : null}
 
+      {/* 3.16 Service Technician Board & Service Health Workspace (SRV-01) */}
+      {(pageId.startsWith('service-') || pageId.startsWith('srv-')) ? (
+        <div className="v9-grid" style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+          {/* Left Column: Technician Board 5-Stage Kanban */}
+          <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Technician Allocation Board</h3>
+                <div style={{ fontSize: 11, color: '#64748b' }}>Live dispatch, site execution status and technician workflow queue</div>
+              </div>
+              <button
+                type="button"
+                className="btn sm primary"
+                onClick={() => toast('All stage assignments refreshed. Notifications dispatched.')}
+              >
+                Update Actions
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+              {[
+                { stage: 'New', count: 4, color: '#3b82f6', items: [{ id: 'SRV-2026-0041', tech: 'Unassigned', priority: 'High', client: 'Tata Motors' }, { id: 'SRV-2026-0042', tech: 'Unassigned', priority: 'Normal', client: 'Mahindra' }] },
+                { stage: 'Assigned', count: 6, color: '#8b5cf6', items: [{ id: 'SRV-2026-0038', tech: 'Rohan Patil', priority: 'High', client: 'Bharat Forge' }, { id: 'SRV-2026-0039', tech: 'Vikas Kadam', priority: 'Normal', client: 'Thermax' }] },
+                { stage: 'On Site', count: 8, color: '#f59e0b', items: [{ id: 'SRV-2026-0035', tech: 'Sunil Jagtap', priority: 'Critical', client: 'Kalyani Tech' }, { id: 'SRV-2026-0036', tech: 'Amit Ghorpade', priority: 'High', client: 'Cummins India' }] },
+                { stage: 'Waiting Parts', count: 3, color: '#ef4444', items: [{ id: 'SRV-2026-0031', tech: 'Pravin Shinde', priority: 'Normal', client: 'Godrej Ind' }] },
+                { stage: 'Closed', count: 18, color: '#10b981', items: [{ id: 'SRV-2026-0027', tech: 'Deepak Rao', priority: 'Resolved', client: 'Bosch Chassis' }] },
+              ].map((col) => (
+                <div key={col.stage} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid ${col.color}`, paddingBottom: 4, marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>{col.stage}</span>
+                    <span style={{ background: col.color, color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10 }}>{col.count}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {col.items.map((item) => (
+                      <div key={item.id} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 4, padding: '6px 8px', fontSize: 11 }}>
+                        <div style={{ fontWeight: 700, color: '#1e293b' }}>{item.id}</div>
+                        <div style={{ color: '#64748b', fontSize: 10 }}>{item.client}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10 }}>
+                          <span style={{ color: '#2563eb' }}>{item.tech}</span>
+                          <span style={{ fontWeight: 600, color: item.priority === 'Critical' ? '#dc2626' : item.priority === 'High' ? '#ea580c' : '#16a34a' }}>{item.priority}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right Column: Service Health Metrics Panel */}
+          <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+            <h3 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700 }}>Service Health</h3>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>SLA compliance, warranty and engineering health</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { label: 'SLA Compliance Rate', val: '97.4%', sub: 'Target: >95.0%', color: '#16a34a' },
+                { label: 'First-Time Fix Rate (FTFR)', val: '89.2%', sub: 'Target: >85.0%', color: '#16a34a' },
+                { label: 'Active AMC Coverage', val: '142 Units', sub: '94% renewal rate', color: '#2563eb' },
+                { label: 'Warranty Exposure', val: '₹ 1.25 L', sub: 'Under reserved allowance', color: '#d97706' },
+                { label: 'Technician Utilization', val: '91.8%', sub: '18 active field engineers', color: '#2563eb' },
+              ].map((m) => (
+                <div key={m.label} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>{m.label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: m.color }}>{m.val}</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>{m.sub}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', gap: 6 }}>
+              <button
+                type="button"
+                className="btn sm"
+                style={{ flex: 1, fontSize: 11 }}
+                onClick={() => toast('Service Health report generated.')}
+              >
+                Health Audit
+              </button>
+              <button
+                type="button"
+                className="btn sm primary"
+                style={{ flex: 1, fontSize: 11 }}
+                onClick={() => toast('Field dispatch optimization completed.')}
+              >
+                Optimize Dispatch
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3.17 Document Management 2-Column Operational Workspace (DOC-02) */}
+      {pageId.startsWith('doc-') ? (
+        <div className="v9-grid" style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          {pageId === 'doc-folders' && (
+            <>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Folder Tree Hierarchy</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Corporate document repository folder taxonomy</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[
+                    { name: '📁 Root / Enterprise Repository', count: '1,420 docs', active: false },
+                    { name: '  📂 Engineering & Drawings (CAD/Spec)', count: '482 docs', active: true },
+                    { name: '  📂 Quality / PPAP / SOPs / Certifications', count: '310 docs', active: false },
+                    { name: '  📂 Finance & Statutory (GST/Audits)', count: '290 docs', active: false },
+                    { name: '  📂 Logistics & Shipping PODs', count: '188 docs', active: false },
+                    { name: '  📂 HR & Confidential Personnel Files', count: '150 docs', active: false },
+                  ].map((f) => (
+                    <div key={f.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: f.active ? '#eff6ff' : '#f8fafc', border: f.active ? '1px solid #3b82f6' : '1px solid #e2e8f0', borderRadius: 6, fontSize: 12 }}>
+                      <span style={{ fontWeight: f.active ? 700 : 500, color: f.active ? '#1e40af' : '#334155' }}>{f.name}</span>
+                      <span style={{ color: '#64748b', fontSize: 11 }}>{f.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Selected Node Editor</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Folder permissions, retention policy and metadata controls</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Folder Name</label>
+                    <input type="text" readOnly value="Engineering & Drawings (CAD/Spec)" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #cbd5e1', marginTop: 4, fontSize: 12, background: '#f8fafc' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Retention Rule</label>
+                      <input type="text" readOnly value="10 Years (Statutory)" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #cbd5e1', marginTop: 4, fontSize: 12, background: '#f8fafc' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Access Classification</label>
+                      <input type="text" readOnly value="Confidential (Internal)" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #cbd5e1', marginTop: 4, fontSize: 12, background: '#f8fafc' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <button type="button" className="btn sm primary" onClick={() => toast('Folder properties updated successfully.')}>Save Node Settings</button>
+                    <button type="button" className="btn sm" onClick={() => toast('Subfolder created.')}>+ Subfolder</button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {pageId === 'doc-documents' && (
+            <>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Document Library Repository</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Active repository files, encryption status and physical vault references</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[
+                    { code: 'DOC-2026-0001', name: 'Standard Operating Procedure - Machining V4.pdf', size: '2.4 MB', status: 'Approved' },
+                    { code: 'DOC-2026-0002', name: 'PPAP Level 3 Quality Approval - Gear Assembly.pdf', size: '8.1 MB', status: 'Approved' },
+                    { code: 'DOC-2026-0003', name: 'Master Plant Layout & Electrical Schematics.dwg', size: '14.5 MB', status: 'Draft' },
+                    { code: 'DOC-2026-0004', name: 'GSTR-3B Statutory Monthly Filing Oct-2026.pdf', size: '1.2 MB', status: 'Approved' },
+                  ].map((d) => (
+                    <div key={d.code} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12 }}>
+                      <div>
+                        <div style={{ fontWeight: 600, color: '#1e293b' }}>{d.name}</div>
+                        <span style={{ fontSize: 10, color: '#64748b' }}>{d.code} · {d.size}</span>
+                      </div>
+                      <span className="badge badge-success" style={{ background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600 }}>{d.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Document Actions & Security</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Digital signature sign-off, watermark stamping, and encryption checksums</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ padding: '8px 10px', background: '#f1f5f9', borderRadius: 6, fontSize: 12 }}>
+                    <b>Security Protocol:</b> AES-256 GCM at rest · TLS 1.3 in transit
+                  </div>
+                  <div style={{ padding: '8px 10px', background: '#f1f5f9', borderRadius: 6, fontSize: 12 }}>
+                    <b>SHA-256 Checksum:</b> <span style={{ fontFamily: 'monospace', fontSize: 10 }}>e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                    <button type="button" className="btn sm primary" onClick={() => toast('Digital signature verification completed.')}>Verify Signature</button>
+                    <button type="button" className="btn sm" onClick={() => toast('Confidential watermark applied.')}>Stamp Watermark</button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {pageId === 'doc-versions' && (
+            <>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Version History Timeline</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Audit changes, differential diffs and author commits</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { ver: 'v3.2 (Current)', date: '2026-11-15', author: 'Rajesh K. (Quality Lead)', change: 'Updated tolerance limits in Section 4.2' },
+                    { ver: 'v3.1', date: '2026-10-02', author: 'Sunita P. (QA Inspector)', change: 'Added CMM measurement frequency requirements' },
+                    { ver: 'v3.0', date: '2026-08-14', author: 'Amit D. (Plant Engineer)', change: 'Major revision for BS-VI Phase 2 compliance' },
+                  ].map((v) => (
+                    <div key={v.ver} style={{ padding: '8px 10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <b style={{ color: '#2563eb' }}>{v.ver}</b>
+                        <span style={{ fontSize: 11, color: '#64748b' }}>{v.date} · {v.author}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#334155', marginTop: 4 }}>{v.change}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>History Controls & Rollback</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Revert to previous revision or lock baseline for external audit</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <button type="button" className="btn sm primary" onClick={() => toast('Diff viewer opened between v3.2 and v3.1.')}>Compare Revisions (Diff)</button>
+                  <button type="button" className="btn sm" onClick={() => toast('Baseline snapshot created and tagged.')}>Tag Audit Baseline</button>
+                  <button type="button" className="btn sm danger" onClick={() => toast('Rollback preview initiated.')}>Rollback to Selected</button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {pageId === 'doc-permissions' && (
+            <>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Permission Matrix</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Role-based read, write, download and approval privileges</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+                  {[
+                    { role: 'Super Admin / CXO', read: '✓', write: '✓', download: '✓', approve: '✓' },
+                    { role: 'Department Head', read: '✓', write: '✓', download: '✓', approve: '✓' },
+                    { role: 'Quality Engineer', read: '✓', write: '✓', download: '✓', approve: '—' },
+                    { role: 'Operator / Viewer', read: '✓', write: '—', download: '—', approve: '—' },
+                  ].map((p) => (
+                    <div key={p.role} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4 }}>
+                      <span style={{ fontWeight: 600 }}>{p.role}</span>
+                      <span style={{ color: '#2563eb' }}>R:{p.read} W:{p.write} DL:{p.download} APP:{p.approve}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Validation Controls</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Audit permission compliance and revoke unverified access tokens</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <button type="button" className="btn sm primary" onClick={() => toast('Permission matrix validated against corporate RBAC policies.')}>Validate Permissions</button>
+                  <button type="button" className="btn sm" onClick={() => toast('Access log export initiated.')}>Export Access Audit Log</button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {pageId === 'doc-tags' && (
+            <>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Tag Master Registry</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Controlled corporate taxonomy and classification tags</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {['#IATF-16949', '#ISO-9001', '#PPAP-Level3', '#CriticalToQuality', '#Confidential-IP', '#Financial-Audit', '#Drawings-CAD', '#SOP-Standard'].map((t) => (
+                    <span key={t} style={{ padding: '4px 10px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 12, fontSize: 12, fontWeight: 600 }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Validation Controls</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Manage tag lifecycle and index cross-departmental keywords</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <button type="button" className="btn sm primary" onClick={() => toast('Document index rebuilt for all active tags.')}>Rebuild Tag Index</button>
+                  <button type="button" className="btn sm" onClick={() => toast('Tag merge utility opened.')}>Merge Duplicate Tags</button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {pageId === 'doc-search' && (
+            <>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Search Workspace</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Full-text OCR indexing, metadata filters and boolean search</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input type="text" placeholder="Search document OCR text, drawings, metadata..." style={{ flex: 1, padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13 }} />
+                  <button type="button" className="btn sm primary" onClick={() => toast('Full-text OCR scan executed.')}>Search</button>
+                </div>
+              </div>
+              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Operational Readiness</h3>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Index health, OCR processing queue and elastic search telemetry</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Index Status:</span>
+                    <b style={{ color: '#16a34a' }}>Healthy (100% In Sync)</b>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Indexed Documents:</span>
+                    <b>2,842 files</b>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
+
       {/* 4. Toolbar: Search, Status, Department Filter */}
       <div className="toolbar proc-toolbar" style={{ marginTop: 12 }}>
         <input
@@ -3693,6 +3867,7 @@ export function FamV40Body({
           <option value="ACTIVE">Active</option>
           <option value="PENDING">Pending</option>
           <option value="IN_TRANSIT">In Transit</option>
+          <option value="CALCULATED">Calculated</option>
           <option value="DELIVERED">Delivered</option>
           <option value="CLOSED">Closed</option>
         </select>
@@ -4099,6 +4274,7 @@ export function FamV40Body({
           <DynamicEntityForm
             title={title}
             columns={uniqueColumns}
+            pageId={pageId}
             onSave={(formVals) => {
               const codeCol = uniqueColumns.find((c) => c.type !== 'actions' && c.type !== 'docs');
               const codeKey = codeCol?.key || 'number';
@@ -4129,6 +4305,7 @@ export function FamV40Body({
           <DynamicEntityForm
             title={title}
             columns={uniqueColumns}
+            pageId={pageId}
             initialValues={activeRecord}
             onSave={(formVals) => {
               setDataRows((prev) =>

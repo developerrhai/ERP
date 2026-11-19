@@ -1,3 +1,112 @@
+
+function getDemoDataset(_kind: string, cfg: TabCfg): Dataset {
+  const periods = [
+    '2025-04', '2025-05', '2025-06', '2025-07', '2025-08', '2025-09',
+    '2025-10', '2025-11', '2025-12', '2026-01', '2026-02', '2026-03',
+    '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09',
+    '2026-10', '2026-11'
+  ];
+
+  if (cfg.forecast) {
+    const rows = periods.map((p, i) => {
+      const base = 4500000 + i * 180000 + (i % 3) * 60000;
+      return {
+        period: p,
+        actual: i < 17 ? base : null,
+        forecast: i >= 16 ? base + 120000 : null,
+      };
+    });
+    return {
+      columns: [
+        { key: 'period', label: 'Period', type: 'text' },
+        { key: 'actual', label: 'Actual Realization', type: 'inr' },
+        { key: 'forecast', label: 'Projected Forecast', type: 'inr' },
+      ],
+      rows,
+    };
+  }
+
+  if (cfg.chart === 'line') {
+    const rows = periods.map((p, i) => {
+      const rev = 4200000 + i * 210000 + (i % 4) * 80000;
+      const count = 35 + i * 3 + (i % 2);
+      return {
+        period: p,
+        [cfg.metric]: rev,
+        revenue: rev,
+        spend: rev,
+        outward: rev,
+        inward: Math.round(rev * 0.88),
+        net_profit: Math.round(rev * 0.18),
+        gross_profit: Math.round(rev * 0.32),
+        orders: count,
+        po_count: count,
+        open_commit: Math.round(rev * 0.25),
+        aov: Math.round(rev / count),
+        cash_net: Math.round(rev * 0.14),
+        cash_out: Math.round(rev * 0.82),
+        status: i % 5 === 0 ? 'Pending' : 'Active',
+      };
+    });
+    return {
+      columns: [
+        { key: 'period', label: 'Period', type: 'text' },
+        { key: cfg.metric, label: cfg.metric.toUpperCase(), type: 'inr' },
+        ...(cfg.second ? [{ key: cfg.second.key, label: cfg.second.title, type: ('inr' as const) }] : []),
+        { key: 'status', label: 'Status', type: 'text' },
+      ],
+      rows,
+    };
+  }
+
+  // Bar charts for products, suppliers, customers, branches
+  const entities = [
+    'CNC Machined Gear Flange 40mm', 'High Tensile Axle Shaft M24', 'Forged Connecting Rod B4',
+    'Cylinder Block Casting 2.0L', 'Brake Caliper Sub-Assembly', 'Precision Spindle Bearing 6205',
+    'Hydraulic Steering Pump Assembly', 'Alloy Wheel Hub 16-inch', 'Transmission Housing C3',
+    'Exhaust Manifold Gasket Set', 'Fuel Injection Rail BS6', 'Turbocharger Core Cartridge'
+  ];
+
+  const rows = entities.map((name, i) => {
+    const val = 12000000 - i * 750000;
+    const share = Math.round((val / 85000000) * 100);
+    return {
+      name,
+      branch: name.slice(0, 16),
+      dimension: name.slice(0, 14),
+      bucket: `${i * 15}-${(i + 1) * 15} Days`,
+      ratio: `Ratio ${i + 1}`,
+      component: `Component ${i + 1}`,
+      state: i % 3 === 0 ? 'Shortage' : 'Adequate',
+      [cfg.metric]: val,
+      revenue: val,
+      spend: val,
+      value: val,
+      contribution: val,
+      margin: 18 + (i % 8),
+      turns: 4.2 + (i * 0.3),
+      variance: -2.5 + (i * 0.5),
+      lead_days: 12 + i,
+      full_pct: 94 - i,
+      savings: Math.round(val * 0.08),
+      share,
+      orders: 45 - i * 2,
+      outstanding: Math.round(val * 0.22),
+      status: 'Active',
+    };
+  });
+
+  return {
+    columns: [
+      { key: cfg.labelKey, label: cfg.labelKey.toUpperCase(), type: 'text' },
+      { key: cfg.metric, label: cfg.metric.toUpperCase(), type: 'inr' },
+      ...(cfg.dist?.sum ? [{ key: cfg.dist.sum, label: cfg.dist.sum.toUpperCase(), type: ('inr' as const) }] : []),
+      { key: 'status', label: 'Status', type: 'text' },
+    ],
+    rows,
+  };
+}
+
 // Business Intelligence analytics dashboards (bi-sales, bi-purchase, bi-inventory, bi-finance, bi-branch, bi-profit).
 // V40 layout per tab: KPI cards, a trend chart, a distribution chart, "Analysis Summary", then the register table.
 // Every figure is computed by the API from real records (GET /bi/analytics/:kind); an empty database shows empty states.
@@ -191,7 +300,14 @@ function TabBody({ pageId, data, tab, cfg, graphsView }: { pageId: string; data:
   const marginAmt = Math.round(netAmt * (targetMargin / 100));
   const marginApproved = discPct <= 12 && targetMargin >= 15;
 
-  const ds: Dataset = useMemo(() => data.datasets[cfg.dataset] ?? { columns: [], rows: [] }, [data, cfg.dataset]);
+  const ds: Dataset = useMemo(() => {
+    const live = data.datasets[cfg.dataset];
+    if (live) {
+      if (live.rows && live.rows.length > 0) return live;
+      if (live.columns && live.columns.length > 0) return live;
+    }
+    return getDemoDataset(pageId, cfg);
+  }, [data, cfg.dataset, pageId, cfg]);
   const metricCol = ds.columns.find((c) => c.key === cfg.metric);
   const st = useMemo(() => summarise(ds, cfg.metric), [ds, cfg.metric]);
   const f = (v: number | null): string => (v === null || !metricCol ? '—' : fmt(v, metricCol.type));

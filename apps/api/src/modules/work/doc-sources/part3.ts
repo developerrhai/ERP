@@ -33,6 +33,7 @@ export const PART3: DocSource[] = [
 
   // Business Documents / Integrated Plant Flow (all read work_movements)
   movement('document-movement-center'),
+  movement('dms-movement-center'),
   movement('dept-work-engineering'),
   movement('dept-work-administration'),
   movement('maint-part-movement', `NOT ${INTERPLANT} AND ${MAINT_DOCS}`),
