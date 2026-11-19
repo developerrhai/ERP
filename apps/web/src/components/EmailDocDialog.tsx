@@ -18,7 +18,7 @@ const EMAIL_FILE_MAX_COUNT = 3;
 const toBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     const r = new FileReader();
-    r.onload = () => resolve(String(r.result).split(',')[1] ?? '');
+    r.onload = () => resolve((typeof r.result === 'string' ? r.result : '').split(',')[1] ?? '');
     r.onerror = () => reject(new Error(`Could not read ${file.name}.`));
     r.readAsDataURL(file);
   });

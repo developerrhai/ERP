@@ -1,5 +1,6 @@
 // Client of GET /sales/v40/:pageId - the V40 tab views of the CRM and Sales pages (apps/api/src/modules/sales/v40-views.ts).
 import { request } from '../../lib/api';
+import { registry } from '../../lib/registry';
 import { FAM_V40_IDS } from '../v40fam/famIds';
 
 export type V40ColType = 'text' | 'date' | 'inr' | 'num' | 'pill' | 'docs' | 'actions' | 'time';
@@ -76,26 +77,6 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
     return getPayrollV40(pageId, p);
   }
 
-  // Service / Support V40
-  if (pageId.startsWith('service-') || pageId.startsWith('srv-')) {
-    return getServiceV40(pageId, p);
-  }
-
-  // Document Management V40
-  if (pageId.startsWith('doc-') || pageId.startsWith('dms-')) {
-    return getDocV40(pageId, p);
-  }
-
-  // Projects V40
-  if (pageId.startsWith('proj-')) {
-    return getProjectV40(pageId, p);
-  }
-
-  // Communication V40
-  if (pageId.startsWith('comm-')) {
-    return getCommV40(pageId, p);
-  }
-
   // If this is a finance module, return complete V40 structure
   if (pageId.startsWith('fin-')) {
     return getFinanceV40(pageId, p);
@@ -104,6 +85,26 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
   // If this is a procurement / SCM module, return complete V40 structure with rich demo data
   if (pageId.startsWith('scm-')) {
     return getScmV40(pageId, p);
+  }
+
+  // If this is a service module, return complete V40 structure (SRV-01, SRV-02)
+  if (pageId.startsWith('service-') || pageId.startsWith('srv-')) {
+    return getServiceV40(pageId, p);
+  }
+
+  // If this is a document management module, return complete V40 structure (DOC-02, DOC-03)
+  if (pageId.startsWith('doc-') || pageId === 'dms-movement-center' || pageId.startsWith('dms-')) {
+    return getDocV40(pageId, p);
+  }
+
+  // If this is a projects module, return complete V40 structure (PRJ-01)
+  if (pageId.startsWith('proj-')) {
+    return getProjectV40(pageId, p);
+  }
+
+  // If this is a communication module, return complete V40 structure (COM-01)
+  if (pageId.startsWith('comm-')) {
+    return getCommV40(pageId, p);
   }
 
   // If this is an inventory module, /inventory/v40 returns { data: { columns, statuses, rows }, meta: { total, ... } }
@@ -154,16 +155,39 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
         : FAM_V40_IDS.has(pageId)
           ? '/fam'
           : '/sales';
-  const r = await request<V40Row[]>(`${base}/v40/${pageId}?${qs.toString()}`);
-  const meta = (r.meta ?? {}) as unknown as Partial<V40Page> & { total?: number };
-  return {
-    rows: r.data,
-    columns: meta.columns ?? [],
-    total: meta.total ?? r.data.length,
-    panel: meta.panel ?? null,
-    audit: Boolean(meta.audit),
-    noSource: meta.noSource ?? [],
-  };
+  try {
+    const r = await request<V40Row[]>(`${base}/v40/${pageId}?${qs.toString()}`);
+    const meta = (r.meta ?? {}) as unknown as Partial<V40Page> & { total?: number };
+    return {
+      rows: r.data,
+      columns: meta.columns ?? [],
+      total: meta.total ?? r.data.length,
+      panel: meta.panel ?? null,
+      audit: Boolean(meta.audit),
+      noSource: meta.noSource ?? [],
+    };
+  } catch {
+    const profileFields = registry.profiles[pageId]?.fields ?? [];
+    const cols: V40Column[] = profileFields.map((fld) => {
+      const isNum = /amount|total|cost|price|gross|net|tax|gst|score|percent|%|qty|quantity|count|hours|rate|value/i.test(fld);
+      const isDate = /date|due|valid|till|from|time|period|dob|doj/i.test(fld);
+      const isPill = /status|stage|priority|type|mode|consent|level/i.test(fld);
+      return {
+        key: fld,
+        label: fld,
+        type: isNum ? 'num' : isDate ? 'date' : isPill ? 'pill' : 'text',
+        source: true,
+      };
+    });
+    return {
+      rows: [],
+      columns: cols,
+      total: 0,
+      panel: null,
+      audit: false,
+      noSource: [],
+    };
+  }
 }
 
 function getAutoV40(pageId: string, p: V40Params): V40Page {
@@ -393,9 +417,9 @@ function getPayrollV40(pageId: string, p: V40Params): V40Page {
       { key: 'Basic %', label: 'Basic %', type: 'text', source: true },
       { key: 'HRA %', label: 'HRA %', type: 'text', source: true },
       { key: 'Allowances', label: 'Allowances', type: 'inr', source: true },
+      { key: 'Variable Pay', label: 'Variable Pay', type: 'inr', source: true },
       { key: 'Employer PF', label: 'Employer PF', type: 'text', source: true },
       { key: 'Employer ESIC', label: 'Employer ESIC', type: 'text', source: true },
-      { key: 'Variable Pay', label: 'Variable Pay', type: 'inr', source: true },
       { key: 'Effective From', label: 'Effective From', type: 'date', source: true },
       { key: 'Project Number', label: 'Project Number', type: 'text', source: true },
       { key: 'Status', label: 'Status', type: 'pill', source: true },
@@ -424,7 +448,11 @@ function getPayrollV40(pageId: string, p: V40Params): V40Page {
         'Basic %': item.b,
         'HRA %': item.h,
         Allowances: item.al,
+        'Variable Pay': `${5000 + (i % 5) * 2500}`,
         'Employer PF': item.epf,
+        'Employer ESIC': '3.25%',
+        'Effective From': '2026-04-01',
+        'Project Number': `PRJ-AUTO-0${(i % 5) + 1}`,
         status,
         Status: status,
       };
@@ -1555,6 +1583,508 @@ function getFinanceV40(pageId: string, p: V40Params): V40Page {
   };
 }
 
+function getProjectV40(_pageId: string, p: V40Params): V40Page {
+  let columns: V40Column[] = [];
+  let allRows: V40Row[] = [];
+
+  const customers = ['Tata Motors Ltd', 'Mahindra & Mahindra', 'Bharat Forge Ltd', 'Cummins India', 'Bajaj Auto Ltd'];
+  const managers = ['Rajesh Sawant', 'Pooja Sharma', 'Amit Deshmukh', 'Vikram Jadhav', 'Nitin Kulkarni'];
+
+  columns = [
+    { key: 'Project No', label: 'Project No', type: 'text', source: true },
+    { key: 'Project Name', label: 'Project Name', type: 'text', source: true },
+    { key: 'Customer', label: 'Customer', type: 'text', source: true },
+    { key: 'Start Date', label: 'Start Date', type: 'date', source: true },
+    { key: 'End Date', label: 'End Date', type: 'date', source: true },
+    { key: 'Contract Value', label: 'Contract Value', type: 'inr', source: true },
+    { key: 'Approved Budget', label: 'Approved Budget', type: 'inr', source: true },
+    { key: 'Actual Cost', label: 'Actual Cost', type: 'inr', source: true },
+    { key: 'EVM Index', label: 'EVM Index', type: 'pill', source: true },
+    { key: 'Project Manager', label: 'Project Manager', type: 'text', source: true },
+    { key: 'Status', label: 'Status', type: 'pill', source: true },
+    { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+  ];
+
+  const projects = [
+    { name: 'EV Powertrain Inverter Line 4', val: 12500000, bud: 10500000, act: 8900000, evm: 'CPI 1.08 / SPI 1.02' },
+    { name: 'High Precision CNC Milling Expansion', val: 8400000, bud: 7200000, act: 6850000, evm: 'CPI 1.05 / SPI 0.98' },
+    { name: 'SPPM Valve Assembly Automation Cell', val: 14800000, bud: 12000000, act: 11200000, evm: 'CPI 1.07 / SPI 1.04' },
+    { name: 'Chakan Plant Robotics Retrofit Phase 2', val: 6200000, bud: 5400000, act: 4950000, evm: 'CPI 1.09 / SPI 1.01' },
+    { name: 'Export Cylinder Block Tooling Package', val: 9500000, bud: 8100000, act: 8450000, evm: 'CPI 0.96 / SPI 0.95' },
+    { name: 'Talwade Facility Cleanroom ISO-8 Build', val: 4500000, bud: 3900000, act: 3200000, evm: 'CPI 1.22 / SPI 1.06' },
+  ];
+
+  allRows = Array.from({ length: 24 }, (_, i) => {
+    const item = projects[i % projects.length]!;
+    const code = `PRJ-AUTO-${String(i + 1).padStart(3, '0')}`;
+    const status = i % 5 === 0 ? 'Planning' : i % 5 === 4 ? 'Completed' : 'Active';
+    return {
+      id: code,
+      number: code,
+      'Project No': code,
+      'Project Name': `${item.name} Phase ${1 + (i % 3)}`,
+      Customer: customers[i % customers.length]!,
+      'Start Date': '2026-04-01',
+      'End Date': '2026-12-31',
+      'Contract Value': String(item.val),
+      'Approved Budget': String(item.bud),
+      'Actual Cost': String(item.act),
+      'EVM Index': item.evm,
+      'Project Manager': managers[i % managers.length]!,
+      status,
+      Status: status,
+    };
+  });
+
+  let filtered = allRows;
+  if (p.q) {
+    const qLower = p.q.toLowerCase();
+    filtered = filtered.filter((r) =>
+      Object.values(r).some((v) => typeof v === 'string' && v.toLowerCase().includes(qLower)),
+    );
+  }
+  if (p.status) {
+    filtered = filtered.filter((r) => (r.status ?? '').toLowerCase() === p.status?.toLowerCase());
+  }
+
+  const pageIndex = Math.max(1, p.page || 1);
+  const pageSize = p.size || 25;
+  const start = (pageIndex - 1) * pageSize;
+  const pagedRows = filtered.slice(start, start + pageSize);
+
+  return {
+    rows: pagedRows,
+    columns,
+    total: filtered.length,
+    panel: null,
+    audit: false,
+    noSource: [],
+  };
+}
+
+function getCommV40(_pageId: string, p: V40Params): V40Page {
+  const columns: V40Column[] = [
+    { key: 'Message Code', label: 'Message Code', type: 'text', source: true },
+    { key: 'Customer / Recipient', label: 'Customer / Recipient', type: 'text', source: true },
+    { key: 'Channel', label: 'Channel', type: 'pill', source: true },
+    { key: 'Template Name', label: 'Template Name', type: 'text', source: true },
+    { key: 'Sent At', label: 'Sent At', type: 'date', source: true },
+    { key: 'Delivery Status', label: 'Delivery Status', type: 'pill', source: true },
+    { key: 'Linked Document', label: 'Linked Document', type: 'text', source: true },
+    { key: 'Opt In Verified', label: 'Opt In Verified', type: 'pill', source: true },
+    { key: 'Status', label: 'Status', type: 'pill', source: true },
+    { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+  ];
+
+  const recipients = [
+    { name: 'Tata Motors SCM Desk', phone: '+91 98220 12345' },
+    { name: 'Bharat Forge Procurement', phone: '+91 98230 54321' },
+    { name: 'Mahindra Auto Quality Desk', phone: '+91 98210 98765' },
+    { name: 'Cummins India Spares', phone: '+91 98200 45678' },
+    { name: 'Bajaj Auto Plant 2', phone: '+91 98190 32109' },
+  ];
+
+  const templates = [
+    'Dispatch Notification & E-Way Bill',
+    'GST Tax Invoice Ready & Payment Link',
+    'Quality Inspection Certificate Attached',
+    'PO Acknowledgment & Delivery Schedule',
+    'Monthly Statement of Account',
+  ];
+
+  const allRows: V40Row[] = Array.from({ length: 24 }, (_, i) => {
+    const code = `MSG-26-${String(i + 1).padStart(4, '0')}`;
+    const rec = recipients[i % recipients.length]!;
+    const chan = i % 3 === 0 ? 'WhatsApp' : i % 3 === 1 ? 'Email' : 'SMS';
+    const status = i % 6 === 0 ? 'Failed' : i % 4 === 0 ? 'Delivered' : 'Read';
+    return {
+      id: code,
+      number: code,
+      'Message Code': code,
+      'Customer / Recipient': `${rec.name} (${rec.phone})`,
+      Channel: chan,
+      'Template Name': templates[i % templates.length]!,
+      'Sent At': '2026-11-15 14:30',
+      'Delivery Status': status,
+      'Linked Document': `INV-26-${String(100 + i)}`,
+      'Opt In Verified': 'Yes',
+      status,
+      Status: status,
+    };
+  });
+
+  let filtered = allRows;
+  if (p.q) {
+    const qLower = p.q.toLowerCase();
+    filtered = filtered.filter((r) =>
+      Object.values(r).some((v) => typeof v === 'string' && v.toLowerCase().includes(qLower)),
+    );
+  }
+  if (p.status) {
+    filtered = filtered.filter((r) => (r.status ?? '').toLowerCase() === p.status?.toLowerCase());
+  }
+
+  const pageIndex = Math.max(1, p.page || 1);
+  const pageSize = p.size || 25;
+  const start = (pageIndex - 1) * pageSize;
+  const pagedRows = filtered.slice(start, start + pageSize);
+
+  return {
+    rows: pagedRows,
+    columns,
+    total: filtered.length,
+    panel: null,
+    audit: false,
+    noSource: [],
+  };
+}
+
+function getServiceV40(pageId: string, p: V40Params): V40Page {
+  let columns: V40Column[] = [];
+  let allRows: V40Row[] = [];
+
+  const techNames = ['Ravi Kumar', 'Sita Patil', 'Amit Deshmukh', 'Pooja Sharma', 'Kiran Shinde', 'Vikram Jadhav', 'Nitin Kulkarni', 'Sneha Joshi'];
+  const territories = ['Pune HQ / Talwade', 'Sawardari Plant', 'Varale Plant', 'Chakan MIDC', 'Bhosari Industrial Area'];
+  const skillSets = [
+    'CNC Machines, Robotics Level 4, MIG Welding',
+    'PLC Automation, SCADA, Electrical Wiring',
+    'Hydraulics, Pneumatics, Mechanical Overhaul',
+    'Quality Calibration, CMM, Metrology',
+    'Sensors, IoT Telemetry, Drive Programming',
+    'HVAC, Chiller Systems, Preventive Maintenance',
+  ];
+
+  if (pageId === 'service-technicians' || pageId === 'srv-technicians') {
+    columns = [
+      { key: 'Technician ID', label: 'Technician ID', type: 'text', source: true },
+      { key: 'Technician Name', label: 'Technician Name', type: 'text', source: true },
+      { key: 'Skills', label: 'Skills', type: 'text', source: true },
+      { key: 'Territory', label: 'Territory', type: 'text', source: true },
+      { key: 'Active Jobs', label: 'Active Jobs', type: 'num', source: true },
+      { key: 'Max Load', label: 'Max Load', type: 'num', source: true },
+      { key: 'Contact', label: 'Contact', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 24 }, (_, i) => {
+      const code = `TECH-26-${String(i + 1).padStart(4, '0')}`;
+      const name = techNames[i % techNames.length]!;
+      const status = i === 5 ? 'On Leave' : i === 11 ? 'In Training' : 'Active';
+      const activeJobs = (i % 5) + 1;
+      const maxLoad = 6;
+      return {
+        id: code,
+        number: code,
+        'Technician ID': code,
+        'Technician Name': name,
+        Skills: skillSets[i % skillSets.length]!,
+        Territory: territories[i % territories.length]!,
+        'Active Jobs': String(activeJobs),
+        'Max Load': String(maxLoad),
+        Contact: `+91 98230 ${String(10000 + i * 111).slice(0, 5)}`,
+        status,
+        Status: status,
+      };
+    });
+  } else {
+    columns = [
+      { key: 'Ticket No', label: 'Ticket No', type: 'text', source: true },
+      { key: 'Customer', label: 'Customer', type: 'text', source: true },
+      { key: 'Subject', label: 'Subject', type: 'text', source: true },
+      { key: 'Priority', label: 'Priority', type: 'pill', source: true },
+      { key: 'Technician', label: 'Technician', type: 'text', source: true },
+      { key: 'SLA Status', label: 'SLA Status', type: 'pill', source: true },
+      { key: 'Created Date', label: 'Created Date', type: 'date', source: true },
+      { key: 'Required By', label: 'Required By', type: 'date', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const priorities = ['High', 'Medium', 'Critical', 'Low'];
+    const customers = ['Tata Motors', 'Bharat Forge', 'Mahindra Auto', 'Bajaj Auto', 'Cummins India', 'Kirloskar Oil'];
+    const subjects = ['CNC spindle vibration alert', 'Hydraulic press leak inspection', 'Robotic arm calibration error', 'PLC comm failure on Line 2', 'Coolant pump replacement', 'Emergency sensor diagnostic'];
+    allRows = Array.from({ length: 25 }, (_, i) => {
+      const code = `TCK-26-${String(i + 1).padStart(4, '0')}`;
+      const status = i % 4 === 0 ? 'Assigned' : i % 4 === 1 ? 'On Site' : i % 4 === 2 ? 'Waiting Parts' : 'Closed';
+      return {
+        id: code,
+        number: code,
+        'Ticket No': code,
+        Customer: customers[i % customers.length]!,
+        Subject: subjects[i % subjects.length]!,
+        Priority: priorities[i % priorities.length]!,
+        Technician: techNames[i % techNames.length]!,
+        'SLA Status': i % 5 === 0 ? 'Breached' : 'Within SLA',
+        'Created Date': '2026-11-10',
+        'Required By': '2026-11-18',
+        status,
+        Status: status,
+      };
+    });
+  }
+
+  let filtered = allRows;
+  if (p.q) {
+    const qLower = p.q.toLowerCase();
+    filtered = filtered.filter((r) =>
+      Object.values(r).some((v) => typeof v === 'string' && v.toLowerCase().includes(qLower)),
+    );
+  }
+  if (p.status) {
+    filtered = filtered.filter((r) => (r.status ?? '').toLowerCase() === p.status?.toLowerCase());
+  }
+
+  const pageIndex = Math.max(1, p.page || 1);
+  const pageSize = p.size || 25;
+  const start = (pageIndex - 1) * pageSize;
+  const pagedRows = filtered.slice(start, start + pageSize);
+
+  return {
+    rows: pagedRows,
+    columns,
+    total: filtered.length,
+    panel: null,
+    audit: false,
+    noSource: [],
+  };
+}
+
+function getDocV40(pageId: string, p: V40Params): V40Page {
+  let columns: V40Column[] = [];
+  let allRows: V40Row[] = [];
+
+  const depts = ['Administration', 'Engineering', 'Procurement', 'Quality', 'Finance', 'Logistics', 'HRMS'];
+
+  if (pageId === 'doc-folders' || pageId.includes('folder')) {
+    columns = [
+      { key: 'Folder Code', label: 'Folder Code', type: 'text', source: true },
+      { key: 'Folder Name', label: 'Folder Name', type: 'text', source: true },
+      { key: 'Parent Folder', label: 'Parent Folder', type: 'text', source: true },
+      { key: 'Owner Department', label: 'Owner Department', type: 'text', source: true },
+      { key: 'Document Count', label: 'Document Count', type: 'num', source: true },
+      { key: 'Storage Size', label: 'Storage Size', type: 'text', source: true },
+      { key: 'Permission Group', label: 'Permission Group', type: 'text', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const folders = [
+      { name: 'Corporate Governance & Board', parent: 'Root', size: '124 MB', perm: 'Executive Board', count: 48 },
+      { name: 'Engineering CAD & Technical Drawings', parent: 'Root', size: '1.4 GB', perm: 'Design & R&D', count: 312 },
+      { name: 'Vendor Contracts & Agreements', parent: 'Root', size: '420 MB', perm: 'SCM & Finance', count: 184 },
+      { name: 'Quality Inspection & Audit Certificates', parent: 'Root', size: '680 MB', perm: 'Quality Team', count: 240 },
+      { name: 'Financial Ledgers & Tax Filings', parent: 'Root', size: '940 MB', perm: 'Finance Accounts', count: 520 },
+      { name: 'Logistics Gate Passes & Consignment Notes', parent: 'Root', size: '360 MB', perm: 'Logistics Operations', count: 410 },
+      { name: 'Human Resource Policies & Offer Letters', parent: 'Root', size: '280 MB', perm: 'HRMS Management', count: 165 },
+    ];
+    allRows = folders.map((f, i) => {
+      const code = `FLD-26-${String(i + 1).padStart(4, '0')}`;
+      return {
+        id: code,
+        number: code,
+        'Folder Code': code,
+        'Folder Name': f.name,
+        'Parent Folder': f.parent,
+        'Owner Department': depts[i % depts.length]!,
+        'Document Count': String(f.count),
+        'Storage Size': f.size,
+        'Permission Group': f.perm,
+        status: 'Active',
+        Status: 'Active',
+      };
+    });
+  } else if (pageId === 'doc-versions' || pageId.includes('version')) {
+    columns = [
+      { key: 'Version Code', label: 'Version Code', type: 'text', source: true },
+      { key: 'Document No', label: 'Document No', type: 'text', source: true },
+      { key: 'Version No', label: 'Version No', type: 'pill', source: true },
+      { key: 'Change Summary', label: 'Change Summary', type: 'text', source: true },
+      { key: 'Changed By', label: 'Changed By', type: 'text', source: true },
+      { key: 'Effective Date', label: 'Effective Date', type: 'date', source: true },
+      { key: 'Approval Status', label: 'Approval Status', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 20 }, (_, i) => {
+      const code = `VER-26-${String(i + 1).padStart(4, '0')}`;
+      const docNo = `DOC-26-${String((i % 7) + 1).padStart(4, '0')}`;
+      const vno = `v${1 + Math.floor(i / 5)}.${i % 5}`;
+      return {
+        id: code,
+        number: code,
+        'Version Code': code,
+        'Document No': docNo,
+        'Version No': vno,
+        'Change Summary': `Updated statutory clauses and revised standard operating tolerances.`,
+        'Changed By': 'Pooja Sharma',
+        'Effective Date': '2026-11-01',
+        'Approval Status': i % 3 === 0 ? 'Pending' : 'Approved',
+        status: 'Active',
+        Status: 'Active',
+      };
+    });
+  } else if (pageId === 'doc-permissions' || pageId.includes('permission')) {
+    columns = [
+      { key: 'Permission Code', label: 'Permission Code', type: 'text', source: true },
+      { key: 'Role / Department', label: 'Role / Department', type: 'text', source: true },
+      { key: 'Access Level', label: 'Access Level', type: 'pill', source: true },
+      { key: 'Folder / Category', label: 'Folder / Category', type: 'text', source: true },
+      { key: 'Can Read', label: 'Can Read', type: 'pill', source: true },
+      { key: 'Can Edit', label: 'Can Edit', type: 'pill', source: true },
+      { key: 'Can Delete', label: 'Can Delete', type: 'pill', source: true },
+      { key: 'Can Share', label: 'Can Share', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = depts.map((d, i) => {
+      const code = `PRM-26-${String(i + 1).padStart(4, '0')}`;
+      return {
+        id: code,
+        number: code,
+        'Permission Code': code,
+        'Role / Department': d,
+        'Access Level': i === 0 ? 'Full Control' : 'Read/Write',
+        'Folder / Category': `${d} Standard Documents`,
+        'Can Read': 'Yes',
+        'Can Edit': i === 0 || i === 4 ? 'Yes' : 'Restricted',
+        'Can Delete': i === 0 ? 'Yes' : 'No',
+        'Can Share': i <= 2 ? 'Yes' : 'No',
+        status: 'Active',
+        Status: 'Active',
+      };
+    });
+  } else if (pageId === 'doc-tags' || pageId.includes('tag')) {
+    columns = [
+      { key: 'Tag Code', label: 'Tag Code', type: 'text', source: true },
+      { key: 'Tag Name', label: 'Tag Name', type: 'text', source: true },
+      { key: 'Category', label: 'Category', type: 'text', source: true },
+      { key: 'Applied Count', label: 'Applied Count', type: 'num', source: true },
+      { key: 'Color Hex', label: 'Color Hex', type: 'text', source: true },
+      { key: 'Mandatory', label: 'Mandatory', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const tags = [
+      { name: 'Statutory GST', cat: 'Tax & Compliance', count: 320, color: '#2563eb', mand: 'Yes' },
+      { name: 'Confidential NDA', cat: 'Legal & Executive', count: 85, color: '#dc2626', mand: 'Yes' },
+      { name: 'Engineering ISO9001', cat: 'Quality Standards', count: 412, color: '#16a34a', mand: 'No' },
+      { name: 'Vendor Verified', cat: 'Procurement', count: 194, color: '#0891b2', mand: 'No' },
+      { name: 'Board Resolution', cat: 'Governance', count: 42, color: '#7c3aed', mand: 'Yes' },
+    ];
+    allRows = tags.map((t, i) => {
+      const code = `TAG-26-${String(i + 1).padStart(4, '0')}`;
+      return {
+        id: code,
+        number: code,
+        'Tag Code': code,
+        'Tag Name': t.name,
+        Category: t.cat,
+        'Applied Count': String(t.count),
+        'Color Hex': t.color,
+        Mandatory: t.mand,
+        status: 'Active',
+        Status: 'Active',
+      };
+    });
+  } else if (pageId === 'doc-search' || pageId.includes('search')) {
+    columns = [
+      { key: 'Result ID', label: 'Result ID', type: 'text', source: true },
+      { key: 'Document No', label: 'Document No', type: 'text', source: true },
+      { key: 'Title', label: 'Title', type: 'text', source: true },
+      { key: 'Department', label: 'Department', type: 'text', source: true },
+      { key: 'Folder', label: 'Folder', type: 'text', source: true },
+      { key: 'Indexed Fields', label: 'Indexed Fields', type: 'text', source: true },
+      { key: 'Matched Keywords', label: 'Matched Keywords', type: 'text', source: true },
+      { key: 'Relevance Score', label: 'Relevance Score', type: 'pill', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    allRows = Array.from({ length: 15 }, (_, i) => {
+      const code = `SRC-26-${String(i + 1).padStart(4, '0')}`;
+      const docNo = `DOC-26-${String(i + 1).padStart(4, '0')}`;
+      return {
+        id: code,
+        number: code,
+        'Result ID': code,
+        'Document No': docNo,
+        Title: `Sawant Group Operational Spec Part ${i + 1}`,
+        Department: depts[i % depts.length]!,
+        Folder: 'Corporate Master Documents',
+        'Indexed Fields': 'Title, Content, Metadata, Author, Project',
+        'Matched Keywords': 'Contract, Compliance, 2026, Revision',
+        'Relevance Score': '98% Match',
+        status: 'Active',
+        Status: 'Active',
+      };
+    });
+  } else {
+    columns = [
+      { key: 'Document No', label: 'Document No', type: 'text', source: true },
+      { key: 'Title', label: 'Title', type: 'text', source: true },
+      { key: 'Folder', label: 'Folder', type: 'text', source: true },
+      { key: 'Category', label: 'Category', type: 'text', source: true },
+      { key: 'Version', label: 'Version', type: 'pill', source: true },
+      { key: 'File Format', label: 'File Format', type: 'text', source: true },
+      { key: 'File Size', label: 'File Size', type: 'text', source: true },
+      { key: 'Uploaded By', label: 'Uploaded By', type: 'text', source: true },
+      { key: 'Uploaded On', label: 'Uploaded On', type: 'date', source: true },
+      { key: 'Status', label: 'Status', type: 'pill', source: true },
+      { key: 'Actions', label: 'Actions', type: 'actions', source: true },
+    ];
+    const docs = [
+      { t: 'FY 2026-27 Board Resolution - Plant Expansion', f: 'Corporate Governance', c: 'Governance', fmt: 'PDF (.pdf)', sz: '2.4 MB' },
+      { t: 'Component 420-B CNC Milling Blueprint v3', f: 'Engineering CAD Drawings', c: 'Technical Spec', fmt: 'DWG / PDF', sz: '14.2 MB' },
+      { t: 'Master Vendor Supply Agreement - Steel Strips', f: 'Vendor Contracts', c: 'Commercial Contract', fmt: 'Word (.docx)', sz: '1.8 MB' },
+      { t: 'ISO 9001:2015 Recertification Audit Report', f: 'Quality Inspection', c: 'Audit Report', fmt: 'PDF (.pdf)', sz: '4.6 MB' },
+      { t: 'GSTR-3B Monthly Return Filing Acknowledgment', f: 'Financial Ledgers', c: 'Statutory Tax', fmt: 'Excel (.xlsx)', sz: '820 KB' },
+      { t: 'Consignment Gate Pass - Pune to Sanand Dispatch', f: 'Logistics Gate Passes', c: 'Movement Pass', fmt: 'PDF (.pdf)', sz: '640 KB' },
+    ];
+    allRows = Array.from({ length: 24 }, (_, i) => {
+      const item = docs[i % docs.length]!;
+      const code = `DOC-26-${String(i + 1).padStart(4, '0')}`;
+      const status = i % 5 === 0 ? 'Draft' : i % 5 === 1 ? 'Under Review' : 'Active';
+      return {
+        id: code,
+        number: code,
+        'Document No': code,
+        Title: `${item.t} #${i + 1}`,
+        Folder: item.f,
+        Category: item.c,
+        Version: `v1.${i % 3}`,
+        'File Format': item.fmt,
+        'File Size': item.sz,
+        'Uploaded By': 'Pooja Sharma',
+        'Uploaded On': '2026-11-12',
+        status,
+        Status: status,
+      };
+    });
+  }
+
+  let filtered = allRows;
+  if (p.q) {
+    const qLower = p.q.toLowerCase();
+    filtered = filtered.filter((r) =>
+      Object.values(r).some((v) => typeof v === 'string' && v.toLowerCase().includes(qLower)),
+    );
+  }
+  if (p.status) {
+    filtered = filtered.filter((r) => (r.status ?? '').toLowerCase() === p.status?.toLowerCase());
+  }
+
+  const pageIndex = Math.max(1, p.page || 1);
+  const pageSize = p.size || 25;
+  const start = (pageIndex - 1) * pageSize;
+  const pagedRows = filtered.slice(start, start + pageSize);
+
+  return {
+    rows: pagedRows,
+    columns,
+    total: filtered.length,
+    panel: null,
+    audit: false,
+    noSource: [],
+  };
+}
+
 function getScmV40(pageId: string, p: V40Params): V40Page {
   let columns: V40Column[] = [];
   let allRows: V40Row[] = [];
@@ -1946,262 +2476,3 @@ function getScmV40(pageId: string, p: V40Params): V40Page {
   };
 }
 
-
-// =========================================================================
-// SERVICE / SUPPORT V40 HANDLER (SRV-02)
-// =========================================================================
-function getServiceV40(_pageId: string, p: V40Params): V40Page {
-  const columns: V40Column[] = [
-    { key: 'Technician ID', label: 'TECHNICIAN ID', type: 'text', source: true },
-    { key: 'Technician Name', label: 'TECHNICIAN NAME', type: 'text', source: true },
-    { key: 'Skill Level', label: 'SKILL LEVEL', type: 'pill', source: true },
-    { key: 'Allocated Ticket', label: 'ALLOCATED TICKET', type: 'text', source: true },
-    { key: 'Customer', label: 'CUSTOMER', type: 'text', source: true },
-    { key: 'Site Location', label: 'SITE LOCATION', type: 'text', source: true },
-    { key: 'Stage', label: 'STAGE', type: 'pill', source: true },
-    { key: 'Status', label: 'STATUS', type: 'pill', source: true },
-    { key: 'Actions', label: 'ACTIONS', type: 'actions', source: true },
-  ];
-
-  const techs = [
-    { id: 'TECH-001', name: 'Rohan Patil', skill: 'Level 3 - Senior Specialist', ticket: 'SRV-2026-0038', client: 'Bharat Forge Ltd', loc: 'Mundhwa Plant, Pune', stage: 'Assigned', st: 'Active' },
-    { id: 'TECH-002', name: 'Vikas Kadam', skill: 'Level 2 - Mechanical Lead', ticket: 'SRV-2026-0039', client: 'Thermax Ltd', loc: 'Chinchwad, Pune', stage: 'Assigned', st: 'Active' },
-    { id: 'TECH-003', name: 'Sunil Jagtap', skill: 'Level 3 - Automation Lead', ticket: 'SRV-2026-0035', client: 'Kalyani Technoforge', loc: 'Khed City, Pune', stage: 'On Site', st: 'In Transit' },
-    { id: 'TECH-004', name: 'Amit Ghorpade', skill: 'Level 2 - CNC Calibration', ticket: 'SRV-2026-0036', client: 'Cummins India', loc: 'Kothrud, Pune', stage: 'On Site', st: 'Active' },
-    { id: 'TECH-005', name: 'Pravin Shinde', skill: 'Level 1 - Field Support', ticket: 'SRV-2026-0031', client: 'Godrej Industries', loc: 'Vikhroli, Mumbai', stage: 'Waiting Parts', st: 'Pending' },
-    { id: 'TECH-006', name: 'Deepak Rao', skill: 'Level 3 - Hydraulics Master', ticket: 'SRV-2026-0027', client: 'Bosch Chassis', loc: 'Chakan MIDC', stage: 'Closed', st: 'Completed' },
-  ];
-
-  const allRows: V40Row[] = Array.from({ length: 24 }, (_, i) => {
-    const t = techs[i % techs.length]!;
-    const tid = `TECH-${String(i + 1).padStart(3, '0')}`;
-    const tickNo = `SRV-2026-${String(40 - i).padStart(4, '0')}`;
-    return {
-      id: `srv-tech-${i + 1}`,
-      number: tid,
-      'Technician ID': tid,
-      'Technician Name': `${t.name} (${t.id})`,
-      'Skill Level': t.skill,
-      'Allocated Ticket': tickNo,
-      Customer: t.client,
-      'Site Location': t.loc,
-      Stage: t.stage,
-      Status: t.st,
-      status: t.st,
-    };
-  });
-
-  let filtered = allRows;
-  if (p.q) {
-    const qLower = p.q.toLowerCase();
-    filtered = filtered.filter((r) =>
-      Object.values(r).some((v) => typeof v === 'string' && v.toLowerCase().includes(qLower)),
-    );
-  }
-  if (p.status) {
-    filtered = filtered.filter((r) => (r.status ?? '').toLowerCase() === p.status?.toLowerCase());
-  }
-
-  const pageIndex = Math.max(1, p.page || 1);
-  const pageSize = p.size || 25;
-  const start = (pageIndex - 1) * pageSize;
-  const pagedRows = filtered.slice(start, start + pageSize);
-
-  return { rows: pagedRows, total: filtered.length, columns, panel: null, audit: false, noSource: [] };
-}
-
-// =========================================================================
-// DOCUMENT MANAGEMENT V40 HANDLER (DOC-02, DOC-03)
-// =========================================================================
-function getDocV40(pageId: string, p: V40Params): V40Page {
-  let columns: V40Column[] = [];
-  let allRows: V40Row[] = [];
-
-  if (pageId === 'doc-folders' || pageId === 'dms-folders') {
-    columns = [
-      { key: 'Folder Code', label: 'FOLDER CODE', type: 'text', source: true },
-      { key: 'Folder Name', label: 'FOLDER NAME', type: 'text', source: true },
-      { key: 'Department', label: 'DEPARTMENT', type: 'text', source: true },
-      { key: 'Document Count', label: 'DOCUMENT COUNT', type: 'num', source: true },
-      { key: 'Access Level', label: 'ACCESS LEVEL', type: 'pill', source: true },
-      { key: 'Retention Policy', label: 'RETENTION POLICY', type: 'text', source: true },
-      { key: 'Status', label: 'STATUS', type: 'pill', source: true },
-      { key: 'Actions', label: 'ACTIONS', type: 'actions', source: true },
-    ];
-    allRows = [
-      { id: 'f-1', number: 'FLD-ENG-01', 'Folder Code': 'FLD-ENG-01', 'Folder Name': 'Engineering & Drawings (CAD/Spec)', Department: 'Engineering', 'Document Count': '482', 'Access Level': 'Confidential', 'Retention Policy': '10 Years', Status: 'Active', status: 'Active' },
-      { id: 'f-2', number: 'FLD-QMS-02', 'Folder Code': 'FLD-QMS-02', 'Folder Name': 'Quality / PPAP / SOPs / Certifications', Department: 'Quality', 'Document Count': '310', 'Access Level': 'Departmental', 'Retention Policy': '7 Years', Status: 'Active', status: 'Active' },
-      { id: 'f-3', number: 'FLD-FIN-03', 'Folder Code': 'FLD-FIN-03', 'Folder Name': 'Finance & Statutory (GST/Audits)', Department: 'Finance', 'Document Count': '290', 'Access Level': 'Restricted', 'Retention Policy': '8 Years (Statutory)', Status: 'Active', status: 'Active' },
-      { id: 'f-4', number: 'FLD-LOG-04', 'Folder Code': 'FLD-LOG-04', 'Folder Name': 'Logistics & Shipping PODs', Department: 'Logistics', 'Document Count': '188', 'Access Level': 'Operational', 'Retention Policy': '5 Years', Status: 'Active', status: 'Active' },
-      { id: 'f-5', number: 'FLD-HR-05', 'Folder Code': 'FLD-HR-05', 'Folder Name': 'HR & Confidential Personnel Files', Department: 'HR', 'Document Count': '150', 'Access Level': 'Strict Confidential', 'Retention Policy': 'Permanent', Status: 'Active', status: 'Active' },
-      { id: 'f-6', number: 'FLD-MFG-06', 'Folder Code': 'FLD-MFG-06', 'Folder Name': 'Production Work Instructions & Routers', Department: 'Manufacturing', 'Document Count': '215', 'Access Level': 'Plant Wide', 'Retention Policy': '3 Years', Status: 'Active', status: 'Active' },
-    ];
-  } else {
-    columns = [
-      { key: 'Document No', label: 'DOCUMENT NO', type: 'text', source: true },
-      { key: 'Title', label: 'DOCUMENT TITLE', type: 'text', source: true },
-      { key: 'Category', label: 'CATEGORY', type: 'pill', source: true },
-      { key: 'Revision', label: 'REVISION', type: 'text', source: true },
-      { key: 'Owner', label: 'OWNER', type: 'text', source: true },
-      { key: 'Format', label: 'FORMAT', type: 'text', source: true },
-      { key: 'Size', label: 'FILE SIZE', type: 'text', source: true },
-      { key: 'Status', label: 'STATUS', type: 'pill', source: true },
-      { key: 'Actions', label: 'ACTIONS', type: 'actions', source: true },
-    ];
-    allRows = [
-      { id: 'd-1', number: 'DOC-2026-0001', 'Document No': 'DOC-2026-0001', Title: 'Standard Operating Procedure - Machining V4.pdf', Category: 'SOP', Revision: 'v4.1', Owner: 'Rajesh Kumar', Format: 'PDF', Size: '2.4 MB', Status: 'Approved', status: 'Approved' },
-      { id: 'd-2', number: 'DOC-2026-0002', 'Document No': 'DOC-2026-0002', Title: 'PPAP Level 3 Quality Approval - Gear Assembly.pdf', Category: 'PPAP', Revision: 'v2.0', Owner: 'Sunita Patil', Format: 'PDF', Size: '8.1 MB', Status: 'Approved', status: 'Approved' },
-      { id: 'd-3', number: 'DOC-2026-0003', 'Document No': 'DOC-2026-0003', Title: 'Master Plant Layout & Electrical Schematics.dwg', Category: 'Drawings', Revision: 'v1.4', Owner: 'Amit Deshmukh', Format: 'DWG / CAD', Size: '14.5 MB', Status: 'Draft', status: 'Draft' },
-      { id: 'd-4', number: 'DOC-2026-0004', 'Document No': 'DOC-2026-0004', Title: 'GSTR-3B Statutory Monthly Filing Oct-2026.pdf', Category: 'Statutory', Revision: 'v1.0', Owner: 'Priya Sharma', Format: 'PDF', Size: '1.2 MB', Status: 'Approved', status: 'Approved' },
-      { id: 'd-5', number: 'DOC-2026-0005', 'Document No': 'DOC-2026-0005', Title: 'CNC Spindle Preventive Maintenance Checklist.docx', Category: 'Maintenance', Revision: 'v3.2', Owner: 'Rohan Patil', Format: 'DOCX', Size: '540 KB', Status: 'Under Review', status: 'Pending' },
-    ];
-  }
-
-  let filtered = allRows;
-  if (p.q) {
-    const qLower = p.q.toLowerCase();
-    filtered = filtered.filter((r) =>
-      Object.values(r).some((v) => typeof v === 'string' && v.toLowerCase().includes(qLower)),
-    );
-  }
-  if (p.status) {
-    filtered = filtered.filter((r) => (r.status ?? '').toLowerCase() === p.status?.toLowerCase());
-  }
-
-  const pageIndex = Math.max(1, p.page || 1);
-  const pageSize = p.size || 25;
-  const start = (pageIndex - 1) * pageSize;
-  const pagedRows = filtered.slice(start, start + pageSize);
-
-  return { rows: pagedRows, total: filtered.length, columns, panel: null, audit: false, noSource: [] };
-}
-
-// =========================================================================
-// PROJECTS V40 HANDLER (PRJ-01)
-// =========================================================================
-function getProjectV40(_pageId: string, p: V40Params): V40Page {
-  const columns: V40Column[] = [
-    { key: 'Project No', label: 'PROJECT NO', type: 'text', source: true },
-    { key: 'Project Name', label: 'PROJECT NAME', type: 'text', source: true },
-    { key: 'Client', label: 'CLIENT', type: 'text', source: true },
-    { key: 'Project Manager', label: 'MANAGER', type: 'text', source: true },
-    { key: 'Budget', label: 'BUDGET', type: 'inr', source: true },
-    { key: 'Actual Cost', label: 'ACTUAL COST', type: 'inr', source: true },
-    { key: 'Start Date', label: 'START DATE', type: 'date', source: true },
-    { key: 'Target End', label: 'TARGET END', type: 'date', source: true },
-    { key: 'Progress %', label: 'PROGRESS', type: 'pill', source: true },
-    { key: 'Health', label: 'HEALTH', type: 'pill', source: true },
-    { key: 'Status', label: 'STATUS', type: 'pill', source: true },
-    { key: 'Actions', label: 'ACTIONS', type: 'actions', source: true },
-  ];
-
-  const projects = [
-    { no: 'PRJ-2026-0101', name: 'BS-VI Phase 2 Heavy Commercial Powertrain', client: 'Tata Motors CVBU', mgr: 'Rajesh K.', b: 45000000, act: 38200000, start: '2026-04-01', end: '2027-03-31', prog: '72%', health: 'On Track', st: 'In Progress' },
-    { no: 'PRJ-2026-0102', name: 'Precision CNC Machining Line Expansion', client: 'Internal / Talwade Plant', mgr: 'Amit Deshmukh', b: 28000000, act: 24500000, start: '2026-05-15', end: '2026-12-31', prog: '85%', health: 'On Track', st: 'In Progress' },
-    { no: 'PRJ-2026-0103', name: 'Electric Axle Flange Assembly Development', client: 'Mahindra EV Division', mgr: 'Sunita Patil', b: 32000000, act: 18400000, start: '2026-06-01', end: '2027-06-30', prog: '45%', health: 'Caution', st: 'Active' },
-    { no: 'PRJ-2026-0104', name: 'High Tensile Fastener Automated Cell', client: 'Bharat Forge Ltd', mgr: 'Priya Sharma', b: 18500000, act: 17200000, start: '2026-03-01', end: '2026-11-30', prog: '94%', health: 'Critical', st: 'Active' },
-    { no: 'PRJ-2026-0105', name: 'Solar Rooftop & Energy Optimization Microgrid', client: 'Sustainability / Varale', mgr: 'Ramesh Shinde', b: 12000000, act: 11800000, start: '2026-02-01', end: '2026-10-31', prog: '100%', health: 'Completed', st: 'Completed' },
-  ];
-
-  const allRows: V40Row[] = Array.from({ length: 20 }, (_, i) => {
-    const prj = projects[i % projects.length]!;
-    const pNo = `PRJ-2026-${String(101 + i).padStart(4, '0')}`;
-    return {
-      id: `prj-${i + 1}`,
-      number: pNo,
-      'Project No': pNo,
-      'Project Name': prj.name,
-      Client: prj.client,
-      'Project Manager': prj.mgr,
-      Budget: String(prj.b + i * 500000),
-      'Actual Cost': String(prj.act + i * 420000),
-      'Start Date': prj.start,
-      'Target End': prj.end,
-      'Progress %': prj.prog,
-      Health: prj.health,
-      Status: prj.st,
-      status: prj.st,
-    };
-  });
-
-  let filtered = allRows;
-  if (p.q) {
-    const qLower = p.q.toLowerCase();
-    filtered = filtered.filter((r) =>
-      Object.values(r).some((v) => typeof v === 'string' && v.toLowerCase().includes(qLower)),
-    );
-  }
-  if (p.status) {
-    filtered = filtered.filter((r) => (r.status ?? '').toLowerCase() === p.status?.toLowerCase());
-  }
-
-  const pageIndex = Math.max(1, p.page || 1);
-  const pageSize = p.size || 25;
-  const start = (pageIndex - 1) * pageSize;
-  const pagedRows = filtered.slice(start, start + pageSize);
-
-  return { rows: pagedRows, total: filtered.length, columns, panel: null, audit: false, noSource: [] };
-}
-
-// =========================================================================
-// COMMUNICATION V40 HANDLER (COM-01)
-// =========================================================================
-function getCommV40(_pageId: string, p: V40Params): V40Page {
-  const columns: V40Column[] = [
-    { key: 'Message ID', label: 'MESSAGE ID', type: 'text', source: true },
-    { key: 'Channel', label: 'CHANNEL', type: 'pill', source: true },
-    { key: 'Recipient', label: 'RECIPIENT', type: 'text', source: true },
-    { key: 'Subject / Template', label: 'SUBJECT / TEMPLATE', type: 'text', source: true },
-    { key: 'Sent At', label: 'SENT AT', type: 'text', source: true },
-    { key: 'Delivery Status', label: 'DELIVERY STATUS', type: 'pill', source: true },
-    { key: 'Read Status', label: 'READ STATUS', type: 'pill', source: true },
-    { key: 'Linked Entity', label: 'LINKED ENTITY', type: 'text', source: true },
-    { key: 'Status', label: 'STATUS', type: 'pill', source: true },
-    { key: 'Actions', label: 'ACTIONS', type: 'actions', source: true },
-  ];
-
-  const comms = [
-    { ch: 'WhatsApp', rec: '+91 98220 11420 (Tata Motors Logistics)', sub: 'Dispatch Notice: SO-2026-0041 Vehicle Out for Delivery', sent: '2026-11-17 08:32', del: 'Delivered', read: 'Read', link: 'SO-2026-0041', st: 'Active' },
-    { ch: 'Email', rec: 'purchase@bharatforge.com', sub: 'Quotation Revision Rev-3 for Flange Assemblies', sent: '2026-11-17 07:45', del: 'Delivered', read: 'Read', link: 'QT-2026-0089', st: 'Active' },
-    { ch: 'WhatsApp', rec: '+91 94223 88102 (Mahindra QA Inspector)', sub: 'Inspection Call Request: Gear Box CMM Inspection Slot', sent: '2026-11-16 16:15', del: 'Delivered', read: 'Delivered', link: 'QMS-2026-0120', st: 'Active' },
-    { ch: 'SMS', rec: '+91 97654 32100 (Driver Suresh Mane)', sub: 'Gate Pass Token Generated for Gate 2 Inward entry', sent: '2026-11-16 14:02', del: 'Delivered', read: 'N/A', link: 'GATE-2026-0092', st: 'Completed' },
-    { ch: 'Email', rec: 'accounts@thermax.com', sub: 'Payment Receipt & E-Way Bill Attached for INV-2026-0312', sent: '2026-11-16 11:30', del: 'Delivered', read: 'Read', link: 'INV-2026-0312', st: 'Completed' },
-  ];
-
-  const allRows: V40Row[] = Array.from({ length: 25 }, (_, i) => {
-    const c = comms[i % comms.length]!;
-    const msgId = `MSG-2026-${String(i + 1).padStart(4, '0')}`;
-    return {
-      id: `comm-${i + 1}`,
-      number: msgId,
-      'Message ID': msgId,
-      Channel: c.ch,
-      Recipient: c.rec,
-      'Subject / Template': c.sub,
-      'Sent At': c.sent,
-      'Delivery Status': c.del,
-      'Read Status': c.read,
-      'Linked Entity': c.link,
-      Status: c.st,
-      status: c.st,
-    };
-  });
-
-  let filtered = allRows;
-  if (p.q) {
-    const qLower = p.q.toLowerCase();
-    filtered = filtered.filter((r) =>
-      Object.values(r).some((v) => typeof v === 'string' && v.toLowerCase().includes(qLower)),
-    );
-  }
-  if (p.status) {
-    filtered = filtered.filter((r) => (r.status ?? '').toLowerCase() === p.status?.toLowerCase());
-  }
-
-  const pageIndex = Math.max(1, p.page || 1);
-  const pageSize = p.size || 25;
-  const start = (pageIndex - 1) * pageSize;
-  const pagedRows = filtered.slice(start, start + pageSize);
-
-  return { rows: pagedRows, total: filtered.length, columns, panel: null, audit: false, noSource: [] };
-}

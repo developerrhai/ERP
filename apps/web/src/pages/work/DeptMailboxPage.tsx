@@ -707,7 +707,7 @@ function MovementRow({
         <div className="v28-mail-from">
           {when(m.sent_at)}
           <br />
-          Cycle {(m as any).cycle_no ?? 1}
+          Cycle {(m as { cycle_no?: number }).cycle_no ?? 1}
         </div>
       </td>
       <td>

@@ -2,10 +2,12 @@
 // shortcuts, recent pages, announcements and "What's new". A counter whose module is not built yet shows
 // "—", never 0.
 import { Link, Navigate } from 'react-router-dom';
+import { useSession } from '../auth/AuthProvider';
 import { contextLabels, useAppContext } from '../lib/context';
 import { homeApi } from '../lib/homeApi';
 import { usePlants } from '../lib/plants';
 import { useLoad } from '../lib/useLoad';
+import { RoleDashboard } from './roledash/RoleDashboard';
 
 function greeting(d = new Date()): string {
   const h = d.getHours();
@@ -15,6 +17,7 @@ function greeting(d = new Date()): string {
 const dash = (n: number | null): string => (n === null || n === undefined ? '—' : String(n));
 
 export function HomePage() {
+  const user = useSession().user;
   const home = useLoad(() => homeApi.home(), []);
   const labels = contextLabels(useAppContext().data);
   const plants = usePlants().data;
@@ -48,35 +51,7 @@ export function HomePage() {
 
   return (
     <div className="home-page">
-      <section className="home-hero" aria-labelledby="home-title">
-        <h1 id="home-title">
-          {greeting()}, {d.user.name}
-        </h1>
-        <div className="chips">
-          {d.user.role ? <span className="chip">{d.user.role}</span> : null}
-          {d.user.department ? <span className="chip">{d.user.department}</span> : null}
-          {chosen.length > 0 ? (
-            chosen.map((p) => (
-              <span key={p.id} className="chip">
-                {p.name}
-              </span>
-            ))
-          ) : labels ? (
-            <span className="chip">{labels.unit}</span>
-          ) : null}
-        </div>
-        <p className="muted">
-          {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
-        <div className="home-buttons">
-          <Link className="btn primary" to="/menu">
-            Open Menu
-          </Link>
-          <Link className="btn" to="/m/my-dashboard">
-            Open My Dashboard
-          </Link>
-        </div>
-      </section>
+      {user ? <RoleDashboard user={user} home={d} /> : null}
 
       <section aria-label="My work">
         <h2>Department workspace</h2>

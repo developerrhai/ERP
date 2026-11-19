@@ -250,10 +250,10 @@ function Bar({
     }, 900);
     return () => clearTimeout(t);
   }, [mode, pageId]);
+  // BI screens (including Custom Dashboards) always get the one standard toolbar (QA report BI-03).
   const isV40Page =
     !!pageId &&
-    !pageId.includes('dashboard') &&
-    !pageId.includes('settings');
+    (pageId.startsWith('bi-') || (!pageId.includes('dashboard') && !pageId.includes('settings')));
 
   const shown = isV40Page
     ? (pageId?.startsWith('admin-')

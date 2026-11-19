@@ -209,7 +209,7 @@ export function DeptMailPage() {
           alignItems: 'start',
         }}
       >
-        <div>
+        <div style={{ minWidth: 0 }}>
           {tab === 'compose' ? (
             <form
               className="panel"
@@ -433,6 +433,7 @@ export function DeptMailPage() {
               </div>
             </form>
           ) : (
+            <div className="table-wrap" style={{ overflowX: 'auto', minWidth: 0, maxWidth: '100%' }}>
             <table className="register-table">
               <thead>
                 <tr>
@@ -482,6 +483,7 @@ export function DeptMailPage() {
                 ) : null}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 
