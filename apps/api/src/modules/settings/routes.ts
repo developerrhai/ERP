@@ -13,6 +13,7 @@ import { asyncHandler } from '../../core/http/async-handler';
 import { validate } from '../../core/http/validate';
 import { requirePageAction } from '../../core/rbac/access';
 import { settingsController } from './controller';
+import { columnsBody, listKindParam, listValuesBody, pagePrefsController } from './page-prefs';
 import { letterheadSchema } from './schemas';
 
 export function createSettingsRouter(): Router {
@@ -49,6 +50,17 @@ export function createSettingsRouter(): Router {
     validate({ body: securityPolicySchema }),
     asyncHandler(settingsController.putSecurityPolicy),
   );
+
+  // Settings tab of every page: pick-lists (item / category / vendor / manufacturer) and the user's hidden columns.
+  router.get('/lists', asyncHandler(pagePrefsController.getLists));
+  router.put(
+    '/lists/:kind',
+    requirePageAction('admin-settings', 'controls'),
+    validate({ params: listKindParam, body: listValuesBody }),
+    asyncHandler(pagePrefsController.putList),
+  );
+  router.get('/columns', asyncHandler(pagePrefsController.getColumns));
+  router.put('/columns', validate({ body: columnsBody }), asyncHandler(pagePrefsController.putColumns));
 
   return router;
 }

@@ -1,6 +1,7 @@
 // Register tab (prototype registerTab / v8RowHtml): summary minis computed from the loaded data,
 // search, status filter, page size, sortable headers, checkbox selection that survives paging,
 // Export Selected / Delete Selected (typed confirmation above 10) and View / Edit / Delete rows.
+import { registerColumns, useHiddenColumns } from '../../lib/pageSettings';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -118,7 +119,16 @@ export function RegisterTab({
   onOpenWorkspace,
   cellRender,
 }: Props) {
-  const fields = useMemo(() => listFields(schema), [schema]);
+  const allFields = useMemo(() => listFields(schema), [schema]);
+  // Settings tab: list the columns there, and leave out the ones this user hid (never all of them)
+  useEffect(() => {
+    registerColumns(schema.pageId, allFields.map((f) => ({ key: f.key, label: f.label })));
+  }, [schema.pageId, allFields]);
+  const hiddenCols = useHiddenColumns(schema.pageId);
+  const fields = useMemo(() => {
+    const kept = allFields.filter((f) => !hiddenCols.has(f.key));
+    return kept.length > 0 ? kept : allFields;
+  }, [allFields, hiddenCols]);
   // Phase 23: with 2+ plants chosen the list mixes plants, so a Plant column appears automatically.
   const showPlant = (usePlants().data?.selected.length ?? 1) > 1;
   const rq: RecordQuery = query;

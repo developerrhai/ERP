@@ -24,13 +24,12 @@ These rules come from the owner (2026-11-02). They override any default behaviou
 * Never touch the old database `erp` or any production database.
 
 ## Source of truth & scope
-* **Source of truth = `docs/phases/`**. `docs/phases/STANDARDS.md` and the active `docs/phases/PHASE-XX.md` override any other doc. Anything in `docs/archive/` is reference only.
-* **Build only the phase named by the owner.** Do not start the next phase. Do not design or add out-of-scope features.
+* **The `docs/phases/` phase plan is complete (2026-11-20).** It is no longer the active spec; treat it as historical reference only, same as `docs/archive/`.
+* **Current source of truth = `docs2/`**, in particular `docs2/RHAI_V40_A3_Continuous_Department_Workflow.pdf` (the 4-stage, 11-department continuous order flow: Sales/Design → Material/IQC → Production/QC → Dispatch/Close, with the Sent → Received → Accepted → Checker → Approved handoff state machine). Work now proceeds by comparing the live app against this workflow doc and closing gaps, not by phase number.
+* Still do not design or add features outside what this workflow doc (or the owner) calls for.
 
 ## How work is done here
-* Spec first:
-  * `docs/phases/STANDARDS.md`;
-  * the per-phase `docs/phases/PHASE-XX.md`.
+* Spec first: read the relevant page(s) of `docs2/RHAI_V40_A3_Continuous_Department_Workflow.pdf`.
 * Then:
   * build;
   * run `npm run verify` and `npm run e2e` **three times from a clean DB**;

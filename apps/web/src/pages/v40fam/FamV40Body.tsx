@@ -4,6 +4,7 @@
 // Horizontal Excel-style Register Table, Secondary Detailed Table, Department Filter,
 // Row Action Shortcuts, and Export options.
 
+import { registerColumns, useHiddenColumns } from '../../lib/pageSettings';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -1409,6 +1410,18 @@ export function FamV40Body({
       return true;
     });
   }, [columns, pageId]);
+  // Settings tab: the page lists its columns there; the ones the user unticked are not drawn (actions / docs always stay).
+  useEffect(() => {
+    registerColumns(
+      pageId,
+      uniqueColumns.filter((c) => c.type !== 'actions' && c.type !== 'docs').map((c) => ({ key: c.key, label: c.label })),
+    );
+  }, [pageId, uniqueColumns]);
+  const hiddenCols = useHiddenColumns(pageId);
+  const visibleColumns = useMemo(
+    () => uniqueColumns.filter((c) => c.type === 'actions' || c.type === 'docs' || !hiddenCols.has(c.key)),
+    [uniqueColumns, hiddenCols],
+  );
 
   useEffect(() => {
     let live = true;
@@ -4045,7 +4058,7 @@ export function FamV40Body({
                   onChange={toggleAll}
                 />
               </th>
-              {uniqueColumns.map((c) => (
+              {visibleColumns.map((c) => (
                 <th key={c.key}>{c.label}</th>
               ))}
             </tr>
@@ -4068,7 +4081,7 @@ export function FamV40Body({
                       aria-label={`Select row ${r.number}`}
                     />
                   </td>
-                  {uniqueColumns.map((c) => {
+                  {visibleColumns.map((c) => {
                     if (c.type === 'actions') {
                       return (
                         <td key={c.key} onClick={(e) => e.stopPropagation()}>
@@ -4193,7 +4206,7 @@ export function FamV40Body({
             })}
             {filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={uniqueColumns.length + 1} style={{ textAlign: 'center', padding: '20px' }}>
+                <td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '20px' }}>
                   No records found in this view.
                 </td>
               </tr>

@@ -3165,3 +3165,33 @@ select.is-invalid {
 @media (max-width: 900px) {
   .dept-mail-layout { grid-template-columns: 1fr !important; }
 }
+
+/* Settings tab of every page (columns + item / category / vendor / manufacturer lists) */
+.page-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 12px; }
+.ps-card { background: var(--card, #fff); border: 1px solid var(--line, #e2e8f0); border-radius: 12px; padding: 14px 16px; }
+.ps-card h2 { margin: 0 0 8px; font-size: 15px; }
+.page-settings > .ps-card:first-child { grid-column: 1 / -1; }
+.ps-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.ps-cols { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 14px; }
+.ps-col { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.ps-add { display: flex; gap: 8px; margin-bottom: 8px; }
+.ps-add input, .ps-list input { flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid var(--line, #cbd5e1); border-radius: 8px; font-size: 13px; }
+.ps-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 260px; overflow: auto; }
+.ps-list li { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.ps-list li > span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ps-error { color: #b91c1c; font-size: 12px; margin-bottom: 6px; }
+/* Settings tab + role dashboard: no overlap, no sideways scroll on phones and tablets */
+.page-settings, .ps-card, .role-dash, .rd-card { min-width: 0; }
+.ps-list li > span, .rd-rows li { overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+  .page-settings { grid-template-columns: 1fr; }
+  .ps-add { flex-wrap: wrap; }
+  .ps-add input { flex-basis: 100%; }
+  .ps-list li { flex-wrap: wrap; }
+  .ps-list li > input { flex-basis: 100%; }
+  .ps-cols { grid-template-columns: 1fr 1fr; }
+  .rd-grid { grid-template-columns: 1fr; }
+  .rd-kpis { grid-template-columns: 1fr 1fr; }
+  .rd-hero { padding: 16px; }
+}
+@media (max-width: 380px) { .ps-cols, .rd-kpis { grid-template-columns: 1fr; } }
