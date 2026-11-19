@@ -38,7 +38,7 @@ function greeting(d = new Date()): string {
 const when = (iso: string): string =>
   new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-export function RoleDashboard({ user, home }: { user: User; home: HomeDto | null }) {
+export function RoleDashboard({ user, home, plants = [] }: { user: User; home: HomeDto | null; plants?: string[] }) {
   const dash = useMemo(() => dashboardFor(user.roleCode ?? user.role, user.roleLevel), [user.roleCode, user.role, user.roleLevel]);
   const elevated = (user.roleLevel ?? 0) >= ADMIN_LEVEL;
   const [counts, setCounts] = useState<InboxCounts | null>(null);
@@ -89,6 +89,11 @@ export function RoleDashboard({ user, home }: { user: User; home: HomeDto | null
         <div className="rd-chips">
           <span className="chip">{user.roleName || user.roleLabel || dash.title}</span>
           {depts.length > 0 ? depts.map((d) => <span key={d} className="chip">{d}</span>) : <span className="chip">All departments</span>}
+          {plants.map((n) => (
+            <span key={n} className="chip">
+              {n}
+            </span>
+          ))}
           {user.approvalLimit ? <span className="chip">Approval limit ₹ {Number(user.approvalLimit).toLocaleString('en-IN')}</span> : null}
           {user.previousLoginAt ? <span className="chip">Last login {when(user.previousLoginAt)}</span> : null}
         </div>

@@ -3,23 +3,16 @@
 // "—", never 0.
 import { Link, Navigate } from 'react-router-dom';
 import { useSession } from '../auth/AuthProvider';
-import { contextLabels, useAppContext } from '../lib/context';
 import { homeApi } from '../lib/homeApi';
 import { usePlants } from '../lib/plants';
 import { useLoad } from '../lib/useLoad';
 import { RoleDashboard } from './roledash/RoleDashboard';
-
-function greeting(d = new Date()): string {
-  const h = d.getHours();
-  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-}
 
 const dash = (n: number | null): string => (n === null || n === undefined ? '—' : String(n));
 
 export function HomePage() {
   const user = useSession().user;
   const home = useLoad(() => homeApi.home(), []);
-  const labels = contextLabels(useAppContext().data);
   const plants = usePlants().data;
   const d = home.data;
 
@@ -51,7 +44,7 @@ export function HomePage() {
 
   return (
     <div className="home-page">
-      {user ? <RoleDashboard user={user} home={d} /> : null}
+      {user ? <RoleDashboard user={user} home={d} plants={chosen.map((p) => p.name)} /> : null}
 
       <section aria-label="My work">
         <h2>Department workspace</h2>
