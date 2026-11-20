@@ -5,6 +5,10 @@
 // shared default - Print, Excel (the visible table), Industry PDF / Word / record Excel (the print endpoint),
 // Approval Queue, Documents and Move Forward (the Phase 25 dialog) - and a button that truly cannot work is
 // greyed with "Not available yet: {reason}". There is no "Arrives in Phase" text any more.
+// + Add New / + Add and Submit Approval have no single generic backend action (the create/submit shape is
+// page-specific), so the shared default dispatches a window event the page can opt into (DocPage already
+// does, for + Add New) and marks `detail.handled = true`; a page that hasn't wired a listener gets an honest
+// "use this screen's own button" toast instead of a silent no-op or a false success message.
 import { useEffect, useState } from 'react';
 import { useInRouterContext, useNavigate } from 'react-router-dom';
 import type { ActionSet } from '../types';
@@ -287,7 +291,9 @@ function Bar({
       if (label === 'Print') window.print();
       else if (label === '← Return') go?.(-1);
       else if (label === '＋ Add New' || label === '＋ Add') {
-        window.dispatchEvent(new CustomEvent('v40-add-record', { detail: { pageId } }));
+        const detail = { pageId, handled: false };
+        window.dispatchEvent(new CustomEvent('v40-add-record', { detail }));
+        if (!detail.handled) toast("This screen's own + New button starts a new record here.");
       }
       else if (label === '⇧ Import' || label === 'Import') {
         setImporting(true);
@@ -345,7 +351,9 @@ function Bar({
         toast(`Opening documents repository for ${effDocNo || pageId}.`);
         go?.('/m/business-documents');
       } else if (label === 'Submit Approval') {
-        toast(`Submitted ${effDocNo || 'record'} for approval.`);
+        const detail = { pageId, recordId: effRecordId, handled: false };
+        window.dispatchEvent(new CustomEvent('v40-submit-record', { detail }));
+        if (!detail.handled) toast("This screen's own Submit button sends the record for approval.");
       }
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Could not complete this action.');

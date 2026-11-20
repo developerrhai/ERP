@@ -132,8 +132,11 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
   useEffect(() => {
     if (!cfg.pageId) return undefined;
     const handler = (e: Event) => {
-      const ce = e as CustomEvent<{ pageId: string }>;
-      if (ce.detail?.pageId === cfg.pageId) setEditing('new');
+      const ce = e as CustomEvent<{ pageId: string; handled: boolean }>;
+      if (ce.detail?.pageId === cfg.pageId) {
+        setEditing('new');
+        ce.detail.handled = true;
+      }
     };
     window.addEventListener('v40-add-record', handler);
     return () => window.removeEventListener('v40-add-record', handler);
@@ -765,6 +768,22 @@ function DocDetail({
   );
   const lines = (Array.isArray(doc.lines) ? doc.lines : []) as Row[];
   const editable = doc.status === 'Draft' || doc.status === 'Rejected';
+
+  // The shell ActionBar's "Submit Approval" only dispatches a global event; reuse the same submit this
+  // modal's own Submit button runs when the event is for the document currently open here.
+  useEffect(() => {
+    if (!cfg.pageId || !editable || !actions.submit) return undefined;
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ pageId: string; recordId: string | null; handled: boolean }>;
+      if (ce.detail?.pageId === cfg.pageId && (!ce.detail.recordId || ce.detail.recordId === doc.id)) {
+        ce.detail.handled = true;
+        void run('submit', 'Submitted', {}, true);
+      }
+    };
+    window.addEventListener('v40-submit-record', handler);
+    return () => window.removeEventListener('v40-submit-record', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfg.pageId, editable, actions.submit, doc.id]);
 
   async function run(name: string, label: string, body: unknown = {}, withVersion = false) {
     setBusy(true);

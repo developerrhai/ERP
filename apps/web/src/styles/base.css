@@ -7,6 +7,12 @@ html,
 body {
   height: 100%;
 }
+html {
+  /* Users were manually zooming the browser out to ~65-70% because at 100% the toolbar buttons,
+     cards and tables feel oversized and sparse, breaking layout into an uneven, scattered look.
+     Bake that density in so 100% browser zoom already looks like their preferred view. */
+  zoom: 0.75;
+}
 body {
   margin: 0;
   font-family:

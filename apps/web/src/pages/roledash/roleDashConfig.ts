@@ -45,6 +45,17 @@ export interface LinkGroup {
 }
 export type Panel = 'activity' | 'projects';
 
+export type AnalyticsKind = 'sales' | 'purchase' | 'inventory' | 'finance' | 'branch';
+/** One chart card. `work`/`inbox`/`docs`/`age` use the user's own counters; the others read GET /bi/analytics/:kind. */
+export type ChartSpec =
+  | { type: 'work'; title: string }
+  | { type: 'inbox'; title: string }
+  | { type: 'docs'; title: string }
+  | { type: 'age'; title: string }
+  | { type: 'trend'; title: string; kind: AnalyticsKind; dataset: string; series: { key: string; name: string; color: string }[]; to: string }
+  | { type: 'top'; title: string; kind: AnalyticsKind; dataset: string; labelKey: string; valueKey: string; limit: number; to: string; sort?: 'desc' }
+  | { type: 'group'; title: string; kind: AnalyticsKind; dataset: string; groupKey: string; valueKey?: string; to: string };
+
 export interface RoleDash {
   key: RoleKey;
   title: string;
@@ -54,11 +65,27 @@ export interface RoleDash {
   kpis: Kpi[];
   groups: LinkGroup[];
   panels: Panel[];
+  /** The role's graphs, in order. A graph whose data the user may not read is left out. */
+  charts: ChartSpec[];
   /** Company-wide numbers (true) or only the user's own department / own work (false). */
   companyWide: boolean;
 }
 
 const l = (label: string, to: string) => ({ label, to: `/m/${to}` });
+const BLUE = '#2563eb';
+const GREEN = '#16a34a';
+const RED = '#ef4444';
+const AMBER = '#f59e0b';
+const WORK: ChartSpec = { type: 'work', title: 'My work by stage' };
+const INBOX: ChartSpec = { type: 'inbox', title: 'Department inbox' };
+const DOCS: ChartSpec = { type: 'docs', title: 'My documents by status' };
+const AGE: ChartSpec = { type: 'age', title: 'Approvals waiting, by age' };
+const SALES: ChartSpec = { type: 'trend', title: 'Sales revenue, last 12 months', kind: 'sales', dataset: 'monthly', series: [{ key: 'revenue', name: 'Revenue', color: BLUE }], to: '/m/bi-sales' };
+const PL: ChartSpec = {
+  type: 'trend', title: 'Revenue, expenses and net profit', kind: 'finance', dataset: 'monthly', to: '/m/bi-finance',
+  series: [{ key: 'revenue', name: 'Revenue', color: BLUE }, { key: 'expense', name: 'Expenses', color: AMBER }, { key: 'net_profit', name: 'Net profit', color: GREEN }],
+};
+const BRANCH: ChartSpec = { type: 'top', title: 'Revenue by branch', kind: 'branch', dataset: 'branches', labelKey: 'branch', valueKey: 'revenue', limit: 6, to: '/m/bi-branch' };
 
 export const ROLE_DASHBOARDS: Record<RoleKey, RoleDash> = {
   SUPER_USER: {
@@ -95,6 +122,7 @@ export const ROLE_DASHBOARDS: Record<RoleKey, RoleDash> = {
         links: [l('Executive dashboard', 'my-dashboard'), l('Owner console', 'owner-console'), l('Plant dashboard', 'plant-dashboard'), l('KPI alerts', 'kpi-alerts')],
       },
     ],
+    charts: [PL, BRANCH, AGE, WORK, INBOX],
     panels: ['activity', 'projects'],
     companyWide: true,
   },
@@ -132,6 +160,7 @@ export const ROLE_DASHBOARDS: Record<RoleKey, RoleDash> = {
         links: [l('Department inbox', 'dept-inbox'), l('Document movement', 'document-movement-center'), l('My approvals', 'my-approvals'), l('Mail', 'dept-mail')],
       },
     ],
+    charts: [WORK, INBOX, DOCS],
     panels: ['activity'],
     companyWide: true,
   },
@@ -165,6 +194,7 @@ export const ROLE_DASHBOARDS: Record<RoleKey, RoleDash> = {
         links: [l('My approvals', 'my-approvals'), l('Process exceptions', 'process-exceptions'), l('Plant flow command', 'plant-flow-command'), l('Project history', 'project-global-history')],
       },
     ],
+    charts: [SALES, PL, BRANCH, AGE, WORK],
     panels: ['projects', 'activity'],
     companyWide: true,
   },
@@ -202,6 +232,10 @@ export const ROLE_DASHBOARDS: Record<RoleKey, RoleDash> = {
         links: [l('Budget', 'fin-budget'), l('Cost centres', 'fin-costcenter'), l('Approval limits', 'finance-limits'), l('KPI targets', 'kpi-targets')],
       },
     ],
+    charts: [PL,
+      { type: 'trend', title: 'Cash in vs cash out', kind: 'finance', dataset: 'cash', to: '/m/bi-finance', series: [{ key: 'cash_in', name: 'Cash in', color: GREEN }, { key: 'cash_out', name: 'Cash out', color: RED }] },
+      { type: 'top', title: 'Working capital', kind: 'finance', dataset: 'working', labelKey: 'component', valueKey: 'amount', limit: 6, to: '/m/bi-finance' },
+      AGE, WORK],
     panels: ['activity'],
     companyWide: false,
   },
@@ -239,6 +273,11 @@ export const ROLE_DASHBOARDS: Record<RoleKey, RoleDash> = {
         links: [l('Production', 'bi-production'), l('Quality', 'bi-quality'), l('Maintenance', 'bi-maintenance'), l('Logistics', 'bi-logistics')],
       },
     ],
+    charts: [SALES,
+      { type: 'trend', title: 'Purchase spend, last 12 months', kind: 'purchase', dataset: 'monthly', series: [{ key: 'spend', name: 'Spend', color: '#9333ea' }], to: '/m/bi-purchase' },
+      { type: 'group', title: 'Stock health (SKUs)', kind: 'inventory', dataset: 'issues', groupKey: 'state', to: '/m/bi-inventory' },
+      { type: 'top', title: 'Top suppliers by spend', kind: 'purchase', dataset: 'suppliers', labelKey: 'name', valueKey: 'spend', limit: 6, to: '/m/bi-purchase' },
+      WORK, INBOX],
     panels: ['projects', 'activity'],
     companyWide: true,
   },
@@ -272,6 +311,7 @@ export const ROLE_DASHBOARDS: Record<RoleKey, RoleDash> = {
         links: [l('My approvals', 'my-approvals'), l('Process exceptions', 'process-exceptions'), l('Business documents', 'business-documents')],
       },
     ],
+    charts: [INBOX, WORK, DOCS],
     panels: ['activity'],
     companyWide: false,
   },
@@ -305,6 +345,7 @@ export const ROLE_DASHBOARDS: Record<RoleKey, RoleDash> = {
         links: [l('Enquiries', 'sales-enquiries'), l('Purchase request', 'scm-pr'), l('Mail', 'dept-mail')],
       },
     ],
+    charts: [WORK, DOCS, INBOX],
     panels: ['activity'],
     companyWide: false,
   },
@@ -334,6 +375,7 @@ export const ROLE_DASHBOARDS: Record<RoleKey, RoleDash> = {
         links: [l('Visitors', 'ops-visitors'), l('Canteen', 'ops-canteen'), l('Document movement', 'document-movement-center')],
       },
     ],
+    charts: [WORK, DOCS],
     panels: [],
     companyWide: false,
   },
@@ -362,6 +404,7 @@ export const ROLE_DASHBOARDS: Record<RoleKey, RoleDash> = {
         links: [l('Expense claim', 'hr-expense'), l('Notifications', 'notif-center'), l('Preferences', 'notif-preferences')],
       },
     ],
+    charts: [WORK, DOCS],
     panels: [],
     companyWide: false,
   },
