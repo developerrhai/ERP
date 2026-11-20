@@ -223,6 +223,14 @@ export const NOTIFICATION_TYPES: readonly NotificationTypeDef[] = [
     severity: 'WARN',
     inAppLocked: false,
   },
+  {
+    type: 'MFG_ECN_RAISED',
+    label: 'Engineering change on a frozen BOM',
+    description: 'A released bill of materials was revised; Sales, Purchase and Production should recheck open quotes, POs and orders.',
+    group: 'System',
+    severity: 'ACTION',
+    inAppLocked: false,
+  },
 ];
 
 export const NOTIFICATION_TYPE_NAMES: readonly string[] = NOTIFICATION_TYPES.map((t) => t.type);

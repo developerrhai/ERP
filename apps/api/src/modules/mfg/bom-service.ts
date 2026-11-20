@@ -22,6 +22,7 @@ import type { Row } from '../procurement/core';
 import type { Caller } from '../records/service';
 import { D, detectCycle, explode, lowLevelCodes, r2, r3 } from './calc';
 import type { BomIn, BomLineIn, Requirement } from './calc';
+import { ecnService } from './ecn-service';
 import { S, dateOf, oneUnit } from './master-service';
 
 export const mfgError = (
@@ -578,8 +579,12 @@ export const bomService = {
     return bomService.get(caller, pageId, id);
   },
 
-  /** A new DRAFT version copied from any BOM (a released one is never edited). */
-  async revise(caller: Caller, pageId: string, id: string): Promise<Row> {
+  /**
+   * A new DRAFT version copied from any BOM (a released one is never edited). The source was frozen
+   * (RELEASED/OBSOLETE) by definition once past the guard below, so this always raises an ECN/ECO (docs2
+   * p.1: "create ECN/ECO if design was frozen") and alerts Sales, Purchase and Production.
+   */
+  async revise(caller: Caller, pageId: string, id: string, reason: string): Promise<Row> {
     const src = await bomService.get(caller, pageId, id);
     if (S(src.status) === 'DRAFT' || S(src.status) === 'PENDING_APPROVAL')
       throw Errors.conflict('This BOM is not released yet. Edit it instead.');
@@ -611,12 +616,22 @@ export const bomService = {
         })),
       })),
     });
+    const fromRevision = Number(src.revision);
+    const toRevision = fromRevision + 1;
     await exec(
       prisma,
       `UPDATE mfg_boms SET revision=$1 WHERE id=$2::uuid`,
-      Number(src.revision) + 1,
+      toRevision,
       S(created.id),
     );
+    await ecnService.raise(caller, {
+      itemId: S(src.itemId),
+      fromBomId: id,
+      fromRevision,
+      toBomId: S(created.id),
+      toRevision,
+      reason,
+    });
     return bomService.get(caller, pageId, S(created.id));
   },
 

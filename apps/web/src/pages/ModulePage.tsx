@@ -84,6 +84,7 @@ import {
 import { GenericModulePage } from './generic/GenericModulePage';
 import { NotFoundPage } from './NotFoundPage';
 import { BomPage, RoutingPage, WorkCentresPage } from './mfg/MasterPages';
+import { EcnPage } from './mfg/EcnPage';
 import { FgPage, OrdersPage, WorkOrdersPage } from './mfg/OrderPages';
 import { MrpPage, ProductionPlansPage } from './mfg/PlanPages';
 import { CostingPage, ReworkPage, ScrapPage, WipPage } from './mfg/RegisterPages';
@@ -480,6 +481,8 @@ function PageBody({
       return <WorkCentresPage actions={actions} />;
     case 'mfg-bom':
       return <BomPage actions={actions} />;
+    case 'mfg-ecn':
+      return <EcnPage actions={actions} />;
     case 'mfg-routing':
       return <RoutingPage actions={actions} />;
     case 'mfg-plan':

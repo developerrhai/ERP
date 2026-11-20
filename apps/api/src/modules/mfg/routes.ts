@@ -21,6 +21,7 @@ import { callerOf, idemOf, isoDate, pageQuery, uuid } from '../inventory/routes-
 import type { Caller } from '../records/service';
 import { boardService } from './board-service';
 import { bomService } from './bom-service';
+import { ecnService } from './ecn-service';
 import {
   REPORTS,
   assertReport,
@@ -541,9 +542,18 @@ export function createMfgRouter(): Router {
   router.post(
     '/mfg/boms/:id/revise',
     g('mfg-bom', 'add'),
-    validate({ params: idp }),
+    validate({ params: idp, body: reasonB }),
     h(async (req, res) =>
-      send(res, await bomService.revise(C(req), 'mfg-bom', String(req.params.id)), 201),
+      send(
+        res,
+        await bomService.revise(
+          C(req),
+          'mfg-bom',
+          String(req.params.id),
+          validated(res, 'body', reasonB).reason,
+        ),
+        201,
+      ),
     ),
   );
   router.post(
@@ -561,6 +571,26 @@ export function createMfgRouter(): Router {
     h(async (req, res) =>
       send(res, await bomService.setDefault(C(req), 'mfg-bom', String(req.params.id), ver(req))),
     ),
+  );
+
+  // --------------------------------------------------------------- Engineering change orders (ECN/ECO)
+  // Read-only: a row is only ever created by bomService.revise(), never through this route.
+  const ecnQ = z.object({ itemId: uuid.optional(), ...pageQuery }).strict();
+  router.get(
+    '/mfg/ecn',
+    g('mfg-ecn', 'view'),
+    validate({ query: ecnQ }),
+    h(async (req, res) => {
+      const q = validated(res, 'query', ecnQ);
+      const r = await ecnService.list(C(req), 'mfg-ecn', q);
+      paged(res, r.rows, r.total, q.page, q.size);
+    }),
+  );
+  router.get(
+    '/mfg/ecn/:id',
+    g('mfg-ecn', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) => send(res, await ecnService.get(C(req), 'mfg-ecn', String(req.params.id)))),
   );
   const expl = z.object({ qty: pos.optional(), date: isoDate.optional() }).strict();
   const today = () => new Date().toISOString().slice(0, 10);

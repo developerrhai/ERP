@@ -827,6 +827,14 @@ export const PHASE_ADDED_PAGES: readonly {
     after: 'proj-test-records',
     purpose: 'Project documents by type and revision; the dossier PDF.',
   },
+  {
+    id: 'mfg-ecn',
+    title: 'Engineering Change Orders',
+    family: 'Manufacturing',
+    after: 'mfg-bom',
+    purpose:
+      'ECN/ECO register: every change raised when a released BOM is revised, with the reason and who was alerted (docs2 p.1).',
+  },
 ];
 
 function addPhasePages(data: RegistryData): void {

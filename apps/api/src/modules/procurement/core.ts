@@ -467,6 +467,21 @@ export async function pageRecipients(tx: Db, pageId: string): Promise<string[]> 
   return [...new Set([...ids, ...admins])];
 }
 
+/** Active users whose primary or extra department is any of the given department names, for cross-department alerts. */
+export async function departmentRecipients(tx: Db, departments: readonly string[]): Promise<string[]> {
+  const rows = await tx.user.findMany({
+    where: {
+      status: 'ACTIVE',
+      OR: [
+        { department: { in: [...departments] } },
+        { extraDepartments: { some: { departmentName: { in: [...departments] } } } },
+      ],
+    },
+    select: { id: true },
+  });
+  return [...new Set(rows.map((r) => r.id))];
+}
+
 /** Safe stringify for loosely typed row values (null/undefined -> ''). */
 export const S = (v: unknown): string =>
   typeof v === 'string'

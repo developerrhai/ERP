@@ -526,7 +526,12 @@ function BomView({
               </>
             ) : null}
             {st === 'RELEASED' && actions.add ? (
-              <Act label="New revision" run={() => mpost(`/boms/${id}/revise`, {})} done={after} />
+              <ReasonAct
+                label="New revision"
+                question="This BOM is released. What is changing? (raises an ECN/ECO and alerts Sales, Purchase and Production)"
+                run={(reason) => mpost(`/boms/${id}/revise`, { reason })}
+                done={after}
+              />
             ) : null}
             {st === 'RELEASED' && actions.approve ? (
               <>

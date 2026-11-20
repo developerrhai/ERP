@@ -87,6 +87,8 @@ export const DOC_PREFIX: Record<string, string> = {
   'opening-cutover': 'CUT',
   // Notifications & Broadcasts (Phase 21)
   'admin-notif-broadcast': 'BRC',
+  // Engineering change (Phase 42)
+  'mfg-ecn': 'ECN',
 };
 
 export interface AllocateOptions {
