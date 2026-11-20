@@ -30,10 +30,7 @@ These rules come from the owner (2026-11-02). They override any default behaviou
 
 ## How work is done here
 * Spec first: read the relevant page(s) of `docs2/RHAI_V40_A3_Continuous_Department_Workflow.pdf`.
-* Then:
-  * build;
-  * run `npm run verify` and `npm run e2e` **three times from a clean DB**;
-  * an independent review;
-  * fix.
+* Then: build; verify with `npm run typecheck` (and the existing test suite unmodified, as a regression check, when touching an area that already has tests) plus a manual/UI sanity pass of the flow; fix.
+* **Do not write new automated test cases or test files.** The owner has a dedicated QA team for functional verification (2026-11-20) — spending effort authoring/maintaining tests here is explicitly unwanted.
 * `index.html` (the prototype) is read-only.
 

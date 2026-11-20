@@ -127,6 +127,13 @@ const envSchema = z
     SMTP_USER: z.string().optional(),
     SMTP_PASS: z.string().optional(),
     SMTP_FROM: z.string().optional(),
+    /** Microsoft 365 mail through Microsoft Graph (see core/mail/transport.ts). The secret / password only ever live in .env. */
+    GRAPH_TENANT_ID: z.string().optional(),
+    GRAPH_CLIENT_ID: z.string().optional(),
+    GRAPH_CLIENT_SECRET: z.string().optional(),
+    GRAPH_SENDER: z.string().email().optional(),
+    GRAPH_SENDER_PASSWORD: z.string().optional(),
+    GRAPH_SENDER_NAME: z.string().default('Sawant Group ERP'),
     /** Base URL of the web client for email links. */
     APP_BASE_URL: z.string().url().default('http://localhost:5173'),
   })

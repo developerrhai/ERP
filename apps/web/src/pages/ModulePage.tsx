@@ -164,7 +164,6 @@ import { KpiAlertsPage, KpiTargetsPage } from './dashboards/TargetsAlertsPages';
 import { DeptInboxPage, DeptWorkPage, WorkflowMatrixPage } from './work/WorkPages';
 import { MyApprovalsPage } from './work/MyApprovalsPage';
 import { V40TabFrame, v40TabsFor } from './frame/V40TabFrame';
-import { FamV40Body } from './v40fam/FamV40Body';
 import { DeptMailboxPage } from './work/DeptMailboxPage';
 import { DepartmentMovementPage, InterplantMovementPage, MaintPartMovementPage, ProcessMovementPage } from './work/MovementRegisterPage';
 import { PlantUnitRoutingPage } from './mfg/RoutePlantUnitRouting';
@@ -184,6 +183,15 @@ import { CanteenPage, HandoverPage, TasksPage, VisitorsPage } from './ops/OpsPag
 import { DevicesPage, LiveBoardPage, PoliciesPage, PunchSitesPage } from './attendance/AttendancePages';
 import { CertificatesPage, DeptMailPage, DocumentCenterPage, LettersPage, MailAutomationPage } from './docsmail/DocsMailPages';
 import { SCREEN_PAGES } from './screens/screenPages';
+
+// FamV40Body's own register/Add/Edit is local-state-only and never persists — it fakes a success toast
+// and silently drops the row on refresh (see project-famv40body-mock-data-scope memory). PageBody always
+// renders something real underneath it: a dedicated page component for ~300 pageIds (confirmed by
+// reading the switch below), or the real schema-driven GenericModulePage engine as the default for
+// everything else. Swept live across all 262 V40-tabbed pages with FamV40Body bypassed (2026-11-20):
+// zero crashes, zero 404s beyond one pre-existing unrelated registry gap (mfg-material-issue, 404s
+// before this code even runs). So FamV40Body is skipped for every V40-tabbed page, the same way
+// bi-/admin- pages already skipped it below.
 
 const SUB_PAGES: Record<string, readonly string[]> = {
   'admin-settings': ['controls', 'letterhead', 'finance-limits'],
@@ -262,13 +270,7 @@ function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: 
       {SCREEN_PAGES.has(pageId) || pageId === 'dashboard' ? null : (
         <ActionBar actions={perms.actions} mode="page" pageId={pageId} />
       )}
-      {v40TabsFor(pageId).length > 0 && !pageId.startsWith('bi-') && !pageId.startsWith('admin-') ? (
-        <V40TabFrame pageId={pageId} tabs={v40TabsFor(pageId)}>
-          <FamV40Body pageId={pageId} actions={perms.actions} user={user}>
-            <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
-          </FamV40Body>
-        </V40TabFrame>
-      ) : v40TabsFor(pageId).length > 0 ? (
+      {v40TabsFor(pageId).length > 0 ? (
         <V40TabFrame pageId={pageId} tabs={v40TabsFor(pageId)}>
           <PageBody user={user} page={page} sub={sub} actions={perms.actions} />
         </V40TabFrame>

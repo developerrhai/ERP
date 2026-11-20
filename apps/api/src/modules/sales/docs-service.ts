@@ -1,7 +1,7 @@
 // Phase 10 pre-sales and orders: customer RFQ with the internal engineering + finance review (client requirement 1),
 // customer-wise quotation with revisions and the customer's decision, sales order with the credit check, and stock
 // reservation for the order lines. Rates come from the Phase 6 price lists or from the person: never from code.
-import { lineNoGstRate } from '../masters/party-rules';
+import { isHsn, lineNoGstRate } from '../masters/party-rules';
 import { prisma } from '../../core/db/prisma';
 import type { Db } from '../../core/db/prisma';
 import { AppError, Errors } from '../../core/http/errors';
@@ -145,7 +145,7 @@ async function priceLines(
     const qty = D(S(l.qty ?? 0));
     if (qty.lte(0)) throw Errors.validation({ [at('qty')]: 'Enter a quantity greater than 0.' });
     if (needItem && !l.itemId) throw Errors.validation({ [at('itemId')]: 'Choose an item.' });
-    let hsn: string | null = null;
+    let masterHsn: string | null = null;
     if (l.itemId) {
       const it = (
         await query(
@@ -155,10 +155,22 @@ async function priceLines(
         )
       )[0];
       if (!it) throw Errors.validation({ [at('itemId')]: 'Choose an item.' });
-      hsn = (it.hsn as string | null) ?? null;
+      masterHsn = (it.hsn as string | null) ?? null;
       l.uom = l.uom ?? it.base_uom;
       await UomService.toBase(tx, { itemId: S(l.itemId), uom: S(l.uom), qty });
     } else l.uom = l.uom ?? 'Nos';
+    // Pre-fill HSN from the item master; a typed value on the line overrides it, with a non-blocking
+    // warning when it diverges from the master (owner decision 2026-11-20, never a hard lock here).
+    let hsn = masterHsn;
+    let hsnWarning: string | null = null;
+    const typedHsn = l.hsnSac === undefined || l.hsnSac === null ? '' : S(l.hsnSac).trim();
+    if (typedHsn) {
+      if (!isHsn(typedHsn))
+        throw Errors.validation({ [at('hsnSac')]: 'Enter a 4, 6 or 8 digit HSN/SAC.' });
+      hsn = typedHsn;
+      if (masterHsn && typedHsn !== masterHsn)
+        hsnWarning = `HSN/SAC ${typedHsn} differs from the item master's ${masterHsn}.`;
+    }
     if ((l.rate === undefined || l.rate === null || S(l.rate) === '') && l.itemId) {
       try {
         const p = await pricingService.lookup({
@@ -192,6 +204,7 @@ async function priceLines(
     out.push({
       ...l,
       hsnSac: hsn,
+      hsnWarning,
       gstPct: gst,
       discountPct: S(l.discountPct ?? 0),
       taxable: str(t.taxable),
@@ -367,6 +380,7 @@ export const quotationCrud = makeCrud({
     'itemId',
     'description',
     'partNo',
+    'hsnSac',
     'qty',
     'uom',
     'rate',
@@ -528,6 +542,7 @@ export const quotationActions = {
         itemId: l.itemId,
         description: l.description,
         partNo: l.partNo,
+        hsnSac: l.hsnSac,
         qty: l.qty,
         uom: l.uom,
         rate: l.rate,
@@ -559,6 +574,7 @@ export const orderCrud = makeCrud({
     'description',
     'partNo',
     'colour',
+    'hsnSac',
     'qty',
     'uom',
     'rate',

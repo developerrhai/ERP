@@ -1,6 +1,7 @@
 // Email for notifications (docs/phases/PHASE-05.md §5): templates, the outbox and the drain that
 // the `email.send` job runs. SMTP is optional: without it, queued rows become SKIPPED and the app
 // keeps working. Backoff doubles from one minute; after 5 attempts a row is FAILED.
+import { createMailTransport, fromAddress, mailConfigured } from '../../core/mail/transport';
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import { env } from '../../config/env';
@@ -19,20 +20,13 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;');
 }
 
+/** True when any provider (Microsoft Graph or SMTP) can send. Kept under its old name for the callers. */
 export function smtpConfigured(): boolean {
-  return Boolean(env.SMTP_HOST && env.SMTP_PORT && env.SMTP_FROM);
+  return mailConfigured();
 }
 
-let transport: Transporter | null = null;
 function transporter(): Transporter | null {
-  if (!smtpConfigured()) return null;
-  transport ??= nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_PORT === 465,
-    auth: env.SMTP_USER && env.SMTP_PASS ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
-  });
-  return transport;
+  return createMailTransport();
 }
 
 /** Test seam: the drain asks this for the transporter, tests may swap it. */
@@ -167,7 +161,7 @@ export async function drainOutbox(now: Date = new Date(), batch = 50): Promise<D
       }
       try {
         await mailer.sendMail({
-          from: env.SMTP_FROM,
+          from: fromAddress(),
           to: row.to_email,
           subject: row.subject,
           text: row.text,

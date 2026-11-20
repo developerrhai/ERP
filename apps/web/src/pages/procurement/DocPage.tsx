@@ -98,6 +98,13 @@ function show(v: unknown, fmt?: string): string {
   return s(v) || '—';
 }
 
+/** Lines with an overridden HSN/SAC that diverges from the item master carry a `hsnWarning`; surface it. */
+function hsnWarningSuffix(d: Doc): string {
+  const lines = Array.isArray(d.lines) ? (d.lines as Row[]) : [];
+  const warnings = lines.map((l) => s(l.hsnWarning)).filter((w) => w !== '');
+  return warnings.length ? ` — ${warnings.join(' ')}` : '';
+}
+
 export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
   const toast = useToast();
   const [page, setPage] = useState(1);
@@ -120,6 +127,17 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
     list.reload();
     setProcKey((k) => k + 1);
   };
+  // The shell ActionBar's "+ Add New" (GuardedPage, outside this component) only dispatches a global
+  // event; open the same form our own header button opens when it's meant for this page.
+  useEffect(() => {
+    if (!cfg.pageId) return undefined;
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ pageId: string }>;
+      if (ce.detail?.pageId === cfg.pageId) setEditing('new');
+    };
+    window.addEventListener('v40-add-record', handler);
+    return () => window.removeEventListener('v40-add-record', handler);
+  }, [cfg.pageId]);
   // CRM / Sales pages inside the V40 tab frame show the V40 columns of the open tab (sales/V40Register.tsx)
   const { pageId: routePage = '' } = useParams();
   const v40 = Boolean(useFrame()) && SALES_V40_IDS.has(routePage) && !cfg.noV40;
@@ -238,7 +256,7 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
           onClose={() => setEditing(null)}
           onSaved={(d) => {
             setEditing(null);
-            toast(`Saved ${s(d.number)}`);
+            toast(`Saved ${s(d.number)}${hsnWarningSuffix(d)}`);
             reloadAll();
           }}
         />

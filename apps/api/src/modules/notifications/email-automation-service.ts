@@ -1,6 +1,7 @@
 // Phase 21 §5.7: Automated Document Emails (SES v2 raw MIME + SMTP fallback),
 // Stored-PDF reuse + 7 MB cutoff -> 30d DMS share link, AES-256 encrypted Payslip PDF,
 // Idempotent rule dispatch, SNS webhook signature verification & bounce/complaint suppression.
+import { createMailTransport } from '../../core/mail/transport';
 import { createHash, createVerify, randomBytes } from 'node:crypto';
 import fs from 'node:fs/promises';
 import {
@@ -841,13 +842,8 @@ async function dispatchRawMime(input: {
     return { providerMessageId: out.MessageId ?? input.messageIdHeader, status: 'SENT' };
   }
 
-  if (smtpConfigured()) {
-    const t = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
-      auth: env.SMTP_USER && env.SMTP_PASS ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
-    });
+  const t = createMailTransport();
+  if (t) {
     const info = await t.sendMail(mailOptions);
     return { providerMessageId: info.messageId ?? input.messageIdHeader, status: 'SENT' };
   }

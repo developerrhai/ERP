@@ -216,6 +216,7 @@ export const CRFQ_CFG: DocCfg = {
 };
 
 export const SQ_CFG: DocCfg = {
+  pageId: 'sales-quotations',
   title: 'Sales Quotations',
   sub: 'Quotes to customers. After approval, record the customer’s decision, then make the sales order.',
   path: '/sales/quotations',
@@ -239,6 +240,7 @@ export const SQ_CFG: DocCfg = {
     { key: 'description', label: 'Description', type: 'text' },
     { key: 'qty', label: 'Quantity', type: 'number', required: true },
     { key: 'uom', label: 'Unit', type: 'text' },
+    { key: 'hsnSac', label: 'HSN/SAC (blank = item master)', type: 'text' },
     { key: 'rate', label: 'Rate (blank = price list)', type: 'number' },
     { key: 'discountPct', label: 'Discount %', type: 'number' },
     { key: 'gstPct', label: 'GST %', type: 'number' },
@@ -274,6 +276,7 @@ export const SQ_CFG: DocCfg = {
 };
 
 export const SO_CFG: DocCfg = {
+  pageId: 'sales-orders',
   title: 'Sales Orders',
   sub: 'Orders from customers. The credit limit is checked when you submit.',
   path: '/sales/orders',
@@ -297,6 +300,7 @@ export const SO_CFG: DocCfg = {
     { key: 'colour', label: 'Colour / powder', type: 'text' },
     { key: 'qty', label: 'Quantity', type: 'number', required: true },
     { key: 'uom', label: 'Unit', type: 'text' },
+    { key: 'hsnSac', label: 'HSN/SAC (blank = item master)', type: 'text' },
     { key: 'rate', label: 'Rate (blank = price list)', type: 'number' },
     { key: 'discountPct', label: 'Discount %', type: 'number' },
     { key: 'gstPct', label: 'GST %', type: 'number' },
