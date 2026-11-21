@@ -166,6 +166,7 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   overflow: hidden;
+  box-shadow: var(--shadow-sm, var(--shadow));
 }
 .ui-table-scroll {
   overflow: auto;
@@ -357,6 +358,7 @@ body {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm, var(--shadow));
 }
 .ui-kpi small {
   color: var(--muted);

@@ -22,7 +22,7 @@
 
 .ops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
 .ops-grid.two { grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
-.ops-card { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.ops-card { border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; box-shadow: var(--shadow); }
 .ops-card h2, .ops-card h3 { margin: 0; font-size: 17px; font-weight: 800; color: var(--text); }
 .ops-card p { margin: 0; }
 .ops-sub { color: var(--muted); font-size: 12px; }

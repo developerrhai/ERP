@@ -61,7 +61,7 @@ export function MyDashboardPage() {
         ) : (
           <BarChart
             ariaLabel="My documents by status"
-            data={m.myDocumentsByStatus.map((r) => ({ label: r.status, count: r.count }))}
+            data={[...m.myDocumentsByStatus].sort((a, b) => b.count - a.count).map((r) => ({ label: r.status, count: r.count }))}
           />
         )}
       </section>

@@ -92,11 +92,21 @@
   border-radius: 7px;
   font-size: 12px;
   margin: 1px 0;
+  transition: background 150ms ease, color 150ms ease;
 }
 .menu-item:hover,
 .menu-item.active {
   background: rgba(59, 130, 246, 0.18);
   color: #fff;
+}
+.menu-item.active {
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 0 #60a5fa;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-item {
+    transition: none;
+  }
 }
 .top {
   grid-area: top;
@@ -2542,9 +2552,48 @@ fieldset.lines {
 .tile { display: block; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text); text-decoration: none; font-weight: 600; }
 .tile:hover { border-color: var(--primary); }
 .family-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: start; }
-.family-card { border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow: hidden; border-top: 4px solid var(--primary); }
+.family-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.05));
+  transition: box-shadow 150ms ease, transform 150ms ease, border-color 150ms ease;
+}
+.family-card:hover {
+  box-shadow: var(--shadow-hover, 0 16px 36px rgba(15, 23, 42, 0.13));
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .family-card { transition: none; }
+  .family-card:hover { transform: none; }
+}
 .family-head { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; width: 100%; text-align: left; padding: 14px; border: 0; background: transparent; cursor: pointer; font: inherit; }
-.family-icon { font-size: 22px; grid-row: 1 / span 2; }
+.family-icon {
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 9px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+/* A module grid of one repeated blue block reads as unfinished; cycle a few tasteful tints instead. */
+.family-grid .family-card:nth-of-type(8n+2) .family-icon { background: linear-gradient(135deg, #4ade80, #16a34a); }
+.family-grid .family-card:nth-of-type(8n+3) .family-icon { background: linear-gradient(135deg, #fbbf24, #d97706); }
+.family-grid .family-card:nth-of-type(8n+4) .family-icon { background: linear-gradient(135deg, #c084fc, #9333ea); }
+.family-grid .family-card:nth-of-type(8n+5) .family-icon { background: linear-gradient(135deg, #22d3ee, #0e7490); }
+.family-grid .family-card:nth-of-type(8n+6) .family-icon { background: linear-gradient(135deg, #f87171, #dc2626); }
+.family-grid .family-card:nth-of-type(8n+7) .family-icon { background: linear-gradient(135deg, #f472b6, #db2777); }
+.family-grid .family-card:nth-of-type(8n+0) .family-icon { background: linear-gradient(135deg, #94a3b8, #475569); }
 .family-name { font-weight: 700; }
 .family-count { font-size: 12px; color: var(--muted); }
 .family-pages { list-style: none; margin: 0; padding: 0 14px 12px; display: grid; grid-template-columns: 1fr; gap: 2px; }

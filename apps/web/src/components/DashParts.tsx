@@ -146,7 +146,12 @@ export function BarChart({ data, ariaLabel }: { data: { label: string; count: nu
   const max = Math.max(1, ...data.map((d) => d.count));
   const rowH = 28;
   return (
-    <svg role="img" aria-label={ariaLabel} width="100%" viewBox={`0 0 420 ${data.length * rowH + 8}`}>
+    <svg
+      role="img"
+      aria-label={ariaLabel}
+      viewBox={`0 0 420 ${data.length * rowH + 8}`}
+      style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block' }}
+    >
       {data.map((d, i) => (
         <g key={d.label} transform={`translate(0 ${i * rowH + 4})`}>
           <text x="0" y="16" fontSize="12" fill="currentColor">

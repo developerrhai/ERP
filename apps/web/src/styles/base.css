@@ -7,12 +7,6 @@ html,
 body {
   height: 100%;
 }
-html {
-  /* Users were manually zooming the browser out to ~65-70% because at 100% the toolbar buttons,
-     cards and tables feel oversized and sparse, breaking layout into an uneven, scattered look.
-     Bake that density in so 100% browser zoom already looks like their preferred view. */
-  zoom: 0.75;
-}
 body {
   margin: 0;
   font-family:
@@ -43,9 +37,22 @@ button {
   border-radius: 9px;
   font-size: 12px;
   font-weight: 700;
+  transition:
+    box-shadow 150ms ease,
+    transform 150ms ease,
+    border-color 150ms ease;
 }
 .btn:hover {
   box-shadow: 0 4px 13px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
 }
 .btn.primary {
   background: var(--primary);
