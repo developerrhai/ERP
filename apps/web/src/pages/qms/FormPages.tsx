@@ -304,14 +304,16 @@ export function FormList({ kind, actions }: { kind: FormKind; actions: ActionSet
   );
 }
 
-/** Quality Alert is its own tab on the NCR page; 8D, continuous improvement and meetings share the CAPA page. */
+/** Quality Alert is its own tab on the NCR page; 8D and continuous improvement share the CAPA page. Minutes of
+ * meeting is its own page (qms-mom) — it used to be a third tab here, which read as "no dedicated module" to
+ * anyone looking for it (Quality_Department_ERP_Comparison.pdf, row 8). */
 function CapaPageBody({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<FormKind>('EIGHT_D');
   return (
     <>
       <PageHead
         title="CAPA, 8D and improvement"
-        sub="8D problem solving with Why-Why and CAPA reference, continuous improvement projects (SQDCPE) and minutes of meetings."
+        sub="8D problem solving with Why-Why and CAPA reference, and continuous improvement projects (SQDCPE)."
       />
       <Tabs
         value={tab}
@@ -319,7 +321,6 @@ function CapaPageBody({ actions }: { actions: ActionSet }) {
         tabs={[
           ['EIGHT_D', '8D problem solving'],
           ['CI', 'Continuous improvement'],
-          ['MOM', 'Minutes of meeting'],
         ]}
       />
       <FormList key={tab} kind={tab} actions={actions} />
@@ -328,3 +329,17 @@ function CapaPageBody({ actions }: { actions: ActionSet }) {
 }
 
 export const CapaPage = withPlantV40('qms-capa', CapaPageBody);
+
+function MomPageBody({ actions }: { actions: ActionSet }) {
+  return (
+    <>
+      <PageHead
+        title="Minutes of Meeting"
+        sub="Customer and internal quality meetings: attendees and action items as real rows, with owner, due date and status."
+      />
+      <FormList kind="MOM" actions={actions} />
+    </>
+  );
+}
+
+export const MomPage = withPlantV40('qms-mom', MomPageBody);

@@ -20,6 +20,11 @@ export interface Template {
   closeRequires: string[];
   status: string;
 }
+export interface FieldColumn {
+  key: string;
+  label: string;
+  type?: 'text' | 'date' | 'number';
+}
 export interface FieldDef {
   key: string;
   label: string;
@@ -32,9 +37,12 @@ export interface FieldDef {
     | 'item'
     | 'customer'
     | 'supplier'
-    | 'instrument';
+    | 'instrument'
+    | 'table';
   required?: boolean;
   options?: string[];
+  /** 'table' only: the repeating row's own columns. */
+  columns?: FieldColumn[];
 }
 
 const key = (): string =>

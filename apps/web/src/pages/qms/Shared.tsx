@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { lookupRef } from '../../lib/qmsApi';
-import type { FieldDef, Option } from '../../lib/qmsApi';
+import type { FieldColumn, FieldDef, Option } from '../../lib/qmsApi';
 
 export const s = (v: unknown): string =>
   v === null || v === undefined
@@ -104,7 +104,85 @@ export function RefPicker({
   );
 }
 
-/** Draws the fields of a template. Values are strings; errors come from the API by field key. */
+/** A 'table' field's rows: attendees, action items and the like, each row shaped by the field's own columns. */
+function TableField({
+  idPrefix,
+  columns,
+  value,
+  disabled,
+  onChange,
+}: {
+  idPrefix: string;
+  columns: FieldColumn[];
+  value: Record<string, string>[];
+  disabled?: boolean | undefined;
+  onChange: (rows: Record<string, string>[]) => void;
+}) {
+  const rows = Array.isArray(value) ? value : [];
+  const setCell = (i: number, key: string, v: string) =>
+    onChange(rows.map((r, k) => (k === i ? { ...r, [key]: v } : r)));
+  return (
+    <div className="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            {columns.map((c) => (
+              <th key={c.key}>{c.label}</th>
+            ))}
+            {disabled ? null : <th />}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length + 1}>No rows yet.</td>
+            </tr>
+          ) : null}
+          {rows.map((r, i) => (
+            <tr key={i}>
+              {columns.map((c) => (
+                <td key={c.key}>
+                  <input
+                    aria-label={`${c.label} row ${i + 1}`}
+                    id={`${idPrefix}-${i}-${c.key}`}
+                    type={c.type === 'date' ? 'date' : c.type === 'number' ? 'number' : 'text'}
+                    value={s(r[c.key])}
+                    disabled={disabled}
+                    onChange={(e) => setCell(i, c.key, e.target.value)}
+                  />
+                </td>
+              ))}
+              {disabled ? null : (
+                <td>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => onChange(rows.filter((_, k) => k !== i))}
+                  >
+                    Remove
+                  </button>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {disabled ? null : (
+        <button
+          type="button"
+          className="btn"
+          onClick={() =>
+            onChange([...rows, Object.fromEntries(columns.map((c) => [c.key, '']))])
+          }
+        >
+          + Add row
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Draws the fields of a template. Values are strings (or, for 'table', rows); errors come from the API by field key. */
 export function DynamicFields({
   fields,
   values,
@@ -120,7 +198,7 @@ export function DynamicFields({
   errors?: Record<string, string> | undefined;
   readOnly?: boolean | undefined;
   idPrefix: string;
-  onChange: (key: string, value: string, label?: string) => void;
+  onChange: (key: string, value: unknown, label?: string) => void;
 }) {
   return (
     <div className="form-grid">
@@ -128,9 +206,19 @@ export function DynamicFields({
         const id = `${idPrefix}-${f.key}`;
         const v = s(values[f.key]);
         const err = errors?.[f.key];
-        const wide = f.type === 'textarea';
+        const wide = f.type === 'textarea' || f.type === 'table';
         let input: ReactNode;
-        if (f.type === 'textarea')
+        if (f.type === 'table')
+          input = (
+            <TableField
+              idPrefix={id}
+              columns={f.columns ?? []}
+              value={(values[f.key] as Record<string, string>[]) ?? []}
+              disabled={readOnly}
+              onChange={(rows) => onChange(f.key, rows)}
+            />
+          );
+        else if (f.type === 'textarea')
           input = (
             <textarea
               id={id}

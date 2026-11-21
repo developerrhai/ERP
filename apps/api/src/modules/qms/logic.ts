@@ -63,6 +63,11 @@ export function overallResult(statuses: RowStatus[]): 'ACCEPTED' | 'REJECTED' | 
   return null;
 }
 
+export interface HeaderFieldColumn {
+  key: string;
+  label: string;
+  type?: 'text' | 'date' | 'number';
+}
 export interface HeaderField {
   key: string;
   label: string;
@@ -75,9 +80,12 @@ export interface HeaderField {
     | 'item'
     | 'customer'
     | 'supplier'
-    | 'instrument';
+    | 'instrument'
+    | 'table';
   required?: boolean;
   options?: string[];
+  /** 'table' only: the repeating row's own columns (e.g. attendees: name, department; action items: action, owner, due date, status). */
+  columns?: HeaderFieldColumn[];
 }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -92,6 +100,12 @@ export function headerErrors(
   for (const k of Object.keys(values)) if (!known.has(k)) out[k] = 'This field is not in the form.';
   for (const f of fields) {
     const raw = values[f.key];
+    if (f.type === 'table') {
+      const rows = Array.isArray(raw) ? raw : [];
+      if (rows.length === 0 && f.required && opts.requireAll !== false)
+        out[f.key] = `Add at least one row to ${f.label.toLowerCase()}.`;
+      continue;
+    }
     const v = raw === undefined || raw === null ? '' : String(raw as string).trim();
     if (v === '') {
       if (f.required && opts.requireAll !== false) out[f.key] = `Enter ${f.label.toLowerCase()}.`;

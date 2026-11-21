@@ -216,10 +216,19 @@ const NCR_C = [
   'Item',
   'Problem Description',
   'Containment',
+  'Disposition',
+  'Rework No',
+  'Rework Status',
+  'CAPA No',
+  'CAPA Status',
   'Status',
   'Actions',
 ];
 const FIVE = `(SELECT fw.root_cause FROM five_why_cases fw WHERE fw.ncr_ref=t.number AND fw.deleted_at IS NULL ORDER BY fw.created_at DESC LIMIT 1)`;
+const REWORK = (col: string): string =>
+  `(SELECT rw.${col} FROM mfg_rework rw WHERE rw.rejection_id=t.id ORDER BY rw.created_at DESC LIMIT 1)`;
+const CAPA_OF_NCR = (col: string): string =>
+  `(SELECT f.${col} FROM qms_forms f WHERE f.kind='EIGHT_D' AND f.deleted_at IS NULL AND f.data->>'ncr_ref'=t.number ORDER BY f.created_at DESC LIMIT 1)`;
 const NCR: PageDef = {
   from: `qms_rejections t LEFT JOIN items it ON it.id=t.item_id LEFT JOIN qms_inspections si ON si.id=t.source_inspection_id ${apJoin('qms-ncr')}`,
   number: 't.number',
@@ -239,6 +248,13 @@ const NCR: PageDef = {
     'Disposition Note': t('t.disposition_note'),
     Responsibility: t('t.operator'),
     'Due Date': none('date'),
+    'Rework No': t(REWORK('number')),
+    'Rework Qty': n(REWORK('qty')),
+    'Rework OK Qty': n(REWORK('qty_ok')),
+    'Rework Scrap Qty': n(REWORK('qty_scrap')),
+    'Rework Status': t(REWORK('status')),
+    'CAPA No': t(CAPA_OF_NCR('number')),
+    'CAPA Status': t(CAPA_OF_NCR('status')),
     Status: pill('t.status'),
     ...approvalCols('t.number'),
     Docs: DOCS('qms-ncr'),
@@ -269,7 +285,7 @@ const CAPA_C = [
 ];
 const CAPA: PageDef = {
   from: `qms_forms t ${apJoin('qms-capa')}`,
-  base: [`t.kind IN ('EIGHT_D','CI','MOM')`],
+  base: [`t.kind IN ('EIGHT_D','CI')`],
   number: 't.number',
   status: 't.status',
   search: ['t.number', 't.title', 't.capa_ref'],
@@ -282,7 +298,7 @@ const CAPA: PageDef = {
     'Corrective Action': t(`COALESCE(t.data->>'d5_corrective', t.data->>'actions')`),
     'Preventive Action': t(`t.data->>'d7_prevent'`),
     Owner: t(`COALESCE(t.data->>'d1_team', t.data->>'team')`),
-    Type: t(`CASE t.kind WHEN 'EIGHT_D' THEN '8D' WHEN 'CI' THEN 'Continuous improvement' ELSE 'Minutes of meeting' END`),
+    Type: t(`CASE t.kind WHEN 'EIGHT_D' THEN '8D' ELSE 'Continuous improvement' END`),
     'CAPA Reference': t('t.capa_ref'),
     'Effectiveness Check': t(`COALESCE(t.data->>'d6_implemented', t.data->>'after')`),
     Date: d('t.doc_date'),
@@ -299,6 +315,50 @@ const CAPA: PageDef = {
     V('corrective action', [...CAPA_C.slice(0, 2), 'Corrective Action', 'Owner', 'Status', 'Actions']),
     V('preventive action', [...CAPA_C.slice(0, 2), 'Preventive Action', 'Owner', 'Status', 'Actions']),
     V('effectiveness check', [...CAPA_C.slice(0, 2), 'Effectiveness Check', 'CAPA Reference', 'Status', 'Actions']),
+  ],
+};
+
+// ------------------------------------------------------------------------------------------------ MOM (minutes of meeting)
+const MOM_C = [
+  'MOM No',
+  'Date',
+  'Title',
+  'Location',
+  'Attendees',
+  'Action Items',
+  'Next Meeting Date',
+  'Status',
+  'Actions',
+];
+const MOM: PageDef = {
+  from: `qms_forms t ${apJoin('qms-mom')}`,
+  base: [`t.kind='MOM'`],
+  number: 't.number',
+  status: 't.status',
+  search: ['t.number', 't.title'],
+  order: 't.doc_date DESC, t.number DESC',
+  cols: {
+    'MOM No': t('t.number'),
+    Date: d('t.doc_date'),
+    Title: t('t.title'),
+    Location: t(`t.data->>'location'`),
+    Attendees: n(`jsonb_array_length(COALESCE(t.data->'attendees','[]'::jsonb))`),
+    'Action Items': n(`jsonb_array_length(COALESCE(t.data->'action_items','[]'::jsonb))`),
+    'Open Action Items': n(
+      `(SELECT count(*) FROM jsonb_array_elements(COALESCE(t.data->'action_items','[]'::jsonb)) a WHERE COALESCE(a->>'status','') NOT IN ('Done','Closed'))`,
+    ),
+    Agenda: t(`t.data->>'agenda'`),
+    'Next Meeting Date': t(`t.data->>'next_meeting_date'`),
+    Status: pill('t.status'),
+    ...approvalCols('t.number'),
+    Docs: DOCS('qms-mom'),
+    Actions: ACTIONS,
+  },
+  register: MOM_C,
+  compact: MOM_C,
+  views: [
+    V('action items', [...MOM_C.slice(0, 4), 'Action Items', 'Open Action Items', 'Status', 'Actions']),
+    V('agenda', [...MOM_C.slice(0, 4), 'Agenda', 'Status', 'Actions']),
   ],
 };
 
@@ -456,6 +516,7 @@ export const QMS_V40_PAGES: Record<string, PageDef> = {
   'qms-supplier': SUPPLIER,
   'qms-ncr': NCR,
   'qms-capa': CAPA,
+  'qms-mom': MOM,
   'qms-5why': FIVEWHY,
   'qms-calibration': CAL,
   'qms-plans': PLANS,

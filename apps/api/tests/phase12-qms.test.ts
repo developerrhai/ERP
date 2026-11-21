@@ -646,9 +646,12 @@ describe('8D, alert, MOM and continuous improvement', () => {
     const mom = await v.call('post', '/qms/forms', {
       kind: 'MOM',
       title: 'Monthly quality review',
-      data: { agenda: 'PPM, complaints', points: 'Reduce rejection / QA head / Nov' },
+      data: {
+        agenda: 'PPM, complaints',
+        action_items: [{ point: 'Reduce rejection', responsible: 'QA head', status: 'Open' }],
+      },
     });
-    expect(mom.status).toBe(201);
+    expect(mom.status, JSON.stringify(mom.body)).toBe(201);
     const ci = body(
       await v.call('post', '/qms/forms', {
         kind: 'CI',

@@ -835,6 +835,14 @@ export const PHASE_ADDED_PAGES: readonly {
     purpose:
       'ECN/ECO register: every change raised when a released BOM is revised, with the reason and who was alerted (docs2 p.1).',
   },
+  {
+    id: 'qms-mom',
+    title: 'Minutes of Meeting',
+    family: 'Quality / QMS',
+    after: 'qms-capa',
+    purpose:
+      'Minutes of meeting as their own register, not a buried CAPA tab: attendees and action items (owner, due date, status) as real rows, not one free-text block (Quality_Department_ERP_Comparison.pdf, row 8).',
+  },
 ];
 
 function addPhasePages(data: RegistryData): void {

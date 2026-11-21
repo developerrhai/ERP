@@ -62,7 +62,7 @@ describe('Customer Master', () => {
     });
     renderApp('/m/crm-customer360');
     const ue = userEvent.setup();
-    await screen.findByRole('heading', { name: 'Customer Master' });
+    await screen.findByRole('heading', { name: 'Customer 360°' });
     expect(await screen.findByText(/Nothing here yet for this view/)).toBeInTheDocument();
     await ue.click(screen.getByRole('button', { name: /Add Customer/ }));
     const dialog = screen.getByRole('dialog');

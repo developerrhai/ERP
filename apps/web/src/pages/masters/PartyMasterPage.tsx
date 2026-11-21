@@ -66,7 +66,8 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
     [kind, q, page],
   );
   const rows = load.data?.rows ?? [];
-  const title = isCustomer ? 'Customer Master' : 'Supplier Master';
+  // Customer 360° and Customer Master share this screen; the heading follows the page that was opened
+  const title = isCustomer ? (routePage === 'crm-customer360' ? 'Customer 360°' : 'Customer Master') : 'Supplier Master';
 
   return (
     <>

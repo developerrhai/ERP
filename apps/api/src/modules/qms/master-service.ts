@@ -75,6 +75,10 @@ export const masterService = {
         throw Errors.validation({
           headerFields: `"${f.label}" is a choice field: give its options.`,
         });
+      if (f.type === 'table' && !(f.columns ?? []).length)
+        throw Errors.validation({
+          headerFields: `"${f.label}" is a table field: give its columns.`,
+        });
     }
     const unknown = (input.closeRequires ?? []).find((k) => !keys.has(k));
     if (unknown)

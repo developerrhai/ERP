@@ -26,7 +26,7 @@ export const FORM_KINDS: FormKind[] = ['EIGHT_D', 'ALERT', 'MOM', 'CI'];
 export const PAGE_OF_FORM: Record<FormKind, string> = {
   EIGHT_D: 'qms-capa',
   CI: 'qms-capa',
-  MOM: 'qms-capa',
+  MOM: 'qms-mom',
   ALERT: 'qms-ncr',
 };
 const PREFIX: Record<FormKind, string> = { EIGHT_D: '8D', ALERT: 'QA', MOM: 'MOM', CI: 'CI' };

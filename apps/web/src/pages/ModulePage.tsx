@@ -107,7 +107,7 @@ import {
   SparesPage,
   WorkOrdersPage as MaintWorkOrdersPage,
 } from './assets/MaintPages';
-import { CapaPage } from './qms/FormPages';
+import { CapaPage, MomPage } from './qms/FormPages';
 import { InspectionPage } from './qms/InspectionPages';
 import { NcrPage } from './qms/RegisterPages';
 import { CalibrationPage, PlansPage } from './qms/SetupPages';
@@ -472,6 +472,8 @@ function PageBody({
       return <NcrPage actions={actions} />;
     case 'qms-capa':
       return <CapaPage actions={actions} />;
+    case 'qms-mom':
+      return <MomPage actions={actions} />;
     case 'qms-5why':
       return <CapaPage actions={actions} />;
     case 'qms-calibration':

@@ -85,6 +85,15 @@ const rowZ = z
   })
   .strict();
 const headerZ = z.record(z.unknown());
+const tableColZ = z
+  .object({
+    key: z
+      .string()
+      .regex(/^[a-z][a-z0-9_]{0,39}$/, 'Use lower-case letters, digits and underscore.'),
+    label: txt(60),
+    type: z.enum(['text', 'date', 'number']).optional(),
+  })
+  .strict();
 const fieldZ = z
   .object({
     key: z
@@ -102,10 +111,12 @@ const fieldZ = z
         'customer',
         'supplier',
         'instrument',
+        'table',
       ])
       .optional(),
     required: z.boolean().optional(),
     options: z.array(z.string().max(60)).max(30).optional(),
+    columns: z.array(tableColZ).max(20).optional(),
   })
   .strict();
 const charZ = z

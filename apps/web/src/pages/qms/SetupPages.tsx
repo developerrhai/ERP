@@ -5,7 +5,7 @@ import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { toUiError } from '../../lib/errors';
 import { qget, qlist, qpatch, qpost, qput } from '../../lib/qmsApi';
-import type { FieldDef, Row } from '../../lib/qmsApi';
+import type { FieldColumn, FieldDef, Row } from '../../lib/qmsApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, PageHead, Pill, todayIso } from '../finance/shared';
@@ -368,6 +368,7 @@ function TemplateDialog({
               headerFields: fields.map((f) => ({
                 ...f,
                 options: f.type === 'select' ? f.options : undefined,
+                columns: f.type === 'table' ? f.columns : undefined,
               })),
               rowConfig: tpl.rowConfig,
               closeRequires: tpl.closeRequires,
@@ -414,7 +415,7 @@ function TemplateDialog({
               <th>Label</th>
               <th>Type</th>
               <th>Required</th>
-              <th>Choices (comma separated)</th>
+              <th>Choices, or table columns as key:Label:type</th>
               <th />
             </tr>
           </thead>
@@ -451,6 +452,7 @@ function TemplateDialog({
                       'customer',
                       'supplier',
                       'instrument',
+                      'table',
                     ].map((t) => (
                       <option key={t}>{t}</option>
                     ))}
@@ -465,19 +467,45 @@ function TemplateDialog({
                   />
                 </td>
                 <td>
-                  <input
-                    aria-label={`Choices ${i + 1}`}
-                    disabled={f.type !== 'select'}
-                    value={(f.options ?? []).join(',')}
-                    onChange={(e) =>
-                      setF(i, {
-                        options: e.target.value
-                          .split(',')
-                          .map((x) => x.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                  />
+                  {f.type === 'table' ? (
+                    <input
+                      aria-label={`Table columns ${i + 1}`}
+                      placeholder="name:Name:text, date:Date:date"
+                      value={(f.columns ?? [])
+                        .map((c) => `${c.key}:${c.label}:${c.type ?? 'text'}`)
+                        .join(', ')}
+                      onChange={(e) =>
+                        setF(i, {
+                          columns: e.target.value
+                            .split(',')
+                            .map((x) => x.trim())
+                            .filter(Boolean)
+                            .map((part): FieldColumn => {
+                              const [ck, cl, ct] = part.split(':').map((p) => p.trim());
+                              return {
+                                key: ck ?? '',
+                                label: cl || ck || '',
+                                type: ct === 'date' || ct === 'number' ? ct : 'text',
+                              };
+                            }),
+                        })
+                      }
+                    />
+                  ) : (
+                    <input
+                      aria-label={`Choices ${i + 1}`}
+                      disabled={f.type !== 'select'}
+                      value={(f.options ?? []).join(',')}
+                      onChange={(e) =>
+                        setF(i, {
+                          options: e.target.value
+                            .split(',')
+                            .map((x) => x.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                    />
+                  )}
                 </td>
                 <td>
                   <button

@@ -779,6 +779,14 @@ const PHASE_ADDED_PAGES = [
     after: 'proj-test-records',
     purpose: 'Project documents by type and revision; the dossier PDF.',
   },
+  {
+    id: 'qms-mom',
+    title: 'Minutes of Meeting',
+    family: 'Quality / QMS',
+    after: 'qms-capa',
+    purpose:
+      'Minutes of meeting as their own register, not a buried CAPA tab: attendees and action items (owner, due date, status) as real rows, not one free-text block (Quality_Department_ERP_Comparison.pdf, row 8).',
+  },
 ] as const;
 
 const builtFamilies = rawRegistry.families.map((f) => {

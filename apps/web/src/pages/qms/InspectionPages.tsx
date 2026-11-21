@@ -372,7 +372,7 @@ function SheetEditor({
           readOnly={!editable}
           onChange={(k, v, l) => {
             setHeader((h) => ({ ...h, [k]: v }));
-            if (k === customerKey) setCustRef(v);
+            if (k === customerKey && typeof v === 'string') setCustRef(v);
             if (l !== undefined) setLabels((x) => ({ ...x, [k]: l }));
           }}
         />
