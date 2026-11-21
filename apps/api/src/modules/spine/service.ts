@@ -106,6 +106,19 @@ approvalService.register(GATE_DOC_TYPE, {
 // ------------------------------------------------------------------------------------------ service
 const randomUuidNil = '00000000-0000-0000-0000-000000000000';
 
+/** An enquiry saved with only a typed customer name (no customer picked) is linked to the one existing customer of that
+ *  name, so Create Quotation / Create Project do not fail with "create the customer first" for a customer that exists. */
+async function linkEnquiryCustomer(caller: Caller, e: Row): Promise<Row> {
+  if (e.customer_id) return e;
+  const name = S(e.prospect_name).trim();
+  if (!name) return e;
+  const hits = await query(prisma, `SELECT id FROM customers WHERE deleted_at IS NULL AND (lower(name) = lower($1) OR name_key = lower($1)) LIMIT 2`, name);
+  if (hits.length !== 1) return e;
+  await query(prisma, `UPDATE sales_enquiries SET customer_id = $2::uuid, version = version + 1, updated_at = now(), updated_by_id = $3::uuid WHERE id = $1::uuid AND customer_id IS NULL`, S(e.id), S(hits[0]!.id), caller.auth.user.id);
+  return { ...e, customer_id: hits[0]!.id };
+}
+
+
 export const spineService = {
   // ---------------------------------------------------------------- gate templates / gates
   async templates() {
@@ -573,7 +586,7 @@ export const spineService = {
   },
   /** Create a Phase 10 draft quotation from the enquiry; the enquiry becomes Quoted. */
   async toQuotation(caller: Caller, id: string, b: { gstPct?: number | string | undefined } = {}): Promise<Row> {
-    const e = await spineService.enquiry(caller, id);
+    const e = await linkEnquiryCustomer(caller, await spineService.enquiry(caller, id));
     if (!e.customer_id) throw Errors.validation({ customerId: 'Create the customer first, then pick it on the enquiry.' });
     if (!['New', 'Qualified'].includes(S(e.status))) throw Errors.conflict('A quotation was already made, or the enquiry is closed.');
     // An enquiry line is free text (no item, so no HSN): the GST rate cannot be looked up and must be given.
@@ -597,7 +610,7 @@ export const spineService = {
   },
   /** A "new product" enquiry becomes a project with the BLDC / SPPM / CUSTOM template. */
   async toProject(caller: Caller, id: string, b: { template?: 'BLDC' | 'SPPM' | 'CUSTOM'; projectManagerId?: string }): Promise<Row> {
-    const e = await spineService.enquiry(caller, id);
+    const e = await linkEnquiryCustomer(caller, await spineService.enquiry(caller, id));
     if (e.project_id) throw Errors.conflict('This enquiry already has a project.');
     if (!e.customer_id) throw Errors.validation({ customerId: 'Create the customer first, then pick it on the enquiry.' });
     const template = b.template ?? (e.project_template as 'BLDC' | 'SPPM' | 'CUSTOM' | null) ?? 'CUSTOM';

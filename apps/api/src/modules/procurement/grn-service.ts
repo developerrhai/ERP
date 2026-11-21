@@ -151,17 +151,11 @@ async function itemInfo(db: Db, itemId: string): Promise<ItemInfo> {
   return r as unknown as ItemInfo;
 }
 
-async function qcRequiredFor(db: Db, item: ItemInfo, supplierId: string): Promise<boolean> {
-  if (item.qc_required) return true;
-  const r = (
-    await query(
-      db,
-      `SELECT quality_hold FROM supplier_items WHERE supplier_id=$1::uuid AND item_id=$2::uuid`,
-      supplierId,
-      item.id,
-    )
-  )[0];
-  return r?.quality_hold === true;
+/** V40 flow (Material / IQC stage): every received item is held in Quarantine / Incoming Quality until it is released, so
+ *  a new GRN always reaches the IQC queue. The item's own qc_required flag and the supplier quality hold stay as stricter
+ *  markers (they are reported by the same call) but no longer let a receipt skip inspection. */
+async function qcRequiredFor(_db: Db, _item: ItemInfo, _supplierId: string): Promise<boolean> {
+  return true;
 }
 
 // ----------------------------------------------------------------------------------------------- save
