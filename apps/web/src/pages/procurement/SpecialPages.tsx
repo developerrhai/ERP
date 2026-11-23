@@ -706,6 +706,7 @@ function InvoiceForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: D
             {(grns.data?.rows ?? []).map((g) => (
               <option key={g.id} value={g.id}>
                 {s(g.number)} · {s(g.supplierName)}
+                {s(g.qcStatus) ? ` · Inspection: ${s(g.qcStatus)}` : ''}
               </option>
             ))}
           </select>

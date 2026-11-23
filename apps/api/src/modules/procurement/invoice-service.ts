@@ -1125,6 +1125,27 @@ export const invoiceService = {
         FROM goods_receipt_lines gl JOIN purchase_order_lines pl ON pl.id=gl.po_line_id JOIN items i ON i.id=gl.item_id WHERE gl.grn_id=$1::uuid AND gl.accepted_qty - gl.billed_qty > 0 ORDER BY gl.line_no`,
       grnId,
     );
+    if (lines.length === 0) {
+      // Only the accepted quantity can be billed (3-way match). Say why nothing came up instead of an empty table (TC-38).
+      const st = (
+        await query(
+          prisma,
+          `SELECT count(*) FILTER (WHERE qc_required AND qc_state = 'PENDING')::int AS pending,
+                  count(*) FILTER (WHERE accepted_qty > 0 AND accepted_qty - billed_qty <= 0)::int AS billed
+             FROM goods_receipt_lines WHERE grn_id=$1::uuid`,
+          grnId,
+        )
+      )[0];
+      if (Number(st?.pending ?? 0) > 0)
+        throw Errors.conflict(
+          `Inspection is still pending on ${Number(st?.pending)} line(s) of ${S(g.number)}. A purchase invoice can only be raised for accepted quantity: finish the Incoming Quality decision first.`,
+        );
+      throw Errors.conflict(
+        Number(st?.billed ?? 0) > 0
+          ? `Everything accepted on ${S(g.number)} is already billed.`
+          : `Nothing on ${S(g.number)} was accepted by inspection, so there is nothing to bill.`,
+      );
+    }
     return {
       supplierId: g.supplier_id,
       poId: g.po_id,

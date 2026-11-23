@@ -213,11 +213,10 @@ describe('sales order tabs show the real chain', () => {
       const dr = dispReg.body.data.find((r: any) => r.id === d0.id);
       expect(cell(dispReg, dr, 'Vehicle')).toBe('MH04AB1234');
       expect(cell(dispReg, dr, 'Sales Order')).toBe(order.number);
-      // columns V40 shows but nothing in the database feeds are flagged for the screen
-      expect(dispReg.body.meta.columns.find((c: any) => c.label === 'Pick List').source).toBe(
-        false,
-      );
-      expect(dispReg.body.meta.noSource).toContain('Pick List');
+      // Pick List / Packing Ref are fed by the warehouse pick wave and pack unit raised for the dispatch (V40 case TC-29),
+      // so they are no longer flagged as "no source"
+      expect(dispReg.body.meta.columns.find((c: any) => c.label === 'Pick List').source).toBe(true);
+      expect(dispReg.body.meta.noSource).not.toContain('Pick List');
 
       // a receipt of 100 against the invoice
       const parent = await prisma.account.findUniqueOrThrow({ where: { code: '1100' } });

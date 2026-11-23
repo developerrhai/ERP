@@ -80,6 +80,19 @@ export function MfgUnitRoutePage() {
     }
   }
 
+  // The top bar's "＋ Add New" is this page's "+ Job Card": it starts a route for a production order (V40 case TC-21)
+  useEffect(() => {
+    const onAdd = (e: Event) => {
+      const ce = e as CustomEvent<{ pageId?: string; handled?: boolean }>;
+      if (ce.detail?.pageId !== 'mfg-unit-route' || ce.detail.handled) return;
+      ce.detail.handled = true;
+      void openAssign();
+    };
+    window.addEventListener('v40-add-record', onAdd);
+    return () => window.removeEventListener('v40-add-record', onAdd);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="dash-page rt-page">
       <div className="page-head">

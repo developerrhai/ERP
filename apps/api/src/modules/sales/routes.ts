@@ -719,6 +719,9 @@ export function createSalesRouter(): Router {
       .default({}),
     (req, id, b) => orderActions.reserve(callerOf(req), id, b),
   );
+  verb('/sales/orders/:id/close-out', 'sales-orders', 'edit', 'so-closeout', empty, (req, id) =>
+    orderActions.closeOut(callerOf(req), id),
+  );
   verb(
     '/sales/orders/:id/short-close',
     'sales-orders',

@@ -1,19 +1,23 @@
 // Credit Notes (fin-creditnote, to a customer) and Debit Notes (fin-debitnote, to a supplier): corrections that
 // involve no goods - discounts, finance charges, rate corrections. Goods returns come from Sales / Purchase.
 import { FinV40 } from './FinV40';
-import { useState, type FormEvent } from 'react';
+import { useLayoutEffect, useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
 import { useToast } from '../../components/Toast';
-import { toUiError, type UiError } from '../../lib/errors';
+import { toUiError, toUiMessage, type UiError } from '../../lib/errors';
 import {
+  allocateNote,
   cancelNote,
   createNote,
   deleteNote,
+  getNote,
   listAccounts,
   listCustomers,
   listNotes,
+  noteSettlement,
+  type NoteSettlement,
   listSuppliers,
   postNote,
   submitNote,
@@ -23,6 +27,7 @@ import { useAppContext } from '../../lib/context';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from './shared';
+import type { FinRow } from './finV40Api';
 
 export function NotesPage({ kind, actions }: { kind: 'CREDIT' | 'DEBIT'; actions: ActionSet }) {
   const toast = useToast();
@@ -32,6 +37,20 @@ export function NotesPage({ kind, actions }: { kind: 'CREDIT' | 'DEBIT'; actions
   const [adding, setAdding] = useState(false);
   const [cancelling, setCancelling] = useState<Note | null>(null);
   const [err, setErr] = useState('');
+  const [tick, setTick] = useState(0); // bumps the V40 register after a change made here
+  const [allocating, setAllocating] = useState<string | null>(null); // note id (or its open item id) being settled
+  // the top bar's "＋ Add New" opens this page's own note form (a layout effect, so it runs before the frame's handler)
+  const pageId = kind === 'CREDIT' ? 'fin-creditnote' : 'fin-debitnote';
+  useLayoutEffect(() => {
+    const onAdd = (e: Event) => {
+      const ce = e as CustomEvent<{ pageId?: string; handled?: boolean }>;
+      if (ce.detail?.pageId !== pageId || ce.detail.handled || !actions.add) return;
+      ce.detail.handled = true;
+      setAdding(true);
+    };
+    window.addEventListener('v40-add-record', onAdd);
+    return () => window.removeEventListener('v40-add-record', onAdd);
+  }, [pageId, actions.add]);
   const act = async (fn: () => Promise<unknown>, msg: string) => {
     setErr('');
     try {
@@ -39,8 +58,73 @@ export function NotesPage({ kind, actions }: { kind: 'CREDIT' | 'DEBIT'; actions
       if (msg) toast(msg);
       reload();
     } catch (e) {
-      setErr(toUiError(e).message);
+      setErr(toUiMessage(e));
     }
+  };
+  /** The row buttons of the V40 register (TC-39): Submit, Post, Delete, Cancel note on the row the table shows. */
+  const rowButtons = (r: FinRow, reloadRegister: () => void) => {
+    const st = r.status;
+    const withNote = (fn: (n: Note) => Promise<unknown>, msg: string) => () =>
+      void act(async () => {
+        await fn(await getNote(kind, r.id));
+        reloadRegister();
+      }, msg);
+    return (
+      <>
+        {(st === 'Draft' || st === 'Rejected') && actions.submit ? (
+          <button
+            type="button"
+            className="btn sm"
+            title="Check the note and send it for approval if it is large"
+            onClick={withNote(async (n) => {
+              const out = await submitNote(kind, n.id, n.version);
+              toast(out.needsApproval ? 'Sent for approval.' : 'Checked. Ready to post.');
+            }, '')}
+          >
+            Submit
+          </button>
+        ) : null}
+        {(st === 'Draft' || st === 'Approved') && actions.post ? (
+          <button
+            type="button"
+            className="btn sm primary"
+            title="Write this note to the books"
+            onClick={withNote((n) => postNote(kind, n.id, n.version), 'Note posted.')}
+          >
+            Post
+          </button>
+        ) : null}
+        {st === 'Draft' && actions.delete ? (
+          <button
+            type="button"
+            className="btn sm danger"
+            aria-label={`Delete note ${r.number}`}
+            onClick={withNote((n) => deleteNote(kind, n.id), 'Draft deleted.')}
+          >
+            Delete
+          </button>
+        ) : null}
+        {st === 'Posted' && actions.edit ? (
+          <button
+            type="button"
+            className="btn sm"
+            title="Set this note against a bill of the same party"
+            onClick={() => setAllocating(r.id)}
+          >
+            Allocate
+          </button>
+        ) : null}
+        {st === 'Posted' && actions.cancel ? (
+          <button
+            type="button"
+            className="btn sm danger"
+            onClick={() => void act(async () => setCancelling(await getNote(kind, r.id)), '')}
+          >
+            Cancel note
+          </button>
+        ) : null}
+      </>
+    );
   };
   return (
     <>
@@ -62,6 +146,9 @@ export function NotesPage({ kind, actions }: { kind: 'CREDIT' | 'DEBIT'; actions
       <FinV40
         pageId={kind === 'CREDIT' ? 'fin-creditnote' : 'fin-debitnote'}
         actions={actions}
+        reloadKey={tick}
+        rowExtra={rowButtons}
+        onAllocate={(docId) => setAllocating(docId)}
         fallback={
           <>
             <div className="card table-wrap">
@@ -164,32 +251,48 @@ export function NotesPage({ kind, actions }: { kind: 'CREDIT' | 'DEBIT'; actions
               </table>
             </div>
             {data ? <Pager page={page} size={20} total={data.meta.total} onPage={setPage} /> : null}
-            {adding ? (
-              <NoteForm
-                kind={kind}
-                onClose={() => setAdding(false)}
-                onSaved={() => {
-                  setAdding(false);
-                  reload();
-                  toast('Note saved as Draft. Post it when it is right.');
-                }}
-              />
-            ) : null}
-            {cancelling ? (
-              <CancelModal
-                note={cancelling}
-                onClose={() => setCancelling(null)}
-                onDone={() => {
-                  setCancelling(null);
-                  reload();
-                  toast('Note cancelled.');
-                }}
-                kind={kind}
-              />
-            ) : null}
           </>
         }
       />
+      {/* outside the FinV40 fallback: the V40 register does not draw the fallback, so the header button and the
+          row buttons opened nothing (V40 40-case report TC-39) */}
+      {adding ? (
+        <NoteForm
+          kind={kind}
+          onClose={() => setAdding(false)}
+          onSaved={() => {
+            setAdding(false);
+            reload();
+            setTick((n) => n + 1);
+            toast('Note saved as Draft. Post it when it is right.');
+          }}
+        />
+      ) : null}
+      {allocating ? (
+        <AllocateModal
+          id={allocating}
+          credit={credit}
+          onClose={() => setAllocating(null)}
+          onDone={() => {
+            setAllocating(null);
+            setTick((n) => n + 1);
+            toast('Allocated.');
+          }}
+        />
+      ) : null}
+      {cancelling ? (
+        <CancelModal
+          note={cancelling}
+          onClose={() => setCancelling(null)}
+          onDone={() => {
+            setCancelling(null);
+            reload();
+            setTick((n) => n + 1);
+            toast('Note cancelled.');
+          }}
+          kind={kind}
+        />
+      ) : null}
     </>
   );
 }
@@ -339,6 +442,88 @@ function NoteForm({
           onChange={(e) => setAgainst(e.target.value)}
         />
       </form>
+    </Modal>
+  );
+}
+
+/** Set a posted credit / debit note against one open bill of the same party (V40 case TC-39: the Allocate button). */
+function AllocateModal({
+  id,
+  credit,
+  onClose,
+  onDone,
+}: {
+  id: string;
+  credit: boolean;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const { data, error } = useLoad<NoteSettlement>(() => noteSettlement(id), [id]);
+  const [billId, setBillId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [err, setErr] = useState('');
+  const [pending, setPending] = useState(false);
+  const room = data?.creditItem ? Math.abs(Number(data.creditItem.outstanding)) : 0;
+  const bill = data?.bills.find((b) => b.id === billId);
+  const pick = (v: string) => {
+    setBillId(v);
+    const b = data?.bills.find((x) => x.id === v);
+    if (b) setAmount(String(Math.min(room, Number(b.outstanding))));
+  };
+  const save = async () => {
+    if (!data?.creditItem || !bill) return;
+    if (!(Number(amount) > 0)) return setErr('Enter an amount greater than 0.');
+    setPending(true);
+    setErr('');
+    try {
+      await allocateNote({ sourceItemId: data.creditItem.id, targetItemId: bill.id, amount });
+      onDone();
+    } catch (e) {
+      setErr(toUiMessage(e));
+      setPending(false);
+    }
+  };
+  return (
+    <Modal
+      title="Allocate note"
+      sub={`Set this note against a ${credit ? 'customer invoice' : 'supplier bill'}.`}
+      size="sm"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="btn primary" disabled={pending || !bill} onClick={() => void save()}>
+            Allocate
+          </button>
+        </>
+      }
+    >
+      <ErrorBox message={error || err} />
+      {!data && !error ? <p className="muted">Loading…</p> : null}
+      {data && !data.creditItem ? (
+        <p>This note has nothing open to allocate: it may add to the balance, or it is not posted yet.</p>
+      ) : null}
+      {data?.creditItem && Number(data.creditItem.outstanding) === 0 ? (
+        <p>This note is fully allocated already.</p>
+      ) : null}
+      {data?.creditItem && room > 0 ? (
+        <>
+          <p>
+            Open on this note: <b>{inr(String(room))}</b>
+          </p>
+          <SelectField label="Against bill *" value={billId} onChange={pick}>
+            <option value="">{data.bills.length ? 'Choose a bill…' : 'No open bills for this party'}</option>
+            {data.bills.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.docNo} · {dmy(b.dueDate ?? b.docDate)} · open {inr(b.outstanding)}
+              </option>
+            ))}
+          </SelectField>
+          <Field label="Amount *" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+        </>
+      ) : null}
     </Modal>
   );
 }

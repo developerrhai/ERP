@@ -4,6 +4,7 @@ import { recordAudit } from '../../core/audit/audit-service';
 import { NumberingService } from '../../core/numbering/numbering-service';
 import { prisma } from '../../core/db/prisma';
 import { Errors } from '../../core/http/errors';
+import { accessUserOf, scopeFor } from '../../core/rbac/access';
 import { query } from '../procurement/core';
 import type { Row } from '../procurement/core';
 import type { Caller } from '../records/service';
@@ -126,6 +127,11 @@ async function linkEnquiryCustomer(caller: Caller, e: Row, chosenCustomerId?: st
   return { ...e, customer_id: hits[0]!.id };
 }
 
+
+/** True when the caller's data scope on Sales Enquiries is "own records" (the same rule the register and analytics apply). */
+async function ownEnquiriesOnly(caller: Caller): Promise<boolean> {
+  return (await scopeFor(accessUserOf(caller.auth.user), 'sales-enquiries')) === 'OWN';
+}
 
 /** The enquiry has no customer yet and the prospect name matched none (or several): say what to do next. */
 function noCustomerMessage(e: Row): string {
@@ -568,8 +574,11 @@ export const spineService = {
   async listEnquiries(caller: Caller, f: { status?: string; q?: string; page?: number; size?: number }): Promise<{ rows: Row[]; total: number }> {
     const size = Math.min(100, f.size ?? 25);
     const off = ((f.page ?? 1) - 1) * size;
-    const args = [caller.ctx.unitIds, f.status ?? null, f.q ? `%${f.q}%` : null];
-    const where = `e.deleted_at IS NULL AND e.unit_id = ANY($1::uuid[]) AND ($2::text IS NULL OR e.status = $2) AND ($3::text IS NULL OR e.number ILIKE $3 OR e.product ILIKE $3 OR e.prospect_name ILIKE $3)`;
+    // a role whose data scope on this page is "own records" sees only the enquiries it created, exactly as the register and
+    // the analytics tab already do (the list used to ignore the scope and returned every enquiry of the plant)
+    const own = await ownEnquiriesOnly(caller);
+    const args = [caller.ctx.unitIds, f.status ?? null, f.q ? `%${f.q}%` : null, own ? caller.auth.userId : null];
+    const where = `e.deleted_at IS NULL AND e.unit_id = ANY($1::uuid[]) AND ($2::text IS NULL OR e.status = $2) AND ($3::text IS NULL OR e.number ILIKE $3 OR e.product ILIKE $3 OR e.prospect_name ILIKE $3) AND ($4::uuid IS NULL OR e.created_by_id = $4::uuid)`;
     const total = Number((await query(prisma, `SELECT count(*)::int AS n FROM sales_enquiries e WHERE ${where}`, ...args))[0]!.n);
     const rows = await query(prisma, `SELECT e.*, c.name AS customer_name, u.name AS assigned_to FROM sales_enquiries e LEFT JOIN customers c ON c.id = e.customer_id LEFT JOIN users u ON u.id = e.assigned_to_id WHERE ${where} ORDER BY e.created_at DESC LIMIT ${size} OFFSET ${off}`, ...args);
     return { rows, total };
@@ -627,6 +636,8 @@ export const spineService = {
   async enquiry(caller: Caller, id: string): Promise<Row> {
     const e = (await query(prisma, `SELECT e.*, c.name AS customer_name FROM sales_enquiries e LEFT JOIN customers c ON c.id = e.customer_id WHERE e.id = $1::uuid AND e.deleted_at IS NULL`, id))[0];
     if (!e || !caller.ctx.unitIds.includes(S(e.unit_id))) throw Errors.notFound('Enquiry not found.');
+    // open, edit, qualify, quote, project, won and lost all load the enquiry here: an "own records" role may not reach another user's
+    if ((await ownEnquiriesOnly(caller)) && S(e.created_by_id) !== caller.auth.userId) throw Errors.notFound('Enquiry not found.');
     return e;
   },
   async setEnquiryStatus(caller: Caller, id: string, status: 'Qualified' | 'Won', ): Promise<Row> {
@@ -655,10 +666,14 @@ export const spineService = {
       throw Errors.validation({ gstPct: `No GST rate is known for "${S(e.product)}" (it has no HSN). Enter the GST % (0 to 28) for this item.` });
     const claimed = await query(prisma, `UPDATE sales_enquiries SET status = 'Quoted', version = version + 1 WHERE id = $1::uuid AND status IN ('New','Qualified') RETURNING id`, id);
     if (!claimed[0]) throw Errors.conflict('A quotation is already being made from this enquiry.');
+    // TC-01: carry the SKU forward. When exactly one active item of the Item Master has this code or name, the line is
+    // that item (its unit, and the rate from the price list); otherwise it stays free text with the rate to be typed.
+    const hits = await query(prisma, `SELECT id::text AS id, base_uom FROM items WHERE deleted_at IS NULL AND status = 'ACTIVE' AND (lower(name) = lower($1) OR lower(code) = lower($1)) LIMIT 2`, S(e.product).trim());
+    const item = hits.length === 1 ? hits[0]! : null;
     try {
       const q = await quotationCrud.create(caller, {
         header: { customerId: e.customer_id, notes: `From enquiry ${S(e.number)}` },
-        lines: [{ itemId: null, description: S(e.product), qty: N(e.qty) || 1, uom: 'Nos', rate: 0, gstPct: String(b.gstPct) }],
+        lines: [{ itemId: item ? S(item.id) : null, description: S(e.product), qty: N(e.qty) || 1, uom: item ? S(item.base_uom) : 'Nos', ...(item ? {} : { rate: 0 }), gstPct: String(b.gstPct) }],
       } as never);
       const qid = S((q as { id?: string }).id);
       await query(prisma, `UPDATE sales_enquiries SET quotation_id = $2::uuid WHERE id = $1::uuid`, id, qid);

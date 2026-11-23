@@ -13,6 +13,7 @@ import type { ActionSet } from '../../types';
 import { DocumentsPanel } from '../generic/DocumentsPanel';
 import { listPageAudit } from '../generic/engineApi';
 import type { PageSchema } from '../generic/engineApi';
+import { ClassicViewSwitch, useClassic } from '../frame/ClassicView';
 import { useFrame, v40TabsFor } from '../frame/V40TabFrame';
 import { getFinV40, hasFinV40 } from './finV40Api';
 import type { FinCard, FinColumn, FinPanel, FinRow } from './finV40Api';
@@ -190,7 +191,11 @@ export interface FinV40Props {
 export function FinV40(props: FinV40Props) {
   const frame = useFrame();
   if (!frame || !hasFinV40(props.pageId)) return <>{props.fallback}</>;
-  return <Body {...props} tabName={frame.tabName} first={frame.index === 0} claim={frame.claim} />;
+  return (
+    <ClassicViewSwitch pageId={props.pageId} fallback={props.fallback}>
+      <Body {...props} tabName={frame.tabName} first={frame.index === 0} claim={frame.claim} />
+    </ClassicViewSwitch>
+  );
 }
 
 
@@ -208,6 +213,7 @@ function Body({
   first,
   claim,
 }: FinV40Props & { tabName: string; first: boolean; claim: () => void }) {
+  const classic = useClassic();
   const [, setParams] = useSearchParams();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
@@ -322,8 +328,13 @@ function Body({
         <button
           type="button"
           className="btn sm"
-          disabled={picked.size === 0 || !onOpen}
-          onClick={() => selectedRows[0] && onOpen?.(selectedRows[0].id)}
+          disabled={picked.size === 0 || (!onOpen && !classic)}
+          onClick={() => {
+            const first = selectedRows[0];
+            if (!first) return;
+            if (onOpen) onOpen(first.id);
+            else classic?.open(first.number);
+          }}
         >
           Load Selected
         </button>

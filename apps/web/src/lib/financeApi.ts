@@ -490,6 +490,16 @@ export interface Note {
 const notePath = (kind: 'CREDIT' | 'DEBIT') => (kind === 'CREDIT' ? 'credit-notes' : 'debit-notes');
 export const listNotes = (kind: 'CREDIT' | 'DEBIT', page: number) =>
   paged<Note>(`/finance/${notePath(kind)}${qs({ page, size: 20 })}`);
+export const getNote = (kind: 'CREDIT' | 'DEBIT', id: string) =>
+  api<Note>(`/finance/${notePath(kind)}/${id}`);
+/** What a posted note can still settle: its open credit and the bills of the same party it can be set against. */
+export interface NoteSettlement {
+  creditItem: { id: string; outstanding: string; settleable: boolean } | null;
+  bills: { id: string; docNo: string; docDate: string; dueDate: string | null; amount: string; outstanding: string; status: string }[];
+}
+export const noteSettlement = (id: string) => api<NoteSettlement>(`/finance/notes/${id}/settlement`);
+export const allocateNote = (b: { sourceItemId: string; targetItemId: string; amount: string; date?: string }) =>
+  api<{ id: string }>('/finance/open-items/allocate', { method: 'POST', body: b });
 export const createNote = (kind: 'CREDIT' | 'DEBIT', b: Record<string, unknown>) =>
   api<Note>(`/finance/${notePath(kind)}`, { method: 'POST', body: b });
 export const postNote = (kind: 'CREDIT' | 'DEBIT', id: string, version: number) =>

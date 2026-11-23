@@ -568,13 +568,18 @@ function DispatchForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: 
   }
   async function save() {
     setMsg('');
+    // Dispatch gate, check 06 "Transport cleared" (workflow p.11): no dispatch without transport details (TC-35)
+    if (!vehicle.trim() && !transporter.trim()) {
+      setMsg('Enter the vehicle number or the transporter: the dispatch gate needs transport details before this goes for approval.');
+      return;
+    }
     try {
       onSaved(
         await createDoc('/sales/dispatch', {
           orderId,
           warehouseId: wh,
-          vehicleNo: vehicle || undefined,
-          transporter: transporter || undefined,
+          vehicleNo: vehicle.trim() || undefined,
+          transporter: transporter.trim() || undefined,
           lines: lines
             .filter((l) => Number(l.qty) > 0)
             .map((l) => ({
@@ -634,12 +639,13 @@ function DispatchForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: 
           </select>
         </div>
         <div className="field">
-          <label htmlFor="dv">Vehicle no.</label>
+          <label htmlFor="dv">Vehicle no. *</label>
           <input id="dv" value={vehicle} onChange={(e) => setVehicle(e.target.value)} />
         </div>
         <div className="field">
-          <label htmlFor="dt">Transporter</label>
+          <label htmlFor="dt">Transporter *</label>
           <input id="dt" value={transporter} onChange={(e) => setTransporter(e.target.value)} />
+          <small className="muted">Give the vehicle number or the transporter (for a courier, type its name).</small>
         </div>
       </div>
       <div className="table-wrap">

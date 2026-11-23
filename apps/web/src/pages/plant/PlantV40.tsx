@@ -12,6 +12,7 @@ import type { ActionSet } from '../../types';
 import { listPageAudit } from '../generic/engineApi';
 import { DocumentsPanel } from '../generic/DocumentsPanel';
 import type { PageSchema } from '../generic/engineApi';
+import { ClassicViewSwitch, useClassic } from '../frame/ClassicView';
 import { useFrame, v40TabsFor } from '../frame/V40TabFrame';
 import { dmy, ErrorBox, inr, Pill } from '../finance/shared';
 import type { V40Column, V40Panel, V40Row } from '../sales/salesV40Api';
@@ -163,7 +164,11 @@ export interface PlantV40Props {
 export function PlantV40(props: PlantV40Props) {
   const frame = useFrame();
   if (!frame || !PLANT_V40_IDS.has(props.pageId)) return <>{props.fallback}</>;
-  return <Body {...props} tabName={frame.tabName} first={frame.index === 0} claim={frame.claim} />;
+  return (
+    <ClassicViewSwitch pageId={props.pageId} fallback={props.fallback}>
+      <Body {...props} tabName={frame.tabName} first={frame.index === 0} claim={frame.claim} />
+    </ClassicViewSwitch>
+  );
 }
 
 /** Wrap a page component so it gets the V40 tab content inside the frame. `pageId` may depend on the props (null = no V40 view). */
@@ -187,6 +192,7 @@ function Body({
   claim,
 }: PlantV40Props & { tabName: string; first: boolean; claim: () => void }) {
   const noun = NOUN[pageId] ?? 'Records';
+  const classic = useClassic();
   const [, setParams] = useSearchParams();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
@@ -274,7 +280,12 @@ function Body({
       </div>
       <div className="pv40-bulk" role="group" aria-label="Selected records">
         <span>{picked.size} selected</span>
-        <button type="button" className="btn sm" disabled={picked.size === 0} onClick={() => undefined}>
+        <button
+          type="button"
+          className="btn sm"
+          disabled={picked.size === 0 || !classic}
+          onClick={() => selectedRows[0] && classic?.open(selectedRows[0].number)}
+        >
           Load Selected
         </button>
         <button type="button" className="btn sm" disabled={rows.length === 0} onClick={exportSelected}>
@@ -313,10 +324,7 @@ function Body({
                         <button
                           type="button"
                           className="btn sm"
-                          onClick={() => {
-                            setQ(r.number);
-                            
-                          }}
+                          onClick={() => (classic ? classic.open(r.number) : setQ(r.number))}
                         >
                           View
                         </button>

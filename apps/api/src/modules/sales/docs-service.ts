@@ -91,11 +91,38 @@ export const SO_DEF: DocDef = {
     const o = (
       await query(
         tx,
-        `SELECT status, customer_id::text, grand_total::text, credit_override_reason FROM sales_orders WHERE id=$1::uuid`,
+        `SELECT status, customer_id::text, grand_total::text, credit_override_reason, quotation_id::text FROM sales_orders WHERE id=$1::uuid`,
         id,
       )
     )[0];
     if (!o || (o.status !== 'Draft' && o.status !== 'Rejected')) return;
+    // Customer PO validation (V40 case TC-03): an order made from a quotation must match what the customer accepted.
+    // Item, quantity, rate and discount are compared line by line; a difference goes back to a quotation revision.
+    if (o.quotation_id) {
+      const qt = (
+        await query(tx, `SELECT number, status FROM sales_quotations WHERE id=$1::uuid`, S(o.quotation_id))
+      )[0];
+      const lineSql = (tbl: string, fk: string) =>
+        `SELECT line_no, item_id::text, qty::numeric AS qty, rate::numeric AS rate, discount_pct::numeric AS disc FROM ${tbl} WHERE ${fk}=$1::uuid ORDER BY line_no`;
+      const [ql, ol] = [
+        await query(tx, lineSql('sales_quotation_lines', 'quotation_id'), S(o.quotation_id)),
+        await query(tx, lineSql('sales_order_lines', 'order_id'), id),
+      ];
+      const diffs: string[] = [];
+      if (ql.length !== ol.length) diffs.push(`the order has ${ol.length} line(s), the quotation ${ql.length}`);
+      for (let i = 0; i < Math.min(ql.length, ol.length); i += 1) {
+        const [a, b] = [ql[i]!, ol[i]!];
+        const same = (x: unknown, y: unknown) => D(S(x) || '0').equals(D(S(y) || '0'));
+        if (S(a.item_id) !== S(b.item_id)) diffs.push(`line ${i + 1}: a different item`);
+        else if (!same(a.qty, b.qty)) diffs.push(`line ${i + 1}: quantity ${S(b.qty)} on the order, ${S(a.qty)} on the quotation`);
+        else if (!same(a.rate, b.rate)) diffs.push(`line ${i + 1}: rate ${S(b.rate)} on the order, ${S(a.rate)} on the quotation`);
+        else if (!same(a.disc, b.disc)) diffs.push(`line ${i + 1}: discount ${S(b.disc)}% on the order, ${S(a.disc)}% on the quotation`);
+      }
+      if (diffs.length > 0)
+        throw Errors.conflict(
+          `This order does not match quotation ${S(qt?.number)} that the customer accepted: ${diffs.slice(0, 4).join('; ')}${diffs.length > 4 ? '; …' : ''}. Make the order match, or revise the quotation and get it approved again.`,
+        );
+    }
     const c = (
       await query(
         tx,
@@ -695,6 +722,73 @@ export const orderActions = {
         warehouseId:
           'Nothing to reserve: choose a warehouse or the lines are fully reserved / dispatched.',
       });
+    return orderCrud.get(caller, id);
+  },
+  /**
+   * Order close-out (V40 case TC-40): the order closes only when everything is dispatched, every dispatch has its proof
+   * of delivery, nothing is left to bill and no balance is outstanding. All blockers are listed, so the person sees
+   * exactly what is missing instead of one reason at a time.
+   */
+  async closeOut(caller: Caller, id: string) {
+    await prisma.$transaction(async (tx) => {
+      const o = await loadDoc(tx, caller, SO_DEF, id, { lock: true });
+      if (o.status !== 'Approved') throw Errors.conflict('Only an approved order can be closed out.');
+      if ((o as Record<string, unknown>).closed_at) throw Errors.conflict('This order is already closed.');
+      const blockers: string[] = [];
+      const open = await query(
+        tx,
+        `SELECT line_no, (qty - dispatched_qty - closed_qty)::text AS q FROM sales_order_lines WHERE order_id=$1::uuid AND qty - dispatched_qty - closed_qty > 0 ORDER BY line_no`,
+        id,
+      );
+      if (open.length)
+        blockers.push(
+          `Still to dispatch: ${open.map((l) => `line ${S(l.line_no)} (${S(l.q)})`).join(', ')}. Dispatch it, or short-close the order with a reason.`,
+        );
+      const disp = await query(
+        tx,
+        `SELECT d.number,
+                EXISTS (SELECT 1 FROM record_documents rd WHERE rd.page_id='sales-dispatch' AND rd.record_id=d.id AND rd.doc_type='POD' AND rd.deleted_at IS NULL) AS pod,
+                (SELECT count(*) FROM sales_dispatch_lines l WHERE l.dispatch_id=d.id AND l.qty - l.invoiced_qty > 0)::int AS unbilled
+           FROM sales_dispatches d WHERE d.order_id=$1::uuid AND d.status='Posted' AND d.deleted_at IS NULL ORDER BY d.number`,
+        id,
+      );
+      if (disp.length === 0)
+        blockers.push('Nothing has been dispatched and posted yet, so there is no proof of delivery to close against.');
+      const noPod = disp.filter((d) => d.pod !== true);
+      if (noPod.length)
+        blockers.push(
+          `Proof of delivery is missing on ${noPod.map((d) => S(d.number)).join(', ')}: attach it in Documents with type POD.`,
+        );
+      const unbilled = disp.filter((d) => Number(d.unbilled) > 0);
+      if (unbilled.length)
+        blockers.push(`Not yet invoiced: ${unbilled.map((d) => S(d.number)).join(', ')}.`);
+      const due = await query(
+        tx,
+        `SELECT number, (grand_total - received_amount)::text AS due FROM sales_invoices WHERE order_id=$1::uuid AND deleted_at IS NULL AND status='Posted' AND grand_total - received_amount > 0 ORDER BY number`,
+        id,
+      );
+      if (due.length)
+        blockers.push(
+          `Balance still to collect: ${due.map((x) => `${S(x.number)} (${S(x.due)})`).join(', ')}.`,
+        );
+      if (blockers.length) throw Errors.conflict(`Cannot close out ${S(o.number)}. ${blockers.join(' ')}`);
+      await exec(
+        tx,
+        `UPDATE sales_orders SET closed_at=now(), version=version+1, updated_by_id=$2::uuid, updated_at=now() WHERE id=$1::uuid`,
+        id,
+        caller.auth.userId,
+      );
+      await audit(
+        tx,
+        caller,
+        caller.auth.userId,
+        'SCM_UPDATED',
+        SO_DEF.title,
+        { id, code: S(o.number) },
+        SO_DEF.pageId,
+        { closeOut: true },
+      );
+    }, TX);
     return orderCrud.get(caller, id);
   },
   async closeLines(caller: Caller, id: string, b: { lineIds?: string[]; reason: string }) {

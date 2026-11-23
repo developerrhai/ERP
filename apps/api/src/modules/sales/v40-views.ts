@@ -599,8 +599,13 @@ const DISPATCH: PageDef = {
     'Sales Order': t('so.number'),
     Customer: t('cu.name'),
     Warehouse: t(`wh.code || ' · ' || wh.name`),
-    'Pick List': none(),
-    'Packing Ref': none(),
+    // TC-29: the warehouse pick wave / pack unit raised for this dispatch (their reference is the dispatch or sales order number)
+    'Pick List': t(
+      `(SELECT pw.number FROM pick_waves pw WHERE pw.deleted_at IS NULL AND lower(btrim(pw.reference)) IN (lower(t.number), lower(so.number)) ORDER BY pw.created_at DESC LIMIT 1)`,
+    ),
+    'Packing Ref': t(
+      `(SELECT pu.number FROM pack_units pu JOIN pick_waves pw ON pw.id=pu.wave_id WHERE pu.deleted_at IS NULL AND pw.deleted_at IS NULL AND lower(btrim(pw.reference)) IN (lower(t.number), lower(so.number)) ORDER BY pu.created_at DESC LIMIT 1)`,
+    ),
     Vehicle: t('t.vehicle_no'),
     Driver: t('t.driver'),
     Transporter: t('t.transporter'),

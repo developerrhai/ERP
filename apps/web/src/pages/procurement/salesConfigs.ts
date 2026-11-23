@@ -247,7 +247,7 @@ export const SQ_CFG: DocCfg = {
     { key: 'unitCost', label: 'Our cost per unit', type: 'number' },
   ],
   more: [
-    ['revise', 'Revise', 'Approved,Rejected', true],
+    ['revise', 'Revise', 'Approved,Rejected', true, { need: 'edit' }],
     [
       'customer-decision',
       'Customer accepted',
@@ -255,6 +255,7 @@ export const SQ_CFG: DocCfg = {
       false,
       {
         body: { decision: 'ACCEPTED' },
+        need: 'edit',
         ask: [{ key: 'customerRef', label: 'Customer’s reference', type: 'text' }],
       },
     ],
@@ -263,7 +264,7 @@ export const SQ_CFG: DocCfg = {
       'Customer rejected',
       'Approved',
       false,
-      { body: { decision: 'REJECTED' } },
+      { body: { decision: 'REJECTED' }, need: 'edit' },
     ],
     [
       'to-order',
@@ -314,6 +315,8 @@ export const SO_CFG: DocCfg = {
       { ask: [{ key: 'reason', label: 'Reason (min 5 letters)', type: 'text' }] },
     ],
     ['reserve', 'Reserve stock', 'Approved', false, { body: {} }],
-    ['short-close', 'Short-close balance', 'Approved', true],
+    // closes only when everything is dispatched, each dispatch has its POD, it is all invoiced and nothing is owed
+    ['close-out', 'Close out order', 'Approved', false, { body: {}, need: 'edit' }],
+    ['short-close', 'Short-close balance', 'Approved', true, { need: 'edit' }],
   ],
 };

@@ -62,6 +62,8 @@ export interface FieldCfg {
 export interface MoreExtra {
   ask?: { key: string; label: string; type: 'text' | 'number' }[];
   body?: Record<string, unknown>;
+  /** the action the signed-in user must hold on THIS page for the button to show (the same one the route checks) */
+  need?: 'add' | 'edit' | 'delete' | 'submit' | 'post' | 'cancel';
 }
 export interface DocCfg {
   /** Procurement pages: the page id of a V40 spec (v40Specs.ts); the register then shows the V40 tabs and columns */
@@ -847,7 +849,10 @@ function DocDetail({
             </button>
           ) : null}
           {(cfg.more ?? [])
-            .filter(([, , st]) => st.split(',').includes(doc.status))
+            .filter(
+              ([, , st, , extra]) =>
+                st.split(',').includes(doc.status) && (!extra?.need || actions[extra.need]),
+            )
             .map(([name, label, , needsReason, extra]) => (
               <button
                 key={`${name}-${label}`}

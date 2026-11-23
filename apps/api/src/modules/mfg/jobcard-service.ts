@@ -276,6 +276,19 @@ export const jobCardService = {
         );
       if (await openLog(tx, opId)) throw Errors.conflict('This job card is already running.');
       if (S(c.op.status) === 'Paused') throw Errors.conflict('This job card is paused. Resume it.');
+      // Machine readiness (V40 case TC-24): a work centre whose machine is down holds new work. An open breakdown or
+      // running maintenance leaves an open downtime event on the work centre; it ends when the machine is back.
+      const down = (
+        await query(
+          tx,
+          `SELECT dt_no, dt_type, reason FROM downtime_events WHERE work_centre_id=$1::uuid AND end_at IS NULL AND deleted_at IS NULL ORDER BY start_at LIMIT 1`,
+          S(c.op.work_centre_id),
+        )
+      )[0];
+      if (down)
+        throw Errors.conflict(
+          `Work centre ${S(c.op.wc_code)} is on hold: ${S(down.dt_type) === 'PLANNED' ? 'maintenance is running' : 'a machine breakdown is open'} (${S(down.dt_no)}${down.reason ? `, ${S(down.reason)}` : ''}). Production can start when the machine is back.`,
+        );
       if (D(c.qtyIn).minus(processed(c.op)).lte(0)) {
         const prev = c.idx > 0 ? c.ops[c.idx - 1]! : null;
         throw mfgError(

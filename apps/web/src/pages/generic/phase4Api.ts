@@ -81,7 +81,7 @@ export interface DocumentRow {
   createdBy: { id: string; name: string } | null;
 }
 
-export const DOC_TYPES = ['GENERAL', 'INVOICE', 'CONTRACT', 'CERTIFICATE', 'DRAWING', 'OTHER'];
+export const DOC_TYPES = ['GENERAL', 'INVOICE', 'CONTRACT', 'CERTIFICATE', 'DRAWING', 'POD', 'OTHER'];
 export const MAX_FILE_MB = 10;
 export const ACCEPT = '.pdf,.png,.jpg,.jpeg,.xlsx,.xls,.docx,.doc,.csv,.txt';
 

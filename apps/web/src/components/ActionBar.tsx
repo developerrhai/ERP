@@ -20,6 +20,7 @@ import { MoveForwardDialog } from './MoveForward';
 import { PickDocumentDialog } from './PickDocument';
 import { ImportDrawer } from './ImportDrawer';
 import { duplicateMessage, scanDuplicates } from './dupScan';
+import { findAddButton } from '../lib/ownAddButton';
 
 const PICK_FIRST = 'Select a record first.';
 
@@ -293,7 +294,12 @@ function Bar({
       else if (label === '＋ Add New' || label === '＋ Add') {
         const detail = { pageId, handled: false };
         window.dispatchEvent(new CustomEvent('v40-add-record', { detail }));
-        if (!detail.handled) toast("This screen's own + New button starts a new record here.");
+        if (!detail.handled) {
+          // no page listened: press the page's own "+ New" button, if it has one (TC-21: it used to answer with a toast only)
+          const own = findAddButton(document.getElementById('main') ?? document.body);
+          if (own) own.click();
+          else toast("This screen's own + New button starts a new record here.");
+        }
       }
       else if (label === '⇧ Import' || label === 'Import') {
         setImporting(true);

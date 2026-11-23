@@ -30,6 +30,7 @@ export const DOC_TYPES = [
   'CONTRACT',
   'CERTIFICATE',
   'DRAWING',
+  'POD', // proof of delivery: an order cannot be closed out without one per dispatch
   'OTHER',
 ] as const;
 

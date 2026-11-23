@@ -255,6 +255,9 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
         onOpen={setOpenId}
         {...(actions ? { actions } : {})}
         rowExtra={(r) => {
+          // Qualify / Create Quotation / Create Project / Won / Lost all need "edit" on this page (the routes check it);
+          // a view-only role must not be offered buttons that only answer 403.
+          if (actions && !actions.edit) return null;
           // The buttons follow the row the table shows (the Sales register API), not a second capped list: a row on a
           // later page is not in that list, and its buttons used to vanish. Details load when a button needs them.
           const known = (list.data ?? []).find((x) => x.id === r.id);

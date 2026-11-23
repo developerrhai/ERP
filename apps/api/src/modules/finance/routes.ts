@@ -778,6 +778,74 @@ export function createFinanceRouter(): Router {
       });
     }),
   );
+  // ----- settling a posted credit / debit note against a bill (V40 case TC-39 "Allocate") --------------------------
+  const noteGuard: RequestHandler = asyncHandler(async (req, _res, next) => {
+    const u = accessUserOf(requireAuth(req));
+    if ((await can(u, 'fin-creditnote', 'edit')) || (await can(u, 'fin-debitnote', 'edit'))) return next();
+    throw Errors.forbidden();
+  });
+  r.get(
+    '/notes/:id/settlement',
+    noteGuard,
+    validate({ params: idParams }),
+    asyncHandler(async (req, res) => {
+      // the id is the note's id, or (from the register's settlement panel) the id of its open item
+      const id = String(req.params.id);
+      const note = await notesService.get(id).catch(() => null);
+      const found = note
+        ? null
+        : await prisma.openItem.findFirst({ where: { OR: [{ id }, { docId: id }] } });
+      if (!note && !found) throw Errors.notFound('Note not found.');
+      const side = note ? (note.kind === 'CREDIT' ? 'RECEIVABLE' : 'PAYABLE') : (found!.side as 'RECEIVABLE' | 'PAYABLE');
+      const partyId = note ? note.partyId : found!.partyId;
+      const docNo = note ? note.code : found!.docNo;
+      const credit = await prisma.openItem.findFirst({
+        // only items of plants the caller works in (a note of another plant shows as having nothing to settle)
+        where: { docNo, side, partyId, status: { not: 'Cancelled' }, unitId: { in: req.ctx?.unitIds ?? [] } },
+      });
+      const bills =
+        credit && credit.amount.lessThan(0)
+          ? (await openItemService.openBills(prisma, side, partyId, ctxUnit(req))).filter(
+              (b) => Number(b.amount) > 0,
+            )
+          : [];
+      res.json({
+        data: {
+          creditItem: credit
+            ? { id: credit.id, outstanding: money(credit.outstanding), settleable: credit.amount.lessThan(0) }
+            : null,
+          bills,
+        },
+      });
+    }),
+  );
+  const allocBody = z
+    .object({
+      sourceItemId: uuid,
+      targetItemId: uuid,
+      amount: moneyStr,
+      date: date.default(() => isoDate(new Date())),
+    })
+    .strict();
+  r.post(
+    '/open-items/allocate',
+    noteGuard,
+    validate({ body: allocBody }),
+    asyncHandler(async (req, res) => {
+      const b = validated(res, 'body', allocBody);
+      // both items must be in a plant the caller works in
+      const items = await prisma.openItem.findMany({
+        where: { id: { in: [b.sourceItemId, b.targetItemId] } },
+        select: { unitId: true },
+      });
+      const mine = req.ctx?.unitIds ?? [];
+      if (items.length !== 2 || items.some((i) => !mine.includes(i.unitId))) throw Errors.notFound('Bill not found.');
+      const out = await prisma.$transaction((tx) =>
+        openItemService.allocate(tx, { ...b, forPayment: false }, actorOf(req)),
+      );
+      res.status(201).json({ data: out });
+    }),
+  );
   const ageingQ = z
     .object({
       side: z.enum(['RECEIVABLE', 'PAYABLE']),
