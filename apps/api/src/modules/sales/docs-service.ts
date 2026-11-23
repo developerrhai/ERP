@@ -54,14 +54,20 @@ export const SQ_DEF: DocDef = {
       await query(tx, `SELECT status, rfq_id FROM sales_quotations WHERE id=$1::uuid`, id)
     )[0];
     if (!q || (q.status !== 'Draft' && q.status !== 'Rejected')) return;
-    const bad = (
-      await query(
-        tx,
-        `SELECT 1 FROM sales_quotation_lines WHERE quotation_id=$1::uuid AND rate <= 0 LIMIT 1`,
-        id,
-      )
-    )[0];
-    if (bad) throw Errors.validation({ lines: 'Enter a rate on every line before submitting.' });
+    const bad = await query(
+      tx,
+      `SELECT line_no, description FROM sales_quotation_lines WHERE quotation_id=$1::uuid AND rate <= 0 ORDER BY line_no LIMIT 5`,
+      id,
+    );
+    if (bad.length > 0) {
+      // name the line(s): the screen has no highlighted field for a line rate (BUG-05)
+      const which = bad
+        .map((l) => `line ${S(l.line_no)}${S(l.description) ? ` (${S(l.description).slice(0, 40)})` : ''}`)
+        .join(', ');
+      throw Errors.validation({
+        lines: `Enter a rate greater than 0 on ${which} (Edit the quotation, then Submit).`,
+      });
+    }
     if (q.rfq_id) {
       const r = (
         await query(tx, `SELECT status FROM customer_rfqs WHERE id=$1::uuid`, q.rfq_id)

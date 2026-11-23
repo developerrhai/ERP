@@ -5,6 +5,8 @@ import { Modal } from '../../components/Modal';
 import { MoveForwardDialog } from '../../components/MoveForward';
 import { useToast } from '../../components/Toast';
 import { ApiError } from '../../lib/api';
+import { lookupCustomers } from '../../lib/scmApi';
+import { Combobox } from '../../ui/components';
 import { spineApi, type Enquiry } from '../../lib/spineApi';
 
 const EDITABLE = ['New', 'Qualified'];
@@ -38,6 +40,8 @@ export function EnquiryDialog({
     source: '',
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // the customer this enquiry is linked to; a prospect has none until one is picked (BUG-02)
+  const [customer, setCustomer] = useState<{ value: string; label: string } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -45,6 +49,7 @@ export function EnquiryDialog({
       (r) => {
         if (!alive) return;
         setE(r);
+        setCustomer(r.customer_id ? { value: r.customer_id, label: r.customer_name ?? 'Linked customer' } : null);
         setForm({
           prospectName: r.prospect_name ?? '',
           contact: r.contact ?? '',
@@ -74,6 +79,7 @@ export function EnquiryDialog({
     setFieldErrors({});
     try {
       const r = await spineApi.updateEnquiry(e.id, e.version, {
+        ...(customer && customer.value !== e.customer_id ? { customerId: customer.value } : {}),
         prospectName: form.prospectName.trim() || null,
         contact: form.contact.trim() || null,
         product: form.product.trim(),
@@ -152,6 +158,17 @@ export function EnquiryDialog({
         {!e && !error ? <p className="muted">Loading…</p> : null}
         {e && editing ? (
           <>
+            <div className="field">
+              <label htmlFor="enq-customer">Customer</label>
+              <Combobox
+                id="enq-customer"
+                value={customer}
+                placeholder="Search customer"
+                search={async (q) => (await lookupCustomers(q)).map((c) => ({ value: c.id, label: c.label }))}
+                onPick={setCustomer}
+              />
+              {fieldErrors.customerId ? <span className="field-error">{fieldErrors.customerId}</span> : null}
+            </div>
             {field('prospectName', 'Customer or prospect name')}
             {field('contact', 'Contact')}
             {field('product', 'Product *')}

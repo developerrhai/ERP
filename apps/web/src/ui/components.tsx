@@ -389,25 +389,39 @@ export function Combobox({
   const [opts, setOpts] = useState<Option[]>([]);
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(0);
+  // "No match" is only true after a search that worked and found nothing; a search still running or one that failed
+  // (for example no permission on the list) must not look like an empty master (BUG-03).
+  const [state, setState] = useState<'loading' | 'done' | 'error'>('loading');
+  const [failure, setFailure] = useState('');
   const lid = useId();
   const seq = useRef(0);
+  // callers pass an inline arrow, a new function on every render: read the latest one from a ref so a re-render never
+  // restarts the search (that made the list refetch and flicker "Searching…" over and over)
+  const searchRef = useRef(search);
+  searchRef.current = search;
   useEffect(() => {
     if (!open) return undefined;
     const n = ++seq.current;
+    setState('loading');
     const h = setTimeout(() => {
-      search(q)
+      searchRef.current(q)
         .then((r) => {
           if (n === seq.current) {
             setOpts(r);
             setHi(0);
+            setState('done');
           }
         })
-        .catch(() => {
-          if (n === seq.current) setOpts([]);
+        .catch((e: unknown) => {
+          if (n === seq.current) {
+            setOpts([]);
+            setFailure(e instanceof Error && e.message ? e.message : 'The list could not be loaded.');
+            setState('error');
+          }
         });
     }, 250);
     return () => clearTimeout(h);
-  }, [q, open, search]);
+  }, [q, open]);
   const pick = (o: Option) => {
     onPick(o);
     setQ(o.label);
@@ -446,7 +460,9 @@ export function Combobox({
       {open ? (
         <ul id={lid} role="listbox">
           {opts.length === 0 ? (
-            <li className="ui-combo-none">No match</li>
+            <li className="ui-combo-none" role={state === 'error' ? 'alert' : undefined}>
+              {state === 'loading' ? 'Searching…' : state === 'error' ? failure : 'No match'}
+            </li>
           ) : (
             opts.map((o, i) => (
               <li

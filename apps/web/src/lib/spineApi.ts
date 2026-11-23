@@ -79,8 +79,8 @@ export const spineApi = {
     api<Enquiry>(`/sales/enquiries/${id}`, { method: 'PUT', body: b, ...(version === undefined ? {} : { headers: { 'If-Match': `"${version}"` } }) }),
   qualify: (id: string) => api<Enquiry>(`/sales/enquiries/${id}/qualify`, { method: 'POST', body: {} }),
   won: (id: string) => api<Enquiry>(`/sales/enquiries/${id}/won`, { method: 'POST', body: {} }),
-  toQuotation: (id: string, gstPct?: number) => api<Row>(`/sales/enquiries/${id}/to-quotation`, { method: 'POST', body: gstPct === undefined ? {} : { gstPct } }),
-  toProject: (id: string, template?: string) => api<Row>(`/sales/enquiries/${id}/to-project`, { method: 'POST', body: template ? { template } : {} }),
+  toQuotation: (id: string, gstPct?: number, customerId?: string) => api<Row>(`/sales/enquiries/${id}/to-quotation`, { method: 'POST', body: { ...(gstPct === undefined ? {} : { gstPct }), ...(customerId ? { customerId } : {}) } }),
+  toProject: (id: string, template?: string, customerId?: string) => api<Row>(`/sales/enquiries/${id}/to-project`, { method: 'POST', body: { ...(template ? { template } : {}), ...(customerId ? { customerId } : {}) } }),
   markLost: (id: string, lostReason: string) => api<Enquiry>(`/sales/enquiries/${id}/mark-lost`, { method: 'POST', body: { lostReason } }),
 };
 

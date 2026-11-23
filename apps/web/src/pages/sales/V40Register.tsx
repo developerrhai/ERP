@@ -10,7 +10,7 @@ import { EmailDocDialog } from '../../components/EmailDocDialog';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { docsMailApi, saveFile } from '../../lib/docsMailApi';
-import { toUiError } from '../../lib/errors';
+import { toUiMessage } from '../../lib/errors';
 import { formatDateTime } from '../../lib/format';
 import { deleteDoc, getDoc, verb } from '../../lib/scmApi';
 import { useLoad } from '../../lib/useLoad';
@@ -338,7 +338,7 @@ function V40Body({
     try {
       saveFile(await docsMailApi.print(pageId, r.id, 'standard'), `${r.number || 'document'}.pdf`);
     } catch (e) {
-      toast(toUiError(e).message);
+      toast(toUiMessage(e));
     }
   }
   async function submit(ids: string[]): Promise<void> {
@@ -352,7 +352,7 @@ function V40Body({
         await verb(cfg.path, id, 'submit', {}, d.version);
         done += 1;
       } catch (e) {
-        setMsg(toUiError(e).message);
+        setMsg(toUiMessage(e));
       }
     }
     toast(`${done} submitted`);
@@ -367,7 +367,7 @@ function V40Body({
       toast(`Posted ${r.number}`);
       reload();
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   async function remove(ids: string[]): Promise<void> {
@@ -380,7 +380,7 @@ function V40Body({
         await deleteDoc(cfg.path, id, d.version);
         done += 1;
       } catch (e) {
-        setMsg(toUiError(e).message);
+        setMsg(toUiMessage(e));
       }
     }
     toast(`${done} deleted`);

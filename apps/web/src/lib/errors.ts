@@ -20,3 +20,14 @@ export function toUiError(err: unknown): UiError {
   }
   return { message: err.message, fields: err.fields, code: err.code };
 }
+
+/**
+ * The text to show when there is no form to hang field errors on (a toast, a banner above a document): a validation
+ * error names what is wrong ("Enter a rate on every line before submitting.") instead of the bare "Please fix the
+ * highlighted fields." when nothing is highlighted.
+ */
+export function toUiMessage(err: unknown): string {
+  const u = toUiError(err);
+  const details = Object.values(u.fields ?? {}).filter((m) => typeof m === 'string' && m.trim() !== '');
+  return u.code === 'VALIDATION_ERROR' && details.length > 0 ? details.join(' ') : u.message;
+}

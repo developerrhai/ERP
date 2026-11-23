@@ -139,11 +139,20 @@ export const homeService = {
     const needle = q.trim().toLowerCase();
     if (needle.length < 2) return { pages: [], create: [], recent: [] };
     const profile = await accessProfile(accessUserOf(auth.user));
+    // BUG-04: "Item Master" must find "Item / SKU Master": match when every word of the search is in the title or id
+    // (punctuation ignored), as well as the plain substring match.
+    const words = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const tokens = words(needle).split(' ').filter((t) => t !== '');
     const pages: { id: string; title: string; family: string }[] = [];
     for (const family of registry.data.families) {
       for (const item of family.items) {
         if (profile.get(item.id)?.actions.view !== true) continue;
-        if (item.title.toLowerCase().includes(needle) || item.id.toLowerCase().includes(needle)) {
+        const hay = `${words(item.title)} ${words(item.id)}`;
+        if (
+          item.title.toLowerCase().includes(needle) ||
+          item.id.toLowerCase().includes(needle) ||
+          (tokens.length > 1 && tokens.every((t) => hay.includes(t)))
+        ) {
           pages.push({ id: item.id, title: item.title, family: family.name });
         }
       }

@@ -12,7 +12,7 @@ import { formatINR } from '../../ui/format';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
 import { useToast } from '../../components/Toast';
-import { toUiError } from '../../lib/errors';
+import { toUiError, toUiMessage } from '../../lib/errors';
 import { lookupItems, lookupWarehouses, type Ref } from '../../lib/inventoryApi';
 import {
   createDoc,
@@ -149,7 +149,7 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
     try {
       setViewing(await getDoc(cfg.path, row.id));
     } catch (e) {
-      setError(toUiError(e).message);
+      setError(toUiMessage(e));
     }
   }
   const rows = list.data?.rows ?? [];
@@ -704,7 +704,7 @@ function RecordBar({ doc }: { doc: Doc }) {
     try {
       saveFile(await docsMailApi.print(pageId, doc.id, kind), `${docNo || 'document'}.${ext}`);
     } catch (e) {
-      toast(toUiError(e).message);
+      toast(toUiMessage(e));
     }
   }
   return (
@@ -792,7 +792,7 @@ function DocDetail({
       await verb(cfg.path, doc.id, name, body, withVersion ? doc.version : undefined);
       onChanged(await getDoc(cfg.path, doc.id), `${label}: ${s(doc.number)}`);
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     } finally {
       setBusy(false);
     }
@@ -819,7 +819,7 @@ function DocDetail({
                 setBusy(true);
                 deleteDoc(cfg.path, doc.id, doc.version)
                   .then(onDeleted)
-                  .catch((e: unknown) => setMsg(toUiError(e).message))
+                  .catch((e: unknown) => setMsg(toUiMessage(e)))
                   .finally(() => setBusy(false));
               }}
             >
@@ -976,7 +976,7 @@ function InviteBox({
           setMsg('');
           verb(cfg.path, doc.id, 'invite', { supplierIds: [pick] })
             .then(async () => onChanged(await getDoc(cfg.path, doc.id), 'Supplier invited'))
-            .catch((e: unknown) => setMsg(toUiError(e).message));
+            .catch((e: unknown) => setMsg(toUiMessage(e)));
         }}
       >
         Invite

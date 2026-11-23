@@ -51,9 +51,9 @@ export function createSpineRouter(): Router {
   }));
   r.post('/sales/enquiries/:id/qualify', requirePageAction('sales-enquiries', 'edit'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.setEnquiryStatus(callerOf(req), validated(res, 'params', id).id, 'Qualified'))));
   r.post('/sales/enquiries/:id/won', requirePageAction('sales-enquiries', 'edit'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.setEnquiryStatus(callerOf(req), validated(res, 'params', id).id, 'Won'))));
-  const toQuo = z.object({ gstPct: z.coerce.number({ invalid_type_error: 'Enter the GST % as a number.' }).min(0, 'GST % cannot be below 0.').max(28, 'GST % cannot be above 28.').optional() }).strict();
+  const toQuo = z.object({ gstPct: z.coerce.number({ invalid_type_error: 'Enter the GST % as a number.' }).min(0, 'GST % cannot be below 0.').max(28, 'GST % cannot be above 28.').optional(), customerId: z.string().uuid().optional() }).strict();
   r.post('/sales/enquiries/:id/to-quotation', requirePageAction('sales-enquiries', 'edit'), validate({ params: id, body: toQuo }), h(async (req, res) => ok(res, await spineService.toQuotation(callerOf(req), validated(res, 'params', id).id, validated(res, 'body', toQuo)))));
-  const toProj = z.object({ template: z.enum(['BLDC', 'SPPM', 'CUSTOM']).optional(), projectManagerId: z.string().uuid().optional() }).strict();
+  const toProj = z.object({ template: z.enum(['BLDC', 'SPPM', 'CUSTOM']).optional(), projectManagerId: z.string().uuid().optional(), customerId: z.string().uuid().optional() }).strict();
   r.post('/sales/enquiries/:id/to-project', requirePageAction('sales-enquiries', 'edit'), validate({ params: id, body: toProj }), h(async (req, res) => ok(res, await spineService.toProject(callerOf(req), validated(res, 'params', id).id, validated(res, 'body', toProj)), 201)));
   const lost = z.object({ lostReason: z.string().max(300).default('') }).strict();
   r.post('/sales/enquiries/:id/mark-lost', requirePageAction('sales-enquiries', 'edit'), validate({ params: id, body: lost }), h(async (req, res) => ok(res, await spineService.markLost(callerOf(req), validated(res, 'params', id).id, validated(res, 'body', lost).lostReason))));

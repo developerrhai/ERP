@@ -12,7 +12,8 @@ import {
   type ProjectOption,
 } from '../../lib/spineApi';
 import { useLoad } from '../../lib/useLoad';
-import { DateField } from '../../ui/components';
+import { lookupCustomers } from '../../lib/scmApi';
+import { Combobox, DateField } from '../../ui/components';
 import type { ActionSet } from '../../types';
 import { V40Register } from '../sales/V40Register';
 import { EnquiryDialog } from './EnquiryDialog';
@@ -85,6 +86,43 @@ function ProjectPicker({
   );
 }
 
+/** Customer picker for an enquiry that is still a prospect (BUG-02): the same customer search the quotation form uses. */
+function CustomerField({
+  prospect,
+  value,
+  error,
+  onPick,
+}: {
+  prospect: string | null;
+  value: { value: string; label: string } | null;
+  error: string;
+  onPick: (o: { value: string; label: string } | null) => void;
+}) {
+  return (
+    <div className="field">
+      <label htmlFor="enq-customer">Customer *</label>
+      <Combobox
+        id="enq-customer"
+        value={value}
+        placeholder={prospect ? `Search customer (prospect: ${prospect})` : 'Search customer'}
+        search={async (q) =>
+          (await lookupCustomers(q)).map((c) => ({ value: c.id, label: c.label }))
+        }
+        onPick={onPick}
+      />
+      <small className="muted">
+        {prospect ? `"${prospect}" is not linked to a customer yet. ` : ''}Pick it here; if the customer is
+        new, create it in Customers first.
+      </small>
+      {error ? (
+        <p role="alert" className="msg error show static">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------------------------- Sales Enquiries
 const STATUSES = ['New', 'Qualified', 'Quoted', 'Won', 'Lost'] as const;
 
@@ -105,6 +143,10 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
   const [quoting, setQuoting] = useState<Enquiry | null>(null);
   const [gst, setGst] = useState('18');
   const [gstError, setGstError] = useState('');
+  // BUG-02: an enquiry with no customer yet (a prospect) gets its customer picked on the step that needs it
+  const [custPick, setCustPick] = useState<{ value: string; label: string } | null>(null);
+  const [custError, setCustError] = useState('');
+  const [projFor, setProjFor] = useState<Enquiry | null>(null);
 
   async function makeQuotation() {
     if (!quoting) return;
@@ -113,14 +155,53 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
       setGstError('Enter the GST % for this item, between 0 and 28.');
       return;
     }
+    setCustError('');
     try {
-      await spineApi.toQuotation(quoting.id, n);
+      if (custPick) await spineApi.toQuotation(quoting.id, n, custPick.value);
+      else await spineApi.toQuotation(quoting.id, n);
       toast('Draft quotation created.');
       setQuoting(null);
       list.reload();
     } catch (e) {
-      setGstError(e instanceof ApiError && e.fields?.gstPct ? e.fields.gstPct : errText(e));
+      if (e instanceof ApiError && e.fields?.customerId) setCustError(e.fields.customerId);
+      else setGstError(e instanceof ApiError && e.fields?.gstPct ? e.fields.gstPct : errText(e));
     }
+  }
+
+  /** Create Project: if the enquiry has no customer to link, ask for one instead of failing with a toast. */
+  async function makeProject(e: Enquiry, customerId?: string) {
+    try {
+      if (customerId) await spineApi.toProject(e.id, undefined, customerId);
+      else await spineApi.toProject(e.id);
+      toast('Project created with its gates.');
+      setProjFor(null);
+      list.reload();
+    } catch (err) {
+      if (err instanceof ApiError && err.fields?.customerId) {
+        setCustError(err.fields.customerId);
+        setCustPick(null);
+        setProjFor(await fullEnquiry(e));
+      } else toast(errText(err));
+    }
+  }
+
+  /** The full enquiry (product, prospect, customer) for a dialog: from the list when it has it, else from the server. */
+  async function fullEnquiry(e: Enquiry): Promise<Enquiry> {
+    if (e.product !== undefined) return e;
+    try {
+      return await spineApi.enquiry(e.id);
+    } catch {
+      return e;
+    }
+  }
+
+  async function openQuotation(e: Enquiry) {
+    const full = await fullEnquiry(e);
+    setQuoting(full);
+    setGst('18');
+    setGstError('');
+    setCustPick(null);
+    setCustError('');
   }
 
   async function run(fn: () => Promise<unknown>, ok: string) {
@@ -174,8 +255,13 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
         onOpen={setOpenId}
         {...(actions ? { actions } : {})}
         rowExtra={(r) => {
-          const e = (list.data ?? []).find((x) => x.id === r.id);
-          if (!e) return null;
+          // The buttons follow the row the table shows (the Sales register API), not a second capped list: a row on a
+          // later page is not in that list, and its buttons used to vanish. Details load when a button needs them.
+          const known = (list.data ?? []).find((x) => x.id === r.id);
+          const e = {
+            ...(known ?? { id: r.id, number: r.number, project_id: null }),
+            status: r.status,
+          } as Enquiry;
           return (
             <>
               {e.status === 'New' ? (
@@ -191,11 +277,7 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
                 <button
                   type="button"
                   className="btn sm"
-                  onClick={() => {
-                    setQuoting(e);
-                    setGst('18');
-                    setGstError('');
-                  }}
+                  onClick={() => void openQuotation(e)}
                 >
                   Create Quotation
                 </button>
@@ -204,9 +286,7 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
                 <button
                   type="button"
                   className="btn sm"
-                  onClick={() =>
-                    void run(() => spineApi.toProject(e.id), 'Project created with its gates.')
-                  }
+                  onClick={() => void makeProject(e)}
                 >
                   Create Project
                 </button>
@@ -288,6 +368,8 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
                             setQuoting(e);
                             setGst('18');
                             setGstError('');
+                            setCustPick(null);
+                            setCustError('');
                           }}
                         >
                           Create Quotation
@@ -297,12 +379,7 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
                         <button
                           type="button"
                           className="btn"
-                          onClick={() =>
-                            void run(
-                              () => spineApi.toProject(e.id),
-                              'Project created with its gates.',
-                            )
-                          }
+                          onClick={() => void makeProject(e)}
                         >
                           Create Project
                         </button>
@@ -445,12 +522,53 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
                 {gstError}
               </p>
             ) : null}
+            {!quoting.customer_id ? (
+              <CustomerField
+                prospect={quoting.prospect_name}
+                value={custPick}
+                error={custError}
+                onPick={(o) => {
+                  setCustPick(o);
+                  setCustError('');
+                }}
+              />
+            ) : null}
             <div className="modal-actions">
               <button type="button" className="btn" onClick={() => setQuoting(null)}>
                 Cancel
               </button>
               <button type="button" className="btn primary" onClick={() => void makeQuotation()}>
                 Create Quotation
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {projFor ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Create project">
+          <div className="modal">
+            <h2>Project for {projFor.number}</h2>
+            <p className="muted">A project needs a customer. Pick the customer for this enquiry.</p>
+            <CustomerField
+              prospect={projFor.prospect_name}
+              value={custPick}
+              error={custError}
+              onPick={(o) => {
+                setCustPick(o);
+                setCustError('');
+              }}
+            />
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={() => setProjFor(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={!custPick}
+                onClick={() => custPick && void makeProject(projFor, custPick.value)}
+              >
+                Create Project
               </button>
             </div>
           </div>

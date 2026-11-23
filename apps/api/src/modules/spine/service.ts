@@ -108,8 +108,16 @@ const randomUuidNil = '00000000-0000-0000-0000-000000000000';
 
 /** An enquiry saved with only a typed customer name (no customer picked) is linked to the one existing customer of that
  *  name, so Create Quotation / Create Project do not fail with "create the customer first" for a customer that exists. */
-async function linkEnquiryCustomer(caller: Caller, e: Row): Promise<Row> {
+async function linkEnquiryCustomer(caller: Caller, e: Row, chosenCustomerId?: string | null): Promise<Row> {
   if (e.customer_id) return e;
+  // BUG-02: the person picked the customer on the Create Quotation / Create Project step: link it to the enquiry here
+  if (chosenCustomerId) {
+    const c = (await query(prisma, `SELECT id FROM customers WHERE id = $1::uuid AND deleted_at IS NULL`, chosenCustomerId))[0];
+    if (!c) throw Errors.validation({ customerId: 'That customer was not found. Pick a customer from the list.' });
+    await query(prisma, `UPDATE sales_enquiries SET customer_id = $2::uuid, version = version + 1, updated_at = now(), updated_by_id = $3::uuid WHERE id = $1::uuid AND customer_id IS NULL`, S(e.id), chosenCustomerId, caller.auth.user.id);
+    await enquiryAudit(caller, e, 'enquiry.updated', { changed: { customer_id: { from: null, to: chosenCustomerId } } });
+    return { ...e, customer_id: chosenCustomerId };
+  }
   const name = S(e.prospect_name).trim();
   if (!name) return e;
   const hits = await query(prisma, `SELECT id FROM customers WHERE deleted_at IS NULL AND (lower(name) = lower($1) OR name_key = lower($1)) LIMIT 2`, name);
@@ -118,6 +126,12 @@ async function linkEnquiryCustomer(caller: Caller, e: Row): Promise<Row> {
   return { ...e, customer_id: hits[0]!.id };
 }
 
+
+/** The enquiry has no customer yet and the prospect name matched none (or several): say what to do next. */
+function noCustomerMessage(e: Row): string {
+  const name = S(e.prospect_name).trim();
+  return `${name ? `No single customer named "${name}" was found. ` : 'This enquiry has no customer. '}Pick the customer from the list here (create it in Customers first if it is new).`;
+}
 
 /** One audit row for an enquiry action, carrying the page and plant so the page's Audit Trail (and its plant filter) finds it. */
 async function enquiryAudit(caller: Caller, e: Row, action: string, extra: Record<string, unknown> = {}): Promise<void> {
@@ -632,9 +646,9 @@ export const spineService = {
     return r[0];
   },
   /** Create a Phase 10 draft quotation from the enquiry; the enquiry becomes Quoted. */
-  async toQuotation(caller: Caller, id: string, b: { gstPct?: number | string | undefined } = {}): Promise<Row> {
-    const e = await linkEnquiryCustomer(caller, await spineService.enquiry(caller, id));
-    if (!e.customer_id) throw Errors.validation({ customerId: 'Create the customer first, then pick it on the enquiry.' });
+  async toQuotation(caller: Caller, id: string, b: { gstPct?: number | string | undefined; customerId?: string | undefined } = {}): Promise<Row> {
+    const e = await linkEnquiryCustomer(caller, await spineService.enquiry(caller, id), b.customerId);
+    if (!e.customer_id) throw Errors.validation({ customerId: noCustomerMessage(e) });
     if (!['New', 'Qualified'].includes(S(e.status))) throw Errors.conflict('A quotation was already made, or the enquiry is closed.');
     // An enquiry line is free text (no item, so no HSN): the GST rate cannot be looked up and must be given.
     if (b.gstPct === undefined || b.gstPct === null || String(b.gstPct).trim() === '')
@@ -656,10 +670,10 @@ export const spineService = {
     }
   },
   /** A "new product" enquiry becomes a project with the BLDC / SPPM / CUSTOM template. */
-  async toProject(caller: Caller, id: string, b: { template?: 'BLDC' | 'SPPM' | 'CUSTOM'; projectManagerId?: string }): Promise<Row> {
-    const e = await linkEnquiryCustomer(caller, await spineService.enquiry(caller, id));
+  async toProject(caller: Caller, id: string, b: { template?: 'BLDC' | 'SPPM' | 'CUSTOM'; projectManagerId?: string; customerId?: string }): Promise<Row> {
+    const e = await linkEnquiryCustomer(caller, await spineService.enquiry(caller, id), b.customerId);
     if (e.project_id) throw Errors.conflict('This enquiry already has a project.');
-    if (!e.customer_id) throw Errors.validation({ customerId: 'Create the customer first, then pick it on the enquiry.' });
+    if (!e.customer_id) throw Errors.validation({ customerId: noCustomerMessage(e) });
     const template = b.template ?? (e.project_template as 'BLDC' | 'SPPM' | 'CUSTOM' | null) ?? 'CUSTOM';
     const code = await NumberingService.allocate(prisma as never, { pageId: 'proj-projects', unitId: S(e.unit_id), fyId: caller.ctx.fyId, prefix: 'PRJ' });
     const pm = b.projectManagerId ?? null; // an employee id (projects.project_manager_id references employees)
