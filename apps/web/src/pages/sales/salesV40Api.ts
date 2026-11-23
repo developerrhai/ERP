@@ -57,6 +57,17 @@ export const SALES_V40_IDS: ReadonlySet<string> = new Set([
   'sales-pricelist',
 ]);
 
+export interface V40Summary {
+  total: number;
+  byStatus: { status: string; count: number }[];
+  byMonth: { month: string; count: number }[];
+}
+
+/** Whole-set counts of a page (GET /sales/v40/:pageId/summary) for its Analytics and Reports tabs. */
+export async function getSalesV40Summary(pageId: string): Promise<V40Summary> {
+  return (await request<V40Summary>(`/sales/v40/${pageId}/summary`)).data;
+}
+
 export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page> {
   const qs = new URLSearchParams({
     tab: p.tab,

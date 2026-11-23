@@ -2235,3 +2235,41 @@ export async function runV40View(
   }
   return out;
 }
+
+export interface V40Summary {
+  total: number;
+  byStatus: { status: string; count: number }[];
+  /** records created per month, oldest first, the last 6 months */
+  byMonth: { month: string; count: number }[];
+}
+
+/** Whole-set figures for the Analytics / Reports tabs: two grouped counts under the same plant / ownership scope as the register. */
+export async function runV40Summary(def: PageDef, caller: Caller, pageId: string): Promise<V40Summary> {
+  const args: unknown[] = [];
+  const where = await scopeParts(
+    caller,
+    pageId,
+    def.unit === undefined ? 't.unit_id' : def.unit,
+    def.soft === undefined ? 't.deleted_at' : def.soft,
+    def.owner === undefined ? 't.created_by_id' : def.owner,
+    args,
+  );
+  where.push(...(def.base ?? []));
+  const w = where.length ? where.join(' AND ') : 'true';
+  const byStatus = await query(
+    prisma,
+    `SELECT COALESCE(${def.status}::text, '-') AS status, count(*)::int AS count FROM ${def.from} WHERE ${w} GROUP BY 1 ORDER BY 2 DESC LIMIT 30`,
+    ...args,
+  );
+  const byMonth = await query(
+    prisma,
+    `SELECT to_char(date_trunc('month', t.created_at), 'YYYY-MM') AS month, count(*)::int AS count FROM ${def.from}
+      WHERE ${w} AND t.created_at >= date_trunc('month', now()) - interval '5 months' GROUP BY 1 ORDER BY 1`,
+    ...args,
+  ).catch(() => []);
+  return {
+    total: byStatus.reduce((n, r) => n + Number(r.count), 0),
+    byStatus: byStatus.map((r) => ({ status: String(r.status), count: Number(r.count) })),
+    byMonth: byMonth.map((r) => ({ month: String(r.month), count: Number(r.count) })),
+  };
+}

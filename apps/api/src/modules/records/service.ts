@@ -268,6 +268,26 @@ export const recordService = {
     id: string,
     op: LockOp | null,
   ): Promise<DocumentTarget> {
+    // SE-02: a page whose records live in their own table (Enquiries, Quotations, Orders ...) keeps its documents in the
+    // same record_documents store; the record is looked up in that table, in a plant the caller may see. A page with no
+    // such table (or a record not found there) takes the generic record path below.
+    const { catalogOf } = await import('../docsmail/print.js');
+    const doc = catalogOf(pageId);
+    if (doc && /^[0-9a-f-]{36}$/i.test(id)) {
+      const rows = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+        `SELECT t.id::text AS id, t.${doc.numberCol}::text AS code, t.${doc.statusCol}::text AS status${doc.unitCol ? `, t.${doc.unitCol}::text AS unit_id` : ''}
+           FROM ${doc.table} t WHERE t.id = $1::uuid`,
+        id,
+      );
+      const r = rows[0];
+      if (r) {
+        if (doc.unitCol && r.unit_id && !caller.ctx.unitIds.includes(String(r.unit_id))) {
+          throw Errors.notFound('Record not found.');
+        }
+        if (op) requireConcreteUnit(caller);
+        return { id: String(r.id), code: String(r.code ?? id), status: String(r.status ?? ''), version: 0 };
+      }
+    }
     const schema = genericSchema(pageId);
     if (op) requireConcreteUnit(caller);
     const row = await load(caller, schema, id);

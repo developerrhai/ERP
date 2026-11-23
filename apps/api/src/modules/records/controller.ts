@@ -22,6 +22,7 @@ import { typedSchema } from '../inventory/definitions';
 import { buildTypedWorkbook } from '../inventory/export';
 import { previewAdjustment, previewTransfer } from '../inventory/stock/service';
 import { typedHandlerFor } from '../inventory/typed-pages';
+import { kindOf } from '../../engine/kinds';
 import { recordPdfService } from './pdf';
 import { recordService } from './service';
 import type { Caller } from './service';
@@ -91,6 +92,13 @@ function sendPdf(res: Response, buffer: Buffer, filename: string): void {
 function need<T>(fn: T | undefined): T {
   if (!fn) throw Errors.readOnly();
   return fn;
+}
+
+/** True for a page whose records are not in generic_records but in their own table (Enquiries, Quotations, Orders ... have a print catalog entry). */
+async function ownTable(pageId: string): Promise<boolean> {
+  if (kindOf(pageId) !== 'generic') return false;
+  const { catalogOf } = await import('../docsmail/print.js');
+  return !!catalogOf(pageId);
 }
 
 export const recordsController = {
@@ -423,6 +431,9 @@ export const recordsController = {
       result = kitSchemaFor(pageId)
         ? await kitAudit(callerOf(req), pageId, query)
         : await typedAudit(callerOf(req), pageId, query);
+    } else if (await ownTable(pageId)) {
+      // a page whose records live in their own table (Sales Enquiries, Quotations ...): its audit rows name the page
+      result = await kitAudit(callerOf(req), pageId, query);
     } else {
       result = await recordService.audit(callerOf(req), pageId, query);
     }
@@ -441,6 +452,11 @@ export const recordsController = {
       const { rows, total } = kitSchemaFor(pageId)
         ? await kitAudit(callerOf(req), pageId, query, id)
         : await typedAudit(callerOf(req), pageId, query, id);
+      res.json({ data: rows, meta: { page: query.page, size: query.size, total } });
+      return;
+    }
+    if (await ownTable(pageId)) {
+      const { rows, total } = await kitAudit(callerOf(req), pageId, query, id);
       res.json({ data: rows, meta: { page: query.page, size: query.size, total } });
       return;
     }

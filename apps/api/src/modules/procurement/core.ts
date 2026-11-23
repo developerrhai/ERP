@@ -175,7 +175,7 @@ export async function audit(
       targetType: target,
       targetId: row.id,
       ...(caller ? { meta: caller.meta } : {}),
-      detail: { pageId, code: row.code, ...detail },
+      detail: { pageId, code: row.code, ...(caller?.ctx.unitId ? { unitId: caller.ctx.unitId } : {}), ...detail },
     },
     db,
   );

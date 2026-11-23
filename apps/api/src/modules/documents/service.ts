@@ -218,6 +218,7 @@ export const documentService = {
         detail: {
           pageId,
           code: target.code,
+          ...(caller.ctx.unitId ? { unitId: caller.ctx.unitId } : {}),
           fileName,
           reason: verdict.detail ?? 'infected',
           sha256,
@@ -257,6 +258,7 @@ export const documentService = {
           detail: {
             pageId,
             code: target.code,
+          ...(caller.ctx.unitId ? { unitId: caller.ctx.unitId } : {}),
             documentId: doc.id,
             fileName,
             size: upload.buffer.length,
@@ -291,7 +293,8 @@ export const documentService = {
           targetType: 'Record',
           targetId: recordId,
           meta: caller.meta,
-          detail: { pageId, code: target.code, documentId: doc.id, title: doc.title },
+          detail: { pageId, code: target.code,
+          ...(caller.ctx.unitId ? { unitId: caller.ctx.unitId } : {}), documentId: doc.id, title: doc.title },
         },
         tx,
       );
@@ -317,7 +320,8 @@ export const documentService = {
           targetType: 'Record',
           targetId: recordId,
           meta: caller.meta,
-          detail: { pageId, code: target.code, documentId: doc.id, via: 's3_presigned' },
+          detail: { pageId, code: target.code,
+          ...(caller.ctx.unitId ? { unitId: caller.ctx.unitId } : {}), documentId: doc.id, via: 's3_presigned' },
         });
         return {
           presignedUrl: presigned.url,
@@ -338,7 +342,8 @@ export const documentService = {
       targetType: 'Record',
       targetId: recordId,
       meta: caller.meta,
-      detail: { pageId, code: target.code, documentId: doc.id, via: 'stream' },
+      detail: { pageId, code: target.code,
+          ...(caller.ctx.unitId ? { unitId: caller.ctx.unitId } : {}), documentId: doc.id, via: 'stream' },
     });
     return {
       presignedUrl: null as string | null,

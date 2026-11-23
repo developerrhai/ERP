@@ -241,7 +241,22 @@ export const workService = {
 
       // 3. checks
       if (input.toDepartmentId === fromDept) {
-        throw Errors.validation({ toDepartmentId: 'Select a different next department' });
+        throw Errors.validation({
+          toDepartmentId:
+            "This department already holds the record. Select a different next department; for your own manager's approval use Submit / Send for Approval.",
+        });
+      }
+      // WF-02: a quotation is approved by the Sales Manager (Submit -> approval) before it leaves Sales; handing a Draft over is not approval
+      if (input.docType === 'sales-quotations') {
+        const q = (await query(tx, `SELECT status FROM sales_quotations WHERE id = $1::uuid`, input.docId))[0];
+        const st = String(q?.status ?? '');
+        if (['Draft', 'Pending Approval', 'Rejected'].includes(st)) {
+          throw Errors.conflict(
+            st === 'Pending Approval'
+              ? 'This quotation is waiting for Sales Manager approval. Move it forward after it is Approved.'
+              : `This quotation is ${st}. Submit it for Sales Manager approval first; it can move to the next department once it is Approved.`,
+          );
+        }
       }
       const toDept = (await query(tx, `SELECT id::text AS id, name FROM departments WHERE id = $1::uuid`, input.toDepartmentId))[0];
       if (!toDept) throw Errors.validation({ toDepartmentId: 'Choose a department from the list.' });
@@ -319,7 +334,7 @@ export const workService = {
       await event(tx, { id, doc_type: input.docType, doc_id: input.docId }, 'SENT', null, 'SENT', fromDept, user.id, input.handoverNote ?? null);
       await refreshCounters(tx, [fromDept, input.toDepartmentId], [unitId, input.toUnitId ?? null]);
       await recordAudit(
-        { action: 'work.sent', actorId: user.id, targetType: 'work_movement', targetId: id, detail: { number, docType: input.docType, docId: input.docId, to: String(toDept.name) } },
+        { action: 'work.sent', actorId: user.id, targetType: 'work_movement', targetId: id, detail: { number, docType: input.docType, docId: input.docId, docNo: input.docNo ?? null, unitId, from: fromDept, to: String(toDept.name) } },
         tx,
       );
       const who = input.assignedManagerId ? [input.assignedManagerId] : targets.map((t) => t.id);
@@ -425,7 +440,7 @@ export const workService = {
         await notifyDept(tx, [String(m.sent_by_id)], 'work.accepted', `${docName} accepted by ${depName}`, `${String(m.number)} was accepted.`, id, `work:${id}:accepted`);
       }
       await refreshCounters(tx, [fromId, toId], [unitId, m.to_unit_id ? String(m.to_unit_id) : null]);
-      await recordAudit({ action: `work.${action}`, actorId: user.id, targetType: 'work_movement', targetId: id, detail: { number: String(m.number), state: to } }, tx);
+      await recordAudit({ action: `work.${action}`, actorId: user.id, targetType: 'work_movement', targetId: id, detail: { number: String(m.number), state: to, docType: String(m.doc_type), docId: String(m.doc_id), docNo: m.doc_no ? String(m.doc_no) : null, unitId: String(m.unit_id), ...(body.reason ? { reason: body.reason } : {}) } }, tx);
       return (await query(tx, `SELECT ${sel()} ${FROM} WHERE m.id = $1::uuid`, id))[0]!;
     });
   },

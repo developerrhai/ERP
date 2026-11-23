@@ -45,6 +45,7 @@ export interface Enquiry {
   id: string; number: string; enq_date: string; customer_id: string | null; customer_name: string | null; prospect_name: string | null; product: string;
   qty: string | null; status: 'New' | 'Qualified' | 'Quoted' | 'Won' | 'Lost'; lost_reason: string | null; quotation_id: string | null; project_id: string | null;
   project_template: 'BLDC' | 'SPPM' | 'CUSTOM' | null; assigned_to: string | null; source: string | null;
+  contact?: string | null; application?: string | null; required_date?: string | null; version?: number;
 }
 
 export const spineApi = {
@@ -73,6 +74,9 @@ export const spineApi = {
   runExceptions: () => api<{ raised: number; resolved: number }>('/exceptions/run', { method: 'POST', body: {} }),
   enquiries: (p: { status?: string; q?: string }) => api<Enquiry[]>(`/sales/enquiries${qs({ status: p.status, q: p.q, size: 100 })}`),
   addEnquiry: (b: Row) => api<Enquiry>('/sales/enquiries', { method: 'POST', body: b }),
+  enquiry: (id: string) => api<Enquiry>(`/sales/enquiries/${id}`),
+  updateEnquiry: (id: string, version: number | undefined, b: Row) =>
+    api<Enquiry>(`/sales/enquiries/${id}`, { method: 'PUT', body: b, ...(version === undefined ? {} : { headers: { 'If-Match': `"${version}"` } }) }),
   qualify: (id: string) => api<Enquiry>(`/sales/enquiries/${id}/qualify`, { method: 'POST', body: {} }),
   won: (id: string) => api<Enquiry>(`/sales/enquiries/${id}/won`, { method: 'POST', body: {} }),
   toQuotation: (id: string, gstPct?: number) => api<Row>(`/sales/enquiries/${id}/to-quotation`, { method: 'POST', body: gstPct === undefined ? {} : { gstPct } }),

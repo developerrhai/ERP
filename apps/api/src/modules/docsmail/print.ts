@@ -276,7 +276,7 @@ export async function renderPrint(caller: Caller, pageId: string, id: string, ki
     contentType = 'application/pdf';
     ext = 'pdf';
   }
-  await recordAudit({ action: 'PRINT_RENDERED', actorId: caller.auth.userId, targetType: 'record', targetId: id, meta: caller.meta, detail: { pageId, kind, copy } });
+  await recordAudit({ action: 'PRINT_RENDERED', actorId: caller.auth.userId, targetType: 'record', targetId: id, meta: caller.meta, detail: { pageId, kind, copy, ...(caller.ctx.unitId ? { unitId: caller.ctx.unitId } : {}) } });
   return { buffer, contentType, filename: `${base}.${ext}` };
 }
 

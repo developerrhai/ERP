@@ -8,16 +8,39 @@ import { HistoryDrawer, MoveForwardDialog, ReturnDialog } from '../../components
 import { TabStrip } from '../../components/TabStrip';
 import { useToast } from '../../components/Toast';
 import { docsMailApi, type MailRow } from '../../lib/docsMailApi';
-import { workApi, type Dept, type InboxCounts, type Movement, type MovementState } from '../../lib/workApi';
+import {
+  workApi,
+  type Dept,
+  type InboxCounts,
+  type Movement,
+  type MovementState,
+} from '../../lib/workApi';
 import type { User } from '../../types';
 import { generateDeptInboxFallback } from './deptInboxFallback';
 import { duplicateMessage, scanDuplicates } from '../../components/dupScan';
 import { tableToCsv } from '../../components/ActionBar';
 
-type ViewKey = 'inbox' | 'unread' | 'attachments' | 'receipt' | 'acceptance' | 'work' | 'approval' | 'ready' | 'sent' | 'returned' | 'completed' | 'all';
+type ViewKey =
+  | 'inbox'
+  | 'unread'
+  | 'attachments'
+  | 'receipt'
+  | 'acceptance'
+  | 'work'
+  | 'approval'
+  | 'ready'
+  | 'sent'
+  | 'returned'
+  | 'completed'
+  | 'all';
 
 /** V40 view buttons in V40 order. `tab` = the /work/inbox tab; `mail` = read from the user's internal mail instead. */
-const VIEWS: { key: ViewKey; label: string; tab?: string; mail?: 'unread' | 'attachments' | 'all' }[] = [
+const VIEWS: {
+  key: ViewKey;
+  label: string;
+  tab?: string;
+  mail?: 'unread' | 'attachments' | 'all';
+}[] = [
   { key: 'inbox', label: 'Inbox', tab: 'open', mail: 'all' },
   { key: 'unread', label: 'Unread', mail: 'unread' },
   { key: 'attachments', label: 'Attachments', mail: 'attachments' },
@@ -32,9 +55,31 @@ const VIEWS: { key: ViewKey; label: string; tab?: string; mail?: 'unread' | 'att
   { key: 'all', label: 'All Mail', tab: 'all', mail: 'all' },
 ];
 
-const STATES = ['SENT', 'RECEIVED', 'ACCEPTED', 'IN_WORK', 'WAITING_APPROVAL', 'COMPLETED', 'FORWARDED', 'RETURNED', 'RECALLED'];
-const when = (iso: string | null): string => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
-const pretty = (s: string): string => s.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+const STATES = [
+  'SENT',
+  'RECEIVED',
+  'ACCEPTED',
+  'IN_WORK',
+  'WAITING_APPROVAL',
+  'COMPLETED',
+  'FORWARDED',
+  'RETURNED',
+  'RECALLED',
+];
+const when = (iso: string | null): string =>
+  iso
+    ? new Date(iso).toLocaleString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '—';
+const pretty = (s: string): string =>
+  s
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/^\w/, (c) => c.toUpperCase());
 
 /** Assets and Logistics have their own Inbox / Work Center pages; their staff sit in the Maintenance and Warehouse departments. */
 const PAGE_DEPT_ALIAS: Readonly<Record<string, { dept: string; label: string }>> = {
@@ -56,9 +101,7 @@ export function deptLabelFromPage(pageId: string, dept: Dept | undefined): strin
   return PAGE_DEPT_ALIAS[slug]?.label ?? dept?.name ?? slug;
 }
 
-type Row =
-  | { kind: 'move'; at: string; m: Movement }
-  | { kind: 'mail'; at: string; mail: MailRow };
+type Row = { kind: 'move'; at: string; m: Movement } | { kind: 'mail'; at: string; mail: MailRow };
 
 interface Filters {
   q: string;
@@ -84,7 +127,15 @@ const DEFAULT_DEPTS: Dept[] = [
   { id: 'f8559bc9-12e1-4d54-a764-6726fc91c301', name: 'Administration' },
 ];
 
-export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; deptName?: string; user?: User }) {
+export function DeptMailboxPage({
+  pageId,
+  deptName,
+  user,
+}: {
+  pageId: string;
+  deptName?: string;
+  user?: User;
+}) {
   const toast = useToast();
   const [depts, setDepts] = useState<Dept[]>(DEFAULT_DEPTS);
   const [view, setView] = useState<ViewKey>(pageId === 'dept-inbox-finance' ? 'receipt' : 'inbox');
@@ -104,7 +155,13 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
   useEffect(() => {
     void workApi.departments().then(setDepts, () => setDepts([]));
   }, []);
-  const dept = useMemo(() => (deptName ? depts.find((d) => d.name.toLowerCase() === deptName.toLowerCase()) : deptFromPage(pageId, depts)), [pageId, deptName, depts]);
+  const dept = useMemo(
+    () =>
+      deptName
+        ? depts.find((d) => d.name.toLowerCase() === deptName.toLowerCase())
+        : deptFromPage(pageId, depts),
+    [pageId, deptName, depts],
+  );
 
   useEffect(() => {
     if (!dept) return;
@@ -114,19 +171,41 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
     const jobs: Promise<Row[]>[] = [];
     if (spec.tab) {
       jobs.push(
-        workApi.inbox({ dept: dept.id, tab: spec.tab, docType: f.docType || undefined, q: f.q || undefined }).then((r) => r.rows.map((m): Row => ({ kind: 'move', at: m.sent_at, m }))),
+        workApi
+          .inbox({
+            dept: dept.id,
+            tab: spec.tab,
+            docType: f.docType || undefined,
+            q: f.q || undefined,
+          })
+          .then((r) => r.rows.map((m): Row => ({ kind: 'move', at: m.sent_at, m }))),
       );
     }
     if (spec.mail) {
       jobs.push(
-        docsMailApi.inbox().then(
-          (mail) => { if (alive) setMailBlocked(false); return mail; },
-          () => { if (alive) setMailBlocked(true); return []; },
-        ).then((mail) =>
-          mail
-            .filter((x) => (spec.mail === 'unread' ? !x.read : spec.mail === 'attachments' ? attachmentCount(x) > 0 : true))
-            .map((x): Row => ({ kind: 'mail', at: x.created_at, mail: x })),
-        ),
+        docsMailApi
+          .inbox()
+          .then(
+            (mail) => {
+              if (alive) setMailBlocked(false);
+              return mail;
+            },
+            () => {
+              if (alive) setMailBlocked(true);
+              return [];
+            },
+          )
+          .then((mail) =>
+            mail
+              .filter((x) =>
+                spec.mail === 'unread'
+                  ? !x.read
+                  : spec.mail === 'attachments'
+                    ? attachmentCount(x) > 0
+                    : true,
+              )
+              .map((x): Row => ({ kind: 'mail', at: x.created_at, mail: x })),
+          ),
       );
     }
     void Promise.all(jobs).then(
@@ -150,8 +229,14 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
         setBusy(false);
       },
     );
-    void workApi.counts(dept.id).then((c) => alive && setCounts(c), () => undefined);
-    void docsMailApi.inbox().then((m) => alive && setUnread(m.filter((x) => !x.read).length), () => undefined);
+    void workApi.counts(dept.id).then(
+      (c) => alive && setCounts(c),
+      () => undefined,
+    );
+    void docsMailApi.inbox().then(
+      (m) => alive && setUnread(m.filter((x) => !x.read).length),
+      () => undefined,
+    );
     return () => {
       alive = false;
     };
@@ -171,11 +256,13 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
         } else if (view === 'acceptance') {
           if (r.kind !== 'move' || r.m.state !== 'RECEIVED') return false;
         } else if (view === 'work') {
-          if (r.kind !== 'move' || (r.m.state !== 'ACCEPTED' && r.m.state !== 'IN_WORK')) return false;
+          if (r.kind !== 'move' || (r.m.state !== 'ACCEPTED' && r.m.state !== 'IN_WORK'))
+            return false;
         } else if (view === 'approval') {
           if (r.kind !== 'move' || r.m.state !== 'WAITING_APPROVAL') return false;
         } else if (view === 'ready') {
-          if (r.kind !== 'move' || (r.m.state !== 'ACCEPTED' && r.m.state !== 'IN_WORK')) return false;
+          if (r.kind !== 'move' || (r.m.state !== 'ACCEPTED' && r.m.state !== 'IN_WORK'))
+            return false;
         } else if (view === 'sent') {
           if (r.kind === 'move' && r.m.from_department !== dept?.name) return false;
         } else if (view === 'returned') {
@@ -183,19 +270,33 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
         } else if (view === 'completed') {
           if (r.kind !== 'move' || r.m.state !== 'COMPLETED') return false;
         } else if (view === 'inbox') {
-          if (r.kind === 'move' && !['SENT', 'RECEIVED', 'ACCEPTED', 'IN_WORK', 'WAITING_APPROVAL'].includes(r.m.state)) return false;
+          if (
+            r.kind === 'move' &&
+            !['SENT', 'RECEIVED', 'ACCEPTED', 'IN_WORK', 'WAITING_APPROVAL'].includes(r.m.state)
+          )
+            return false;
         }
 
         // Generic filter form
         if (r.kind === 'mail') {
           if (f.state || f.docType) return false;
           if (f.source && r.mail.from_department !== f.source) return false;
-          if (f.q && !`${r.mail.subject} ${r.mail.from_name ?? ''}`.toLowerCase().includes(f.q.toLowerCase())) return false;
+          if (
+            f.q &&
+            !`${r.mail.subject} ${r.mail.from_name ?? ''}`.toLowerCase().includes(f.q.toLowerCase())
+          )
+            return false;
         } else {
           if (f.state && r.m.state !== f.state) return false;
           if (f.source && r.m.from_department !== f.source) return false;
           if (f.docType && r.m.doc_type !== f.docType) return false;
-          if (f.q && !`${r.m.number} ${r.m.doc_no ?? ''} ${r.m.handover_note ?? ''}`.toLowerCase().includes(f.q.toLowerCase())) return false;
+          if (
+            f.q &&
+            !`${r.m.number} ${r.m.doc_no ?? ''} ${r.m.handover_note ?? ''}`
+              .toLowerCase()
+              .includes(f.q.toLowerCase())
+          )
+            return false;
         }
         if (f.from && r.at.slice(0, 10) < f.from) return false;
         if (f.to && r.at.slice(0, 10) > f.to) return false;
@@ -203,45 +304,73 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
       }),
     [rows, f, view, dept?.name],
   );
-  const docTypes = useMemo(() => [...new Set(rows.flatMap((r) => (r.kind === 'move' ? [r.m.doc_type] : [])))].sort(), [rows]);
+  const docTypes = useMemo(
+    () => [...new Set(rows.flatMap((r) => (r.kind === 'move' ? [r.m.doc_type] : [])))].sort(),
+    [rows],
+  );
 
-  const act = useCallback(async (m: Movement, action: 'receive' | 'accept' | 'recall' | 'complete'): Promise<void> => {
-    try {
-      await workApi.act(m.id, action);
-      toast(action === 'receive' ? 'Marked Received.' : action === 'accept' ? 'Accepted.' : action === 'recall' ? 'Recalled.' : 'Completed.');
-      setTick((t) => t + 1);
-    } catch {
-      // In demo / fallback mode, simulate movement state update locally so QA can test interactive flow
-      const now = new Date().toISOString();
-      const nextState: MovementState =
-        action === 'receive' ? 'RECEIVED' :
-        action === 'accept' ? 'ACCEPTED' :
-        action === 'recall' ? 'RECALLED' :
-        'COMPLETED';
-      setRows((prev) =>
-        prev.map((r) => {
-          if (r.kind === 'move' && r.m.id === m.id) {
-            return {
-              ...r,
-              m: {
-                ...r.m,
-                state: nextState,
-                received_at: action === 'receive' ? now : r.m.received_at,
-                accepted_at: action === 'accept' ? now : r.m.accepted_at,
-              },
-            };
-          }
-          return r;
-        }),
-      );
-      toast(action === 'receive' ? 'Marked Received.' : action === 'accept' ? 'Accepted.' : action === 'recall' ? 'Recalled.' : 'Completed.');
-    }
-  }, [toast]);
+  const act = useCallback(
+    async (m: Movement, action: 'receive' | 'accept' | 'recall' | 'complete'): Promise<void> => {
+      try {
+        await workApi.act(m.id, action);
+        toast(
+          action === 'receive'
+            ? 'Marked Received.'
+            : action === 'accept'
+              ? 'Accepted.'
+              : action === 'recall'
+                ? 'Recalled.'
+                : 'Completed.',
+        );
+        setTick((t) => t + 1);
+      } catch {
+        // In demo / fallback mode, simulate movement state update locally so QA can test interactive flow
+        const now = new Date().toISOString();
+        const nextState: MovementState =
+          action === 'receive'
+            ? 'RECEIVED'
+            : action === 'accept'
+              ? 'ACCEPTED'
+              : action === 'recall'
+                ? 'RECALLED'
+                : 'COMPLETED';
+        setRows((prev) =>
+          prev.map((r) => {
+            if (r.kind === 'move' && r.m.id === m.id) {
+              return {
+                ...r,
+                m: {
+                  ...r.m,
+                  state: nextState,
+                  received_at: action === 'receive' ? now : r.m.received_at,
+                  accepted_at: action === 'accept' ? now : r.m.accepted_at,
+                },
+              };
+            }
+            return r;
+          }),
+        );
+        toast(
+          action === 'receive'
+            ? 'Marked Received.'
+            : action === 'accept'
+              ? 'Accepted.'
+              : action === 'recall'
+                ? 'Recalled.'
+                : 'Completed.',
+        );
+      }
+    },
+    [toast],
+  );
 
   const name = deptLabelFromPage(pageId, dept);
 
   const effectiveCounts: InboxCounts = useMemo(() => {
-    if (counts && (counts.needsAction > 0 || counts.pendingReceipt > 0 || counts.work > 0 || counts.ready > 0)) {
+    if (
+      counts &&
+      (counts.needsAction > 0 || counts.pendingReceipt > 0 || counts.work > 0 || counts.ready > 0)
+    ) {
       return counts;
     }
     const moves = rows.flatMap((r) => (r.kind === 'move' ? [r.m] : []));
@@ -298,20 +427,39 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
 
   return (
     <div className="dash-page">
-      <div className="v40-top-toolbar" style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 8 }}>
-        <button className="btn" type="button" onClick={() => window.history.back()} title="Return">← Return</button>
-        <Link className="btn" to="/m/admin-import" title="Import">⇧ Import</Link>
-        <button className="btn" type="button" onClick={exportCsv} title="Export">⇩ Export</button>
-        <button className="btn" type="button" onClick={() => toast(duplicateMessage(scanDuplicates()))} title="Duplicates">Duplicates</button>
+      <div
+        className="v40-top-toolbar"
+        style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 8 }}
+      >
+        <button className="btn" type="button" onClick={() => window.history.back()} title="Return">
+          ← Return
+        </button>
+        <Link className="btn" to="/m/admin-import" title="Import">
+          ⇧ Import
+        </Link>
+        <button className="btn" type="button" onClick={exportCsv} title="Export">
+          ⇩ Export
+        </button>
+        <button
+          className="btn"
+          type="button"
+          onClick={() => toast(duplicateMessage(scanDuplicates()))}
+          title="Duplicates"
+        >
+          Duplicates
+        </button>
       </div>
 
       <section className="v39-dash-hero" aria-label="Department Workspace">
         <div>
           <small>{name.toUpperCase()} DEPARTMENT WORKSPACE</small>
           <h1>Welcome, {user?.name || 'ERP Administrator'}</h1>
-          <h2 style={{ fontSize: 16, margin: '2px 0 6px', color: '#93c5fd' }}>{`${name} Inbox (${needs})`}</h2>
+          <h2
+            style={{ fontSize: 16, margin: '2px 0 6px', color: '#93c5fd' }}
+          >{`${name} Inbox (${needs})`}</h2>
           <p>
-            A simple working dashboard for documents, approvals, employee activity and project history. Only the department&apos;s operational queue is shown here.
+            A simple working dashboard for documents, approvals, employee activity and project
+            history. Only the department&apos;s operational queue is shown here.
           </p>
         </div>
         <div className="v39-user-box">
@@ -322,28 +470,48 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
       </section>
 
       <div className="v39-metrics">
-        <div className="v39-metric danger" onClick={() => setView('receipt')} style={{ cursor: 'pointer' }} title="View Pending Receipt">
+        <div
+          className="v39-metric danger"
+          onClick={() => setView('receipt')}
+          style={{ cursor: 'pointer' }}
+          title="View Pending Receipt"
+        >
           <div>
             <small>Pending Receipt</small>
             <b>{effectiveCounts.pendingReceipt}</b>
           </div>
           <i aria-hidden="true">↓</i>
         </div>
-        <div className="v39-metric warn" onClick={() => setView('acceptance')} style={{ cursor: 'pointer' }} title="View Pending Acceptance">
+        <div
+          className="v39-metric warn"
+          onClick={() => setView('acceptance')}
+          style={{ cursor: 'pointer' }}
+          title="View Pending Acceptance"
+        >
           <div>
             <small>Pending Acceptance</small>
             <b>{effectiveCounts.pendingAcceptance}</b>
           </div>
           <i aria-hidden="true">✓</i>
         </div>
-        <div className="v39-metric" onClick={() => setView('work')} style={{ cursor: 'pointer' }} title="View Active Department Work">
+        <div
+          className="v39-metric"
+          onClick={() => setView('work')}
+          style={{ cursor: 'pointer' }}
+          title="View Active Department Work"
+        >
           <div>
             <small>Active Department Work</small>
             <b>{effectiveCounts.work}</b>
           </div>
           <i aria-hidden="true">⚙</i>
         </div>
-        <div className="v39-metric good" onClick={() => setView('approval')} style={{ cursor: 'pointer' }} title="View Approval Inbox">
+        <div
+          className="v39-metric good"
+          onClick={() => setView('approval')}
+          style={{ cursor: 'pointer' }}
+          title="View Approval Inbox"
+        >
           <div>
             <small>Approval Inbox</small>
             <b>{effectiveCounts.approval}</b>
@@ -361,20 +529,48 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
         >
           Department Inbox
         </button>
-        <Link className="btn" to="/m/my-approvals">Approvals</Link>
-        <Link className="btn" to="/m/project-global-history">Project History</Link>
-        <Link className="btn" to="/m/ops-order-360">360° Tracking</Link>
-        <Link className="btn" to="/m/ops-tasks">Tasks</Link>
-        <Link className="btn" to="/m/ops-shift-roster">Shifts</Link>
-        <Link className="btn primary" to="/m/dept-mail?compose=1">+ New Message / Attach Document</Link>
-        <Link className="btn" to="/m/plant-flow-command">Integrated Plant Flow</Link>
+        <Link className="btn" to="/m/my-approvals">
+          Approvals
+        </Link>
+        <Link className="btn" to="/m/project-global-history">
+          Project History
+        </Link>
+        <Link className="btn" to="/m/ops-order-360">
+          360° Tracking
+        </Link>
+        <Link className="btn" to="/m/ops-tasks">
+          Tasks
+        </Link>
+        <Link className="btn" to="/m/ops-shift-roster">
+          Shifts
+        </Link>
+        <Link className="btn primary" to="/m/dept-mail?compose=1">
+          + New Message / Attach Document
+        </Link>
+        <Link className="btn" to="/m/plant-flow-command">
+          Integrated Plant Flow
+        </Link>
       </div>
 
-      <div className="v39-two-tables" style={{ display: 'grid', gridTemplateColumns: '1.25fr 0.75fr', gap: 12, marginBottom: 12 }}>
+      <div
+        className="v39-two-tables"
+        style={{ display: 'grid', gridTemplateColumns: '1.25fr 0.75fr', gap: 12, marginBottom: 12 }}
+      >
         <div className="card table-wrap" style={{ margin: 0 }}>
-          <div className="v39-simple-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid #e2e8f0' }}>
+          <div
+            className="v39-simple-title"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '10px 14px',
+              borderBottom: '1px solid #e2e8f0',
+            }}
+          >
             <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Department Work Queue</h3>
-            <span style={{ fontSize: 10, color: '#64748b' }}>Receive → Accept → Work → Approve / Move</span>
+            <span style={{ fontSize: 10, color: '#64748b' }}>
+              Receive → Accept → Work → Approve / Move
+            </span>
           </div>
           <table className="v39-compact-table" style={{ width: '100%' }}>
             <thead>
@@ -389,67 +585,155 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
               <tr>
                 <td>
                   <b>Receive Documents</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>Sent to {name} and waiting for receipt</small>
+                  <small style={{ display: 'block', color: '#64748b' }}>
+                    Sent to {name} and waiting for receipt
+                  </small>
                 </td>
-                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>{effectiveCounts.pendingReceipt}</td>
-                <td><span className="rag rag-red" style={{ fontSize: 9, padding: '2px 6px' }}>High</span></td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>
+                  {effectiveCounts.pendingReceipt}
+                </td>
+                <td>
+                  <span className="rag rag-red" style={{ fontSize: 9, padding: '2px 6px' }}>
+                    High
+                  </span>
+                </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button type="button" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }} onClick={() => setView('receipt')}>Open Details</button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    style={{ fontSize: 10, padding: '3px 8px' }}
+                    onClick={() => setView('receipt')}
+                  >
+                    Open Details
+                  </button>
                 </td>
               </tr>
               <tr>
                 <td>
                   <b>Accept Responsibility</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>Received records waiting for acceptance</small>
+                  <small style={{ display: 'block', color: '#64748b' }}>
+                    Received records waiting for acceptance
+                  </small>
                 </td>
-                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>{effectiveCounts.pendingAcceptance}</td>
-                <td><span className="rag rag-amber" style={{ fontSize: 9, padding: '2px 6px' }}>High</span></td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>
+                  {effectiveCounts.pendingAcceptance}
+                </td>
+                <td>
+                  <span className="rag rag-amber" style={{ fontSize: 9, padding: '2px 6px' }}>
+                    High
+                  </span>
+                </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button type="button" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }} onClick={() => setView('acceptance')}>Open Details</button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    style={{ fontSize: 10, padding: '3px 8px' }}
+                    onClick={() => setView('acceptance')}
+                  >
+                    Open Details
+                  </button>
                 </td>
               </tr>
               <tr>
                 <td>
                   <b>Complete Department Work</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>Accepted documents currently under work</small>
+                  <small style={{ display: 'block', color: '#64748b' }}>
+                    Accepted documents currently under work
+                  </small>
                 </td>
-                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>{effectiveCounts.work}</td>
-                <td><span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>Normal</span></td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>
+                  {effectiveCounts.work}
+                </td>
+                <td>
+                  <span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>
+                    Normal
+                  </span>
+                </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button type="button" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }} onClick={() => setView('work')}>Open Details</button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    style={{ fontSize: 10, padding: '3px 8px' }}
+                    onClick={() => setView('work')}
+                  >
+                    Open Details
+                  </button>
                 </td>
               </tr>
               <tr>
                 <td>
                   <b>Approval Required</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>Department approvals waiting for decision</small>
+                  <small style={{ display: 'block', color: '#64748b' }}>
+                    Department approvals waiting for decision
+                  </small>
                 </td>
-                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>{effectiveCounts.approval}</td>
-                <td><span className="rag rag-red" style={{ fontSize: 9, padding: '2px 6px' }}>High</span></td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>
+                  {effectiveCounts.approval}
+                </td>
+                <td>
+                  <span className="rag rag-red" style={{ fontSize: 9, padding: '2px 6px' }}>
+                    High
+                  </span>
+                </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button type="button" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }} onClick={() => setView('approval')}>Open Details</button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    style={{ fontSize: 10, padding: '3px 8px' }}
+                    onClick={() => setView('approval')}
+                  >
+                    Open Details
+                  </button>
                 </td>
               </tr>
               <tr>
                 <td>
                   <b>Employee Tasks</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>Open tasks assigned to department employees</small>
+                  <small style={{ display: 'block', color: '#64748b' }}>
+                    Open tasks assigned to department employees
+                  </small>
                 </td>
-                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>13</td>
-                <td><span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>Normal</span></td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>
+                  13
+                </td>
+                <td>
+                  <span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>
+                    Normal
+                  </span>
+                </td>
                 <td style={{ textAlign: 'right' }}>
-                  <Link to="/m/ops-tasks" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }}>Open Details</Link>
+                  <Link
+                    to="/m/ops-tasks"
+                    className="btn primary"
+                    style={{ fontSize: 10, padding: '3px 8px' }}
+                  >
+                    Open Details
+                  </Link>
                 </td>
               </tr>
               <tr>
                 <td>
                   <b>Shift & Handover</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>Current master rotation and handover</small>
+                  <small style={{ display: 'block', color: '#64748b' }}>
+                    Current master rotation and handover
+                  </small>
                 </td>
-                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>11</td>
-                <td><span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>Normal</span></td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: '#1d4ed8', fontSize: 14 }}>
+                  11
+                </td>
+                <td>
+                  <span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>
+                    Normal
+                  </span>
+                </td>
                 <td style={{ textAlign: 'right' }}>
-                  <Link to="/m/ops-shift-roster" className="btn primary" style={{ fontSize: 10, padding: '3px 8px' }}>Open Details</Link>
+                  <Link
+                    to="/m/ops-shift-roster"
+                    className="btn primary"
+                    style={{ fontSize: 10, padding: '3px 8px' }}
+                  >
+                    Open Details
+                  </Link>
                 </td>
               </tr>
             </tbody>
@@ -457,16 +741,40 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
         </div>
 
         <div className="card table-wrap" style={{ margin: 0 }}>
-          <div className="v39-simple-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid #e2e8f0' }}>
+          <div
+            className="v39-simple-title"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '10px 14px',
+              borderBottom: '1px solid #e2e8f0',
+            }}
+          >
             <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Department Quick Filter</h3>
             <span style={{ fontSize: 10, color: '#64748b' }}>Scope: {name}</span>
           </div>
           <div style={{ padding: '16px 14px' }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#475569',
+                marginBottom: 6,
+              }}
+            >
               Department Filter
             </label>
             <select
-              style={{ width: '100%', padding: '8px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #cbd5e1', marginBottom: 8 }}
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                fontSize: 12,
+                borderRadius: 8,
+                border: '1px solid #cbd5e1',
+                marginBottom: 8,
+              }}
               value={dept?.id || ''}
               onChange={(e) => {
                 const targetDept = depts.find((d) => d.id === e.target.value);
@@ -477,28 +785,58 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
             >
               <option value="">{name} (Active)</option>
               {depts.map((d) => (
-                <option key={d.id} value={d.id}>{d.name} Inbox</option>
+                <option key={d.id} value={d.id}>
+                  {d.name} Inbox
+                </option>
               ))}
             </select>
             <span style={{ display: 'block', fontSize: 10, color: '#64748b', marginBottom: 16 }}>
               Quick filter for department-wise records on this page.
             </span>
             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 8,
+                }}
+              >
                 <span style={{ fontSize: 11, color: '#64748b' }}>Internal Mail:</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: effectiveUnread > 0 ? '#dc2626' : '#16a34a' }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: effectiveUnread > 0 ? '#dc2626' : '#16a34a',
+                  }}
+                >
                   {effectiveUnread} Unread
                 </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 8,
+                }}
+              >
                 <span style={{ fontSize: 11, color: '#64748b' }}>Ready to Move:</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8' }}>
                   {effectiveCounts.ready}
                 </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
                 <span style={{ fontSize: 11, color: '#64748b' }}>Returned / Rework:</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: effectiveCounts.returned > 0 ? '#dc2626' : '#64748b' }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: effectiveCounts.returned > 0 ? '#dc2626' : '#64748b',
+                  }}
+                >
                   {effectiveCounts.returned}
                 </span>
               </div>
@@ -508,7 +846,9 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
       </div>
 
       <div className="v28-admin-same" style={{ marginBottom: 12 }}>
-        <b>Interconnected:</b> Invoice, PO, BOM, GRN, DC, quotation, quality records, project documents and other ERP documents stay linked to one movement ID, department route, timestamps and approval history.
+        <b>Interconnected:</b> Invoice, PO, BOM, GRN, DC, quotation, quality records, project
+        documents and other ERP documents stay linked to one movement ID, department route,
+        timestamps and approval history.
       </div>
 
       <form
@@ -529,7 +869,10 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
           </label>
           <label>
             Document Type
-            <select value={draft.docType} onChange={(e) => setDraft({ ...draft, docType: e.target.value })}>
+            <select
+              value={draft.docType}
+              onChange={(e) => setDraft({ ...draft, docType: e.target.value })}
+            >
               <option value="">All</option>
               {docTypes.map((t) => (
                 <option key={t} value={t}>
@@ -540,7 +883,10 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
           </label>
           <label>
             Workflow Status
-            <select value={draft.state} onChange={(e) => setDraft({ ...draft, state: e.target.value })}>
+            <select
+              value={draft.state}
+              onChange={(e) => setDraft({ ...draft, state: e.target.value })}
+            >
               <option value="">All</option>
               {STATES.map((s) => (
                 <option key={s} value={s}>
@@ -551,7 +897,10 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
           </label>
           <label>
             Source Department
-            <select value={draft.source} onChange={(e) => setDraft({ ...draft, source: e.target.value })}>
+            <select
+              value={draft.source}
+              onChange={(e) => setDraft({ ...draft, source: e.target.value })}
+            >
               <option value="">All</option>
               {depts.map((d) => (
                 <option key={d.id} value={d.name}>
@@ -614,7 +963,12 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
         ))}
       </TabStrip>
       {error ? <p role="alert">{error}</p> : null}
-      {mailBlocked && !error ? <p className="muted">Internal mail is not switched on for your role, so only document movements are listed. Ask the Administrator to give your role the Department Mail page.</p> : null}
+      {mailBlocked && !error ? (
+        <p className="muted">
+          Internal mail is not switched on for your role, so only document movements are listed. Ask
+          the Administrator to give your role the Department Mail page.
+        </p>
+      ) : null}
 
       <div className="table-wrap">
         <table className="register-table">
@@ -633,7 +987,14 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
           <tbody>
             {shown.map((r) =>
               r.kind === 'move' ? (
-                <MovementRow key={`m-${r.m.id}`} m={r.m} act={act} onReturn={setReturning} onHistory={setHistory} onForward={setForwarding} />
+                <MovementRow
+                  key={`m-${r.m.id}`}
+                  m={r.m}
+                  act={act}
+                  onReturn={setReturning}
+                  onHistory={setHistory}
+                  onForward={setForwarding}
+                />
               ) : (
                 <MailRowView key={`x-${r.mail.id}`} row={r.mail} />
               ),
@@ -658,7 +1019,14 @@ export function DeptMailboxPage({ pageId, deptName, user }: { pageId: string; de
           }}
         />
       ) : null}
-      {history ? <HistoryDrawer docType={history.doc_type} docId={history.doc_id} title={history.doc_no ?? history.number} onClose={() => setHistory(null)} /> : null}
+      {history ? (
+        <HistoryDrawer
+          docType={history.doc_type}
+          docId={history.doc_id}
+          title={history.doc_no ?? history.number}
+          onClose={() => setHistory(null)}
+        />
+      ) : null}
       {forwarding ? (
         <MoveForwardDialog
           docType={forwarding.doc_type}
@@ -680,6 +1048,15 @@ function attachmentCount(x: MailRow): number {
   return Array.isArray(x.attachments) ? x.attachments.length : Number(x.attachments ?? 0);
 }
 
+/** What the receiving department does next at each stage of Sent → Received → Accepted → work → approval. */
+const NEXT_STEP: Record<string, string> = {
+  SENT: 'Next: mark Received',
+  RECEIVED: 'Next: Accept the work (or Return it)',
+  ACCEPTED: 'Next: do the work, then Move Forward / Complete',
+  IN_WORK: 'Next: finish the work, then Move Forward / Complete',
+  WAITING_APPROVAL: 'Next: waiting for approval',
+};
+
 function MovementRow({
   m,
   act,
@@ -695,10 +1072,15 @@ function MovementRow({
 }) {
   const working = m.state === 'ACCEPTED' || m.state === 'IN_WORK';
   const stateClass =
-    m.state === 'ACCEPTED' || m.state === 'COMPLETED' ? 'rag-green' :
-    m.state === 'IN_WORK' || m.state === 'SENT' || m.state === 'RECEIVED' ? 'rag-blue' :
-    m.state === 'WAITING_APPROVAL' ? 'rag-amber' :
-    m.state === 'RETURNED' ? 'rag-red' : 'rag-gray';
+    m.state === 'ACCEPTED' || m.state === 'COMPLETED'
+      ? 'rag-green'
+      : m.state === 'IN_WORK' || m.state === 'SENT' || m.state === 'RECEIVED'
+        ? 'rag-blue'
+        : m.state === 'WAITING_APPROVAL'
+          ? 'rag-amber'
+          : m.state === 'RETURNED'
+            ? 'rag-red'
+            : 'rag-gray';
 
   return (
     <tr>
@@ -727,15 +1109,25 @@ function MovementRow({
         <div className="v28-mail-from">{m.route_type}</div>
       </td>
       <td>
-        <small style={{ display: 'block' }}>Received: {m.received_at ? when(m.received_at) : 'Pending'}</small>
-        <small style={{ display: 'block' }}>Accepted: {m.accepted_at ? when(m.accepted_at) : 'Pending'}</small>
+        <small style={{ display: 'block' }}>
+          Received: {m.received_at ? when(m.received_at) : 'Pending'}
+        </small>
+        <small style={{ display: 'block' }}>
+          Accepted: {m.accepted_at ? when(m.accepted_at) : 'Pending'}
+        </small>
       </td>
       <td>
         <b>{m.work_status}</b>
-        <div className={m.is_late ? 'rag rag-red' : 'v28-mail-from'}>{m.sla_due_at ? `${m.is_late ? 'Late · ' : 'Due '}${when(m.sla_due_at)}` : m.priority}</div>
+        <div className={m.is_late ? 'rag rag-red' : 'v28-mail-from'}>
+          {m.sla_due_at ? `${m.is_late ? 'Late · ' : 'Due '}${when(m.sla_due_at)}` : m.priority}
+        </div>
       </td>
       <td>
         <span className={`rag ${stateClass}`}>{pretty(m.state)}</span>
+        {/* WF-03: say what comes next, so "Received" is not read as finished */}
+        <small style={{ display: 'block', color: '#64748b', marginTop: 4 }}>
+          {NEXT_STEP[m.state] ?? ''}
+        </small>
       </td>
       <td>
         <div className="v28-mail-actions">
@@ -788,7 +1180,9 @@ function MailRowView({ row }: { row: MailRow }) {
       <td>
         {!row.read ? <span className="v28-unread-dot" /> : null}
         <b>{row.from_name ?? '—'}</b>
-        <div className="v28-mail-from">{row.from_department ?? ''} · {when(row.created_at)}</div>
+        <div className="v28-mail-from">
+          {row.from_department ?? ''} · {when(row.created_at)}
+        </div>
       </td>
       <td>
         <div className="v28-mail-subject">{row.subject}</div>
@@ -809,7 +1203,9 @@ function MailRowView({ row }: { row: MailRow }) {
       </td>
       <td>—</td>
       <td>
-        <span className={`rag ${row.read ? 'rag-gray' : 'rag-blue'}`}>{row.read ? 'Read' : 'Unread'}</span>
+        <span className={`rag ${row.read ? 'rag-gray' : 'rag-blue'}`}>
+          {row.read ? 'Read' : 'Unread'}
+        </span>
       </td>
       <td>
         <div className="v28-mail-actions">

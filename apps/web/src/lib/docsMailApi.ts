@@ -63,6 +63,11 @@ export function saveFile(file: { blob: Blob; filename: string | null }, fallback
   const a = document.createElement('a');
   a.href = url;
   a.download = file.filename ?? fallback;
+  // The link must be in the page for Firefox, and the object URL must outlive the click: revoking it straight away
+  // can cancel or empty the download (SE-01: PDF action failing), so it is released a little later.
+  a.style.display = 'none';
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

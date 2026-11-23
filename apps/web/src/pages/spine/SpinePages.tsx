@@ -13,7 +13,9 @@ import {
 } from '../../lib/spineApi';
 import { useLoad } from '../../lib/useLoad';
 import { DateField } from '../../ui/components';
+import type { ActionSet } from '../../types';
 import { V40Register } from '../sales/V40Register';
+import { EnquiryDialog } from './EnquiryDialog';
 
 const errText = (e: unknown): string => {
   if (e instanceof ApiError) {
@@ -86,7 +88,7 @@ function ProjectPicker({
 // ---------------------------------------------------------------------------------------------- Sales Enquiries
 const STATUSES = ['New', 'Qualified', 'Quoted', 'Won', 'Lost'] as const;
 
-export function SalesEnquiriesPage() {
+export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
   const toast = useToast();
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
@@ -95,6 +97,7 @@ export function SalesEnquiriesPage() {
     [status, q],
   );
   const [adding, setAdding] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [form, setForm] = useState({ prospectName: '', product: '', qty: '', projectTemplate: '' });
   const [lost, setLost] = useState<Enquiry | null>(null);
   const [reason, setReason] = useState('');
@@ -168,6 +171,8 @@ export function SalesEnquiriesPage() {
         pageId="sales-enquiries"
         reloadKey={list.data}
         onChanged={list.reload}
+        onOpen={setOpenId}
+        {...(actions ? { actions } : {})}
         rowExtra={(r) => {
           const e = (list.data ?? []).find((x) => x.id === r.id);
           if (!e) return null;
@@ -336,6 +341,14 @@ export function SalesEnquiriesPage() {
           </div>
         }
       />
+      {openId ? (
+        <EnquiryDialog
+          id={openId}
+          canEdit={actions?.edit ?? true}
+          onClose={() => setOpenId(null)}
+          onChanged={list.reload}
+        />
+      ) : null}
       {adding ? (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Add enquiry">
           <div className="modal">

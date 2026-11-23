@@ -16,8 +16,12 @@ export async function kitAudit(
   page: { page: number; size: number },
   recordId?: string,
 ) {
+  // `@>` (not `->>`) so the jsonb_path_ops GIN index on audit_logs.detail answers it; the second branch is the
+  // department-movement trail (work.sent / received / accepted ... name the page as docType)
+  const byPage = JSON.stringify({ pageId });
+  const byDoc = JSON.stringify({ docType: pageId });
   const where: Prisma.Sql[] = [
-    Prisma.sql`a.detail ->> 'pageId' = ${pageId}`,
+    Prisma.sql`(a.detail @> ${byPage}::jsonb OR a.detail @> ${byDoc}::jsonb)`,
   ];
 
   if (recordId) {

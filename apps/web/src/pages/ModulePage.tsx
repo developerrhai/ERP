@@ -908,7 +908,7 @@ function PageBody({
     case 'hr-offer-letter':
       return <LettersPage />;
     case 'sales-enquiries':
-      return <SalesEnquiriesPage />;
+      return <SalesEnquiriesPage actions={actions} />;
     case 'ops-order-360':
       return <Order360Page />;
     case 'project-global-history':

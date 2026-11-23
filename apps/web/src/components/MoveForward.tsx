@@ -1,6 +1,6 @@
 // Phase 25: the Move Forward popup (V40 field order), the Return dialog and the History drawer.
 // Nothing moves by itself: every handover is a person pressing a button (R-31).
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../lib/api';
 import { ROUTE_TYPES, WORK_STATUSES, workApi, type DocMovement, type Dept } from '../lib/workApi';
 import { Drawer } from './Drawer';
@@ -56,12 +56,16 @@ export function MoveForwardDialog({
   const [workStatus, setWorkStatus] = useState<string>(WORK_STATUSES[0]);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
+  // WF-01: what the server refused, field by field (the generic "fix the highlighted fields" alone told nobody what to fix)
+  const [serverFields, setServerFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [suggested, setSuggested] = useState<string | null>(null);
   const [fromDept, setFromDept] = useState<string>(
     fromDepartment ?? getSession().user?.department ?? ownerDeptOf(docType),
   );
   const [submitted, setSubmitted] = useState(false);
+  const fromDeptRef = useRef(fromDept);
+  fromDeptRef.current = fromDept;
   // QA ERP-MF-01: what is wrong with the form, field by field (shown in red under the field)
   const problems: Record<string, string> = {};
   if (!fromDept.trim()) problems.from = 'From Department is required.';
@@ -70,7 +74,15 @@ export function MoveForwardDialog({
     if (!isIsoDate(requiredBy)) problems.by = 'Pick a valid date from the calendar.';
     else if (requiredBy < todayIso()) problems.by = 'Required By cannot be in the past.';
   }
-  const shown = submitted ? problems : {};
+  const serverKey: Record<string, string> = {
+    fromDepartment: 'from',
+    toDepartmentId: 'to',
+    assignedManagerId: 'mgr',
+    requiredBy: 'by',
+  };
+  const fromServer: Record<string, string> = {};
+  for (const [k, v] of Object.entries(serverFields)) fromServer[serverKey[k] ?? '_'] = v;
+  const shown = { ...(submitted ? problems : {}), ...fromServer };
   const fieldProps = (key: string) => ({
     'aria-invalid': shown[key] ? true : undefined,
     style: shown[key] ? RED : undefined,
@@ -80,7 +92,7 @@ export function MoveForwardDialog({
     void workApi.departments().then(setDepts, () => setDepts([]));
     void workApi.suggest(docType).then(
       (s) => {
-        if (s.departmentId) {
+        if (s.departmentId && s.department !== fromDeptRef.current) {
           setTo((cur) => cur || (s.departmentId as string));
           setSuggested(s.department);
         }
@@ -88,6 +100,15 @@ export function MoveForwardDialog({
       () => undefined,
     );
   }, [docType]);
+
+  // a refused field is cleared as soon as the person changes the form
+  useEffect(() => setServerFields({}), [to, manager, requiredBy, fromDept]);
+
+  // choosing the holding department as the sender again must not leave it selected as the target
+  useEffect(() => {
+    const picked = depts.find((d) => d.id === to);
+    if (picked && picked.name === fromDept) setTo('');
+  }, [fromDept, depts, to]);
 
   useEffect(() => {
     setManager('');
@@ -103,6 +124,7 @@ export function MoveForwardDialog({
     if (Object.keys(problems).length > 0) return;
     setBusy(true);
     setError('');
+    setServerFields({});
     try {
       await workApi.forward({
         docType,
@@ -118,7 +140,17 @@ export function MoveForwardDialog({
       });
       onMoved();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not move the record.');
+      if (e instanceof ApiError && Object.keys(e.fields).length > 0) {
+        setServerFields(e.fields);
+        // a field the form has no input for is shown as the message itself
+        const known = new Set(Object.keys(serverKey));
+        const rest = Object.entries(e.fields)
+          .filter(([k]) => !known.has(k))
+          .map(([, v]) => v);
+        setError(rest.join(' '));
+      } else {
+        setError(e instanceof ApiError ? e.message : 'Could not move the record.');
+      }
       setBusy(false);
     }
   }
@@ -149,7 +181,7 @@ export function MoveForwardDialog({
           {error}
         </p>
       ) : null}
-      {submitted && Object.keys(problems).length > 0 ? (
+      {submitted && Object.keys(problems).length > 0 && Object.keys(serverFields).length === 0 ? (
         <p
           role="alert"
           className="error-text"
@@ -187,12 +219,18 @@ export function MoveForwardDialog({
         <label htmlFor="mf-to">Next Working Department *</label>
         <select id="mf-to" value={to} onChange={(e) => setTo(e.target.value)} {...fieldProps('to')}>
           <option value="">Choose a department</option>
-          {depts.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
+          {depts
+            .filter((d) => d.name !== fromDept)
+            .map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
         </select>
+        <span className="hint">
+          {fromDept} already holds this record. To get your own manager&apos;s approval use Submit /
+          Send for Approval; Move Forward hands the work to another department.
+        </span>
         {suggested ? (
           <span className="hint">Suggested by the Workflow Matrix: {suggested}</span>
         ) : null}
@@ -213,6 +251,7 @@ export function MoveForwardDialog({
             </option>
           ))}
         </select>
+        {shown.mgr ? <span className="field-error">{shown.mgr}</span> : null}
       </div>
       <div className="field">
         <label htmlFor="mf-type">Work Type</label>

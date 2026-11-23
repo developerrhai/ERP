@@ -28,6 +28,14 @@ import {
   type V40Row,
 } from './salesV40Api';
 import { FAM_PAGE_CFG, FAM_V40_IDS } from '../v40fam/famIds';
+import {
+  SalesAnalyticsView,
+  SalesCalendarView,
+  SalesReportsView,
+  isAnalyticsTab,
+  isCalendarTab,
+  isReportsTab,
+} from './SalesTabViews';
 import './sales-v40.css';
 
 interface PageCfg {
@@ -150,7 +158,9 @@ function PanelTable({
                     <td key={c.key}>
                       {!r[c.key] ? (
                         '—'
-                      ) : onAllocate && (r[c.key] === 'Allocate' || r[c.key] === 'Reallocate') && r.id ? (
+                      ) : onAllocate &&
+                        (r[c.key] === 'Allocate' || r[c.key] === 'Reallocate') &&
+                        r.id ? (
                         <button
                           type="button"
                           className="btn sm"
@@ -257,7 +267,8 @@ export interface V40RegisterProps {
 /** Wrap the table of a sales page: `<V40Register pageId=… actions=… fallback={<table…/>} />`. */
 export function V40Register(props: V40RegisterProps) {
   const frame = useFrame();
-  if (!frame || (!SALES_V40_IDS.has(props.pageId) && !FAM_V40_IDS.has(props.pageId))) return <>{props.fallback}</>;
+  if (!frame || (!SALES_V40_IDS.has(props.pageId) && !FAM_V40_IDS.has(props.pageId)))
+    return <>{props.fallback}</>;
   return (
     <V40Body {...props} tabName={frame.tabName} first={frame.index === 0} claim={frame.claim} />
   );
@@ -279,7 +290,7 @@ function V40Body({
   const cfg = PAGE_CFG[pageId] ?? { noun: 'Records' };
   const toast = useToast();
   const navigate = useNavigate();
-  const [, setParams] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -386,227 +397,282 @@ function V40Body({
       `${pageId}.csv`,
     );
   }
-  const openDocs = (): void => {
+  // SE-02: the Docs button remembers its row in the URL (?doc=), because changing tab clears the ticked rows
+  const openDocs = (id?: string): void => {
     if (docsTab < 0) return;
     setParams((p) => {
       const n = new URLSearchParams(p);
       n.set('tab', String(docsTab));
+      if (id) n.set('doc', id);
       return n;
     });
   };
 
   const showDocs = /^documents$/i.test(tabName);
-  const docRow = selectedRows[0];
+  const docParam = params.get('doc');
+  const docRow = rows.find((r) => r.id === docParam) ?? selectedRows[0] ?? rows[0];
+  // the real-data tab views exist for the pages the sales endpoint serves
+  const realViews = SALES_V40_IDS.has(pageId);
+  const view = !realViews
+    ? null
+    : isAnalyticsTab(tabName)
+      ? 'analytics'
+      : isCalendarTab(tabName)
+        ? 'calendar'
+        : isReportsTab(tabName)
+          ? 'reports'
+          : null;
   const docSchema = useMemo(() => ({ pageId }) as unknown as PageSchema, [pageId]);
 
   return (
     <section className="sv40" aria-label={`${tabName || cfg.noun} (V40 view)`}>
       <ErrorBox message={msg || load.error} />
-      <div className="toolbar sv40-toolbar">
-        <select
-          aria-label="Select record"
-          value=""
-          onChange={(e) => {
-            if (e.target.value) setQ(e.target.value);
-          }}
-        >
-          <option value="">{`Select ${cfg.noun}`}</option>
-          {rows.map((r) => (
-            <option key={r.id} value={r.number}>
-              {r.number}
-            </option>
-          ))}
-        </select>
-        <input
-          aria-label={`Search ${cfg.noun}`}
-          placeholder={`Search ${cfg.noun}...`}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">All statuses</option>
-          {[...seen.current].sort().map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <span className="sv40-count">{total} records</span>
-      </div>
-      {picked.size > 0 || rows.length > 0 ? (
-        <div className="sv40-bulk" role="group" aria-label="Selected records">
-          <span>{picked.size} selected</span>
-          <button
-            type="button"
-            className="btn sm"
-            disabled={picked.size === 0 || !onOpen}
-            onClick={() => selectedRows[0] && onOpen?.(selectedRows[0].id)}
-          >
-            Load Selected
-          </button>
-          <button
-            type="button"
-            className="btn sm"
-            disabled={rows.length === 0}
-            onClick={exportSelected}
-          >
-            Export Selected
-          </button>
-          {cfg.submit && actions.submit ? (
+      {view === 'analytics' ? <SalesAnalyticsView pageId={pageId} noun={cfg.noun} /> : null}
+      {view === 'calendar' ? <SalesCalendarView pageId={pageId} tabName={tabName} /> : null}
+      {view === 'reports' ? <SalesReportsView pageId={pageId} noun={cfg.noun} /> : null}
+      {view ? null : (
+        <>
+          <div className="toolbar sv40-toolbar">
+            <select
+              aria-label="Select record"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) setQ(e.target.value);
+              }}
+            >
+              <option value="">{`Select ${cfg.noun}`}</option>
+              {rows.map((r) => (
+                <option key={r.id} value={r.number}>
+                  {r.number}
+                </option>
+              ))}
+            </select>
+            <input
+              aria-label={`Search ${cfg.noun}`}
+              placeholder={`Search ${cfg.noun}...`}
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All statuses</option>
+              {[...seen.current].sort().map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <span className="sv40-count">{total} records</span>
+          </div>
+          {picked.size > 0 || rows.length > 0 ? (
+            <div className="sv40-bulk" role="group" aria-label="Selected records">
+              <span>{picked.size} selected</span>
+              <button
+                type="button"
+                className="btn sm"
+                disabled={picked.size === 0 || !onOpen}
+                onClick={() => selectedRows[0] && onOpen?.(selectedRows[0].id)}
+              >
+                Load Selected
+              </button>
+              <button
+                type="button"
+                className="btn sm"
+                disabled={rows.length === 0}
+                onClick={exportSelected}
+              >
+                Export Selected
+              </button>
+              {cfg.submit && actions.submit ? (
+                <button
+                  type="button"
+                  className="btn sm"
+                  disabled={picked.size === 0}
+                  onClick={() => void submit([...picked])}
+                >
+                  Submit Selected
+                </button>
+              ) : null}
+              {cfg.path && actions.delete ? (
+                <button
+                  type="button"
+                  className="btn sm danger"
+                  disabled={picked.size === 0}
+                  onClick={() => setAskDelete([...picked])}
+                >
+                  Delete Selected
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="card table-wrap">
+            <table className="register-table sv40-table">
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      type="checkbox"
+                      aria-label="Select all rows"
+                      checked={allOn}
+                      onChange={() => setPicked(allOn ? new Set() : new Set(rows.map((r) => r.id)))}
+                    />
+                  </th>
+                  {columns.map((c) => (
+                    <th
+                      key={c.key}
+                      title={c.source ? undefined : 'No source for this column in the database yet'}
+                    >
+                      {c.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className={picked.has(r.id) ? 'selected' : undefined}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${r.number}`}
+                        checked={picked.has(r.id)}
+                        onChange={() => toggle(r.id)}
+                      />
+                    </td>
+                    {columns.map((c) => {
+                      if (c.type === 'actions')
+                        return (
+                          <td key={c.key} className="row-actions">
+                            {onOpen ? (
+                              <button type="button" className="btn sm" onClick={() => onOpen(r.id)}>
+                                View
+                              </button>
+                            ) : null}
+                            {cfg.print ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn sm"
+                                  onClick={() => setEmail(r.id)}
+                                >
+                                  Email
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn sm"
+                                  onClick={() => void pdf(r)}
+                                >
+                                  PDF
+                                </button>
+                              </>
+                            ) : null}
+                            {cfg.submit && actions.submit && EDITABLE.has(r.status) ? (
+                              <button
+                                type="button"
+                                className="btn sm"
+                                onClick={() => void submit([r.id])}
+                              >
+                                Submit
+                              </button>
+                            ) : null}
+                            {cfg.path && cfg.post && r.status === 'Approved' && actions.post ? (
+                              <button type="button" className="btn sm" onClick={() => void post(r)}>
+                                Post
+                              </button>
+                            ) : null}
+                            {rowExtra?.(r, reload)}
+                            {cfg.track ? (
+                              <button
+                                type="button"
+                                className="btn sm"
+                                onClick={() => navigate(`/m/ops-order-360?so=${r.id}`)}
+                              >
+                                360° Track
+                              </button>
+                            ) : null}
+                            {docsTab >= 0 ? (
+                              <button
+                                type="button"
+                                className="btn sm"
+                                onClick={() => openDocs(r.id)}
+                              >
+                                Docs
+                              </button>
+                            ) : null}
+                          </td>
+                        );
+                      if (c.type === 'docs')
+                        return (
+                          <td key={c.key} className="num">
+                            {r[c.key] ?? '—'}
+                          </td>
+                        );
+                      return <Cell key={c.key} col={c} row={r} />;
+                    })}
+                  </tr>
+                ))}
+                {rows.length === 0 && !load.loading ? (
+                  <tr className="empty-row">
+                    <td colSpan={columns.length + 1}>Nothing here yet for this view.</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+          <div className="actions sv40-pager">
             <button
               type="button"
               className="btn sm"
-              disabled={picked.size === 0}
-              onClick={() => void submit([...picked])}
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
             >
-              Submit Selected
+              Previous
             </button>
-          ) : null}
-          {cfg.path && actions.delete ? (
+            <span>
+              Page {page} of {pages}
+            </span>
             <button
               type="button"
-              className="btn sm danger"
-              disabled={picked.size === 0}
-              onClick={() => setAskDelete([...picked])}
+              className="btn sm"
+              disabled={page >= pages}
+              onClick={() => setPage((p) => p + 1)}
             >
-              Delete Selected
+              Next
             </button>
-          ) : null}
-        </div>
-      ) : null}
-      <div className="card table-wrap">
-        <table className="register-table sv40-table">
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  aria-label="Select all rows"
-                  checked={allOn}
-                  onChange={() => setPicked(allOn ? new Set() : new Set(rows.map((r) => r.id)))}
-                />
-              </th>
-              {columns.map((c) => (
-                <th
-                  key={c.key}
-                  title={c.source ? undefined : 'No source for this column in the database yet'}
-                >
-                  {c.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className={picked.has(r.id) ? 'selected' : undefined}>
-                <td>
-                  <input
-                    type="checkbox"
-                    aria-label={`Select ${r.number}`}
-                    checked={picked.has(r.id)}
-                    onChange={() => toggle(r.id)}
-                  />
-                </td>
-                {columns.map((c) => {
-                  if (c.type === 'actions')
-                    return (
-                      <td key={c.key} className="row-actions">
-                        {onOpen ? (
-                          <button type="button" className="btn sm" onClick={() => onOpen(r.id)}>
-                            View
-                          </button>
-                        ) : null}
-                        {cfg.print ? (
-                          <>
-                            <button type="button" className="btn sm" onClick={() => setEmail(r.id)}>
-                              Email
-                            </button>
-                            <button type="button" className="btn sm" onClick={() => void pdf(r)}>
-                              PDF
-                            </button>
-                          </>
-                        ) : null}
-                        {cfg.submit && actions.submit && EDITABLE.has(r.status) ? (
-                          <button
-                            type="button"
-                            className="btn sm"
-                            onClick={() => void submit([r.id])}
-                          >
-                            Submit
-                          </button>
-                        ) : null}
-                        {cfg.path && cfg.post && r.status === 'Approved' && actions.post ? (
-                          <button type="button" className="btn sm" onClick={() => void post(r)}>
-                            Post
-                          </button>
-                        ) : null}
-                        {rowExtra?.(r, reload)}
-                        {cfg.track ? (
-                          <button
-                            type="button"
-                            className="btn sm"
-                            onClick={() => navigate(`/m/ops-order-360?so=${r.id}`)}
-                          >
-                            360° Track
-                          </button>
-                        ) : null}
-                        {docsTab >= 0 ? (
-                          <button type="button" className="btn sm" onClick={openDocs}>
-                            Docs
-                          </button>
-                        ) : null}
-                      </td>
-                    );
-                  if (c.type === 'docs')
-                    return (
-                      <td key={c.key} className="num">
-                        {r[c.key] ?? '—'}
-                      </td>
-                    );
-                  return <Cell key={c.key} col={c} row={r} />;
-                })}
-              </tr>
-            ))}
-            {rows.length === 0 && !load.loading ? (
-              <tr className="empty-row">
-                <td colSpan={columns.length + 1}>Nothing here yet for this view.</td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
-      <div className="actions sv40-pager">
-        <button
-          type="button"
-          className="btn sm"
-          disabled={page <= 1}
-          onClick={() => setPage((p) => p - 1)}
-        >
-          Previous
-        </button>
-        <span>
-          Page {page} of {pages}
-        </span>
-        <button
-          type="button"
-          className="btn sm"
-          disabled={page >= pages}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          Next
-        </button>
-      </div>
-      {data?.panel ? <PanelTable panel={data.panel} onAllocate={onAllocate} /> : null}
+          </div>
+        </>
+      )}
+      {!view && data?.panel ? <PanelTable panel={data.panel} onAllocate={onAllocate} /> : null}
       {showDocs ? (
         docRow ? (
-          <DocumentsPanel
-            schema={docSchema}
-            row={{ id: docRow.id, code: docRow.number, status: docRow.status }}
-            canEdit={actions.edit}
-            onChanged={reload}
-          />
+          <>
+            <label className="v8-sub" style={{ display: 'block', margin: '8px 0' }}>
+              Record{' '}
+              <select
+                aria-label="Record for documents"
+                value={docRow.id}
+                onChange={(e) =>
+                  setParams((p) => {
+                    const n = new URLSearchParams(p);
+                    n.set('doc', e.target.value);
+                    return n;
+                  })
+                }
+              >
+                {rows.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.number}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <DocumentsPanel
+              schema={docSchema}
+              row={{ id: docRow.id, code: docRow.number, status: docRow.status }}
+              canEdit={actions.edit}
+              onChanged={reload}
+            />
+          </>
         ) : (
-          <p className="v8-sub">Tick a record to see and add its documents.</p>
+          <p className="v8-sub">No record to show documents for yet.</p>
         )
       ) : null}
       {data?.audit || /audit/i.test(tabName) ? <AuditEntries pageId={pageId} /> : null}

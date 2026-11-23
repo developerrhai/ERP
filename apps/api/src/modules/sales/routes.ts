@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { authenticate, requirePasswordChanged } from '../../core/auth/authenticate';
 import { resolveContext } from '../../core/context/resolve-context';
 import { asyncHandler } from '../../core/http/async-handler';
+import { Errors } from '../../core/http/errors';
 import { parseIfMatch } from '../../core/http/if-match';
 import { validate, validated } from '../../core/http/validate';
 import { requirePageAction } from '../../core/rbac/access';
@@ -46,7 +47,7 @@ import {
   rfqCrud,
 } from './docs-service';
 import { pageInfo } from '../../core/registry';
-import { SALES_V40_PAGES, noSourceColumns, salesV40View } from './v40-views';
+import { SALES_V40_PAGES, noSourceColumns, runV40Summary, salesV40View } from './v40-views';
 import {
   DISP_DEF,
   INV_DEF,
@@ -502,6 +503,25 @@ export function createSalesRouter(): Router {
           noSource: noSourceColumns(pageId),
         },
       });
+    }),
+  );
+
+  router.get(
+    '/sales/v40/:pageId/summary',
+    (req, res, next) => {
+      const pageId = String(req.params.pageId ?? '');
+      const guard = pageInfo(pageId) ? pageId : (V40_GUARD[pageId] ?? '');
+      if (!SALES_V40_PAGES[pageId] || !guard) {
+        res.status(404).json({ error: { code: 'NOT_FOUND', message: 'No V40 views for this page.' } });
+        return;
+      }
+      g(guard, 'view')(req, res, next);
+    },
+    h(async (req, res) => {
+      const pageId = String(req.params.pageId);
+      const def = SALES_V40_PAGES[pageId];
+      if (!def) throw Errors.notFound('No V40 views for this page.');
+      res.json({ data: await runV40Summary(def, callerOf(req), pageId) });
     }),
   );
 

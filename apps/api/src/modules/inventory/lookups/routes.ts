@@ -9,7 +9,7 @@ import { resolveContext } from '../../../core/context/resolve-context';
 import { asyncHandler } from '../../../core/http/async-handler';
 import { Errors } from '../../../core/http/errors';
 import { validate, validated } from '../../../core/http/validate';
-import { requirePageAction } from '../../../core/rbac/access';
+import { accessUserOf, can, requirePageAction } from '../../../core/rbac/access';
 import { lookupService } from './service';
 
 const base = {
@@ -28,13 +28,26 @@ const warehousesQuery = z
   })
   .strict();
 
+/** Pages whose forms pick an item on a line: their users need the item list (code, name, unit only) even without the Inventory pages (WF-04). */
+const ITEM_PICKER_PAGES = ['sales-quotations', 'sales-orders', 'sales-enquiries', 'sales-dispatch', 'sales-invoices'] as const;
+
+const canPickItems = asyncHandler(async (req: Request, _res: Response, next) => {
+  if (!req.auth) throw Errors.unauthenticated();
+  const user = accessUserOf(req.auth);
+  if (await can(user, 'inv-items', 'view')) return next();
+  for (const page of ITEM_PICKER_PAGES) {
+    if ((await can(user, page, 'add')) || (await can(user, page, 'edit'))) return next();
+  }
+  throw Errors.forbidden();
+});
+
 export function createLookupsRouter(): Router {
   const router = Router();
   router.use(authenticate, requirePasswordChanged, resolveContext);
 
   router.get(
     '/items',
-    requirePageAction('inv-items', 'view'),
+    canPickItems,
     validate({ query: itemsQuery }),
     asyncHandler(async (_req: Request, res: Response) => {
       const query = validated(res, 'query', itemsQuery);

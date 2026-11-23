@@ -189,6 +189,10 @@ export function EmailDocDialog({
           borderRadius: 16,
           boxShadow: '0 20px 45px rgba(15, 23, 42, 0.22)',
           border: '1px solid #e2e8f0',
+          // SE-03/SE-04: the head and the Send footer stay in view; only the body scrolls
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '90vh',
           overflow: 'hidden',
           background: '#ffffff',
         }}
@@ -229,7 +233,10 @@ export function EmailDocDialog({
           </button>
         </div>
 
-        <div className="modal-body" style={{ padding: '20px 24px' }}>
+        <div
+          className="modal-body"
+          style={{ padding: '20px 24px', flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}
+        >
           {/* Document Reference Pill Card */}
           <div
             style={{

@@ -35,7 +35,7 @@ const MIN_COMMENT = 10;
 const HOUR = 3600 * 1000;
 
 type DecisionKind = 'APPROVE' | 'REJECT' | 'RETURN';
-type Audited = Pick<ApprovalRequest, 'id' | 'docType' | 'docId' | 'docCode' | 'amount'>;
+type Audited = Pick<ApprovalRequest, 'id' | 'docType' | 'docId' | 'docCode' | 'amount'> & { unitId?: string | null };
 
 function requestLink(requestId: string): string {
   return `/approvals?request=${requestId}`;
@@ -90,6 +90,7 @@ async function auditApproval(
         pageId: req.docType,
         code: req.docCode,
         requestId: req.id,
+        ...(req.unitId ? { unitId: req.unitId } : {}),
         amount: req.amount?.toString() ?? null,
         ...extra,
       },

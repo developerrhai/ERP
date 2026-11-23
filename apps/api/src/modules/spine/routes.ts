@@ -39,6 +39,16 @@ export function createSpineRouter(): Router {
   }));
   r.post('/sales/enquiries', requirePageAction('sales-enquiries', 'add'), validate({ body: enqBody }), h(async (req, res) => ok(res, await spineService.createEnquiry(callerOf(req), validated(res, 'body', enqBody)), 201)));
   r.get('/sales/enquiries/:id', requirePageAction('sales-enquiries', 'view'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.enquiry(callerOf(req), validated(res, 'params', id).id))));
+  const enqPatch = z.object({
+    customerId: z.string().uuid().nullable().optional(), prospectName: z.string().max(120).nullable().optional(), contact: z.string().max(120).nullable().optional(),
+    product: z.string().min(1).max(200).optional(), application: z.string().max(300).nullable().optional(), qty: num.optional(), requiredDate: date.nullable().optional(),
+    source: z.string().max(60).nullable().optional(), assignedToId: z.string().uuid().nullable().optional(), projectTemplate: z.enum(['BLDC', 'SPPM', 'CUSTOM']).nullable().optional(),
+  }).strict();
+  r.put('/sales/enquiries/:id', requirePageAction('sales-enquiries', 'edit'), validate({ params: id, body: enqPatch }), h(async (req, res) => {
+    const v = req.get('if-match');
+    const version = v ? Number(v.replace(/"/g, '')) : undefined;
+    ok(res, await spineService.updateEnquiry(callerOf(req), validated(res, 'params', id).id, validated(res, 'body', enqPatch), Number.isFinite(version) ? version : undefined));
+  }));
   r.post('/sales/enquiries/:id/qualify', requirePageAction('sales-enquiries', 'edit'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.setEnquiryStatus(callerOf(req), validated(res, 'params', id).id, 'Qualified'))));
   r.post('/sales/enquiries/:id/won', requirePageAction('sales-enquiries', 'edit'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.setEnquiryStatus(callerOf(req), validated(res, 'params', id).id, 'Won'))));
   const toQuo = z.object({ gstPct: z.coerce.number({ invalid_type_error: 'Enter the GST % as a number.' }).min(0, 'GST % cannot be below 0.').max(28, 'GST % cannot be above 28.').optional() }).strict();

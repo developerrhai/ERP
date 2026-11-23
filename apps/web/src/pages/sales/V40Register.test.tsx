@@ -220,13 +220,11 @@ describe('V40Register', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
 
-  it('Documents tab asks to tick a record first', async () => {
+  it('Documents tab opens on a record (the first one) and lets you pick another', async () => {
     const user = userEvent.setup();
     body();
     await screen.findByText('Acme Steel');
     await user.click(screen.getByRole('tab', { name: 'Documents' }));
-    expect(
-      await screen.findByText('Tick a record to see and add its documents.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByLabelText('Record for documents')).toBeInTheDocument();
   });
 });
