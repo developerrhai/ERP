@@ -37,8 +37,9 @@ doc from clint/
 *from clint*/
 *from client*/
 
-# Uploaded files / generated exports (local disk StorageProvider)
-storage/
+# Uploaded files / generated exports (local disk StorageProvider).
+# Anchored to the repo root: a bare "storage/" also hid the SOURCE folder apps/api/src/core/storage, so it was never committed.
+/storage/
 apps/api/storage/
 
 # Phase 36 feed state (generated passwords)

@@ -12,6 +12,7 @@ import { formatINR } from '../../ui/format';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
 import { useToast } from '../../components/Toast';
+import { WorkflowStrip } from '../../components/WorkflowStrip';
 import { toUiError, toUiMessage } from '../../lib/errors';
 import { lookupItems, lookupWarehouses, type Ref } from '../../lib/inventoryApi';
 import {
@@ -599,7 +600,22 @@ function DocForm({
       onSaved(saved);
     } catch (e) {
       const u = toUiError(e);
-      setMsg(u.message);
+      // A field the form cannot highlight (a line total, a hidden key) must still be named: the banner alone used to say
+      // "Please fix the highlighted fields" while nothing was highlighted (QA BUG-01).
+      const shown = (k: string): boolean =>
+        cfg.header.some((f) => f.key === k) ||
+        (/^lines\.\d+\./.test(k) && !!cfg.lines?.some((f) => k.endsWith(`.${f.key}`)));
+      const labelOf = (k: string): string => {
+        const m = /^lines\.(\d+)\.(.+)$/.exec(k);
+        if (m) return `Line ${Number(m[1]) + 1} ${cfg.lines?.find((f) => f.key === m[2])?.label ?? m[2]}`;
+        return cfg.header.find((f) => f.key === k)?.label ?? k;
+      };
+      const hidden = Object.entries(u.fields).filter(([k, m]) => !shown(k) && m.trim() !== '');
+      setMsg(
+        hidden.length > 0
+          ? `${u.message} ${hidden.map(([k, m]) => `${labelOf(k)}: ${m}`).join(' ')}`
+          : u.message,
+      );
       setFields(u.fields);
     } finally {
       setBusy(false);
@@ -896,6 +912,7 @@ function DocDetail({
       <p>
         <Pill>{doc.status}</Pill>
       </p>
+      <WorkflowStrip docType={cfg.pageId} docId={doc.id} />
       <dl className="kv">
         {cfg.columns.map((c) => (
           <div key={c.key}>

@@ -380,8 +380,14 @@ export function HistoryDrawer({
       {!data && !error ? <p className="muted">Loading…</p> : null}
       {data?.holder ? (
         <p>
-          <strong>Currently with {data.holder.department}</strong> since{' '}
-          {new Date(data.holder.sent_at).toLocaleString('en-IN')}
+          <strong>
+            Currently with {data.holder.department} ({data.holder.state.replace('_', ' ').toLowerCase()})
+          </strong>{' '}
+          since {new Date(data.holder.sent_at).toLocaleString('en-IN')}
+          <br />
+          <span className="muted">
+            This is the department step only. A record's own status (for example Pending Approval) changes when its approver decides.
+          </span>
         </p>
       ) : null}
       {data && data.events.length === 0 ? (

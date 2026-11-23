@@ -187,6 +187,7 @@ export function createProcurementRouter(): Router {
   // ------------------------------------------------------------------ PR
   const prLine = z
     .object({
+      id: uuid.optional(), // the edit form sends a saved line's id back; lines are rewritten, so it is accepted and ignored
       itemId: uuid.nullish(),
       serviceText: z.string().max(300).nullish(),
       qty: pos,
@@ -251,6 +252,7 @@ export function createProcurementRouter(): Router {
   // ------------------------------------------------------------------ RFQ
   const rfqLine = z
     .object({
+      id: uuid.optional(), // the edit form sends a saved line's id back; lines are rewritten, so it is accepted and ignored
       prLineId: uuid.nullish(),
       itemId: uuid.nullish(),
       serviceText: z.string().max(300).nullish(),
@@ -296,6 +298,7 @@ export function createProcurementRouter(): Router {
   // ------------------------------------------------------------------ vendor quote
   const vqLine = z
     .object({
+      id: uuid.optional(), // the edit form sends a saved line's id back; lines are rewritten, so it is accepted and ignored
       rfqLineId: uuid.nullish(),
       itemId: uuid.nullish(),
       qty: pos,
@@ -434,6 +437,7 @@ export function createProcurementRouter(): Router {
   // ------------------------------------------------------------------ contracts
   const conLine = z
     .object({
+      id: uuid.optional(), // the edit form sends a saved line's id back; lines are rewritten, so it is accepted and ignored
       itemId: uuid,
       uom: z.string().min(1).max(20),
       rate: dec,
@@ -744,6 +748,7 @@ export function createProcurementRouter(): Router {
   // ------------------------------------------------------------------ purchase invoice
   const invLine = z
     .object({
+      id: uuid.optional(), // the edit form sends a saved line's id back; lines are rewritten, so it is accepted and ignored
       grnLineId: uuid.nullish(),
       poLineId: uuid.nullish(),
       itemId: uuid.nullish(),
@@ -955,6 +960,7 @@ export function createProcurementRouter(): Router {
   // ------------------------------------------------------------------ debit notes
   const dnLine = z
     .object({
+      id: uuid.optional(), // the edit form sends a saved line's id back; lines are rewritten, so it is accepted and ignored
       grnLineId: uuid.nullish(),
       invoiceLineId: uuid.nullish(),
       qty: dec.optional(),

@@ -528,6 +528,7 @@ export function createSalesRouter(): Router {
   // ------------------------------------------------------------------ pre-sales: customer RFQ + quotation
   const rfqLine = z
     .object({
+      id: uuid.optional(), // the edit form sends a saved line's id back; lines are rewritten, so it is accepted and ignored
       itemId: uuid.nullish(),
       description: z.string().max(300).nullish(),
       partNo: z.string().max(60).nullish(),
@@ -581,6 +582,7 @@ export function createSalesRouter(): Router {
 
   const qLine = z
     .object({
+      id: uuid.optional(), // the edit form sends a saved line's id back; lines are rewritten, so it is accepted and ignored
       itemId: uuid.nullish(),
       description: z.string().max(300).nullish(),
       partNo: z.string().max(60).nullish(),
@@ -664,6 +666,7 @@ export function createSalesRouter(): Router {
   // ------------------------------------------------------------------ orders
   const oLine = z
     .object({
+      id: uuid.optional(), // the edit form sends a saved line's id back; lines are rewritten, so it is accepted and ignored
       itemId: uuid,
       description: z.string().max(300).nullish(),
       partNo: z.string().max(60).nullish(),
@@ -736,6 +739,7 @@ export function createSalesRouter(): Router {
   // ------------------------------------------------------------------ dispatch
   const dLine = z
     .object({
+      id: uuid.optional(), // the edit form sends a saved line's id back; lines are rewritten, so it is accepted and ignored
       orderLineId: uuid,
       qty: pos,
       batchNo: z.string().max(60).nullish(),
