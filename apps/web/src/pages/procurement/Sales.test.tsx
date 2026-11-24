@@ -116,7 +116,7 @@ describe('Lead Management', () => {
         }),
     });
     renderApp('/m/crm-leads');
-    await userEvent.setup().click(await screen.findByRole('button', { name: 'View' }));
+    await userEvent.setup().click((await screen.findAllByRole('button', { name: 'View' }))[0]!);
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByRole('button', { name: 'Mark Qualified' })).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Not qualified' })).toBeInTheDocument();

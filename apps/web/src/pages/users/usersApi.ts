@@ -6,6 +6,9 @@ import type { PageMeta, RoleCode, RoleMeta, UnitRef, User, UserStatus } from '..
 export interface UserQuery {
   q?: string;
   role?: RoleCode | '';
+  /** filter by a role record (works for custom roles too) */
+  roleId?: string;
+  department?: string;
   status?: UserStatus | '';
   /** Phase 3: only users who may work in this unit ('' = any). */
   unitId?: string;
@@ -22,6 +25,8 @@ export async function listUsers(query: UserQuery): Promise<UserPage> {
   const params = new URLSearchParams();
   if (query.q && query.q.trim()) params.set('q', query.q.trim());
   if (query.role) params.set('role', query.role);
+  if (query.roleId) params.set('roleId', query.roleId);
+  if (query.department) params.set('department', query.department);
   if (query.status) params.set('status', query.status);
   if (query.unitId) params.set('unitId', query.unitId);
   const page = query.page ?? 1;

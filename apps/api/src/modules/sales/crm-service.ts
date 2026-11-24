@@ -364,7 +364,7 @@ export const crmActions = {
     const sc = await scopeSql(caller, OPP_DEF.pageId, 'o');
     const rows = await query(
       prisma,
-      `SELECT o.*, c.name AS customer_name FROM opportunities o LEFT JOIN customers c ON c.id=o.customer_id WHERE ${sc.sql} ORDER BY o.created_at DESC LIMIT 500`,
+      `SELECT o.*, c.name AS customer_name, COALESCE(u.name, cb.name) AS owner_name FROM opportunities o LEFT JOIN customers c ON c.id=o.customer_id LEFT JOIN users u ON u.id=o.owner_id LEFT JOIN users cb ON cb.id=o.created_by_id WHERE ${sc.sql} ORDER BY o.created_at DESC LIMIT 500`,
       ...sc.args,
     );
     const cols = STAGES.map((stage) => {

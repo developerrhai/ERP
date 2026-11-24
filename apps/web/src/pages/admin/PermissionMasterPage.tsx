@@ -20,6 +20,7 @@ import {
 import { getPermissions, roleVersion, savePermissions, type PermissionsData } from './adminApi';
 import { DepartmentAccessTab } from './DepartmentAccessTab';
 import { EffectiveAccessTab } from './EffectiveAccessTab';
+import { EmployeeAccessTab } from './EmployeeAccessTab';
 import {
   cellState,
   draftFromRows,
@@ -78,13 +79,16 @@ export const ADMIN_CONTROLS_TITLE = "An Admin's Controls permission is protected
 export function PermissionMasterPage({ actions }: { actions: ActionSet }) {
   const [params, setParams] = useSearchParams();
   const rawTab = params.get('tab');
-  const tab: 'roles' | 'access' | 'effective' =
-    rawTab === 'access' ? 'access' : rawTab === 'effective' ? 'effective' : 'roles';
+  type Tab = 'roles' | 'employees' | 'access' | 'effective';
+  const tab: Tab =
+    rawTab === 'access' || rawTab === 'effective' || rawTab === 'employees' ? rawTab : 'roles';
 
-  const setTab = (next: 'roles' | 'access' | 'effective'): void => {
+  const setTab = (next: Tab, userId?: string): void => {
     const p = new URLSearchParams(params);
+    p.delete('user');
     if (next === 'roles') p.delete('tab');
     else p.set('tab', next);
+    if (userId) p.set('user', userId);
     setParams(p, { replace: true });
   };
 
@@ -109,6 +113,15 @@ export function PermissionMasterPage({ actions }: { actions: ActionSet }) {
         <button
           type="button"
           role="tab"
+          aria-selected={tab === 'employees'}
+          className={tab === 'employees' ? 'v9-subtab active' : 'v9-subtab'}
+          onClick={() => setTab('employees')}
+        >
+          Employees
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={tab === 'access'}
           className={tab === 'access' ? 'v9-subtab active' : 'v9-subtab'}
           onClick={() => setTab('access')}
@@ -127,10 +140,12 @@ export function PermissionMasterPage({ actions }: { actions: ActionSet }) {
       </div>
       {tab === 'roles' ? (
         <RolePermissionsTab focusRole={params.get('role')} />
+      ) : tab === 'employees' ? (
+        <EmployeeAccessTab onInspect={(id) => setTab('effective', id)} />
       ) : tab === 'access' ? (
         <DepartmentAccessTab canEdit={actions.controls} />
       ) : (
-        <EffectiveAccessTab />
+        <EffectiveAccessTab initialUserId={params.get('user')} />
       )}
     </>
   );

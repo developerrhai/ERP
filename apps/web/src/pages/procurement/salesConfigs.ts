@@ -6,6 +6,7 @@ export const LEAD_CFG: DocCfg = {
   sub: 'Enquiries before they are customers. Qualify a lead, then convert it into an opportunity.',
   path: '/crm/leads',
   add: '＋ New Lead',
+  noEditStatuses: ['Converted'],
   columns: [
     { key: 'name', label: 'Name' },
     { key: 'company', label: 'Company' },
@@ -39,6 +40,7 @@ export const OPP_CFG: DocCfg = {
   sub: 'Deals being worked on. Move them along the stages on the Sales Pipeline board.',
   path: '/crm/opportunities',
   add: '＋ New Opportunity',
+  noEditStatuses: ['Won', 'Lost'],
   columns: [
     { key: 'title', label: 'Title' },
     { key: 'customerName', label: 'Customer' },
@@ -60,6 +62,7 @@ export const FU_CFG: DocCfg = {
   sub: 'Calls and tasks to do. Close each one with what happened.',
   path: '/crm/followups',
   add: '＋ New Follow-up',
+  noEditStatuses: ['Done', 'Cancelled'],
   columns: [
     { key: 'title', label: 'Task' },
     { key: 'customerName', label: 'Customer' },
@@ -87,6 +90,7 @@ export const MTG_CFG: DocCfg = {
   sub: 'Meetings and calls with customers and leads, with their outcome.',
   path: '/crm/meetings',
   add: '＋ New Meeting',
+  noEditStatuses: ['Held', 'Cancelled'],
   columns: [
     { key: 'subject', label: 'Subject' },
     { key: 'customerName', label: 'Customer' },
@@ -125,6 +129,7 @@ export const FB_CFG: DocCfg = {
   sub: 'What customers say, scored 0 to 10. Low scores need an action before they can be closed.',
   path: '/crm/feedback',
   add: '＋ New Feedback',
+  noEditStatuses: ['Closed'],
   columns: [
     { key: 'customerName', label: 'Customer' },
     { key: 'rating', label: 'Score' },

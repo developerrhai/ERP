@@ -86,7 +86,13 @@ export interface DocCfg {
   delivery?: boolean;
   /** extra verbs on the detail dialog: [verb, label, status the document must be in, needs a reason] */
   more?: [string, string, string, boolean, MoreExtra?][];
+  /** CRM records stay editable in every stage except these (the server's own `canEdit` rule); others: Draft / Rejected only */
+  noEditStatuses?: string[];
 }
+
+/** Whether the record's status still allows Edit; mirrors the server rule of the same page. */
+export const canEditStatus = (cfg: { noEditStatuses?: string[] }, status: string): boolean =>
+  cfg.noEditStatuses ? !cfg.noEditStatuses.includes(status) : status === 'Draft' || status === 'Rejected';
 
 const s = (v: unknown): string =>
   v === null || v === undefined
@@ -184,6 +190,16 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
           pageId={cfg.noV40 ? '' : routePage}
           actions={actions}
           onOpen={(id) => void open({ id } as Doc)}
+          onEdit={
+            actions.edit
+              ? (id) =>
+                  void getDoc(cfg.path, id).then(
+                    (d) => setEditing(d),
+                    (e: unknown) => setError(toUiMessage(e)),
+                  )
+              : undefined
+          }
+          canEditRow={(st) => canEditStatus(cfg, st)}
           reloadKey={list.data}
           onChanged={list.reload}
           fallback={
@@ -823,7 +839,7 @@ function DocDetail({
       footer={
         <>
           <RecordBar doc={doc} />
-          {editable && actions.edit ? (
+          {canEditStatus(cfg, String(doc.status)) && actions.edit ? (
             <button type="button" className="btn" onClick={onEdit}>
               Edit
             </button>

@@ -271,8 +271,8 @@ export const recordService = {
     // SE-02: a page whose records live in their own table (Enquiries, Quotations, Orders ...) keeps its documents in the
     // same record_documents store; the record is looked up in that table, in a plant the caller may see. A page with no
     // such table (or a record not found there) takes the generic record path below.
-    const { catalogOf } = await import('../docsmail/print.js');
-    const doc = catalogOf(pageId);
+    const { printSourceOf } = await import('../docsmail/print.js');
+    const doc = printSourceOf(pageId);
     if (doc && /^[0-9a-f-]{36}$/i.test(id)) {
       const rows = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
         `SELECT t.id::text AS id, t.${doc.numberCol}::text AS code, t.${doc.statusCol}::text AS status${doc.unitCol ? `, t.${doc.unitCol}::text AS unit_id` : ''}

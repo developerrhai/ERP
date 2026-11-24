@@ -61,6 +61,8 @@ export interface V40Summary {
   total: number;
   byStatus: { status: string; count: number }[];
   byMonth: { month: string; count: number }[];
+  /** late / failed open records by the page rule; null when the page has no rule */
+  atRisk?: number | null;
 }
 
 /** Whole-set counts of a page (GET /sales/v40/:pageId/summary) for its Analytics and Reports tabs. */

@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { EmailDocDialog } from '../../components/EmailDocDialog';
 import { Modal } from '../../components/Modal';
+import { MoveForwardDialog } from '../../components/MoveForward';
 import { useToast } from '../../components/Toast';
 import { docsMailApi, saveFile } from '../../lib/docsMailApi';
 import { toUiMessage } from '../../lib/errors';
@@ -19,6 +20,13 @@ import { listPageAudit } from '../generic/engineApi';
 import { DocumentsPanel } from '../generic/DocumentsPanel';
 import type { PageSchema } from '../generic/engineApi';
 import { useFrame, v40TabsFor } from '../frame/V40TabFrame';
+import {
+  ActivityPanel,
+  Customer360Workspace,
+  RecordStrip,
+  RegisterKpis,
+  CRM_PAGES,
+} from './SalesRegisterParts';
 import { dmy, ErrorBox, inr, Pill } from '../finance/shared';
 import {
   SALES_V40_IDS,
@@ -47,6 +55,10 @@ interface PageCfg {
   post?: boolean;
   /** the print engine knows this page (Industry PDF, Email) */
   print?: boolean;
+  /** Move Forward on the row even without a document path (customers) */
+  move?: boolean;
+  /** status in which the server still lets the record be deleted (default Draft) */
+  draftStatus?: string;
   /** "360° Track" opens the order tracking page for the row */
   track?: boolean;
 }
@@ -82,14 +94,19 @@ const PAGE_CFG: Record<string, PageCfg> = {
   },
   'sales-collections': { noun: 'Payments', print: true },
   'sales-enquiries': { noun: 'Enquiries', print: true },
-  'crm-leads': { noun: 'Leads', path: '/crm/leads' },
-  'crm-opportunities': { noun: 'Opportunities', path: '/crm/opportunities' },
-  'crm-followups': { noun: 'Follow-ups', path: '/crm/followups' },
-  'crm-meetings': { noun: 'Meetings', path: '/crm/meetings' },
-  'crm-feedback': { noun: 'Feedback', path: '/crm/feedback' },
+  'crm-leads': { noun: 'Leads', path: '/crm/leads', print: true, draftStatus: 'New' },
+  'crm-opportunities': {
+    noun: 'Opportunities',
+    path: '/crm/opportunities',
+    print: true,
+    draftStatus: 'Prospecting',
+  },
+  'crm-followups': { noun: 'Follow-ups', path: '/crm/followups', print: true, draftStatus: 'Open' },
+  'crm-meetings': { noun: 'Meetings', path: '/crm/meetings', print: true, draftStatus: 'Planned' },
+  'crm-feedback': { noun: 'Feedback', path: '/crm/feedback', print: true, draftStatus: 'New' },
   'crm-sources': { noun: 'Sources' },
-  'master-customers': { noun: 'Customers' },
-  'crm-customer360': { noun: 'Customers' },
+  'master-customers': { noun: 'Customers', print: true, move: true },
+  'crm-customer360': { noun: 'Customers', print: true, move: true },
   'sales-reservations': { noun: 'Reservations' },
   'sales-delivery': { noun: 'Delivery Plans' },
   'sales-credit': { noun: 'Credit Profiles' },
@@ -254,6 +271,9 @@ export interface V40RegisterProps {
   fallback: ReactNode;
   /** opens the page's own record dialog for a row (View, Load Selected) */
   onOpen?: (id: string) => void;
+  /** opens the record's edit form: a row "Edit" button (only for rows `canEditRow` accepts) */
+  onEdit?: ((id: string) => void) | undefined;
+  canEditRow?: (status: string) => boolean;
   /** bump to reload after the page changed a record */
   reloadKey?: unknown;
   /** the page's own list reloads (after Submit / Delete here) */
@@ -278,6 +298,8 @@ function V40Body({
   pageId,
   actions: given,
   onOpen,
+  onEdit,
+  canEditRow,
   reloadKey,
   onChanged,
   onAllocate,
@@ -298,6 +320,7 @@ function V40Body({
   const [msg, setMsg] = useState('');
   const [email, setEmail] = useState<string | null>(null);
   const [askDelete, setAskDelete] = useState<string[] | null>(null);
+  const [moving, setMoving] = useState<V40Row | null>(null);
   const [tick, setTick] = useState(0);
   const seen = useRef<Set<string>>(new Set());
   const claimRef = useRef(claim);
@@ -337,6 +360,13 @@ function V40Body({
   async function pdf(r: V40Row): Promise<void> {
     try {
       saveFile(await docsMailApi.print(pageId, r.id, 'standard'), `${r.number || 'document'}.pdf`);
+    } catch (e) {
+      toast(toUiMessage(e));
+    }
+  }
+  async function word(r: V40Row): Promise<void> {
+    try {
+      saveFile(await docsMailApi.print(pageId, r.id, 'word'), `${r.number || 'document'}.docx`);
     } catch (e) {
       toast(toUiMessage(e));
     }
@@ -424,6 +454,70 @@ function V40Body({
           : null;
   const docSchema = useMemo(() => ({ pageId }) as unknown as PageSchema, [pageId]);
 
+  // the row buttons, shared by the register and its Detailed Table
+  const rowButtons = (r: V40Row): ReactNode => (
+    <>
+      {onOpen ? (
+        <button type="button" className="btn sm" onClick={() => onOpen(r.id)}>
+          View
+        </button>
+      ) : null}
+      {onEdit && (canEditRow ? canEditRow(r.status) : EDITABLE.has(r.status)) ? (
+        <button type="button" className="btn sm" onClick={() => onEdit(r.id)}>
+          Edit
+        </button>
+      ) : null}
+      {cfg.print ? (
+        <>
+          <button type="button" className="btn sm" onClick={() => setEmail(r.id)}>
+            Email
+          </button>
+          <button type="button" className="btn sm" onClick={() => void pdf(r)}>
+            PDF
+          </button>
+          <button type="button" className="btn sm" onClick={() => void word(r)}>
+            Word
+          </button>
+        </>
+      ) : null}
+      {cfg.submit && actions.submit && EDITABLE.has(r.status) ? (
+        <button type="button" className="btn sm" onClick={() => void submit([r.id])}>
+          Submit
+        </button>
+      ) : null}
+      {cfg.path && cfg.post && r.status === 'Approved' && actions.post ? (
+        <button type="button" className="btn sm" onClick={() => void post(r)}>
+          Post
+        </button>
+      ) : null}
+      {rowExtra?.(r, reload)}
+      {cfg.path && actions.delete && r.status === (cfg.draftStatus ?? 'Draft') ? (
+        <button type="button" className="btn sm danger" onClick={() => setAskDelete([r.id])}>
+          Delete
+        </button>
+      ) : null}
+      {cfg.path || cfg.move ? (
+        <button type="button" className="btn sm primary" onClick={() => setMoving(r)}>
+          Move Forward
+        </button>
+      ) : null}
+      {cfg.track ? (
+        <button
+          type="button"
+          className="btn sm"
+          onClick={() => navigate(`/m/ops-order-360?so=${r.id}`)}
+        >
+          360° Track
+        </button>
+      ) : null}
+      {docsTab >= 0 ? (
+        <button type="button" className="btn sm" onClick={() => openDocs(r.id)}>
+          Docs
+        </button>
+      ) : null}
+    </>
+  );
+
   return (
     <section className="sv40" aria-label={`${tabName || cfg.noun} (V40 view)`}>
       <ErrorBox message={msg || load.error} />
@@ -432,6 +526,21 @@ function V40Body({
       {view === 'reports' ? <SalesReportsView pageId={pageId} noun={cfg.noun} /> : null}
       {view ? null : (
         <>
+          {CRM_PAGES.has(pageId) ? <RegisterKpis pageId={pageId} reloadKey={tick} /> : null}
+          {CRM_PAGES.has(pageId) ? (
+            <RecordStrip
+              pageId={pageId}
+              rows={rows}
+              actions={actions}
+              canSubmitDoc={Boolean(cfg.submit)}
+              canEdit={(st) => (canEditRow ? canEditRow(st) : EDITABLE.has(st))}
+              canDelete={(st) => Boolean(cfg.path) && st === (cfg.draftStatus ?? 'Draft')}
+              onLoad={onOpen}
+              onEdit={onEdit}
+              onDelete={(id) => setAskDelete([id])}
+              onSubmit={(id) => void submit([id])}
+            />
+          ) : null}
           <div className="toolbar sv40-toolbar">
             <select
               aria-label="Select record"
@@ -541,62 +650,7 @@ function V40Body({
                       if (c.type === 'actions')
                         return (
                           <td key={c.key} className="row-actions">
-                            {onOpen ? (
-                              <button type="button" className="btn sm" onClick={() => onOpen(r.id)}>
-                                View
-                              </button>
-                            ) : null}
-                            {cfg.print ? (
-                              <>
-                                <button
-                                  type="button"
-                                  className="btn sm"
-                                  onClick={() => setEmail(r.id)}
-                                >
-                                  Email
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn sm"
-                                  onClick={() => void pdf(r)}
-                                >
-                                  PDF
-                                </button>
-                              </>
-                            ) : null}
-                            {cfg.submit && actions.submit && EDITABLE.has(r.status) ? (
-                              <button
-                                type="button"
-                                className="btn sm"
-                                onClick={() => void submit([r.id])}
-                              >
-                                Submit
-                              </button>
-                            ) : null}
-                            {cfg.path && cfg.post && r.status === 'Approved' && actions.post ? (
-                              <button type="button" className="btn sm" onClick={() => void post(r)}>
-                                Post
-                              </button>
-                            ) : null}
-                            {rowExtra?.(r, reload)}
-                            {cfg.track ? (
-                              <button
-                                type="button"
-                                className="btn sm"
-                                onClick={() => navigate(`/m/ops-order-360?so=${r.id}`)}
-                              >
-                                360° Track
-                              </button>
-                            ) : null}
-                            {docsTab >= 0 ? (
-                              <button
-                                type="button"
-                                className="btn sm"
-                                onClick={() => openDocs(r.id)}
-                              >
-                                Docs
-                              </button>
-                            ) : null}
+                            {rowButtons(r)}
                           </td>
                         );
                       if (c.type === 'docs')
@@ -638,6 +692,51 @@ function V40Body({
               Next
             </button>
           </div>
+          {CRM_PAGES.has(pageId) && rows.length > 0 ? (
+            <section className="sv40-panel" aria-label={`${cfg.noun} Register – Detailed Table`}>
+              <h3>{cfg.noun} Register – Detailed Table</h3>
+              <div className="table-wrap">
+                <table className="register-table">
+                  <thead>
+                    <tr>
+                      {columns
+                        .filter((c) => c.type !== 'actions' && c.type !== 'docs')
+                        .slice(0, 8)
+                        .map((c) => (
+                          <th key={c.key}>{c.label}</th>
+                        ))}
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.id}>
+                        {columns
+                          .filter((c) => c.type !== 'actions' && c.type !== 'docs')
+                          .slice(0, 8)
+                          .map((c) => (
+                            <Cell key={c.key} col={c} row={r} />
+                          ))}
+                        <td className="row-actions">{rowButtons(r)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
+          {pageId === 'crm-followups' || pageId === 'crm-meetings' || pageId === 'crm-feedback' ? (
+            <ActivityPanel
+              pageId={pageId}
+              rows={rows}
+              columns={columns}
+              canAdd={Boolean(actions.add)}
+              onSaved={reload}
+            />
+          ) : null}
+          {pageId === 'crm-customer360' ? (
+            <Customer360Workspace rows={rows} columns={columns} />
+          ) : null}
         </>
       )}
       {!view && data?.panel ? <PanelTable panel={data.panel} onAllocate={onAllocate} /> : null}
@@ -715,6 +814,19 @@ function V40Body({
             the reason.
           </p>
         </Modal>
+      ) : null}
+      {moving ? (
+        <MoveForwardDialog
+          docType={pageId}
+          docId={moving.id}
+          docNo={moving.number}
+          onClose={() => setMoving(null)}
+          onMoved={() => {
+            setMoving(null);
+            toast(`Moved ${moving.number} forward`);
+            reload();
+          }}
+        />
       ) : null}
       {email ? (
         <EmailDocDialog docType={pageId} docId={email} onClose={() => setEmail(null)} />

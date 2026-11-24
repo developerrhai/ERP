@@ -1049,11 +1049,11 @@ export function V40Body({
                 {hasDocs ? <th>Docs</th> : null}
                 {isReg ? (
                   <>
+                    <th>Status</th>
                     <th>Actions</th>
                     {after.map((c) => (
                       <th key={c.key}>{c.label}</th>
                     ))}
-                    <th>Status</th>
                   </>
                 ) : (
                   <>
@@ -1134,6 +1134,7 @@ export function V40Body({
                     ) : null}
                     {isReg ? (
                       <>
+                        {statusCell}
                         {actionsCell}
                         {after.map((c) => (
                           <td key={c.key}>
@@ -1144,7 +1145,6 @@ export function V40Body({
                             )}
                           </td>
                         ))}
-                        {statusCell}
                       </>
                     ) : (
                       <>

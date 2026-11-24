@@ -21,7 +21,7 @@ const ACTION_SHORT: Record<Action, string> = {
   import: 'Imp',
 };
 
-export function EffectiveAccessTab() {
+export function EffectiveAccessTab({ initialUserId }: { initialUserId?: string | null }) {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -39,7 +39,8 @@ export function EffectiveAccessTab() {
         if (!alive) return;
         setUsers(res.users);
         if (res.users.length > 0 && res.users[0] && !selectedUserId) {
-          const first = res.users[0];
+          // arriving from the Employees tab: open that person, not the first in the list
+          const first = res.users.find((u) => u.id === initialUserId) ?? res.users[0];
           setSelectedUserId(first.id);
           setSelectedUser(first);
         }

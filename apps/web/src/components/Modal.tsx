@@ -1,6 +1,7 @@
 // Accessible dialog using the prototype .modal-bg/.modal markup (lines 17 of the prototype CSS),
 // with focus trap and Escape-to-close; used for Add/Edit user, reset password and confirms.
 import { useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useFocusTrap } from './useFocusTrap';
 
 interface ModalProps {
@@ -16,7 +17,9 @@ export function Modal({ title, sub, onClose, footer, children, size = 'lg' }: Mo
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useFocusTrap(ref, true, onClose);
-  return (
+  // drawn on <body>: a dialog opened from a table row would otherwise sit inside that row's sticky cell, and the sticky
+  // Actions cells of the rows after it would paint on top of the dialog
+  return createPortal(
     <div className="modal-bg show">
       <div
         ref={ref}
@@ -38,6 +41,7 @@ export function Modal({ title, sub, onClose, footer, children, size = 'lg' }: Mo
         <div className="modal-body">{children}</div>
         <div className="modal-foot">{footer}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

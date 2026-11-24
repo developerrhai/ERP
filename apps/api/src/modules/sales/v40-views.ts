@@ -2246,7 +2246,20 @@ export interface V40Summary {
   byStatus: { status: string; count: number }[];
   /** records created per month, oldest first, the last 6 months */
   byMonth: { month: string; count: number }[];
+  /** records past their date and still open (page rule below); null for a page with no such rule */
+  atRisk: number | null;
 }
+
+/** What "At Risk" means on a page: a condition on the table row (alias t) that is true for a record that is late or went wrong. */
+const AT_RISK_SQL: Record<string, string> = {
+  'crm-leads': "t.status = 'Unqualified'",
+  'crm-opportunities': "t.status NOT IN ('Won', 'Lost') AND t.expected_close < current_date",
+  'crm-followups': "t.status = 'Open' AND t.due_at < now()",
+  'crm-meetings': "t.status = 'Planned' AND t.starts_at < now()",
+  'crm-feedback': "t.status <> 'Closed' AND t.rating <= 6",
+  'master-customers': "t.status <> 'ACTIVE'",
+  'crm-customer360': "t.status <> 'ACTIVE'",
+};
 
 /** Whole-set figures for the Analytics / Reports tabs: two grouped counts under the same plant / ownership scope as the register. */
 export async function runV40Summary(def: PageDef, caller: Caller, pageId: string): Promise<V40Summary> {
@@ -2272,7 +2285,12 @@ export async function runV40Summary(def: PageDef, caller: Caller, pageId: string
       WHERE ${w} AND t.created_at >= date_trunc('month', now()) - interval '5 months' GROUP BY 1 ORDER BY 1`,
     ...args,
   ).catch(() => []);
+  const riskSql = AT_RISK_SQL[pageId];
+  const risk = riskSql
+    ? await query(prisma, `SELECT count(*)::int AS n FROM ${def.from} WHERE ${w} AND (${riskSql})`, ...args).catch(() => null)
+    : null;
   return {
+    atRisk: risk ? Number(risk[0]?.n ?? 0) : null,
     total: byStatus.reduce((n, r) => n + Number(r.count), 0),
     byStatus: byStatus.map((r) => ({ status: String(r.status), count: Number(r.count) })),
     byMonth: byMonth.map((r) => ({ month: String(r.month), count: Number(r.count) })),

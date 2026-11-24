@@ -195,104 +195,119 @@ export function MoveForwardDialog({
           Please fix the highlighted fields
         </p>
       ) : null}
-      <div className="field">
-        <label htmlFor="mf-from">From Department *</label>
-        <select
-          id="mf-from"
-          value={fromDept}
-          onChange={(e) => setFromDept(e.target.value)}
-          {...fieldProps('from')}
-        >
-          {[...new Set([fromDept, ...depts.map((d) => d.name)].filter(Boolean))].map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-        <span className="hint">
-          Filled in from your department; the server records the department that really holds the
-          document.
-        </span>
-        {shown.from ? <span className="field-error">{shown.from}</span> : null}
-      </div>
-      <div className="field">
-        <label htmlFor="mf-to">Next Working Department *</label>
-        <select id="mf-to" value={to} onChange={(e) => setTo(e.target.value)} {...fieldProps('to')}>
-          <option value="">Choose a department</option>
-          {depts
-            .filter((d) => d.name !== fromDept)
-            .map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
+      <div
+        className="mf-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '12px 18px',
+        }}
+      >
+        <div className="field">
+          <label htmlFor="mf-from">From Department *</label>
+          <select
+            id="mf-from"
+            value={fromDept}
+            onChange={(e) => setFromDept(e.target.value)}
+            {...fieldProps('from')}
+          >
+            {[...new Set([fromDept, ...depts.map((d) => d.name)].filter(Boolean))].map((n) => (
+              <option key={n} value={n}>
+                {n}
               </option>
             ))}
-        </select>
-        <span className="hint">
-          {fromDept} already holds this record. To get your own manager&apos;s approval use Submit /
-          Send for Approval; Move Forward hands the work to another department.
-        </span>
-        {suggested ? (
-          <span className="hint">Suggested by the Workflow Matrix: {suggested}</span>
-        ) : null}
-        {shown.to ? <span className="field-error">{shown.to}</span> : null}
-      </div>
-      <div className="field">
-        <label htmlFor="mf-mgr">Responsible Manager</label>
-        <select
-          id="mf-mgr"
-          value={manager}
-          onChange={(e) => setManager(e.target.value)}
-          disabled={!to}
-        >
-          <option value="">Anyone in the department</option>
-          {managers.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-        {shown.mgr ? <span className="field-error">{shown.mgr}</span> : null}
-      </div>
-      <div className="field">
-        <label htmlFor="mf-type">Work Type</label>
-        <select id="mf-type" value={routeType} onChange={(e) => setRouteType(e.target.value)}>
-          {ROUTE_TYPES.map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
-      </div>
-      <div className="field">
-        <label htmlFor="mf-prio">Priority</label>
-        <select id="mf-prio" value={priority} onChange={(e) => setPriority(e.target.value)}>
-          {['Normal', 'High', 'Critical'].map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
-      </div>
-      <div className="field">
-        <label htmlFor="mf-by">Required By</label>
-        <input
-          id="mf-by"
-          type="date"
-          min={todayIso()}
-          value={requiredBy}
-          onChange={(e) => setRequiredBy(e.target.value)}
-          {...fieldProps('by')}
-        />
-        {shown.by ? <span className="field-error">{shown.by}</span> : null}
-      </div>
-      <div className="field">
-        <label htmlFor="mf-ws">Work Status</label>
-        <select id="mf-ws" value={workStatus} onChange={(e) => setWorkStatus(e.target.value)}>
-          {WORK_STATUSES.map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
+          </select>
+          <span className="hint">
+            Filled in from your department; the server records the department that really holds the
+            document.
+          </span>
+          {shown.from ? <span className="field-error">{shown.from}</span> : null}
+        </div>
+        <div className="field">
+          <label htmlFor="mf-to">Next Working Department *</label>
+          <select
+            id="mf-to"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            {...fieldProps('to')}
+          >
+            <option value="">Choose a department</option>
+            {depts
+              .filter((d) => d.name !== fromDept)
+              .map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+          </select>
+          <span className="hint">
+            {fromDept} already holds this record. To get your own manager&apos;s approval use Submit
+            / Send for Approval; Move Forward hands the work to another department.
+          </span>
+          {suggested ? (
+            <span className="hint">Suggested by the Workflow Matrix: {suggested}</span>
+          ) : null}
+          {shown.to ? <span className="field-error">{shown.to}</span> : null}
+        </div>
+        <div className="field">
+          <label htmlFor="mf-mgr">Responsible Manager</label>
+          <select
+            id="mf-mgr"
+            value={manager}
+            onChange={(e) => setManager(e.target.value)}
+            disabled={!to}
+          >
+            <option value="">Anyone in the department</option>
+            {managers.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+          {shown.mgr ? <span className="field-error">{shown.mgr}</span> : null}
+        </div>
+        <div className="field">
+          <label htmlFor="mf-type">Work Type</label>
+          <select id="mf-type" value={routeType} onChange={(e) => setRouteType(e.target.value)}>
+            {ROUTE_TYPES.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="mf-prio">Priority</label>
+          <select id="mf-prio" value={priority} onChange={(e) => setPriority(e.target.value)}>
+            {['Normal', 'High', 'Critical'].map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="mf-by">Required By</label>
+          <input
+            id="mf-by"
+            type="date"
+            min={todayIso()}
+            value={requiredBy}
+            onChange={(e) => setRequiredBy(e.target.value)}
+            {...fieldProps('by')}
+          />
+          {shown.by ? <span className="field-error">{shown.by}</span> : null}
+        </div>
+        <div className="field">
+          <label htmlFor="mf-ws">Work Status</label>
+          <select id="mf-ws" value={workStatus} onChange={(e) => setWorkStatus(e.target.value)}>
+            {WORK_STATUSES.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </div>
       </div>
       <div className="field">
         <label htmlFor="mf-note">Short Handover Note</label>
         <textarea
           id="mf-note"
+          rows={3}
           maxLength={500}
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -381,12 +396,14 @@ export function HistoryDrawer({
       {data?.holder ? (
         <p>
           <strong>
-            Currently with {data.holder.department} ({data.holder.state.replace('_', ' ').toLowerCase()})
+            Currently with {data.holder.department} (
+            {data.holder.state.replace('_', ' ').toLowerCase()})
           </strong>{' '}
           since {new Date(data.holder.sent_at).toLocaleString('en-IN')}
           <br />
           <span className="muted">
-            This is the department step only. A record's own status (for example Pending Approval) changes when its approver decides.
+            This is the department step only. A record's own status (for example Pending Approval)
+            changes when its approver decides.
           </span>
         </p>
       ) : null}

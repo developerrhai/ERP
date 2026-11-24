@@ -45,6 +45,12 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
   const [salesperson, setSalesperson] = useState('');
   const [moving, setMoving] = useState<{ id: string; title: string; to: string } | null>(null);
   const [reason, setReason] = useState('');
+  // the people who own the opportunities on the board (no invented names)
+  const salespeople = Array.from(
+    new Set(
+      (board.data?.stages ?? []).flatMap((c) => rowsOf(c.items).map((o) => s(o.ownerName)).filter(Boolean)),
+    ),
+  ).sort();
   async function move(id: string, stage: string, lostReason?: string) {
     setMsg('');
     try {
@@ -118,10 +124,11 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
           onChange={(e) => setSalesperson(e.target.value)}
         >
           <option value="">All Salespeople</option>
-          <option value="Nishant Mishra">Nishant Mishra</option>
-          <option value="Amit Sharma">Amit Sharma</option>
-          <option value="Pooja Verma">Pooja Verma</option>
-          <option value="Rahul Patil">Rahul Patil</option>
+          {salespeople.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -140,7 +147,8 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
               !q ||
               s(o.title).toLowerCase().includes(q.toLowerCase()) ||
               s(o.customerName).toLowerCase().includes(q.toLowerCase());
-            return matchQ;
+            const matchOwner = !salesperson || s(o.ownerName) === salesperson;
+            return matchQ && matchOwner;
           });
           return (
             <section key={s(col.stage)} className="card" aria-label={s(col.stage)}>

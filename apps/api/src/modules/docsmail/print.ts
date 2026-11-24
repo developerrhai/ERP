@@ -62,6 +62,31 @@ export const CATALOG: readonly CatalogDoc[] = [
   { pageId: 'hr-offer-letter', title: 'Letters (offer / appointment)', group: 'HR', table: 'issued_letters', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
 ];
 
+/**
+ * Pages that keep their records in their own table (not the generic record engine) and are not Document Center documents:
+ * Word / PDF / Excel and the Docs upload of their rows read the table row directly (no 'own storage' refusal).
+ */
+export const TYPED_DOCS: readonly CatalogDoc[] = [
+  { pageId: 'inv-items', title: 'Item Master', group: 'Inventory', table: 'items', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'wms-warehouses', title: 'Warehouse', group: 'Inventory', table: 'warehouses', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'inv-batch', title: 'Batch', group: 'Inventory', table: 'batches', numberCol: 'batch_no', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'inv-serial', title: 'Serial Number', group: 'Inventory', table: 'serial_numbers', numberCol: 'serial_no', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'inv-reservation', title: 'Stock Reservation', group: 'Inventory', table: 'stock_reservations', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'crm-leads', title: 'Lead', group: 'CRM', table: 'leads', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'crm-opportunities', title: 'Opportunity', group: 'CRM', table: 'opportunities', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'crm-followups', title: 'Follow-up', group: 'CRM', table: 'crm_followups', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'crm-meetings', title: 'Meeting', group: 'CRM', table: 'crm_meetings', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'crm-feedback', title: 'Customer Feedback', group: 'CRM', table: 'crm_feedback', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'master-customers', title: 'Customer', group: 'Sales', table: 'customers', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'crm-customer360', title: 'Customer 360', group: 'Sales', table: 'customers', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'fin-coa', title: 'Account', group: 'Finance', table: 'accounts', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+];
+
+/** The table-backed document of a page: a Document Center type first, then a typed master / register page. */
+export function printSourceOf(pageId: string): CatalogDoc | undefined {
+  return CATALOG.find((c) => c.pageId === pageId) ?? TYPED_DOCS.find((c) => c.pageId === pageId);
+}
+
 const HIDE = /(^id$|_id$|^version$|^deleted_at$|^created_at$|^updated_at$|^fy_id$|^password|^json|_json$|^body_html$)/;
 
 export function catalogOf(pageId: string): CatalogDoc | undefined {
@@ -157,7 +182,7 @@ export async function buildPrintDto(caller: Caller, pageId: string, id: string):
     };
     return { dto, status: String(l.status) };
   }
-  const doc = catalogOf(pageId);
+  const doc = printSourceOf(pageId);
   if (doc) {
     const dto = await rowDto(caller, doc, id);
     return { dto, status: dto.facts.find((f) => f.label === 'Status')?.value ?? '' };
