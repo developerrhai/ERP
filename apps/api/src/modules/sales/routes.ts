@@ -412,6 +412,7 @@ export function createSalesRouter(): Router {
         ownerId: uuid.nullish(),
         locationMode: z.string().trim().max(30).nullish(),
         agenda: z.string().trim().max(1000).nullish(),
+        outcome: z.string().trim().max(500).nullish(),
         projectNumber: z.string().trim().max(50).nullish(),
       })
       .strict(),

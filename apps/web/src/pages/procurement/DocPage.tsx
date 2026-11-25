@@ -21,6 +21,7 @@ import {
   getDoc,
   listDocs,
   lookupCustomers,
+  lookupLeads,
   lookupSalespeople,
   lookupSuppliers,
   updateDoc,
@@ -52,6 +53,7 @@ type FieldType =
   | 'ref'
   | 'customer'
   | 'user'
+  | 'lead'
   | 'project'
   | 'datetime';
 export interface FieldCfg {
@@ -438,6 +440,16 @@ function Input({
         onPick={(o) => onChange(o?.id ?? '')}
       />
     );
+  else if (f.type === 'lead')
+    control = (
+      <LookupCombo<Option>
+        id={fid}
+        value={value}
+        search={lookupLeads}
+        label={(o) => o.label}
+        onPick={(o) => onChange(o?.id ?? '')}
+      />
+    );
   else if (f.type === 'user')
     control = (
       <select {...common} value={value} onChange={(e) => onChange(e.target.value)}>
@@ -622,7 +634,12 @@ function localInput(iso: string): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-function toBody(fields: FieldCfg[], vals: Record<string, string>, editing = false): Row {
+function toBody(
+  fields: FieldCfg[],
+  vals: Record<string, string>,
+  editing = false,
+  keepRelation = false,
+): Row {
   const out: Row = {};
   for (const f of fields) {
     if (f.readOnly) continue;
@@ -637,9 +654,11 @@ function toBody(fields: FieldCfg[], vals: Record<string, string>, editing = fals
       continue;
     }
     if (v === '') {
-      if (editing && f.clearable) out[f.key] = '';
+      if (editing && f.clearable && !(f.type === 'lead' && keepRelation))
+        out[f.key] = f.type === 'lead' ? null : '';
       continue;
     }
+    if (f.type === 'lead') out.relatedType = 'LEAD';
     out[f.key] = f.type === 'number' && INT_KEYS.includes(f.key) ? Number(v) : v;
   }
   return out;
@@ -662,7 +681,9 @@ function DocForm({
       o[f.key] = src
         ? f.type === 'datetime'
           ? localInput(s(src[f.key]))
-          : s(src[f.key])
+          : f.type === 'lead' && src.relatedType !== 'LEAD'
+            ? ''
+            : s(src[f.key])
         : f.type === 'date' && f.key.toLowerCase().includes('date') && !f.def
           ? ''
           : (f.def ?? '');
@@ -693,7 +714,14 @@ function DocForm({
     setMsg('');
     setFields({});
     try {
-      const body: Row = { ...toBody(cfg.header, head, doc !== null) };
+      const body: Row = {
+        ...toBody(
+          cfg.header,
+          head,
+          doc !== null,
+          !!doc && !!doc.relatedType && doc.relatedType !== 'LEAD',
+        ),
+      };
       if (cfg.lines) {
         body.lines = lines.map((l) => ({
           ...toBody(cfg.lines ?? [], l),

@@ -86,6 +86,17 @@ export const lookupPos = async (): Promise<Option[]> => {
   }));
 };
 
+export const lookupLeads = async (q = ''): Promise<Option[]> => {
+  const r = await request<{ id: string; number: string; name: string; company?: string }[]>(
+    `/crm/leads${qs({ size: 100 })}`,
+  );
+  const needle = q.trim().toLowerCase();
+  return r.data
+    .filter((l) => !needle || `${l.number} ${l.name} ${l.company ?? ''}`.toLowerCase().includes(needle))
+    .slice(0, 30)
+    .map((l) => ({ id: l.id, label: `${l.number} · ${l.name}` }));
+};
+
 export const lookupSalespeople = async (): Promise<Option[]> => {
   const r = await request<{ id: string; name: string }[]>('/crm/salespeople');
   return r.data.map((u) => ({ id: u.id, label: u.name }));

@@ -173,6 +173,7 @@ export const meetingCrud = makeCrud({
     'ownerId',
     'locationMode',
     'agenda',
+    'outcome',
     'projectNumber',
   ],
   lineKeys: [],
@@ -184,16 +185,30 @@ export const meetingCrud = makeCrud({
     const r = (
       await query(
         db,
-        `SELECT (SELECT code FROM projects WHERE id=$1::uuid) AS project_number, (SELECT name FROM users WHERE id=$2::uuid) AS owner_name`,
+        `SELECT (SELECT code FROM projects WHERE id=$1::uuid) AS project_number, (SELECT name FROM users WHERE id=$2::uuid) AS owner_name,
+                (SELECT name FROM leads WHERE id=$3::uuid) AS lead_name`,
         h.project_id ?? null,
         h.owner_id ?? null,
+        h.related_type === 'LEAD' ? (h.related_id ?? null) : null,
       )
     )[0];
-    return { projectNumber: r?.project_number ?? null, ownerName: r?.owner_name ?? null };
+    return {
+      projectNumber: r?.project_number ?? null,
+      ownerName: r?.owner_name ?? null,
+      leadName: r?.lead_name ?? null,
+    };
   },
   async prepare(c) {
     const header = await resolveProject(c.tx, { ...c.header });
     if (!c.existing && !header.ownerId) header.ownerId = c.caller.auth.userId;
+    if (header.relatedId && !header.relatedType) header.relatedType = 'LEAD';
+    if (header.relatedId) {
+      const ok = (
+        await query(c.tx, `SELECT 1 FROM leads WHERE id=$1::uuid AND deleted_at IS NULL`, header.relatedId)
+      )[0];
+      if (!ok && header.relatedType === 'LEAD')
+        throw Errors.validation({ relatedId: 'Choose an existing lead.' });
+    }
     return { header, lines: [] };
   },
 });

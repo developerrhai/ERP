@@ -121,7 +121,8 @@ export const MTG_CFG: DocCfg = {
   columns: [
     { key: 'number', label: 'Meeting No' },
     { key: 'subject', label: 'Subject' },
-    { key: 'customerName', label: 'Customer Lead' },
+    { key: 'customerName', label: 'Customer' },
+    { key: 'leadName', label: 'Lead' },
     { key: 'startsAt', label: 'Start Date', fmt: 'date' },
     { key: 'startsAt', label: 'Start Time', fmt: 'time' },
     { key: 'durationMin', label: 'Duration (min)' },
@@ -135,8 +136,16 @@ export const MTG_CFG: DocCfg = {
     { key: 'projectNumber', label: 'Project Number' },
   ],
   header: [
+    {
+      key: 'number',
+      label: 'Meeting No',
+      type: 'text',
+      readOnly: true,
+      placeholder: 'Given automatically when saved',
+    },
     { key: 'subject', label: 'Subject', type: 'text', required: true },
-    { key: 'customerId', label: 'Customer / Lead', type: 'customer' },
+    { key: 'customerId', label: 'Customer', type: 'customer' },
+    { key: 'relatedId', label: 'Lead', type: 'lead', clearable: true },
     {
       key: 'kind',
       label: 'Channel',
@@ -167,6 +176,8 @@ export const MTG_CFG: DocCfg = {
     { key: 'ownerId', label: 'Organizer', type: 'user' },
     { key: 'attendees', label: 'Participants', type: 'text', clearable: true },
     { key: 'agenda', label: 'Agenda', type: 'text', clearable: true },
+    { key: 'outcome', label: 'Outcome', type: 'text', clearable: true },
+    { key: 'status', label: 'Status', type: 'text', readOnly: true, def: 'Planned' },
     { key: 'projectNumber', label: 'Project Number', type: 'project', clearable: true },
   ],
   more: [
