@@ -64,6 +64,8 @@ export interface FieldCfg {
   options?: [string, string][];
   /** type 'ref': the list endpoint of the document to pick */
   refPath?: string;
+  /** type 'ref': the fields shown as the option text (default: number and status) */
+  refLabel?: string[];
   /** line only: pre-filled value */
   def?: string;
   /** shown but never sent: numbers the server gives, or a stage that only Move Forward may change */
@@ -330,7 +332,7 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
 
 // ------------------------------------------------------------------------------------------------ form
 /** Type-ahead picker over a server search (Phase 36): replaces the full-list dropdown that was capped at 30 rows. */
-function LookupCombo<T extends { id: string }>({
+export function LookupCombo<T extends { id: string }>({
   id,
   value,
   search,
@@ -407,10 +409,15 @@ function Input({
     () =>
       f.type === 'ref' && f.refPath
         ? listDocs(f.refPath, { size: 100 }).then((r) =>
-            r.rows.map((d) => ({ id: d.id, label: `${s(d.number)} · ${d.status}` })),
+            r.rows.map((d) => ({
+              id: d.id,
+              label: f.refLabel
+                ? f.refLabel.map((k) => s((d as Row)[k])).filter(Boolean).join(' · ')
+                : `${s(d.number)} · ${d.status}`,
+            })),
           )
         : Promise.resolve([]),
-    [f.type, f.refPath],
+    [f.type, f.refPath, f.refLabel],
   );
   const people = useLoad<Option[]>(
     () => (f.type === 'user' ? lookupSalespeople() : Promise.resolve([])),
@@ -655,7 +662,7 @@ function toBody(
     }
     if (v === '') {
       if (editing && f.clearable && !(f.type === 'lead' && keepRelation))
-        out[f.key] = f.type === 'lead' ? null : '';
+        out[f.key] = f.type === 'lead' || f.type === 'ref' ? null : '';
       continue;
     }
     if (f.type === 'lead') out.relatedType = 'LEAD';
@@ -847,12 +854,13 @@ function DocForm({
 
 // ------------------------------------------------------------------------------------------------ detail
 /** V40 record bar on a document: Move Forward, Industry PDF, Word, Email, History (Phase 36 C3). */
-function RecordBar({ doc, canEdit }: { doc: Doc; canEdit: boolean }) {
-  const { pageId = '' } = useParams();
+export function RecordBar({ doc, canEdit, pageId: forPage }: { doc: Doc; canEdit: boolean; pageId?: string }) {
+  const { pageId: routePage = '' } = useParams();
+  const pageId = forPage ?? routePage;
   const toast = useToast();
   const [dlg, setDlg] = useState<'move' | 'email' | 'history' | 'docs' | null>(null);
   const docNo = s(doc.number);
-  async function download(kind: 'standard' | 'word', ext: string) {
+  async function download(kind: 'standard' | 'word' | 'excel', ext: string) {
     try {
       saveFile(await docsMailApi.print(pageId, doc.id, kind), `${docNo || 'document'}.${ext}`);
     } catch (e) {
@@ -869,6 +877,9 @@ function RecordBar({ doc, canEdit }: { doc: Doc; canEdit: boolean }) {
       </button>
       <button type="button" className="btn" onClick={() => void download('word', 'docx')}>
         Word
+      </button>
+      <button type="button" className="btn" onClick={() => void download('excel', 'xlsx')}>
+        Excel
       </button>
       <button type="button" className="btn" onClick={() => setDlg('email')}>
         Email

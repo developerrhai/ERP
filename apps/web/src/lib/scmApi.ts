@@ -65,6 +65,9 @@ export const verb = async <T = Doc>(
       headers: { ...idem(), ...(version !== undefined ? ifMatch(version) : {}) },
     })
   ).data;
+export const putJson = async <T = unknown>(path: string, body: unknown): Promise<T> =>
+  (await request<T>(path, { method: 'PUT', body })).data;
+
 export const post = async <T = unknown>(path: string, body: unknown = {}): Promise<T> =>
   (await request<T>(path, { method: 'POST', body, headers: idem() })).data;
 

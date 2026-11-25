@@ -583,17 +583,18 @@ export const spineService = {
     const rows = await query(prisma, `SELECT e.*, c.name AS customer_name, u.name AS assigned_to FROM sales_enquiries e LEFT JOIN customers c ON c.id = e.customer_id LEFT JOIN users u ON u.id = e.assigned_to_id WHERE ${where} ORDER BY e.created_at DESC LIMIT ${size} OFFSET ${off}`, ...args);
     return { rows, total };
   },
-  async createEnquiry(caller: Caller, b: { customerId?: string | null; prospectName?: string | null; contact?: string | null; product: string; application?: string | null; qty?: number | null; requiredDate?: string | null; source?: string | null; assignedToId?: string | null; projectTemplate?: 'BLDC' | 'SPPM' | 'CUSTOM' | null; unitId?: string }): Promise<Row> {
+  async createEnquiry(caller: Caller, b: { customerId?: string | null; itemId?: string | null; prospectName?: string | null; contact?: string | null; product: string; application?: string | null; qty?: number | null; requiredDate?: string | null; source?: string | null; assignedToId?: string | null; projectTemplate?: 'BLDC' | 'SPPM' | 'CUSTOM' | null; unitId?: string }): Promise<Row> {
     if (!b.customerId && !b.prospectName?.trim()) throw Errors.validation({ prospectName: 'Choose a customer or type the prospect name.' });
     const unitId = b.unitId ?? caller.ctx.unitId ?? '';
     if (!caller.ctx.unitIds.includes(unitId)) throw Errors.forbidden();
     return prisma.$transaction(async (tx) => {
       const number = await NumberingService.next(tx, { docType: 'sales-enquiries', unitId, fyId: caller.ctx.fyId });
+      if (b.itemId && !(await query(tx, `SELECT 1 FROM items WHERE id=$1::uuid`, b.itemId))[0]) throw Errors.validation({ itemId: 'Choose an item from the Item master.' });
       const r = await query(
         tx,
-        `INSERT INTO sales_enquiries (unit_id, fy_id, number, customer_id, prospect_name, contact, product, application, qty, required_date, source, assigned_to_id, project_template, created_by_id, updated_by_id)
-         VALUES ($1::uuid,$2::uuid,$3,$4::uuid,$5,$6,$7,$8,$9,$10::date,$11,$12::uuid,$13,$14::uuid,$14::uuid) RETURNING *`,
-        unitId, caller.ctx.fyId, number, b.customerId ?? null, b.prospectName ?? null, b.contact ?? null, b.product, b.application ?? null, b.qty ?? null, b.requiredDate ?? null, b.source ?? null, b.assignedToId ?? null, b.projectTemplate ?? null, caller.auth.user.id,
+        `INSERT INTO sales_enquiries (unit_id, fy_id, number, customer_id, prospect_name, contact, product, application, qty, required_date, source, assigned_to_id, project_template, item_id, created_by_id, updated_by_id)
+         VALUES ($1::uuid,$2::uuid,$3,$4::uuid,$5,$6,$7,$8,$9,$10::date,$11,$12::uuid,$13,$15::uuid,$14::uuid,$14::uuid) RETURNING *`,
+        unitId, caller.ctx.fyId, number, b.customerId ?? null, b.prospectName ?? null, b.contact ?? null, b.product, b.application ?? null, b.qty ?? null, b.requiredDate ?? null, b.source ?? null, b.assignedToId ?? null, b.projectTemplate ?? null, caller.auth.user.id, b.itemId ?? null,
       );
       await recordAudit({ action: 'enquiry.created', actorId: caller.auth.user.id, targetType: 'sales_enquiry', targetId: S(r[0]!.id), detail: { pageId: 'sales-enquiries', code: number, number, unitId, product: b.product } }, tx);
       if (b.assignedToId) await notificationService.notify(tx, [b.assignedToId], { type: 'sales.enquiry_assigned', title: `Enquiry ${number} assigned to you`, body: b.product, link: '/m/sales-enquiries', entityType: 'sales_enquiry', entityId: S(r[0]!.id), dedupeKey: `enq:${S(r[0]!.id)}:assigned` });
@@ -604,14 +605,14 @@ export const spineService = {
   async updateEnquiry(
     caller: Caller,
     id: string,
-    b: { customerId?: string | null; prospectName?: string | null; contact?: string | null; product?: string; application?: string | null; qty?: number | null; requiredDate?: string | null; source?: string | null; assignedToId?: string | null; projectTemplate?: 'BLDC' | 'SPPM' | 'CUSTOM' | null },
+    b: { customerId?: string | null; itemId?: string | null; prospectName?: string | null; contact?: string | null; product?: string; application?: string | null; qty?: number | null; requiredDate?: string | null; source?: string | null; assignedToId?: string | null; projectTemplate?: 'BLDC' | 'SPPM' | 'CUSTOM' | null },
     version?: number,
   ): Promise<Row> {
     const before = await spineService.enquiry(caller, id);
     if (!['New', 'Qualified'].includes(S(before.status))) throw Errors.conflict(`A ${S(before.status)} enquiry cannot be edited.`);
     if (version !== undefined && Number(before.version) !== version) throw Errors.conflict('This enquiry was changed by someone else. Reload it and try again.');
     const next = { ...before, ...Object.fromEntries(Object.entries({
-      customer_id: b.customerId, prospect_name: b.prospectName, contact: b.contact, product: b.product, application: b.application, qty: b.qty,
+      customer_id: b.customerId, item_id: b.itemId, prospect_name: b.prospectName, contact: b.contact, product: b.product, application: b.application, qty: b.qty,
       required_date: b.requiredDate, source: b.source, assigned_to_id: b.assignedToId, project_template: b.projectTemplate,
     }).filter(([, v]) => v !== undefined)) } as Row;
     if (!next.customer_id && !S(next.prospect_name).trim()) throw Errors.validation({ prospectName: 'Choose a customer or type the prospect name.' });
@@ -619,11 +620,11 @@ export const spineService = {
     const r = await query(
       prisma,
       `UPDATE sales_enquiries SET customer_id=$2::uuid, prospect_name=$3, contact=$4, product=$5, application=$6, qty=$7, required_date=$8::date, source=$9,
-              assigned_to_id=$10::uuid, project_template=$11, version = version + 1, updated_at = now(), updated_by_id = $12::uuid
+              assigned_to_id=$10::uuid, project_template=$11, item_id=$14::uuid, version = version + 1, updated_at = now(), updated_by_id = $12::uuid
         WHERE id = $1::uuid AND status IN ('New','Qualified') AND version = $13 RETURNING *`,
       id, next.customer_id ?? null, next.prospect_name ?? null, next.contact ?? null, S(next.product), next.application ?? null, next.qty ?? null,
       next.required_date ? String(next.required_date instanceof Date ? next.required_date.toISOString() : next.required_date).slice(0, 10) : null,
-      next.source ?? null, next.assigned_to_id ?? null, next.project_template ?? null, caller.auth.user.id, Number(before.version),
+      next.source ?? null, next.assigned_to_id ?? null, next.project_template ?? null, caller.auth.user.id, Number(before.version), next.item_id ?? null,
     );
     if (!r[0]) throw Errors.conflict('This enquiry was changed by someone else. Reload it and try again.');
     const changed: Record<string, { from: unknown; to: unknown }> = {};

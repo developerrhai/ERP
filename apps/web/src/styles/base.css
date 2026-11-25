@@ -73,6 +73,15 @@ button {
   opacity: 0.45;
   cursor: not-allowed;
 }
+/* a disabled coloured button must not look active (QA: the disabled "+ Add source" was drawn in active blue) */
+.btn.primary:disabled,
+.btn.success:disabled,
+.btn.danger:disabled {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #64748b;
+  opacity: 1;
+}
 :focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;

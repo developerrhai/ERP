@@ -5,8 +5,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { EmailDocDialog } from '../../components/EmailDocDialog';
 import { Modal } from '../../components/Modal';
-import { saveFile } from '../../lib/docsMailApi';
+import { MoveForwardDialog } from '../../components/MoveForward';
+import { useToast } from '../../components/Toast';
+import { docsMailApi, saveFile } from '../../lib/docsMailApi';
+import type { PrintKind } from '../../lib/docsMailApi';
+import { toUiMessage } from '../../lib/errors';
+import { AllocateInvoiceDialog } from './AllocateInvoice';
 import { formatDateTime } from '../../lib/format';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
@@ -27,6 +33,20 @@ const num = (v: string | null): string => {
   return Number.isNaN(n) ? v : n.toLocaleString('en-IN', { maximumFractionDigits: 3 });
 };
 const csvCell = (v: string): string => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+
+/**
+ * The record a register row stands for. The report pages (Trial Balance, P&L, Balance Sheet, Cash Flow) list ledger
+ * accounts, so Email / Word / Excel / PDF / Docs / Move Forward act on the account; a summary line ("REV") is no record.
+ */
+const RECORD_PAGE: Record<string, string> = {
+  'fin-trial': 'fin-coa',
+  'fin-pnl': 'fin-coa',
+  'fin-bs': 'fin-coa',
+  'fin-cashflow': 'fin-coa',
+};
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** The buttons the page's own row may offer that the register shows as one of its own fixed buttons (or never as a proxy). */
+const FIXED = new Set(['View', 'Open', 'Details', 'Docs', 'Email', 'Word', 'Excel', 'PDF', 'Move Forward']);
 
 function Cell({ col, row }: { col: FinColumn; row: Record<string, string | null> }) {
   const v = row[col.key] ?? null;
@@ -53,12 +73,17 @@ function Cards({ cards }: { cards: FinCard[] }) {
   );
 }
 
+type PanelRow = FinPanel['rows'][number];
+
 function PanelTable({
   panel,
   onAllocate,
+  onView,
 }: {
   panel: FinPanel;
   onAllocate?: ((id: string) => void) | undefined;
+  /** a line of the panel with no action of its own gets a View button */
+  onView?: ((row: PanelRow) => void) | undefined;
 }) {
   return (
     <section className="fv40-panel" aria-label={panel.title}>
@@ -84,7 +109,13 @@ function PanelTable({
                   c.type === 'actions' ? (
                     <td key={c.key}>
                       {!r[c.key] ? (
-                        '—'
+                        onView ? (
+                          <button type="button" className="btn sm" onClick={() => onView(r)}>
+                            View
+                          </button>
+                        ) : (
+                          '—'
+                        )
                       ) : onAllocate && r[c.key] === 'Allocate' && r.id ? (
                         <button
                           type="button"
@@ -185,14 +216,18 @@ export interface FinV40Props {
   onAllocate?: (docId: string) => void;
   /** page-specific row buttons shown after View */
   rowExtra?: (row: FinRow, reload: () => void) => ReactNode;
+  /** more of the record under the cards of the detail dialog (a journal's debit / credit lines) */
+  detailExtra?: (row: FinRow) => ReactNode;
 }
+
+type RowDialog = { kind: 'email' | 'move'; row: FinRow };
 
 /** Wrap the table of a finance or tax page: `<FinV40 pageId=… fallback={<table…/>} />`. */
 export function FinV40(props: FinV40Props) {
   const frame = useFrame();
   if (!frame || !hasFinV40(props.pageId)) return <>{props.fallback}</>;
   return (
-    <ClassicViewSwitch pageId={props.pageId} fallback={props.fallback}>
+    <ClassicViewSwitch pageId={props.pageId} fallback={props.fallback} host>
       <Body {...props} tabName={frame.tabName} first={frame.index === 0} claim={frame.claim} />
     </ClassicViewSwitch>
   );
@@ -209,12 +244,18 @@ function Body({
   reloadKey,
   onAllocate,
   rowExtra,
+  detailExtra,
   tabName,
   first,
   claim,
 }: FinV40Props & { tabName: string; first: boolean; claim: () => void }) {
   const classic = useClassic();
-  const [, setParams] = useSearchParams();
+  const toast = useToast();
+  const [params, setParams] = useSearchParams();
+  const [dlg, setDlg] = useState<RowDialog | null>(null);
+  const [panelRow, setPanelRow] = useState<PanelRow | null>(null);
+  const [allocId, setAllocId] = useState<string | null>(null);
+  const [hostTick, setHostTick] = useState(0);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -243,6 +284,69 @@ function Body({
   const docsTab = v40TabsFor(pageId).findIndex((x) => /^documents$/i.test(x));
   const selectedRows = rows.filter((r) => picked.has(r.id));
   const reload = (): void => setTick((n) => n + 1);
+
+  // The page's own screen is mounted (hidden) behind this register: its row buttons (Edit, Delete, Submit, Allocate ...)
+  // are what this register offers on each row, so every action runs the page's real dialog and rules.
+  useEffect(() => {
+    setHostTick(0);
+    const t = setInterval(() => setHostTick((n) => (n >= 6 ? n : n + 1)), 500);
+    return () => clearInterval(t);
+  }, [rows, tick]);
+  const hostActions = (r: FinRow): string[] => classic?.actionsOf(r.number) ?? [];
+  const proxy = (r: FinRow, label: string): void => {
+    if (!classic?.press(r.number, label)) toast(`${label} is not available for ${r.number} right now.`);
+  };
+  void hostTick;
+
+  // A dialog of the page (create, edit, delete, allocate ...) changed a record while this register was behind it: when the
+  // last dialog closes the register reloads, so it never keeps showing the rows from before the change.
+  useEffect(() => {
+    let open = document.querySelectorAll('.modal-bg').length;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const watch = new MutationObserver(() => {
+      const now = document.querySelectorAll('.modal-bg').length;
+      if (open > 0 && now === 0) {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => setTick((n) => n + 1), 450);
+      }
+      open = now;
+    });
+    watch.observe(document.body, { childList: true });
+    return () => {
+      watch.disconnect();
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
+  const recPage = RECORD_PAGE[pageId] ?? pageId;
+  const isRecord = (r: FinRow): boolean => UUID.test(r.id);
+  async function printRow(r: FinRow, kind: PrintKind, ext: string): Promise<void> {
+    try {
+      saveFile(await docsMailApi.print(recPage, r.id, kind), `${r.number || 'record'}.${ext}`);
+    } catch (e) {
+      toast(toUiMessage(e));
+    }
+  }
+  // tell the page toolbar (Word, Industry PDF, Send Email, Excel, Move Forward ...) which record is ticked
+  const activeId = selectedRows[0]?.id ?? '';
+  const activeNo = selectedRows[0]?.number ?? '';
+  useEffect(() => {
+    const announce = (): void => {
+      window.dispatchEvent(
+        new CustomEvent('v40-active-record', {
+          detail: { pageId, recordId: isRecord({ id: activeId } as FinRow) ? activeId : '', docNo: activeNo },
+        }),
+      );
+    };
+    announce();
+    const onRequest = (e: Event): void => {
+      const ce = e as CustomEvent<{ pageId?: string }>;
+      if (!ce.detail?.pageId || ce.detail.pageId === pageId) announce();
+    };
+    window.addEventListener('v40-request-active-record', onRequest);
+    return () => window.removeEventListener('v40-request-active-record', onRequest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageId, activeId, activeNo]);
   const toggle = (id: string): void =>
     setPicked((p) => {
       const n = new Set(p);
@@ -262,11 +366,13 @@ function Body({
       `${pageId}.csv`,
     );
   }
-  const openDocs = (): void => {
+  // the Docs button remembers its row in the URL (?doc=): changing tab clears the ticked rows
+  const openDocs = (id?: string): void => {
     if (docsTab < 0) return;
     setParams((p) => {
       const n = new URLSearchParams(p);
       n.set('tab', String(docsTab));
+      if (id) n.set('doc', id);
       return n;
     });
   };
@@ -275,8 +381,80 @@ function Body({
     else setDetail(r);
   };
   const showDocs = /^documents$/i.test(tabName);
-  const docRow = selectedRows[0];
-  const docSchema = useMemo(() => ({ pageId }) as unknown as PageSchema, [pageId]);
+  const docParam = params.get('doc');
+  const docRow = rows.find((r) => r.id === docParam) ?? selectedRows[0] ?? rows[0];
+  const docSchema = useMemo(() => ({ pageId: recPage }) as unknown as PageSchema, [recPage]);
+
+  /** every action of a record, in the order the V40 reference shows them */
+  const recordButtons = (r: FinRow, where: 'row' | 'modal'): ReactNode => {
+    const offered = hostActions(r);
+    const has = (label: string): boolean => offered.includes(label);
+    const proxied = (label: string, perm: boolean | undefined) =>
+      perm ? (
+        <button
+          type="button"
+          className={`btn sm${label === 'Delete' ? ' danger' : ''}`}
+          disabled={!has(label)}
+          title={
+            has(label)
+              ? undefined
+              : `${label} is not available for this record here: it is done on the screen that creates it`
+          }
+          onClick={() => proxy(r, label)}
+        >
+          {label}
+        </button>
+      ) : null;
+    const printable = isRecord(r);
+    const extras = offered.filter(
+      (l) =>
+        !FIXED.has(l) && l !== r.number && !['Edit', 'Delete', 'Submit'].includes(l) && !/^(view|open)\b/i.test(l) && !rowExtra,
+    );
+    return (
+      <>
+        {where === 'row' ? (
+          <button type="button" className="btn sm" onClick={() => view(r)}>
+            View
+          </button>
+        ) : null}
+        {proxied('Edit', actions ? actions.edit : true)}
+        {proxied('Delete', actions ? actions.delete : true)}
+        {printable ? (
+          <>
+            <button type="button" className="btn sm" onClick={() => setDlg({ kind: 'email', row: r })}>
+              Email
+            </button>
+            <button type="button" className="btn sm" onClick={() => void printRow(r, 'word', 'docx')}>
+              Word
+            </button>
+            <button type="button" className="btn sm" onClick={() => void printRow(r, 'excel', 'xlsx')}>
+              Excel
+            </button>
+            <button type="button" className="btn sm" onClick={() => void printRow(r, 'standard', 'pdf')}>
+              PDF
+            </button>
+          </>
+        ) : null}
+        {proxied('Submit', actions ? actions.submit : true)}
+        {extras.map((l) => (
+          <button key={l} type="button" className="btn sm" onClick={() => proxy(r, l)}>
+            {l}
+          </button>
+        ))}
+        {where === 'row' ? rowExtra?.(r, reload) : null}
+        {printable ? (
+          <button type="button" className="btn sm primary" onClick={() => setDlg({ kind: 'move', row: r })}>
+            Move Forward
+          </button>
+        ) : null}
+        {printable && docsTab >= 0 ? (
+          <button type="button" className="btn sm" onClick={() => openDocs(r.id)}>
+            Docs
+          </button>
+        ) : null}
+      </>
+    );
+  };
 
   return (
     <section className="fv40" aria-label={`${tabName || 'Register'} (V40 view)`}>
@@ -384,15 +562,7 @@ function Body({
                   if (c.type === 'actions')
                     return (
                       <td key={c.key} className="row-actions">
-                        <button type="button" className="btn sm" onClick={() => view(r)}>
-                          View
-                        </button>
-                        {rowExtra?.(r, reload)}
-                        {docsTab >= 0 ? (
-                          <button type="button" className="btn sm" onClick={openDocs}>
-                            Docs
-                          </button>
-                        ) : null}
+                        {recordButtons(r, 'row')}
                       </td>
                     );
                   if (c.type === 'docs')
@@ -434,7 +604,37 @@ function Body({
           Next
         </button>
       </div>
-      {data?.panel ? <PanelTable panel={data.panel} onAllocate={onAllocate} /> : null}
+      {data?.panel ? (
+        <PanelTable panel={data.panel} onAllocate={onAllocate ?? setAllocId} onView={setPanelRow} />
+      ) : null}
+      {panelRow && data?.panel ? (
+        <Modal
+          title={data.panel.title}
+          onClose={() => setPanelRow(null)}
+          footer={
+            <button type="button" className="btn" onClick={() => setPanelRow(null)}>
+              Close
+            </button>
+          }
+        >
+          <dl className="fv40-detail">
+            {data.panel.columns
+              .filter((c) => c.type !== 'actions' && c.type !== 'docs')
+              .map((c) => (
+                <div key={c.key} className="fv40-detail-row">
+                  <dt>{c.label}</dt>
+                  <dd>
+                    {c.type === 'inr'
+                      ? inr(panelRow[c.key] ?? null)
+                      : c.type === 'date'
+                        ? dmy(panelRow[c.key] ?? null)
+                        : (panelRow[c.key] ?? '—')}
+                  </dd>
+                </div>
+              ))}
+          </dl>
+        </Modal>
+      ) : null}
       {showDocs ? (
         docRow ? (
           <DocumentsPanel
@@ -448,6 +648,29 @@ function Body({
         )
       ) : null}
       {data?.audit ? <AuditEntries pageId={pageId} /> : null}
+      {allocId ? (
+        <AllocateInvoiceDialog
+          id={allocId}
+          onClose={() => setAllocId(null)}
+          onDone={(msg) => {
+            setAllocId(null);
+            toast(msg);
+            reload();
+          }}
+        />
+      ) : null}
+      {dlg?.kind === 'email' ? (
+        <EmailDocDialog docType={recPage} docId={dlg.row.id} onClose={() => setDlg(null)} />
+      ) : null}
+      {dlg?.kind === 'move' ? (
+        <MoveForwardDialog
+          docType={recPage}
+          docId={dlg.row.id}
+          docNo={dlg.row.number}
+          onClose={() => setDlg(null)}
+          onMoved={() => setDlg(null)}
+        />
+      ) : null}
       {columns.some((c) => !c.source) || data?.panel?.columns.some((c) => !c.source) ? (
         <p className="v8-sub fv40-nosource">
           No source in the database yet (shown as a dash):{' '}
@@ -461,12 +684,14 @@ function Body({
       {detail ? (
         <Modal
           title={detail.number || 'Record'}
-          size="sm"
           onClose={() => setDetail(null)}
           footer={
-            <button type="button" className="btn" onClick={() => setDetail(null)}>
-              Close
-            </button>
+            <>
+              {recordButtons(detail, 'modal')}
+              <button type="button" className="btn" onClick={() => setDetail(null)}>
+                Close
+              </button>
+            </>
           }
         >
           <dl className="fv40-detail">
@@ -485,6 +710,7 @@ function Body({
                 </div>
               ))}
           </dl>
+          {detailExtra?.(detail)}
         </Modal>
       ) : null}
     </section>

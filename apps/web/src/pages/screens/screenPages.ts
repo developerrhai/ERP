@@ -13,7 +13,6 @@ export const SCREEN_PAGES: ReadonlySet<string> = new Set([
   'proj-milestones',
   'proj-subtasks',
   'proj-team',
-  'sales-pricelist',
   'scm-approval',
   'service-history',
   'service-requests',

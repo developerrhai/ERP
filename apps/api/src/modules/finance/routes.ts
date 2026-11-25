@@ -286,6 +286,24 @@ export function createFinanceRouter(): Router {
       ...pageQuery,
     })
     .strict();
+  // the people a cost / profit centre can be assigned to (its Manager); any user who may open either page
+  r.get(
+    '/managers',
+    asyncHandler(async (req, res, next) => {
+      const u = accessUserOf(requireAuth(req));
+      if ((await can(u, 'fin-costcenter', 'view')) || (await can(u, 'fin-profitcenter', 'view'))) return next();
+      throw Errors.forbidden();
+    }),
+    asyncHandler(async (_req, res) => {
+      const rows = await prisma.user.findMany({
+        where: { status: 'ACTIVE' },
+        select: { id: true, name: true, department: true },
+        orderBy: { name: 'asc' },
+        take: 300,
+      });
+      res.json({ data: rows });
+    }),
+  );
   r.get(
     '/cost-centers',
     requirePageAction('fin-costcenter', 'view'),
@@ -815,6 +833,35 @@ export function createFinanceRouter(): Router {
             ? { id: credit.id, outstanding: money(credit.outstanding), settleable: credit.amount.lessThan(0) }
             : null,
           bills,
+        },
+      });
+    }),
+  );
+  // ----- settling a payable / receivable INVOICE with the credits of its party (the Allocate button of AP / AR) -------
+  const settleGuard: RequestHandler = asyncHandler(async (req, _res, next) => {
+    const u = accessUserOf(requireAuth(req));
+    if ((await can(u, 'fin-ar', 'edit')) || (await can(u, 'fin-ap', 'edit'))) return next();
+    throw Errors.forbidden();
+  });
+  r.get(
+    '/open-items/:id/settle-options',
+    settleGuard,
+    validate({ params: idParams }),
+    asyncHandler(async (req, res) => {
+      // the id is the open item's id, or (from the settlement panel) the id of the document it came from
+      const id = String(req.params.id);
+      const target = await prisma.openItem.findFirst({
+        where: { OR: [{ id }, { docId: id }], unitId: { in: req.ctx?.unitIds ?? [] }, status: { not: 'Cancelled' } },
+      });
+      if (!target) throw Errors.notFound('Bill not found.');
+      const side = target.side as 'RECEIVABLE' | 'PAYABLE';
+      const credits = target.amount.greaterThan(0)
+        ? (await openItemService.openBills(prisma, side, target.partyId, target.unitId)).filter((b) => Number(b.amount) < 0)
+        : [];
+      res.json({
+        data: {
+          target: { id: target.id, docNo: target.docNo, outstanding: money(target.outstanding), side },
+          credits,
         },
       });
     }),

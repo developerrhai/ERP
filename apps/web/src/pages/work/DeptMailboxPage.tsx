@@ -86,6 +86,7 @@ const PAGE_DEPT_ALIAS: Readonly<Record<string, { dept: string; label: string }>>
   assets: { dept: 'maintenance', label: 'Assets' },
   logistics: { dept: 'warehouse', label: 'Logistics' },
   hrms: { dept: 'hr', label: 'HRMS' },
+  accounts: { dept: 'finance', label: 'Finance' },
 };
 
 /** Page id slug -> department: dept-inbox-hr -> "HR"; dept-inbox-assets -> Maintenance (shown as "Assets"). */

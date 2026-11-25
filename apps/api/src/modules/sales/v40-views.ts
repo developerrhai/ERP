@@ -152,6 +152,7 @@ const ORDERS: PageDef = {
   search: ['t.number', 'cu.name', 'cu.code', 't.customer_po_no', 'sq.number'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Sales Order ID': t(`upper(left(t.id::text,8))`),
     'SO No': t('t.number'),
     'Quotation Number': t('sq.number'),
@@ -167,6 +168,8 @@ const ORDERS: PageDef = {
     'Total Amount': m('t.grand_total'),
     Status: { e: 't.status', type: 'pill' },
     'Customer PO': t('t.customer_po_no'),
+    'Customer PO No': t('t.customer_po_no'),
+    'PO Date': d('t.customer_po_date'),
     'Dispatched Qty': n('ln.disp'),
     'Balance Qty': n('GREATEST(ln.qty - ln.disp - ln.closed, 0)'),
     'Invoiced Qty': n('ln.inv'),
@@ -179,13 +182,14 @@ const ORDERS: PageDef = {
     'Manufacturing Orders': n(
       `(SELECT count(*) FROM mfg_orders mo WHERE mo.source_type='SALES_ORDER' AND mo.source_id::text=t.id::text AND mo.deleted_at IS NULL)`,
     ),
-    ...approvalCols('t.number'),
     Docs: DOCS('sales-orders'),
     Actions: ACTIONS,
   },
   register: [
     'Sales Order ID',
     'SO No',
+    'Customer PO No',
+    'PO Date',
     'Quotation Number',
     'Customer ID',
     'Customer',
@@ -321,6 +325,7 @@ const QUOTES: PageDef = {
   search: ['t.number', 'cu.name', 'cu.code', 't.customer_ref'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Quotation Number': t('t.number'),
     'Enquiry Number': t(
       `(SELECT en.number FROM sales_enquiries en WHERE en.quotation_id=t.id AND en.deleted_at IS NULL LIMIT 1)`,
@@ -348,7 +353,6 @@ const QUOTES: PageDef = {
     'Company Code': t('un.code'),
     Revision: n('t.revision_no'),
     'Customer Decision': t('t.customer_status'),
-    ...approvalCols('t.number'),
     Docs: DOCS('sales-quotations'),
     Actions: ACTIONS,
   },
@@ -437,6 +441,7 @@ const INVOICES: PageDef = {
   search: ['t.number', 'cu.name', 'cu.code', 'so.number', 't.irn'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Invoice No': t('t.number'),
     Customer: t('cu.name'),
     'Invoice Date': d('t.invoice_date'),
@@ -460,7 +465,6 @@ const INVOICES: PageDef = {
     'Age (days)': n(
       `CASE WHEN t.status='Posted' AND t.grand_total - t.received_amount > 0 AND t.due_date IS NOT NULL THEN GREATEST(CURRENT_DATE - t.due_date, 0) END`,
     ),
-    ...approvalCols('t.number'),
     Docs: DOCS('sales-invoices'),
     Actions: ACTIONS,
   },
@@ -595,6 +599,7 @@ const DISPATCH: PageDef = {
   search: ['t.number', 'cu.name', 'so.number', 't.vehicle_no', 't.lr_no'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Dispatch No': t('t.number'),
     'Sales Order': t('so.number'),
     Customer: t('cu.name'),
@@ -622,7 +627,6 @@ const DISPATCH: PageDef = {
       `(SELECT i.ewb_no FROM sales_invoices i WHERE i.order_id=t.order_id AND i.ewb_no IS NOT NULL AND i.deleted_at IS NULL ORDER BY i.created_at DESC LIMIT 1)`,
     ),
     Status: { e: 't.status', type: 'pill' },
-    ...approvalCols('t.number'),
     Docs: DOCS('sales-dispatch'),
     Actions: ACTIONS,
   },
@@ -699,6 +703,7 @@ const COLLECTIONS: PageDef = {
   search: ['t.number', 'cu.name', 'cu.code', 't.reference', 'al.inv', 'al.so'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Payment Number': t('t.number'),
     'Payment Date': d('t.receipt_date'),
     'Receipt Amount': m('t.amount'),
@@ -714,7 +719,6 @@ const COLLECTIONS: PageDef = {
     Unallocated: m('t.amount - COALESCE(al.alloc,0)'),
     Particulars: t(`'Receipt ' || t.number`),
     Credit: m('t.amount'),
-    ...approvalCols('t.number'),
     Docs: none('docs'),
     Actions: ACTIONS,
   },
@@ -858,6 +862,7 @@ const LEADS: PageDef = {
   search: ['t.number', 't.name', 't.company', 't.mobile', 't.email'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Lead No': t('t.number'),
     'Lead Name': t('t.name'),
     Company: t('t.company'),
@@ -877,7 +882,6 @@ const LEADS: PageDef = {
     Interested: t('t.interest'),
     'Converted On': d('t.converted_at'),
     'Lost Reason': t('t.lost_reason'),
-    ...approvalCols('t.number'),
     Docs: DOCS('crm-leads'),
     Actions: ACTIONS,
   },
@@ -945,6 +949,7 @@ const OPPS: PageDef = {
   search: ['t.number', 't.title', 'cu.name'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Opportunity No': t('t.number'),
     Customer: t('cu.name'),
     'Opportunity Name': t('t.title'),
@@ -968,7 +973,6 @@ const OPPS: PageDef = {
     Quotations: n(
       `(SELECT count(*) FROM sales_quotations q WHERE q.opportunity_id=t.id AND q.deleted_at IS NULL)`,
     ),
-    ...approvalCols('t.number'),
     Docs: DOCS('crm-opportunities'),
     Actions: ACTIONS,
   },
@@ -1034,6 +1038,7 @@ const FOLLOWUPS: PageDef = {
   search: ['t.number', 't.title', 'cu.name'],
   order: 't.due_at, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Follow-up No': t('t.number'),
     'Lead Customer': t(
       `COALESCE(cu.name, (SELECT l.name FROM leads l WHERE t.related_type='LEAD' AND l.id=t.related_id))`,
@@ -1052,7 +1057,6 @@ const FOLLOWUPS: PageDef = {
     'Days Overdue': n(
       `CASE WHEN t.status='Open' AND t.due_at < now() THEN CURRENT_DATE - (t.due_at AT TIME ZONE 'Asia/Kolkata')::date END`,
     ),
-    ...approvalCols('t.number'),
     Docs: none('docs'),
     Actions: ACTIONS,
   },
@@ -1124,6 +1128,7 @@ const MEETINGS: PageDef = {
   search: ['t.number', 't.subject', 'cu.name'],
   order: 't.starts_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Meeting No': t('t.number'),
     Subject: t('t.subject'),
     'Customer Lead': t(
@@ -1139,7 +1144,6 @@ const MEETINGS: PageDef = {
     Participants: t(`CASE WHEN t.attendees IS NOT NULL THEN t.attendees::text END`),
     Owner: t('ow.name'),
     Outcome: t('t.outcome'),
-    ...approvalCols('t.number'),
     Docs: none('docs'),
     Actions: ACTIONS,
   },
@@ -1181,6 +1185,7 @@ const FEEDBACK: PageDef = {
   search: ['t.number', 'cu.name', 't.category', 't.comment'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Feedback No': t('t.number'),
     Customer: t('cu.name'),
     Date: d('t.given_on'),
@@ -1193,7 +1198,6 @@ const FEEDBACK: PageDef = {
     Status: { e: 't.status', type: 'pill' },
     Comment: t('t.comment'),
     'Action Taken': t('t.action_note'),
-    ...approvalCols('t.number'),
     Docs: none('docs'),
     Actions: ACTIONS,
   },
@@ -1253,6 +1257,7 @@ const SOURCES: PageDef = {
   search: ['t.code', 't.name'],
   order: 't.code',
   cols: {
+    ...approvalCols('t.code'),
     'Source Code': t('t.code'),
     'Source Name': t('t.name'),
     'UTM Source': none(),
@@ -1268,7 +1273,6 @@ const SOURCES: PageDef = {
     'Lead Value': m(
       `(SELECT COALESCE(sum(l.est_value),0) FROM leads l WHERE l.source_id=t.id AND l.deleted_at IS NULL)`,
     ),
-    ...approvalCols('t.code'),
     Actions: ACTIONS,
   },
   register: [
@@ -1538,10 +1542,11 @@ const ENQUIRIES: PageDef = {
   search: ['t.number', 'cu.name', 't.prospect_name', 't.product'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Enquiry Number': t('t.number'),
     'Customer ID': t('cu.code'),
     Customer: t('COALESCE(cu.name, t.prospect_name)'),
-    'Product ID': none(),
+    'Product ID': t(`(SELECT i.code FROM items i WHERE i.id=t.item_id)`),
     Product: t('t.product'),
     Quantity: n('t.qty'),
     'Expected Delivery Date': d('t.required_date'),
@@ -1560,7 +1565,6 @@ const ENQUIRIES: PageDef = {
     ),
     Quotation: t('sq.number'),
     'Lost Reason': t('t.lost_reason'),
-    ...approvalCols('t.number'),
     Docs: DOCS('sales-enquiries'),
     Actions: ACTIONS,
   },
@@ -1639,6 +1643,7 @@ const RESERVATIONS: PageDef = {
   search: ['t.code', 't.demand_ref', 'it.code', 'it.name', 'dm.cname'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.code'),
     'Reservation No': t('t.code'),
     'Demand Ref': t('t.demand_ref'),
     Customer: t('dm.cname'),
@@ -1650,7 +1655,6 @@ const RESERVATIONS: PageDef = {
     'Short Qty': n('GREATEST(t.required_qty - t.reserved_qty, 0)'),
     'Reserved Until': d('t.reserved_until'),
     Status: { e: 't.status', type: 'pill' },
-    ...approvalCols('t.code'),
     Docs: none('docs'),
     Actions: ACTIONS,
   },
@@ -1734,12 +1738,15 @@ const DELIVERY: PageDef = {
   search: ['t.number', 'cu.name'],
   order: 't.delivery_date NULLS LAST, t.number',
   cols: {
+    ...approvalCols('t.number'),
     'Delivery Plan No': t('t.number'),
     'Sales Order': t('t.number'),
     Customer: t('cu.name'),
-    'Ship To': t('t.ship_to'),
+    'Ship To': t(`COALESCE(NULLIF(t.ship_to,''), (SELECT d.ship_to FROM sales_dispatches d WHERE d.order_id=t.id AND d.deleted_at IS NULL ORDER BY d.created_at DESC LIMIT 1))`),
     'Promise Date': d('t.delivery_date'),
-    Route: none(),
+    Route: t(
+      `(SELECT NULLIF(concat_ws(' · ', d.transporter, d.vehicle_no), '') FROM sales_dispatches d WHERE d.order_id=t.id AND d.deleted_at IS NULL ORDER BY d.created_at DESC LIMIT 1)`,
+    ),
     Transporter: t(
       `(SELECT dp.transporter FROM sales_dispatches dp WHERE dp.order_id=t.id AND dp.deleted_at IS NULL AND dp.transporter IS NOT NULL ORDER BY dp.created_at DESC LIMIT 1)`,
     ),
@@ -1751,7 +1758,6 @@ const DELIVERY: PageDef = {
     'Days Late': n(
       `CASE WHEN COALESCE(ln.qty - ln.disp - ln.closed,0) > 0 AND t.delivery_date < CURRENT_DATE THEN CURRENT_DATE - t.delivery_date END`,
     ),
-    ...approvalCols('t.number'),
     Docs: none('docs'),
     Actions: ACTIONS,
   },
@@ -1826,6 +1832,7 @@ const CREDIT: PageDef = {
   search: ['t.code', 't.name'],
   order: 't.name, t.id',
   cols: {
+    ...approvalCols('t.code'),
     'Customer Code': t('t.code'),
     Customer: t('t.name'),
     'Credit Limit': m('t.credit_limit'),
@@ -1841,7 +1848,6 @@ const CREDIT: PageDef = {
     },
     'Credit Days': n('t.credit_days'),
     Tier: t('t.tier'),
-    ...approvalCols('t.code'),
     Docs: none('docs'),
     Actions: ACTIONS,
   },
@@ -1888,6 +1894,7 @@ const RETURNS: PageDef = {
   search: ['t.number', 'cu.name', 'iv.number', 't.credit_note_no'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.number'),
     'Return No': t('t.number'),
     Customer: t('cu.name'),
     'Invoice Ref': t('iv.number'),
@@ -1901,7 +1908,6 @@ const RETURNS: PageDef = {
     'Replacement Ref': none(),
     Status: { e: 't.status', type: 'pill' },
     'Return Value': m('t.grand_total'),
-    ...approvalCols('t.number'),
     Docs: DOCS('sales-returns'),
     Actions: ACTIONS,
   },
@@ -1976,6 +1982,7 @@ const PRICELIST: PageDef = {
   search: ['t.code', 't.name', 'cu.name'],
   order: 't.created_at DESC, t.id',
   cols: {
+    ...approvalCols('t.code'),
     'Price List Code': t('t.code'),
     'Price List Name': t('t.name'),
     'Customer Segment': t(
@@ -1994,7 +2001,6 @@ const PRICELIST: PageDef = {
     'Valid From': d('t.valid_from'),
     'Valid To': d('t.valid_to'),
     Items: n(`(SELECT count(*) FROM price_list_items pi WHERE pi.price_list_id=t.id)`),
-    ...approvalCols('t.code'),
     Docs: none('docs'),
     Actions: ACTIONS,
   },
@@ -2099,7 +2105,12 @@ function resolveView(def: PageDef, q: V40Query): { labels: string[]; view: ViewD
   if (/approval/i.test(name))
     return {
       labels: [...APPROVAL_LABELS, ...def.compact.filter((l) => l !== 'Status' && l !== 'Actions')],
-      view: { match: /./, labels: [], where: ['ap.id IS NOT NULL'] },
+      view: {
+        match: /./,
+        labels: [],
+        where: ['ap.id IS NOT NULL'],
+        cols: { Department: approvalCols('').Department as Col, Amount: approvalCols('').Amount as Col },
+      },
     };
   return { labels: def.compact, view: null };
 }

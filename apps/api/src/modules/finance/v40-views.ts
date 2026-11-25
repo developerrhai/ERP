@@ -52,6 +52,7 @@ const AP: PageDef = {
   metric: { label: 'Invoice Amount', e: 'abs(t.amount)' },
   calendar: 't.due_date',
   cols: {
+    ...approvalCols('t.doc_no'),
     'Vendor Invoice': t('COALESCE(pi.vendor_invoice_no, t.doc_no)'),
     Vendor: t('su.name'),
     'Invoice Date': d('t.doc_date'),
@@ -66,7 +67,6 @@ const AP: PageDef = {
     'Project Number': t('pr.code'),
     Docs: DOCS('fin-ap'),
     Actions: ACTIONS,
-    ...approvalCols('t.doc_no'),
   },
   register: ['Vendor Invoice', 'Vendor', 'Invoice Date', 'Due Date', 'Invoice Amount', 'Status', 'Project Number', 'Actions'],
   compact: AP_COMPACT,
@@ -109,6 +109,7 @@ const AR: PageDef = {
   metric: { label: 'Invoice Amount', e: 'abs(t.amount)' },
   calendar: 't.due_date',
   cols: {
+    ...approvalCols('t.doc_no'),
     'Invoice No': t('t.doc_no'),
     Customer: t('cu.name'),
     'Invoice Date': d('t.doc_date'),
@@ -119,7 +120,6 @@ const AR: PageDef = {
     Status: pill('t.status'),
     Docs: DOCS('fin-ar'),
     Actions: ACTIONS,
-    ...approvalCols('t.doc_no'),
   },
   register: ['Invoice No', 'Customer', 'Invoice Date', 'Due Date', 'Invoice Amount', 'Status', 'Received', 'Actions'],
   compact: AR_COMPACT,
@@ -184,6 +184,7 @@ const AGEING: PageDef = {
   order: 't.pname, t.side',
   metric: { label: 'Outstanding', e: 't.total' },
   cols: {
+    ...approvalCols('t.pcode'),
     'Party Code': t('t.pcode'),
     'Party Name': t('t.pname'),
     Type: t(`CASE t.side WHEN 'RECEIVABLE' THEN 'Customer' ELSE 'Supplier' END`),
@@ -194,7 +195,6 @@ const AGEING: PageDef = {
     'Over 90 Days': m('COALESCE(t.d90p,0)'),
     Status: pill(`CASE WHEN COALESCE(t.d90p,0)>0 THEN 'Critical' WHEN COALESCE(t.d30,0)+COALESCE(t.d60,0)+COALESCE(t.d90,0)>0 THEN 'Overdue' ELSE 'Current' END`),
     Actions: ACTIONS,
-    ...approvalCols('t.pcode'),
   },
   register: AGE_LABELS,
   compact: AGE_LABELS,
@@ -216,7 +216,8 @@ const AGEING: PageDef = {
 };
 
 // ================================================================================================ ledger pages (gl entries)
-const GL_PARTY = partyName('t', 't.party_type', 't.party_id');
+// the party of the line, else the party carried by another line of the same voucher (a cash / bank line is posted without it)
+const GL_PARTY = `COALESCE(${partyName('t', 't.party_type', 't.party_id')}, (SELECT ${partyName('gx', 'gx.party_type', 'gx.party_id')} FROM gl_entries gx WHERE gx.journal_id=t.journal_id AND gx.party_id IS NOT NULL LIMIT 1))`;
 const GL_BASE_FROM = (extraJoin = ''): string =>
   `gl_entries t JOIN accounts a ON a.id=t.account_id LEFT JOIN cost_centers cc ON cc.id=t.cost_center_id ${extraJoin} ${NOAP}`;
 const GL_STATUS = `CASE WHEN t.is_reversal THEN 'Reversal' ELSE 'Posted' END`;
@@ -231,6 +232,7 @@ const GL: PageDef = {
   metric: { label: 'Debit', e: 't.debit' },
   calendar: 't.posting_date',
   cols: {
+    ...approvalCols('t.voucher_no'),
     'Posting Date': d('t.posting_date'),
     'Voucher No': t('t.voucher_no'),
     'Voucher Type': t('t.voucher_type'),
@@ -241,7 +243,6 @@ const GL: PageDef = {
     'Cost Center': t('cc.name'),
     Status: pill(GL_STATUS),
     Actions: ACTIONS,
-    ...approvalCols('t.voucher_no'),
   },
   register: ['Posting Date', 'Voucher No', 'Voucher Type', 'Account', 'Narration', 'Status', 'Actions'],
   compact: GL_LABELS,
@@ -291,6 +292,7 @@ const CASHBOOK: PageDef = {
   metric: { label: 'Cash In', e: 't.debit' },
   calendar: 't.posting_date',
   cols: {
+    ...approvalCols('t.voucher_no'),
     Date: d('t.posting_date'),
     'Voucher No': t('t.voucher_no'),
     'Receipt Payment': t(RP),
@@ -300,7 +302,6 @@ const CASHBOOK: PageDef = {
     'Cash Out': m('t.credit'),
     Status: pill(GL_STATUS),
     Actions: ACTIONS,
-    ...approvalCols('t.voucher_no'),
   },
   register: CB_MAIN,
   compact: CASHBOOK_LABELS,
@@ -347,6 +348,7 @@ const BANKBOOK: PageDef = {
   metric: { label: 'Debit', e: 't.debit' },
   calendar: 't.posting_date',
   cols: {
+    ...approvalCols('t.voucher_no'),
     Date: d('t.posting_date'),
     'Voucher No': t('t.voucher_no'),
     'Bank Account': t('COALESCE(ba.name, a.name)'),
@@ -358,7 +360,6 @@ const BANKBOOK: PageDef = {
     Credit: m('t.credit'),
     Status: pill(GL_STATUS),
     Actions: ACTIONS,
-    ...approvalCols('t.voucher_no'),
   },
   register: ['Bank Account', 'Receipt Payment', 'Clearing Status', 'Status', 'Voucher No', 'Actions'],
   compact: BK_LABELS,
@@ -424,6 +425,7 @@ const JOURNAL: PageDef = {
   metric: { label: 'Debit Total', e: 't.total_debit' },
   calendar: 't.doc_date',
   cols: {
+    ...approvalCols('t.code'),
     'JV No': t('t.code'),
     Date: d('t.doc_date'),
     Reference: t('COALESCE(t.reference_no, t.source_doc_no)'),
@@ -433,7 +435,6 @@ const JOURNAL: PageDef = {
     'Cost Center': t('cc.name'),
     Status: pill(`CASE WHEN t.status='Draft' THEN t.posting_status ELSE t.status END`),
     Actions: ACTIONS,
-    ...approvalCols('t.code'),
   },
   register: ['JV No', 'Narration', 'Debit Total', 'Credit Total', 'Cost Center', 'Status', 'Actions'],
   compact: JV_COMPACT,
@@ -459,6 +460,7 @@ const COA: PageDef = {
   search: ['t.code', 't.name', 'pa.name'],
   order: 't.code',
   cols: {
+    ...approvalCols('t.code'),
     'Account Code': t('t.code'),
     'Account Name': t('t.name'),
     'Account Type': t('t.root_type'),
@@ -468,7 +470,6 @@ const COA: PageDef = {
     'Cost Center Required': t(`CASE WHEN t.cost_center_required THEN 'Yes' ELSE 'No' END`),
     Status: pill('t.status'),
     Actions: ACTIONS,
-    ...approvalCols('t.code'),
   },
   register: COA_LABELS,
   compact: COA_LABELS,
@@ -522,6 +523,7 @@ const COSTCENTER: PageDef = {
   order: 't.code',
   metric: { label: 'Budget', e: CC_BUDGET },
   cols: {
+    ...approvalCols('t.code'),
     'Cost Center Code': t('t.code'),
     'Cost Center Name': t('t.name'),
     Department: t('t.department'),
@@ -532,7 +534,6 @@ const COSTCENTER: PageDef = {
     Variance: m(`${CC_BUDGET} - ${CC_YTD('debit-credit', `'Expense'`)}`),
     Status: pill('t.status'),
     Actions: ACTIONS,
-    ...approvalCols('t.code'),
   },
   register: CC_LABELS,
   compact: CC_LABELS,
@@ -570,6 +571,7 @@ const PROFITCENTER: PageDef = {
   order: 't.code',
   metric: { label: 'Revenue', e: PC_REV },
   cols: {
+    ...approvalCols('t.code'),
     'Profit Center Code': t('t.code'),
     'Profit Center Name': t('t.name'),
     Branch: t('un.name'),
@@ -580,7 +582,6 @@ const PROFITCENTER: PageDef = {
     'Margin %': n(`CASE WHEN ${PC_REV} > 0 THEN round((${PC_REV} - ${PC_COST}) / ${PC_REV} * 100, 2) END`),
     Status: pill('t.status'),
     Actions: ACTIONS,
-    ...approvalCols('t.code'),
   },
   register: ['Profit Center Code', 'Profit Center Name', 'Status', 'Branch', 'Manager', 'Actions', 'Direct Cost', 'Allocated Cost', 'Margin %'],
   compact: PC_LABELS,
@@ -634,6 +635,7 @@ const BANKRECO: PageDef = {
   metric: { label: 'Bank Balance', e: 't.closing_balance' },
   calendar: 't.period_to',
   cols: {
+    ...approvalCols(`upper(left(t.id::text, 8))`),
     'Statement Ref': t(`upper(left(t.id::text, 8))`),
     'Bank Account': t('ba.name'),
     'Statement Date': d('t.period_to'),
@@ -643,7 +645,6 @@ const BANKRECO: PageDef = {
     'Unmatched Bank': m(REC_UNMATCHED),
     Status: pill('t.status'),
     Actions: ACTIONS,
-    ...approvalCols(`upper(left(t.id::text, 8))`),
   },
   register: REC_LABELS,
   compact: REC_LABELS,
@@ -740,8 +741,9 @@ const EXPENSES: PageDef = {
   metric: { label: 'Amount', e: 't.amount' },
   calendar: 't.claim_date',
   cols: {
+    ...approvalCols('t.code'),
     'Expense No': t('t.code'),
-    'Employee Vendor': t(`trim(e.first_name || ' ' || COALESCE(e.last_name,''))`),
+    'Employee Vendor': t(`COALESCE(NULLIF(trim(e.first_name || ' ' || COALESCE(e.last_name,'')), ''), (SELECT cu.name FROM users cu WHERE cu.id=t.created_by_id))`),
     Date: d('t.claim_date'),
     Category: t('t.category'),
     Department: t('cc.department'),
@@ -754,7 +756,6 @@ const EXPENSES: PageDef = {
     Status: pill('t.status'),
     Docs: DOCS('fin-expenses'),
     Actions: ACTIONS,
-    ...approvalCols('t.code'),
   },
   register: ['Expense No', 'Employee Vendor', 'Date', 'Category', 'Department', 'Cost Center', 'Amount', 'GST', 'Policy Result', 'Approver', 'Payment Status', 'Status', 'Docs', 'Actions'],
   compact: EXP_LABELS,
@@ -795,6 +796,7 @@ const BUDGET: PageDef = {
   order: 't.created_at DESC, t.name',
   metric: { label: 'Budget Amount', e: BUD_TOTAL },
   cols: {
+    ...approvalCols('t.name'),
     'Budget No': t('t.name'),
     'Financial Year': t('fyr.label'),
     Department: t('cc.department'),
@@ -806,7 +808,6 @@ const BUDGET: PageDef = {
     Variance: m(`${BUD_TOTAL} - ${BUD_ACTUAL}`),
     Status: pill('t.status'),
     Actions: ACTIONS,
-    ...approvalCols('t.name'),
   },
   register: BUD_LABELS,
   compact: BUD_LABELS,
@@ -977,6 +978,7 @@ const BALANCE: PageDef = {
   order: `CASE t.root_type WHEN 'Asset' THEN 0 WHEN 'Liability' THEN 1 ELSE 2 END, t.ord, t.code`,
   metric: { label: 'Current Period', e: 't.cur' },
   cols: {
+    ...approvalCols('t.code'),
     'Line Code': t('t.code'),
     Particulars: t('t.name'),
     'Current Period': m('t.cur'),
@@ -985,7 +987,6 @@ const BALANCE: PageDef = {
     Category: t('t.root_type'),
     Status: pill(BS_STATUS),
     Actions: ACTIONS,
-    ...approvalCols('t.code'),
   },
   register: BS_LABELS,
   compact: BS_LABELS,
@@ -1039,6 +1040,7 @@ const CASHFLOW: PageDef = {
   order: 't.cat, t.code',
   metric: { label: 'YTD', e: 't.ytd' },
   cols: {
+    ...approvalCols('t.code'),
     'Line Code': t(`t.code || ' ' || t.name`),
     'Cash Flow Category': t('t.cat'),
     'Current Month': m('t.cm'),
@@ -1048,7 +1050,6 @@ const CASHFLOW: PageDef = {
     Variance: none('inr'),
     Status: pill(CF_STATUS),
     Actions: ACTIONS,
-    ...approvalCols('t.code'),
   },
   register: CF_LABELS,
   compact: CF_LABELS,

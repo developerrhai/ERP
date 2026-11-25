@@ -131,6 +131,18 @@ export const listCustomers = (
     `/customers${qs({ q: q.q, status: q.status, page: q.page ?? 1, size: q.size ?? 20 })}`,
   );
 
+export const getCustomer = (id: string) => api<Customer>(`/customers/${id}`);
+
+export interface CustomerEdit {
+  name?: string;
+  legalName?: string | null;
+  tier?: 'A' | 'B' | 'C' | 'D';
+  status?: 'ACTIVE' | 'INACTIVE';
+}
+/** Everyday details only: GSTIN / PAN / credit limit have their own controlled paths. */
+export const updateCustomer = (id: string, version: number, body: CustomerEdit) =>
+  api<Customer>(`/customers/${id}`, { method: 'PUT', body, headers: { 'If-Match': `"${version}"` } });
+
 export const createCustomer = (
   input: PartyInput & { creditLimit?: number | null; creditDays?: number | null },
 ) =>

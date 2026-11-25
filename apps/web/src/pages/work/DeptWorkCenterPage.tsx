@@ -99,42 +99,42 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
         <div className="v39-metric danger">
           <div>
             <small>Pending Receipt</small>
-            <b>{counts ? counts.pendingReceipt : 0}</b>
+            <b>{counts ? counts.pendingReceipt : '—'}</b>
           </div>
           <i>↓</i>
         </div>
         <div className="v39-metric warn">
           <div>
             <small>Pending Acceptance</small>
-            <b>{counts ? counts.pendingAcceptance : 0}</b>
+            <b>{counts ? counts.pendingAcceptance : '—'}</b>
           </div>
           <i>✓</i>
         </div>
         <div className="v39-metric">
           <div>
             <small>Active Department Work</small>
-            <b>{counts ? counts.work : 0}</b>
+            <b>{counts ? counts.work : '—'}</b>
           </div>
           <i>⚙</i>
         </div>
         <div className="v39-metric good">
           <div>
             <small>Approval Inbox</small>
-            <b>{counts ? counts.approval : 0}</b>
+            <b>{counts ? counts.approval : '—'}</b>
           </div>
           <i>◎</i>
         </div>
         <div className="v39-metric">
           <div>
             <small>Ready to Move</small>
-            <b>{counts ? (counts as any).readyToMove ?? rows.filter((r) => (r as any).status === 'READY_TO_MOVE' || (r as any).status === 'ACCEPTED').length : 0}</b>
+            <b>{counts ? (counts as any).readyToMove ?? rows.filter((r) => (r as any).status === 'READY_TO_MOVE' || (r as any).status === 'ACCEPTED').length : '—'}</b>
           </div>
           <i>→</i>
         </div>
         <div className="v39-metric warn">
           <div>
             <small>Sent / Waiting</small>
-            <b>{counts ? (counts as any).sentWaiting ?? 0 : 0}</b>
+            <b>{counts ? (counts as any).sentWaiting ?? 0 : '—'}</b>
           </div>
           <i>⏳</i>
         </div>

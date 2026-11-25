@@ -12,8 +12,10 @@ import {
   type ProjectOption,
 } from '../../lib/spineApi';
 import { useLoad } from '../../lib/useLoad';
-import { lookupCustomers } from '../../lib/scmApi';
 import { Combobox, DateField } from '../../ui/components';
+import { lookupItems, type Ref } from '../../lib/inventoryApi';
+import { lookupCustomers, type Option } from '../../lib/scmApi';
+import { LookupCombo } from '../procurement/DocPage';
 import type { ActionSet } from '../../types';
 import { V40Register } from '../sales/V40Register';
 import { EnquiryDialog } from './EnquiryDialog';
@@ -136,7 +138,17 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
   );
   const [adding, setAdding] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [form, setForm] = useState({ prospectName: '', product: '', qty: '', projectTemplate: '' });
+  const [form, setForm] = useState({
+    prospectName: '',
+    product: '',
+    qty: '',
+    projectTemplate: '',
+    customerId: '',
+    itemId: '',
+    contact: '',
+    requiredDate: '',
+    application: '',
+  });
   const [lost, setLost] = useState<Enquiry | null>(null);
   const [reason, setReason] = useState('');
   // an enquiry line is free text with no HSN, so the GST rate is asked for here
@@ -250,6 +262,7 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
       {list.error ? <p role="alert">{list.error}</p> : null}
       <V40Register
         pageId="sales-enquiries"
+        host
         reloadKey={list.data}
         onChanged={list.reload}
         onOpen={setOpenId}
@@ -433,18 +446,61 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Add enquiry">
           <div className="modal">
             <h2>New enquiry</h2>
+            <div className="field">
+              <label htmlFor="enq-cust">Customer (from the Customer master)</label>
+              <LookupCombo<Option>
+                id="enq-cust"
+                value={form.customerId}
+                search={lookupCustomers}
+                label={(o) => o.label}
+                onPick={(o) => setForm({ ...form, customerId: o?.id ?? '' })}
+              />
+            </div>
             <label>
-              Customer or prospect name
+              Or a new prospect's name
               <input
                 value={form.prospectName}
+                disabled={!!form.customerId}
                 onChange={(e) => setForm({ ...form, prospectName: e.target.value })}
               />
             </label>
+            <div className="field">
+              <label htmlFor="enq-item">Product (from the Item master)</label>
+              <LookupCombo<Ref>
+                id="enq-item"
+                value={form.itemId}
+                search={lookupItems}
+                label={(o) => `${o.code} · ${o.name}`}
+                onPick={(o) =>
+                  setForm({ ...form, itemId: o?.id ?? '', product: o && o.name ? o.name : form.product })
+                }
+              />
+            </div>
             <label>
-              Product
+              Product description
               <input
                 value={form.product}
                 onChange={(e) => setForm({ ...form, product: e.target.value })}
+                placeholder="Filled from the item; type it for a new product"
+              />
+            </label>
+            <label>
+              Contact person
+              <input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} />
+            </label>
+            <label>
+              Expected delivery date
+              <input
+                type="date"
+                value={form.requiredDate}
+                onChange={(e) => setForm({ ...form, requiredDate: e.target.value })}
+              />
+            </label>
+            <label>
+              Application
+              <input
+                value={form.application}
+                onChange={(e) => setForm({ ...form, application: e.target.value })}
               />
             </label>
             <label>
@@ -479,12 +535,30 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
                     () =>
                       spineApi
                         .addEnquiry({
-                          prospectName: form.prospectName || null,
+                          customerId: form.customerId || null,
+                          itemId: form.itemId || null,
+                          prospectName: form.customerId ? null : form.prospectName || null,
                           product: form.product,
+                          contact: form.contact || null,
+                          application: form.application || null,
+                          requiredDate: form.requiredDate || null,
                           qty: form.qty ? Number(form.qty) : null,
                           projectTemplate: form.projectTemplate || null,
                         })
-                        .then(() => setAdding(false)),
+                        .then(() => {
+                          setAdding(false);
+                          setForm({
+                            prospectName: '',
+                            product: '',
+                            qty: '',
+                            projectTemplate: '',
+                            customerId: '',
+                            itemId: '',
+                            contact: '',
+                            requiredDate: '',
+                            application: '',
+                          });
+                        }),
                     'Enquiry saved.',
                   )
                 }

@@ -229,7 +229,8 @@ function Bar({
     const handler = (e: Event) => {
       const ce = e as CustomEvent<{ pageId: string; recordId: string; docNo: string }>;
       if (ce.detail && (!pageId || ce.detail.pageId === pageId)) {
-        setSyncedRecord({ id: ce.detail.recordId, docNo: ce.detail.docNo });
+        // an empty id = the page un-ticked its record: the buttons go back to "select a record"
+        setSyncedRecord(ce.detail.recordId ? { id: ce.detail.recordId, docNo: ce.detail.docNo } : null);
       }
     };
     window.addEventListener('v40-active-record', handler);

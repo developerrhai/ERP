@@ -9,7 +9,7 @@ import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { decideRequest, getRequests } from '../../lib/approvalsApi';
 import { docsMailApi, saveFile } from '../../lib/docsMailApi';
-import { toUiError } from '../../lib/errors';
+import { toUiMessage } from '../../lib/errors';
 import { formatDateTime } from '../../lib/format';
 import { submitSupplier } from '../../lib/mastersApi';
 import { deleteDoc, verb } from '../../lib/scmApi';
@@ -822,7 +822,7 @@ export function V40Body({
         else await submitSupplier(String(r.id));
         ok += 1;
       } catch (e) {
-        fails.push(`${String(r.number ?? r.vendorId)}: ${toUiError(e).message}`);
+        fails.push(`${String(r.number ?? r.vendorId)}: ${toUiMessage(e)}`);
       }
     }
     toast(`${ok} submitted${fails.length ? `, ${fails.length} failed (${fails[0] ?? ''})` : ''}`);
@@ -837,7 +837,7 @@ export function V40Body({
         if (spec?.path) await deleteDoc(spec.path, String(r.id), num(r.version));
         ok += 1;
       } catch (e) {
-        setError(toUiError(e).message);
+        setError(toUiMessage(e));
       }
     }
     toast(`${ok} draft${ok === 1 ? '' : 's'} deleted`);
@@ -1202,7 +1202,7 @@ export function V40Body({
             if (firstId) {
               void docsMailApi.print(pageId, firstId, 'standard').then(
                 (f) => saveFile(f, `${spec.title}_Register.pdf`),
-                (e: unknown) => toast(toUiError(e).message),
+                (e: unknown) => toast(toUiMessage(e)),
               );
             } else {
               window.print();
@@ -1308,7 +1308,7 @@ function RowActions({
     try {
       saveFile(await docsMailApi.print(pageId, id, 'standard'), `${no || 'document'}.pdf`);
     } catch (e) {
-      toast(toUiError(e).message);
+      toast(toUiMessage(e));
     }
   }
   async function word(): Promise<void> {
@@ -1339,7 +1339,7 @@ function RowActions({
       toast(`Submitted ${no}`);
       onChanged();
     } catch (e) {
-      toast(toUiError(e).message);
+      toast(toUiMessage(e));
     }
   }
   async function deleteOne(): Promise<void> {
@@ -1350,7 +1350,7 @@ function RowActions({
         onChanged();
       }
     } catch (e) {
-      toast(toUiError(e).message);
+      toast(toUiMessage(e));
     }
   }
   const isDraft = !row.status || String(row.status) === 'Draft';
@@ -1884,7 +1884,7 @@ function RevisionPanel({ spec, rows, pageId, actions, reload }: PanelCtx) {
       setMsg('');
       reload();
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
 
@@ -1948,7 +1948,7 @@ function RevisionPanel({ spec, rows, pageId, actions, reload }: PanelCtx) {
                         reqs.reload();
                         reload();
                       },
-                      (e: unknown) => toast(toUiError(e).message),
+                      (e: unknown) => toast(toUiMessage(e)),
                     )
                   }
                 >
@@ -1965,7 +1965,7 @@ function RevisionPanel({ spec, rows, pageId, actions, reload }: PanelCtx) {
                         reqs.reload();
                         reload();
                       },
-                      (e: unknown) => toast(toUiError(e).message),
+                      (e: unknown) => toast(toUiMessage(e)),
                     )
                   }
                 >
@@ -2532,7 +2532,7 @@ function ApprovalsList({ pageId, actions }: { pageId: string; actions: ActionSet
                               toast(`Approved ${r.docCode}`);
                               a.reload();
                             },
-                            (e: unknown) => toast(toUiError(e).message),
+                            (e: unknown) => toast(toUiMessage(e)),
                           )
                         }
                       >
@@ -2548,7 +2548,7 @@ function ApprovalsList({ pageId, actions }: { pageId: string; actions: ActionSet
                               toast(`Rejected ${r.docCode}`);
                               a.reload();
                             },
-                            (e: unknown) => toast(toUiError(e).message),
+                            (e: unknown) => toast(toUiMessage(e)),
                           )
                         }
                       >

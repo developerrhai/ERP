@@ -10,9 +10,11 @@ import {
   createDimension,
   deleteDimension,
   listDimension,
+  listManagers,
   updateDimension,
   type Dimension,
 } from '../../lib/financeApi';
+import { workApi } from '../../lib/workApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { Empty, ErrorBox, PageHead, Pill } from './shared';
@@ -216,6 +218,10 @@ function DimensionForm({
   const [parentId, setParentId] = useState(item?.parentId ?? '');
   const [isGroup, setIsGroup] = useState(item?.isGroup ?? false);
   const [status, setStatus] = useState<'Active' | 'Inactive'>(item?.status ?? 'Active');
+  const [department, setDepartment] = useState(item?.department ?? '');
+  const [managerId, setManagerId] = useState(item?.managerId ?? '');
+  const managers = useLoad(listManagers, []);
+  const departments = useLoad(() => workApi.departments(), []);
   const [err, setErr] = useState<UiError | null>(null);
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
@@ -243,12 +249,27 @@ function DimensionForm({
           await createDimension(
             kind,
             kind === 'cost'
-              ? { code, name: name.trim(), parentId: parentId || null, isGroup, unitId }
-              : { code, name: name.trim(), unitId },
+              ? {
+                  code,
+                  name: name.trim(),
+                  parentId: parentId || null,
+                  isGroup,
+                  unitId,
+                  department: department || null,
+                  managerId: managerId || null,
+                }
+              : { code, name: name.trim(), unitId, managerId: managerId || null },
           ),
         );
       } else {
-        onSaved(await updateDimension(kind, item.id, item.version, { name: name.trim(), status }));
+        onSaved(
+          await updateDimension(kind, item.id, item.version, {
+            name: name.trim(),
+            status,
+            managerId: managerId || null,
+            ...(kind === 'cost' ? { department: department || null } : {}),
+          }),
+        );
       }
     } catch (caught) {
       setErr(
@@ -291,6 +312,24 @@ function DimensionForm({
           onChange={(e) => setName(e.target.value)}
           error={err?.fields.name}
         />
+ {kind === 'cost' ? (
+          <SelectField label="Department" value={department} onChange={setDepartment}>
+            <option value="">(not set)</option>
+            {(departments.data ?? []).map((d) => (
+              <option key={d.id} value={d.name}>
+                {d.name}
+              </option>
+            ))}
+          </SelectField>
+        ) : null}
+        <SelectField label="Manager" value={managerId} onChange={setManagerId}>
+          <option value="">(not set)</option>
+          {(managers.data ?? []).map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+        </SelectField>
         {!item && kind === 'cost' ? (
           <>
             <SelectField label="Belongs to" value={parentId} onChange={setParentId}>

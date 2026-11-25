@@ -346,7 +346,10 @@ export async function runV40(
   const def = defs[pageId];
   if (!def) throw new Error(`No V40 views for ${pageId}`);
   const { labels, view, approvals } = resolveView(def, q);
-  const cols: Record<string, Col> = def.cols;
+  // the Approvals tab shows the approving department and the approval amount; every other tab keeps the page's own columns
+  const cols: Record<string, Col> = approvals
+    ? { ...def.cols, Department: approvalCols('').Department as Col, Amount: approvalCols('').Amount as Col }
+    : def.cols;
   const columns: V40Column[] = labels.map((label, i) => {
     const c = cols[label] ?? none();
     return {

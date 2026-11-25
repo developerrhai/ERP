@@ -56,6 +56,11 @@ export function CashBankPage({ cash, actions }: { cash: boolean; actions: Action
             ＋ New Entry
           </button>
         ) : null}
+        {actions.add && books.data && mine.length === 0 ? (
+          <button type="button" className="btn primary" onClick={() => setDialog('account')}>
+            ＋ Add {cash ? 'Cash' : 'Bank'} Account
+          </button>
+        ) : null}
       </PageHead>
       <ErrorBox message={books.error || book.error} />
       <FinV40

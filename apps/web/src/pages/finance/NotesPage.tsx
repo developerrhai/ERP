@@ -17,6 +17,7 @@ import {
   listCustomers,
   listNotes,
   noteSettlement,
+  openBills,
   type NoteSettlement,
   listSuppliers,
   postNote,
@@ -317,6 +318,16 @@ function NoteForm({
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [against, setAgainst] = useState('');
+  // the open invoices of the chosen party: the note is raised against one of them, not against a typed number
+  const invoices = useLoad(
+    () => (partyId ? openBills(partyId, credit ? 'RECEIVABLE' : 'PAYABLE') : Promise.resolve([])),
+    [partyId, credit],
+  );
+  const pickInvoice = (docNo: string): void => {
+    setAgainst(docNo);
+    const inv = (invoices.data ?? []).find((b) => b.docNo === docNo);
+    if (inv && !amount) setAmount(String(Math.abs(Number(inv.outstanding))));
+  };
   const [err, setErr] = useState<UiError | null>(null);
   const [pending, setPending] = useState(false);
   const submit = async (e: FormEvent) => {
@@ -436,11 +447,26 @@ function NoteForm({
           error={err?.fields.reason}
           placeholder="Why is this note being raised?"
         />
-        <Field
-          label="Against invoice no."
+        <SelectField
+          label={credit ? 'Against sales invoice' : 'Against purchase invoice'}
           value={against}
-          onChange={(e) => setAgainst(e.target.value)}
-        />
+          onChange={pickInvoice}
+        >
+          <option value="">
+            {!partyId
+              ? 'Choose the party first…'
+              : (invoices.data ?? []).length
+                ? 'Choose an invoice (optional)…'
+                : 'No open invoice for this party'}
+          </option>
+          {(invoices.data ?? [])
+            .filter((b) => Number(b.outstanding) > 0)
+            .map((b) => (
+              <option key={b.id} value={b.docNo}>
+                {b.docNo} · {dmy(b.docDate)} · open {inr(b.outstanding)}
+              </option>
+            ))}
+        </SelectField>
       </form>
     </Modal>
   );

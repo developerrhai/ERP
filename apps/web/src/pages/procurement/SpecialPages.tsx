@@ -5,7 +5,7 @@ import { FinV40 } from '../finance/FinV40';
 import { useState } from 'react';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { toUiError } from '../../lib/errors';
+import { toUiMessage } from '../../lib/errors';
 import { lookupWarehouses, listBins, type Ref } from '../../lib/inventoryApi';
 import {
   createDoc,
@@ -64,7 +64,7 @@ export function GrnPage({ actions }: { actions: ActionSet }) {
           onView={(id) =>
             void getDoc('/scm/grn', id)
               .then(setOpen)
-              .catch((e: unknown) => setError(toUiError(e).message))
+              .catch((e: unknown) => setError(toUiMessage(e)))
           }
           onChanged={list.reload}
         />
@@ -95,7 +95,7 @@ export function GrnPage({ actions }: { actions: ActionSet }) {
                       onClick={() =>
                         void getDoc('/scm/grn', g.id)
                           .then(setOpen)
-                          .catch((e: unknown) => setError(toUiError(e).message))
+                          .catch((e: unknown) => setError(toUiMessage(e)))
                       }
                     >
                       {s(g.number)}
@@ -187,7 +187,7 @@ function ReceiveForm({
         })),
       );
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   async function save() {
@@ -231,7 +231,7 @@ function ReceiveForm({
       const hold = rowsOf(done.lines).filter((l) => l.qcRequired === true).length;
       onSaved(done, hold ? `Stock in QC hold: ${hold} lines` : `Receipt ${s(done.number)} saved`);
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   return (
@@ -373,7 +373,7 @@ function GrnDetail({
       await fn();
       onChanged(await getDoc('/scm/grn', grn.id), text);
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   return (
@@ -533,7 +533,7 @@ export function InvoicePage({ actions }: { actions: ActionSet }) {
           onView={(id) =>
             void getDoc('/scm/purchaseinvoice', id)
               .then(setOpen)
-              .catch((e: unknown) => setError(toUiError(e).message))
+              .catch((e: unknown) => setError(toUiMessage(e)))
           }
           onChanged={list.reload}
         />
@@ -564,7 +564,7 @@ export function InvoicePage({ actions }: { actions: ActionSet }) {
                       onClick={() =>
                         void getDoc('/scm/purchaseinvoice', i.id)
                           .then(setOpen)
-                          .catch((e: unknown) => setError(toUiError(e).message))
+                          .catch((e: unknown) => setError(toUiMessage(e)))
                       }
                     >
                       {s(i.number)}
@@ -653,7 +653,7 @@ function InvoiceForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: D
         })),
       );
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   async function save() {
@@ -673,7 +673,7 @@ function InvoiceForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: D
         }),
       );
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   return (
@@ -792,7 +792,7 @@ function InvoiceDetail({
       await fn();
       onChanged(await getDoc('/scm/purchaseinvoice', inv.id), text);
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   return (
@@ -989,7 +989,7 @@ export function ComparisonPage({ actions }: { actions: ActionSet }) {
       toast(text);
       list.reload();
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   return (
@@ -1027,7 +1027,7 @@ export function ComparisonPage({ actions }: { actions: ActionSet }) {
           onView={(id) =>
             void getDoc('/scm/comparison', id)
               .then(setOpen)
-              .catch((e: unknown) => setMsg(toUiError(e).message))
+              .catch((e: unknown) => setMsg(toUiMessage(e)))
           }
           onChanged={list.reload}
         />
@@ -1190,13 +1190,13 @@ export function ApPage({ actions }: { actions: ActionSet }) {
                   toast('Payment proposal created: submit it for approval');
                   props.reload();
                 })
-                .catch((e: unknown) => setMsg(toUiError(e).message));
+                .catch((e: unknown) => setMsg(toUiMessage(e)));
             }}
           >
-            ＋ Proposal for invoices due till
+            ＋ New Payment Proposal
           </button>
         ) : null}
-        <DateField aria-label="Due till" value={till} onChange={(e) => setTill(e.target.value)} />
+        <DateField aria-label="Invoices due till" title="Invoices due till" value={till} onChange={(e) => setTill(e.target.value)} />
       </PageHead>
       <FinV40
         pageId="fin-ap"
@@ -1394,7 +1394,7 @@ function PostPayment({ id, onDone }: { id: string; onDone: () => void }) {
                 setOpen(false);
                 onDone();
               })
-              .catch((e: unknown) => setMsg(toUiError(e).message));
+              .catch((e: unknown) => setMsg(toUiMessage(e)));
           }}
         >
           Record payment
@@ -1460,7 +1460,7 @@ export function PutawayPage({ actions }: { actions: ActionSet }) {
                     toast('Task claimed');
                     list.reload();
                   })
-                  .catch((e: unknown) => setMsg(toUiError(e).message));
+                  .catch((e: unknown) => setMsg(toUiMessage(e)));
               }}
             >
               Claim
@@ -1516,7 +1516,7 @@ function BinDialog({
             setMsg('');
             verb('/wms/putaway', s(task.id), 'complete', { binId: chosen })
               .then(onDone)
-              .catch((e: unknown) => setMsg(toUiError(e).message));
+              .catch((e: unknown) => setMsg(toUiMessage(e)));
           }}
         >
           Done
@@ -1569,7 +1569,7 @@ export function EvaluationPage({ actions }: { actions: ActionSet }) {
                   toast('Evaluation updated');
                   list.reload();
                 })
-                .catch((e: unknown) => setMsg(toUiError(e).message));
+                .catch((e: unknown) => setMsg(toUiMessage(e)));
             }}
           >
             Run evaluation

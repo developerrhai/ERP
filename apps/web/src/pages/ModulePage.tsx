@@ -166,6 +166,7 @@ import { DeptInboxPage, DeptWorkPage, WorkflowMatrixPage } from './work/WorkPage
 import { MyApprovalsPage } from './work/MyApprovalsPage';
 import { V40TabFrame, v40TabsFor } from './frame/V40TabFrame';
 import { DeptMailboxPage } from './work/DeptMailboxPage';
+import { SalesPriceListPage } from './sales/SalesPriceListPage';
 import { DepartmentMovementPage, InterplantMovementPage, MaintPartMovementPage, ProcessMovementPage } from './work/MovementRegisterPage';
 import { PlantUnitRoutingPage } from './mfg/RoutePlantUnitRouting';
 import { MfgUnitRoutePage } from './mfg/RouteLivePage';
@@ -592,12 +593,14 @@ function PageBody({
       return <DocPage cfg={SO_CFG} actions={actions} />;
     case 'sales-reservations':
       return <SalesReservationsPage actions={actions} />;
+    case 'sales-pricelist':
+      return <SalesPriceListPage actions={actions} />;
     case 'master-customers':
       return <PartyMasterPage kind="CUSTOMER" actions={actions} />;
     case 'sales-credit':
-      return <CreditPage />;
+      return <CreditPage actions={actions} />;
     case 'sales-delivery':
-      return <DeliveryPlanPage />;
+      return <DeliveryPlanPage actions={actions} />;
     case 'sales-dispatch':
       return <DispatchPage actions={actions} />;
     case 'sales-invoices':

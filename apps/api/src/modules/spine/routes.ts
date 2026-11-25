@@ -18,7 +18,7 @@ const num = z.number().finite().nullable().optional();
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 const enqBody = z.object({
-  customerId: z.string().uuid().nullable().optional(), prospectName: z.string().max(120).nullable().optional(), contact: z.string().max(120).nullable().optional(),
+  customerId: z.string().uuid().nullable().optional(), itemId: z.string().uuid().nullable().optional(), prospectName: z.string().max(120).nullable().optional(), contact: z.string().max(120).nullable().optional(),
   product: z.string().min(1).max(200), application: z.string().max(300).nullable().optional(), qty: num, requiredDate: date.nullable().optional(),
   source: z.string().max(60).nullable().optional(), assignedToId: z.string().uuid().nullable().optional(), projectTemplate: z.enum(['BLDC', 'SPPM', 'CUSTOM']).nullable().optional(),
   unitId: z.string().uuid().optional(),
@@ -40,7 +40,7 @@ export function createSpineRouter(): Router {
   r.post('/sales/enquiries', requirePageAction('sales-enquiries', 'add'), validate({ body: enqBody }), h(async (req, res) => ok(res, await spineService.createEnquiry(callerOf(req), validated(res, 'body', enqBody)), 201)));
   r.get('/sales/enquiries/:id', requirePageAction('sales-enquiries', 'view'), validate({ params: id }), h(async (req, res) => ok(res, await spineService.enquiry(callerOf(req), validated(res, 'params', id).id))));
   const enqPatch = z.object({
-    customerId: z.string().uuid().nullable().optional(), prospectName: z.string().max(120).nullable().optional(), contact: z.string().max(120).nullable().optional(),
+    customerId: z.string().uuid().nullable().optional(), itemId: z.string().uuid().nullable().optional(), prospectName: z.string().max(120).nullable().optional(), contact: z.string().max(120).nullable().optional(),
     product: z.string().min(1).max(200).optional(), application: z.string().max(300).nullable().optional(), qty: num.optional(), requiredDate: date.nullable().optional(),
     source: z.string().max(60).nullable().optional(), assignedToId: z.string().uuid().nullable().optional(), projectTemplate: z.enum(['BLDC', 'SPPM', 'CUSTOM']).nullable().optional(),
   }).strict();

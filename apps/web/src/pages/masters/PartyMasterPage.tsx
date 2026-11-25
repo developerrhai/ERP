@@ -12,7 +12,7 @@ import { ErrorMessage } from '../../components/ErrorMessage';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
 import { useToast } from '../../components/Toast';
-import { toUiError } from '../../lib/errors';
+import { toUiError, toUiMessage } from '../../lib/errors';
 import { inr } from '../../lib/approvalsApi';
 import {
   addBankAccount,
@@ -20,10 +20,12 @@ import {
   createCustomer,
   createSupplier,
   decodeGstin,
+  getCustomer,
   listCustomers,
   listSuppliers,
   requestCreditChange,
   submitSupplier,
+  updateCustomer,
   verifyBankAccount,
   type Customer,
   type DupHit,
@@ -55,9 +57,18 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
   const { pageId: routePage = '' } = useParams();
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
-  const [dialog, setDialog] = useState<'add' | { credit: Customer } | { bank: Supplier } | null>(
-    null,
-  );
+  const [dialog, setDialog] = useState<
+    'add' | { credit: Customer } | { bank: Supplier } | { view: Customer } | { edit: Customer } | null
+  >(null);
+  const [rowError, setRowError] = useState('');
+  /** View / Edit of a register row: the row of this page, else the record by id. */
+  const openCustomer = (id: string, mode: 'view' | 'edit'): void => {
+    setRowError('');
+    const hit = rows.find((x) => x.id === id) as Customer | undefined;
+    const done = (c: Customer): void => setDialog(mode === 'view' ? { view: c } : { edit: c });
+    if (hit && mode === 'view') return done(hit);
+    getCustomer(id).then(done, (e: unknown) => setRowError(toUiMessage(e)));
+  };
   const isCustomer = kind === 'CUSTOMER';
   // Supplier Master inside the V40 tab frame: the V40 tabs and columns (procurement/V40Body.tsx)
   const v40Suppliers = Boolean(useFrame()) && !isCustomer;
@@ -101,6 +112,7 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
         />
       </div>
       {load.error ? <ErrorMessage onReload={load.reload}>{load.error}</ErrorMessage> : null}
+      {rowError ? <ErrorMessage onReload={() => setRowError('')}>{rowError}</ErrorMessage> : null}
       {v40Suppliers ? (
         <V40Body
           pageId="scm-suppliers"
@@ -134,6 +146,9 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
         actions={actions}
         reloadKey={load.data}
         onChanged={load.reload}
+        onOpen={isCustomer ? (id) => openCustomer(id, 'view') : undefined}
+        onEdit={isCustomer && actions.edit ? (id) => openCustomer(id, 'edit') : undefined}
+        canEditRow={() => true}
         rowExtra={(r) =>
           isCustomer && actions.edit ? (
             <button
@@ -221,7 +236,7 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
                                     toast(`${r.code} sent for approval.`);
                                     load.reload();
                                   })
-                                  .catch((err: unknown) => toast(toUiError(err).message));
+                                  .catch((err: unknown) => toast(toUiMessage(err)));
                               }}
                             >
                               Submit for Approval
@@ -281,6 +296,20 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
           }}
         />
       ) : null}
+      {dialog && typeof dialog === 'object' && 'view' in dialog ? (
+        <CustomerViewDialog customer={dialog.view} onClose={() => setDialog(null)} />
+      ) : null}
+      {dialog && typeof dialog === 'object' && 'edit' in dialog ? (
+        <CustomerEditDialog
+          customer={dialog.edit}
+          onClose={() => setDialog(null)}
+          onDone={(msg) => {
+            setDialog(null);
+            load.reload();
+            toast(msg);
+          }}
+        />
+      ) : null}
       {dialog && typeof dialog === 'object' && 'bank' in dialog ? (
         <BankDialog
           supplier={dialog.bank}
@@ -289,6 +318,114 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
         />
       ) : null}
     </>
+  );
+}
+
+function CustomerViewDialog({ customer: c, onClose }: { customer: Customer; onClose: () => void }) {
+  const row = (label: string, value: string | number | null | undefined) => (
+    <div key={label}>
+      <dt>{label}</dt>
+      <dd>{value === null || value === undefined || value === '' ? '—' : value}</dd>
+    </div>
+  );
+  return (
+    <Modal
+      title={`${c.code} · ${c.name}`}
+      onClose={onClose}
+      footer={
+        <button type="button" className="btn" onClick={onClose}>
+          Close
+        </button>
+      }
+    >
+      <dl className="kv">
+        {row('Customer code', c.code)}
+        {row('Name', c.name)}
+        {row('Legal name', c.legalName)}
+        {row('GST registration', REG_TYPES.find((t) => t.value === c.gstRegistrationType)?.label)}
+        {row('GSTIN', c.gstin)}
+        {row('PAN', c.pan)}
+        {row('State code', c.stateCode)}
+        {row('Currency', c.currencyCode)}
+        {row('Credit limit', c.creditLimit === null ? 'No limit' : inr(c.creditLimit))}
+        {row('Credit days', c.creditDays)}
+        {row('Tier', c.tier)}
+        {row('Approval', approvalLabel[c.approvalStatus])}
+        {row('Status', c.status)}
+      </dl>
+    </Modal>
+  );
+}
+
+function CustomerEditDialog({
+  customer: c,
+  onClose,
+  onDone,
+}: {
+  customer: Customer;
+  onClose: () => void;
+  onDone: (msg: string) => void;
+}) {
+  const [name, setName] = useState(c.name);
+  const [legalName, setLegalName] = useState(c.legalName ?? '');
+  const [tier, setTier] = useState<Customer['tier']>(c.tier);
+  const [status, setStatus] = useState<Customer['status']>(c.status);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const save = (): void => {
+    setError('');
+    if (name.trim().length < 2) return setError('Enter the customer name (at least 2 letters).');
+    setBusy(true);
+    updateCustomer(c.id, c.version, { name: name.trim(), legalName: legalName.trim() || null, tier, status })
+      .then(() => onDone(`${c.code} saved.`))
+      .catch((e: unknown) => setError(toUiMessage(e)))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <Modal
+      title={`Edit ${c.code}`}
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="btn primary" disabled={busy} onClick={save}>
+            {busy ? 'Saving…' : 'Save'}
+          </button>
+        </>
+      }
+    >
+      {error ? <p role="alert" className="field-error">{error}</p> : null}
+      <div className="form-grid">
+        <div className="field">
+          <label htmlFor="ce-name">Name *</label>
+          <input id="ce-name" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="field">
+          <label htmlFor="ce-legal">Legal name</label>
+          <input id="ce-legal" value={legalName} onChange={(e) => setLegalName(e.target.value)} />
+        </div>
+        <div className="field">
+          <label htmlFor="ce-tier">Tier</label>
+          <select id="ce-tier" value={tier} onChange={(e) => setTier(e.target.value as Customer['tier'])}>
+            {(['A', 'B', 'C', 'D'] as const).map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="ce-status">Status</label>
+          <select id="ce-status" value={status} onChange={(e) => setStatus(e.target.value as Customer['status'])}>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <p className="muted">GSTIN, PAN and the credit limit are changed through their own controlled steps (Credit button).</p>
+    </Modal>
   );
 }
 
@@ -584,7 +721,7 @@ function CreditDialog({
           : 'Credit change sent for approval. The limit stays the same until it is approved.',
       );
     } catch (err) {
-      setError(toUiError(err).message);
+      setError(toUiMessage(err));
     } finally {
       setPending(false);
     }
@@ -682,7 +819,7 @@ function BankDialog({
       setAcct2('');
       onChanged('Bank account added. Another user must verify it before it is used for payment.');
     } catch (err) {
-      setError(toUiError(err).message);
+      setError(toUiMessage(err));
     }
   };
   return (
@@ -747,7 +884,7 @@ function BankDialog({
                   setAdded((a) => a.map((x) => (x.id === b.id ? { ...x, verified: true } : x)));
                   onChanged('Bank account verified.');
                 })
-                .catch((err: unknown) => setError(toUiError(err).message));
+                .catch((err: unknown) => setError(toUiMessage(err)));
             }}
           >
             Verify

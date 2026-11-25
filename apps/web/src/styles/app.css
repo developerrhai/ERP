@@ -2467,6 +2467,50 @@ dl.kv dt {
 dl.kv dd {
   margin: 0;
 }
+/* The detail dialog of a record: bordered cards, three to a row (the V40 reference detail panel), not a bare list. */
+.modal dl.kv,
+.modal dl.fv40-detail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.modal dl.kv > div,
+.modal dl.fv40-detail > .fv40-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 8px;
+  background: var(--soft, #f8fafc);
+}
+.modal dl.kv dt,
+.modal dl.fv40-detail dt {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted, #64748b);
+}
+.modal dl.kv dd,
+.modal dl.fv40-detail dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 720px) {
+  .modal dl.kv,
+  .modal dl.fv40-detail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .modal dl.kv,
+  .modal dl.fv40-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 
 /* Phase 22: the universal ActionBar (R-32). Greyed buttons keep the reason on hover (title). */
 .actionbar {
@@ -3244,3 +3288,17 @@ select.is-invalid {
   .rd-hero { padding: 16px; }
 }
 @media (max-width: 380px) { .ps-cols, .rd-kpis { grid-template-columns: 1fr; } }
+
+/* narrow dialogs keep two cards per row; a footer with many record actions wraps instead of overflowing */
+.modal.sm dl.kv,
+.modal.sm dl.fv40-detail {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.modal-foot {
+  flex-wrap: wrap;
+}
+.sv40-head-add {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 8px;
+}

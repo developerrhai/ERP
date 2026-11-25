@@ -93,9 +93,14 @@ export interface Dimension {
   parentId?: string | null;
   isGroup?: boolean;
   isDefault?: boolean;
+  department?: string | null;
+  managerId?: string | null;
   status: 'Active' | 'Inactive';
   version: number;
 }
+/** People a cost / profit centre can be assigned to. */
+export const listManagers = () =>
+  api<{ id: string; name: string; department: string | null }[]>('/finance/managers');
 export const listDimension = (kind: 'cost' | 'profit') =>
   paged<Dimension>(`/finance/${kind === 'cost' ? 'cost-centers' : 'profit-centers'}?size=200`);
 export const createDimension = (kind: 'cost' | 'profit', b: Record<string, unknown>) =>
@@ -498,6 +503,12 @@ export interface NoteSettlement {
   bills: { id: string; docNo: string; docDate: string; dueDate: string | null; amount: string; outstanding: string; status: string }[];
 }
 export const noteSettlement = (id: string) => api<NoteSettlement>(`/finance/notes/${id}/settlement`);
+/** The credits (receipts, advances, credit notes) that can settle one payable / receivable invoice. */
+export interface SettleOptions {
+  target: { id: string; docNo: string; outstanding: string; side: 'RECEIVABLE' | 'PAYABLE' };
+  credits: { id: string; itemType: string; docNo: string; docDate: string; amount: string; outstanding: string }[];
+}
+export const settleOptions = (id: string) => api<SettleOptions>(`/finance/open-items/${id}/settle-options`);
 export const allocateNote = (b: { sourceItemId: string; targetItemId: string; amount: string; date?: string }) =>
   api<{ id: string }>('/finance/open-items/allocate', { method: 'POST', body: b });
 export const createNote = (kind: 'CREDIT' | 'DEBIT', b: Record<string, unknown>) =>

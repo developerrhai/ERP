@@ -352,6 +352,13 @@ const PHASE_ADDED_PAGES = [
     purpose: 'Work Center of Finance: incoming work, routed documents, approvals and onward movement.',
   },
   {
+    id: 'dept-inbox-accounts',
+    title: 'Finance Inbox',
+    family: 'Finance & Accounts',
+    after: 'dept-work-finance',
+    purpose: 'Department mailbox of Finance: documents, receipt, acceptance, work, approval and mail.',
+  },
+  {
     id: 'dept-work-hr',
     title: 'HRMS Work Center',
     family: 'HRMS',

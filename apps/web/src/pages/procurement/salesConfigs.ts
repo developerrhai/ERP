@@ -305,6 +305,23 @@ export const SQ_CFG: DocCfg = {
     { key: 'customerId', label: 'Customer', type: 'customer', required: true },
     { key: 'validUntil', label: 'Valid until', type: 'date' },
     { key: 'formatCode', label: 'Quotation format', type: 'text' },
+    {
+      key: 'paymentTermId',
+      label: 'Payment terms',
+      type: 'ref',
+      refPath: '/payment-terms',
+      refLabel: ['code', 'name'],
+      clearable: true,
+    },
+    {
+      key: 'priceListId',
+      label: 'Price list',
+      type: 'ref',
+      refPath: '/price-lists',
+      refLabel: ['code', 'name'],
+      clearable: true,
+    },
+    { key: 'customerRef', label: 'Customer reference / enquiry no.', type: 'text', clearable: true },
     { key: 'notes', label: 'Notes', type: 'text' },
   ],
   lines: [

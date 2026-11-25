@@ -7,6 +7,7 @@
 //   - View / Load Selected in the register open that record on the page's screen.
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { findAddButton } from '../../lib/ownAddButton';
 
 export interface ClassicApi {
@@ -14,10 +15,35 @@ export interface ClassicApi {
   open: (recordNo: string) => void;
   /** Show the page's own screen and start its "+ New" form. */
   add: () => void;
+  /**
+   * Host mode: the page's own screen stays mounted (hidden) behind the V40 register, so its dialogs (create, edit, delete,
+   * allocate ...) work from the register. `actionsOf` lists the buttons the page's own row for this record offers;
+   * `press` clicks one of them. Both answer "nothing" when there is no host or no such row.
+   */
+  actionsOf: (recordNo: string) => string[];
+  press: (recordNo: string, label: string) => boolean;
+  /** Text of the page's own "＋ New ..." button inside the host ('' when it has none) and a way to press it. */
+  addLabel: () => string;
+  pressAdd: () => boolean;
 }
 
 const Ctx = createContext<ClassicApi | null>(null);
 export const useClassic = (): ClassicApi | null => useContext(Ctx);
+
+/**
+ * Registers that no record is entered on (a ledger view, a report, a payable / receivable list): their "＋ Add New" opens
+ * the screen where the matching entry is made, and presses its own "＋ New" button there.
+ */
+const ADD_ELSEWHERE: Record<string, { page: string; label: string }> = {
+  'fin-gl': { page: 'fin-journal', label: 'journal entry' },
+  'fin-ap': { page: 'fin-bankbook', label: 'payment entry' },
+  'fin-ar': { page: 'fin-bankbook', label: 'receipt entry' },
+  'fin-trial': { page: 'fin-journal', label: 'journal entry' },
+  'fin-pnl': { page: 'fin-journal', label: 'journal entry' },
+  'fin-bs': { page: 'fin-journal', label: 'journal entry' },
+  'fin-cashflow': { page: 'fin-journal', label: 'journal entry' },
+};
+const PENDING_ADD = 'v40-add-after-nav';
 
 const OPEN_LABEL = /^(open|view|edit|details)$/i;
 type Job = { kind: 'add' } | { kind: 'open'; no: string };
@@ -39,32 +65,101 @@ function findOpen(scope: ParentNode, no: string): HTMLElement | null {
   return null;
 }
 
+/** The buttons of the row that shows this record number, and the row itself. */
+function rowOf(scope: ParentNode, no: string): HTMLElement | null {
+  const rows = Array.from(scope.querySelectorAll<HTMLElement>('tr'));
+  const exact = rows.filter((row) => Array.from(row.querySelectorAll('td')).some((c) => textOf(c) === no));
+  const loose = rows.filter((row) => Array.from(row.querySelectorAll('td')).some((c) => textOf(c).includes(no)));
+  return (exact.length > 0 ? exact : loose)[0] ?? null;
+}
+
 export function ClassicViewSwitch({
   pageId,
   fallback,
   children,
+  host = false,
 }: {
   pageId: string;
   /** the page's own screen */
   fallback: ReactNode;
   /** the V40 register */
   children: ReactNode;
+  /** keep the page's own screen mounted but hidden behind the register (see ClassicApi.actionsOf / press) */
+  host?: boolean;
 }) {
   const [classic, setClassic] = useState(false);
   const [job, setJob] = useState<Job | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const hostBox = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  // arrived from a register that has no entry form of its own: press this page's own "＋ New" once it has drawn
+  useEffect(() => {
+    if (!host) return undefined;
+    let pending = '';
+    try {
+      pending = window.sessionStorage.getItem(PENDING_ADD) ?? '';
+    } catch {
+      pending = '';
+    }
+    if (pending !== pageId) return undefined;
+    // the flag is cleared only when the button is pressed (a dev-mode double mount must not lose it)
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      const el = findAddButton(document.getElementById('main') ?? document.body);
+      if (el) {
+        clearInterval(timer);
+        try {
+          window.sessionStorage.removeItem(PENDING_ADD);
+        } catch {
+          /* nothing to clear */
+        }
+        el.click();
+      } else if (tries >= 20) {
+        clearInterval(timer);
+        try {
+          window.sessionStorage.removeItem(PENDING_ADD);
+        } catch {
+          /* nothing to clear */
+        }
+      }
+    }, 200);
+    return () => clearInterval(timer);
+  }, [host, pageId]);
 
   useEffect(() => {
     const onAdd = (e: Event) => {
       const ce = e as CustomEvent<{ pageId?: string; handled?: boolean }>;
       if (!ce.detail || ce.detail.pageId !== pageId || ce.detail.handled) return;
+      if (host && !classic) {
+        // the page's own "+ New" button is on screen next to the register and its dialog lives in the hidden host:
+        // press it in place instead of switching the user to the classic screen
+        const own = findAddButton(document.getElementById('main') ?? document.body);
+        if (own) {
+          ce.detail.handled = true;
+          own.click();
+          return;
+        }
+        const elsewhere = ADD_ELSEWHERE[pageId];
+        if (elsewhere) {
+          ce.detail.handled = true;
+          try {
+            window.sessionStorage.setItem(PENDING_ADD, elsewhere.page);
+          } catch {
+            /* the target screen still opens; the user presses its own button */
+          }
+          navigate(`/m/${elsewhere.page}`);
+          return;
+        }
+      }
       ce.detail.handled = true;
       setClassic(true);
       setJob({ kind: 'add' });
     };
     window.addEventListener('v40-add-record', onAdd);
     return () => window.removeEventListener('v40-add-record', onAdd);
-  }, [pageId]);
+  }, [pageId, host, classic, navigate]);
 
   // press the page's own button once its screen has drawn (its rows load first); give up after ~3 s
   useEffect(() => {
@@ -98,10 +193,38 @@ export function ClassicViewSwitch({
       setClassic(true);
       setJob({ kind: 'add' });
     },
+    actionsOf: (no) => {
+      const row = hostBox.current ? rowOf(hostBox.current, no) : null;
+      if (!row) return [];
+      return Array.from(row.querySelectorAll<HTMLElement>('button'))
+        .filter((b) => !b.hasAttribute('disabled'))
+        .map(textOf)
+        .filter(Boolean);
+    },
+    addLabel: () => {
+      const b = hostBox.current ? findAddButton(hostBox.current) : null;
+      return b ? textOf(b) : '';
+    },
+    pressAdd: () => {
+      const b = hostBox.current ? findAddButton(hostBox.current) : null;
+      if (!b) return false;
+      b.click();
+      return true;
+    },
+    press: (no, label) => {
+      const row = hostBox.current ? rowOf(hostBox.current, no) : null;
+      const hit = row
+        ? Array.from(row.querySelectorAll<HTMLElement>('button')).find((b) => !b.hasAttribute('disabled') && textOf(b) === label)
+        : null;
+      if (!hit) return false;
+      hit.click();
+      return true;
+    },
   };
 
   return (
     <Ctx.Provider value={api}>
+      {host ? null : (
       <div className="classic-switch" style={{ display: 'flex', justifyContent: 'flex-end', margin: '0 0 8px' }}>
         <button
           type="button"
@@ -120,7 +243,13 @@ export function ClassicViewSwitch({
           {classic ? '← V40 view' : 'Classic view (create & actions)'}
         </button>
       </div>
+      )}
       {classic ? <div ref={box}>{fallback}</div> : children}
+      {host && !classic ? (
+        <div ref={hostBox} hidden aria-hidden="true" data-classic-host="">
+          {fallback}
+        </div>
+      ) : null}
     </Ctx.Provider>
   );
 }

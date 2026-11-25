@@ -10,6 +10,7 @@ import { authenticate, requirePasswordChanged } from '../../core/auth/authentica
 import { prisma } from '../../core/db/prisma';
 import { asyncHandler } from '../../core/http/async-handler';
 import { Errors } from '../../core/http/errors';
+import { parseIfMatch } from '../../core/http/if-match';
 import { validate, validated } from '../../core/http/validate';
 import { accessUserOf, can, requirePageAction } from '../../core/rbac/access';
 import { runIdempotent } from '../approvals/idempotent';
@@ -250,6 +251,36 @@ export function createMastersRouter(): Router {
         include: { addresses: true, contacts: true },
       });
       if (!row) throw Errors.notFound('Customer not found.');
+      res.set('ETag', `"${row.version}"`).json({ data: row });
+    }),
+  );
+
+  const customerUpdate = z
+    .object({
+      name: z.string().trim().min(2).max(150).optional(),
+      legalName: z.string().trim().max(200).nullish(),
+      groupId: uuid.nullish(),
+      territoryId: uuid.nullish(),
+      salesPersonId: uuid.nullish(),
+      priceListId: uuid.nullish(),
+      paymentTermId: uuid.nullish(),
+      tier: z.enum(['A', 'B', 'C', 'D']).optional(),
+      status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+    })
+    .strict();
+  router.put(
+    '/customers/:id',
+    requirePageAction(CREDIT_DOC_TYPE, 'edit'),
+    validate({ params: idParams, body: customerUpdate }),
+    asyncHandler(async (req: Request, res: Response) => {
+      const { id } = validated(res, 'params', idParams);
+      const body = validated(res, 'body', customerUpdate);
+      const row = await partyService.updateCustomer(
+        callerOf(req),
+        id,
+        parseIfMatch(req.get('if-match')),
+        clean(body) as never,
+      );
       res.set('ETag', `"${row.version}"`).json({ data: row });
     }),
   );

@@ -182,9 +182,12 @@ describe('Collections and Credit Limits', () => {
         }),
     });
     renderApp('/m/sales-collections?tab=3');
-    expect((await screen.findAllByText('INV/TAL/26-27/0001')).length).toBe(2);
+    // the page's own table stays mounted (hidden) behind the register: count only what the user can see
+    expect(
+      (await screen.findAllByText('INV/TAL/26-27/0001', { ignore: '[data-classic-host] *' })).length,
+    ).toBe(2);
     expect(screen.getByText('Overdue 38 d')).toBeInTheDocument();
-    expect(screen.getByText('01-10-2026')).toBeInTheDocument();
+    expect(screen.getByText('01-10-2026', { ignore: '[data-classic-host] *' })).toBeInTheDocument();
   });
 
   it('credit limits flag the customer who is over', async () => {

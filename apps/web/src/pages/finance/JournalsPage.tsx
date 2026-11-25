@@ -90,6 +90,7 @@ export function JournalsPage({ actions }: { actions: ActionSet }) {
       <FinV40
         pageId="fin-journal"
         actions={actions}
+        detailExtra={(r) => <JournalLines id={r.id} />}
         fallback={
           <>
             <div className="recordbar" style={{ marginBottom: 16 }}>
@@ -719,6 +720,56 @@ function JournalView({
         </>
       ) : null}
     </Modal>
+  );
+}
+
+/** The debit / credit lines of a journal, under the cards of its View dialog. */
+function JournalLines({ id }: { id: string }) {
+  const { data: j, error } = useLoad(() => getJournal(id), [id]);
+  if (error) return <ErrorBox message={error} />;
+  if (!j) return <p className="v8-sub">Loading the journal lines…</p>;
+  const sum = (k: 'debit' | 'credit'): number => j.lines.reduce((s, l) => s + Number(l[k]), 0);
+  return (
+    <>
+      {j.narration ? <p>{j.narration}</p> : null}
+      <div className="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Account</th>
+              <th scope="col" style={{ textAlign: 'right' }}>
+                Debit
+              </th>
+              <th scope="col" style={{ textAlign: 'right' }}>
+                Credit
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {j.lines.map((l) => (
+              <tr key={l.id}>
+                <td>
+                  {l.accountCode} · {l.accountName}
+                </td>
+                <td style={{ textAlign: 'right' }}>{amt(l.debit)}</td>
+                <td style={{ textAlign: 'right' }}>{amt(l.credit)}</td>
+              </tr>
+            ))}
+            <tr>
+              <td>
+                <strong>Total</strong>
+              </td>
+              <td style={{ textAlign: 'right' }}>
+                <strong>{inr(sum('debit'))}</strong>
+              </td>
+              <td style={{ textAlign: 'right' }}>
+                <strong>{inr(sum('credit'))}</strong>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

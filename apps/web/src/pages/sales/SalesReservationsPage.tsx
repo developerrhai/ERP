@@ -3,7 +3,7 @@
 // inventory reservation page is shown unchanged. Needs one line in ModulePage.tsx:
 //   case 'sales-reservations': return <SalesReservationsPage actions={actions} />;
 import { useToast } from '../../components/Toast';
-import { toUiError } from '../../lib/errors';
+import { toUiMessage } from '../../lib/errors';
 import { extendReservation, releaseReservation } from '../../lib/inventoryApi';
 import type { ActionSet } from '../../types';
 import { ReservationsPage } from '../inventory/StockPages';
@@ -16,6 +16,7 @@ export function SalesReservationsPage({ actions }: { actions: ActionSet }) {
   return (
     <V40Register
       pageId="sales-reservations"
+      host
       actions={actions}
       fallback={<ReservationsPage actions={actions} />}
       rowExtra={(r, reload) =>
@@ -30,7 +31,7 @@ export function SalesReservationsPage({ actions }: { actions: ActionSet }) {
                     toast('Extended by 7 days.');
                     reload();
                   })
-                  .catch((e: unknown) => toast(toUiError(e).message))
+                  .catch((e: unknown) => toast(toUiMessage(e)))
               }
             >
               +7 days
@@ -44,7 +45,7 @@ export function SalesReservationsPage({ actions }: { actions: ActionSet }) {
                     toast('Reservation released.');
                     reload();
                   })
-                  .catch((e: unknown) => toast(toUiError(e).message))
+                  .catch((e: unknown) => toast(toUiMessage(e)))
               }
             >
               Release

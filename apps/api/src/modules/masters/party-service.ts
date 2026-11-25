@@ -139,7 +139,68 @@ function maskedBank(b: {
   };
 }
 
+export interface CustomerUpdateInput {
+  name?: string | undefined;
+  legalName?: string | null | undefined;
+  groupId?: string | null | undefined;
+  territoryId?: string | null | undefined;
+  salesPersonId?: string | null | undefined;
+  priceListId?: string | null | undefined;
+  paymentTermId?: string | null | undefined;
+  tier?: 'A' | 'B' | 'C' | 'D' | undefined;
+  status?: 'ACTIVE' | 'INACTIVE' | undefined;
+}
+
 export const partyService = {
+  /**
+   * Edit a customer's everyday details (name, group, territory, sales person, price list, payment terms, tier, status).
+   * GSTIN / PAN / state go through the duplicate-checked create path and the credit limit through a credit request,
+   * so they are deliberately not editable here.
+   */
+  async updateCustomer(
+    caller: ApprovalCaller,
+    id: string,
+    ifMatch: number,
+    input: CustomerUpdateInput,
+  ): Promise<Customer> {
+    return prisma.$transaction(async (tx) => {
+      const cur = await tx.customer.findFirst({ where: { id, deletedAt: null } });
+      if (!cur) throw Errors.notFound('Customer not found.');
+      if (cur.version !== ifMatch)
+        throw Errors.conflict('This customer was changed by someone else. Reload and try again.');
+      const data: Prisma.CustomerUncheckedUpdateInput = {
+        updatedById: caller.auth.userId,
+        updatedAt: new Date(),
+        version: { increment: 1 },
+      };
+      if (input.name !== undefined) {
+        data.name = input.name.trim();
+        data.nameKey = normaliseName(input.name);
+      }
+      if (input.legalName !== undefined) data.legalName = input.legalName;
+      if (input.groupId !== undefined) data.customerGroupId = input.groupId;
+      if (input.territoryId !== undefined) data.territoryId = input.territoryId;
+      if (input.salesPersonId !== undefined) data.salesPersonId = input.salesPersonId;
+      if (input.priceListId !== undefined) data.priceListId = input.priceListId;
+      if (input.paymentTermId !== undefined) data.paymentTermId = input.paymentTermId;
+      if (input.tier !== undefined) data.tier = input.tier;
+      if (input.status !== undefined) data.status = input.status;
+      const updated = await tx.customer.update({ where: { id }, data });
+      await recordAudit(
+        {
+          action: input.status !== undefined && input.status !== cur.status ? 'CUSTOMER_STATUS_CHANGED' : 'CUSTOMER_UPDATED',
+          actorId: caller.auth.userId,
+          targetType: 'Customer',
+          targetId: id,
+          meta: caller.meta,
+          detail: { code: cur.code, changed: Object.keys(input) },
+        },
+        tx,
+      );
+      return updated;
+    });
+  },
+
   async createCustomer(caller: ApprovalCaller, input: CustomerInput): Promise<Customer> {
     const id = await identity(input);
     const hits = await duplicateService.check({

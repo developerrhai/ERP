@@ -13,7 +13,8 @@ import { requirePageAction } from '../../core/rbac/access';
 import type { Action } from '../../core/rbac/permission-model';
 import { runIdempotent } from '../approvals/idempotent';
 import { callerOf, isoDate, pageQuery, uuid } from '../inventory/routes-shared';
-import { softDelete, submitDoc, todayIst } from '../procurement/core';
+import { prisma } from '../../core/db/prisma';
+import { norm, query, softDelete, submitDoc, todayIst } from '../procurement/core';
 import type { DocDef, Row } from '../procurement/core';
 import type { Crud } from '../procurement/crud';
 import {
@@ -363,6 +364,22 @@ export function createSalesRouter(): Router {
     '/crm/salespeople',
     g('crm-opportunities', 'view'),
     h(async (req, res) => res.json({ data: await crmActions.salespeople(callerOf(req)) })),
+  );
+  // the items of one price list with their item code / name / category (the price list master returns item ids only)
+  router.get(
+    '/sales/price-lists/:id/items',
+    g('sales-pricelist', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) => {
+      const rows = await query(
+        prisma,
+        `SELECT pi.id, pi.item_id, i.code AS item_code, i.name AS item_name, i.category, pi.uom_code, pi.min_qty, pi.rate, pi.discount_pct,
+                pi.valid_from, pi.valid_to, i.standard_cost
+           FROM price_list_items pi JOIN items i ON i.id=pi.item_id WHERE pi.price_list_id=$1::uuid ORDER BY i.code, pi.min_qty`,
+        String(req.params.id),
+      );
+      res.json({ data: rows.map((r) => norm<Row>(r)) });
+    }),
   );
   router.get(
     '/crm/pipeline',

@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { EmailDocButton } from '../../components/EmailDocDialog';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { toUiError } from '../../lib/errors';
+import { toUiMessage } from '../../lib/errors';
 import { lookupWarehouses, type Ref } from '../../lib/inventoryApi';
 import { download } from '../../lib/api';
 import {
@@ -15,14 +15,20 @@ import {
   getJson,
   listDocs,
   post,
+  putJson,
+  updateDoc,
   verb,
   type Doc,
   type Row,
 } from '../../lib/scmApi';
 import { useLoad } from '../../lib/useLoad';
+import { requestCreditChange } from '../../lib/mastersApi';
+import { lookupItems } from '../../lib/inventoryApi';
+import { lookupCustomers } from '../../lib/scmApi';
+import type { Option } from '../../lib/scmApi';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
-import { DocPage } from './DocPage';
+import { DocPage, LookupCombo, RecordBar } from './DocPage';
 import { V40Register } from '../sales/V40Register';
 import { CRFQ_CFG, SQ_CFG } from './salesConfigs';
 
@@ -61,7 +67,7 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
       toast(`Moved to ${stage}`);
       board.reload();
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   return (
@@ -235,6 +241,29 @@ export function SourcesPage({ actions }: { actions: ActionSet }) {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [msg, setMsg] = useState('');
+  const [viewing, setViewing] = useState<Row | null>(null);
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editStatus, setEditStatus] = useState('Active');
+  const byId = (id: string): Row | undefined => (list.data ?? []).find((r) => s(r.id) === id);
+  function startEdit(id: string): void {
+    const r = byId(id);
+    if (!r) return;
+    setEditName(s(r.name));
+    setEditStatus(s(r.status) || 'Active');
+    setEditing(r);
+  }
+  function saveEdit(): void {
+    if (!editing) return;
+    setMsg('');
+    putJson(`/crm/sources/${s(editing.id)}`, { name: editName.trim(), status: editStatus })
+      .then(() => {
+        setEditing(null);
+        toast('Source saved');
+        list.reload();
+      })
+      .catch((e: unknown) => setMsg(toUiMessage(e)));
+  }
   return (
     <>
       <PageHead title="Lead Sources" sub="Where enquiries come from." />
@@ -266,7 +295,7 @@ export function SourcesPage({ actions }: { actions: ActionSet }) {
                   toast('Source added');
                   list.reload();
                 })
-                .catch((e: unknown) => setMsg(toUiError(e).message));
+                .catch((e: unknown) => setMsg(toUiMessage(e)));
             }}
           >
             ＋ Add source
@@ -276,6 +305,8 @@ export function SourcesPage({ actions }: { actions: ActionSet }) {
       <V40Register
         pageId="crm-sources"
         actions={actions}
+        onOpen={(id) => setViewing(byId(id) ?? null)}
+        onEdit={actions.edit ? startEdit : undefined}
         reloadKey={list.data}
         onChanged={list.reload}
         fallback={
@@ -303,6 +334,68 @@ export function SourcesPage({ actions }: { actions: ActionSet }) {
           </div>
         }
       />
+      {viewing ? (
+        <Modal
+          title={`Lead source ${s(viewing.code)}`}
+          size="sm"
+          onClose={() => setViewing(null)}
+          footer={
+            <button type="button" className="btn" onClick={() => setViewing(null)}>
+              Close
+            </button>
+          }
+        >
+          <dl className="kv">
+            <div>
+              <dt>Code</dt>
+              <dd>{s(viewing.code)}</dd>
+            </div>
+            <div>
+              <dt>Name</dt>
+              <dd>{s(viewing.name)}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{s(viewing.status)}</dd>
+            </div>
+          </dl>
+        </Modal>
+      ) : null}
+      {editing ? (
+        <Modal
+          title={`Edit lead source ${s(editing.code)}`}
+          size="sm"
+          onClose={() => setEditing(null)}
+          footer={
+            <>
+              <button type="button" className="btn" onClick={() => setEditing(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={editName.trim().length < 2}
+                onClick={saveEdit}
+              >
+                Save
+              </button>
+            </>
+          }
+        >
+          <ErrorBox message={msg} />
+          <div className="field">
+            <label htmlFor="src-name">Name *</label>
+            <input id="src-name" value={editName} onChange={(e) => setEditName(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="src-status">Status</label>
+            <select id="src-status" value={editStatus} onChange={(e) => setEditStatus(e.target.value)}>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </Modal>
+      ) : null}
     </>
   );
 }
@@ -346,6 +439,7 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
   const list = useLoad(() => listDocs('/sales/dispatch', { size: 50 }), []);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Doc | null>(null);
   const [open, setOpen] = useState<Doc | null>(null);
   const [msg, setMsg] = useState('');
   const [reason, setReason] = useState('');
@@ -357,7 +451,7 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
       toast(text);
       list.reload();
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   async function challan(id: string) {
@@ -365,7 +459,7 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
       const { blob } = await download(`/sales/dispatch/${id}/challan.pdf`);
       window.open(URL.createObjectURL(blob), '_blank');
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   return (
@@ -383,8 +477,10 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
       <ErrorBox message={msg || list.error} />
       <V40Register
         pageId="sales-dispatch"
+        host
         actions={actions}
         onOpen={(id) => void getDoc('/sales/dispatch', id).then(setOpen)}
+        onEdit={actions.edit ? (id) => void getDoc('/sales/dispatch', id).then(setEditing) : undefined}
         reloadKey={list.data}
         onChanged={list.reload}
         fallback={
@@ -429,11 +525,16 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
           </div>
         }
       />
-      {creating ? (
+      {creating || editing ? (
         <DispatchForm
-          onClose={() => setCreating(false)}
+          {...(editing ? { doc: editing } : {})}
+          onClose={() => {
+            setCreating(false);
+            setEditing(null);
+          }}
           onSaved={(d) => {
             setCreating(false);
+            setEditing(null);
             toast(`Saved ${s(d.number)}`);
             setOpen(d);
             list.reload();
@@ -450,6 +551,19 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
               <button type="button" className="btn" onClick={() => void challan(open.id)}>
                 Print challan
               </button>
+              {(open.status === 'Draft' || open.status === 'Rejected') && actions.edit ? (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setEditing(open);
+                    setOpen(null);
+                  }}
+                >
+                  Edit
+                </button>
+              ) : null}
+              <RecordBar doc={open} canEdit={actions.edit} pageId="sales-dispatch" />
               {open.status === 'Draft' && actions.submit ? (
                 <button
                   type="button"
@@ -544,16 +658,39 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
   );
 }
 
-function DispatchForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: Doc) => void }) {
+function DispatchForm({
+  doc,
+  onClose,
+  onSaved,
+}: {
+  doc?: Doc;
+  onClose: () => void;
+  onSaved: (d: Doc) => void;
+}) {
   const orders = useLoad(() => listDocs('/sales/orders', { status: 'Approved', size: 100 }), []);
   const whs = useLoad<Ref[]>(() => lookupWarehouses(), []);
-  const [orderId, setOrderId] = useState('');
-  const [wh, setWh] = useState('');
-  const [vehicle, setVehicle] = useState('');
-  const [transporter, setTransporter] = useState('');
+  const [orderId, setOrderId] = useState(doc ? s(doc.orderId) : '');
+  const [wh, setWh] = useState(doc ? s(doc.warehouseId) : '');
+  const [vehicle, setVehicle] = useState(doc ? s(doc.vehicleNo) : '');
+  const [transporter, setTransporter] = useState(doc ? s(doc.transporter) : '');
+  const [driver, setDriver] = useState(doc ? s(doc.driver) : '');
+  const [lrNo, setLrNo] = useState(doc ? s(doc.lrNo) : '');
+  const [shipTo, setShipTo] = useState(doc ? s(doc.shipTo) : '');
+  const [weight, setWeight] = useState(doc ? s(doc.weightKg) : '');
   const [lines, setLines] = useState<
-    { orderLineId: string; label: string; open: string; qty: string; serial: string }[]
-  >([]);
+    { orderLineId: string; label: string; open: string; qty: string; serial: string; id?: string }[]
+  >(() =>
+    doc
+      ? rowsOf(doc.lines).map((l) => ({
+          id: s(l.id),
+          orderLineId: s(l.orderLineId),
+          label: `${s(l.itemCode)} · ${s(l.itemName)}`,
+          open: s(l.qty),
+          qty: s(l.qty),
+          serial: s(l.inspectionSerial),
+        }))
+      : [],
+  );
   const [msg, setMsg] = useState('');
   async function pick(id: string) {
     setOrderId(id);
@@ -571,7 +708,7 @@ function DispatchForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: 
         })),
       );
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   async function save() {
@@ -582,29 +719,37 @@ function DispatchForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: 
       return;
     }
     try {
+      const body = {
+        orderId,
+        warehouseId: wh,
+        vehicleNo: vehicle.trim() || undefined,
+        transporter: transporter.trim() || undefined,
+        driver: driver.trim() || undefined,
+        lrNo: lrNo.trim() || undefined,
+        shipTo: shipTo.trim() || undefined,
+        ...(Number(weight) > 0 ? { weightKg: weight } : {}),
+        lines: lines
+          .filter((l) => Number(l.qty) > 0)
+          .map((l) => ({
+            ...(l.id ? { id: l.id } : {}),
+            orderLineId: l.orderLineId,
+            qty: l.qty,
+            ...(l.serial ? { inspectionSerial: l.serial } : {}),
+          })),
+      };
       onSaved(
-        await createDoc('/sales/dispatch', {
-          orderId,
-          warehouseId: wh,
-          vehicleNo: vehicle.trim() || undefined,
-          transporter: transporter.trim() || undefined,
-          lines: lines
-            .filter((l) => Number(l.qty) > 0)
-            .map((l) => ({
-              orderLineId: l.orderLineId,
-              qty: l.qty,
-              ...(l.serial ? { inspectionSerial: l.serial } : {}),
-            })),
-        }),
+        doc
+          ? await updateDoc('/sales/dispatch', doc.id, doc.version, body)
+          : await createDoc('/sales/dispatch', body),
       );
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   return (
     <Modal
-      title="New Dispatch"
-      sub="Pick the order; the lines come pre-filled with what is still to send."
+      title={doc ? `Edit ${s(doc.number)}` : 'New Dispatch'}
+      sub={doc ? 'Change the transport details or the quantities of this draft.' : 'Pick the order; the lines come pre-filled with what is still to send.'}
       onClose={onClose}
       footer={
         <>
@@ -626,7 +771,7 @@ function DispatchForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: 
       <div className="form-grid">
         <div className="field">
           <label htmlFor="so">Sales order *</label>
-          <select id="so" value={orderId} onChange={(e) => void pick(e.target.value)}>
+          <select id="so" value={orderId} disabled={!!doc} onChange={(e) => void pick(e.target.value)}>
             <option value="">Choose…</option>
             {(orders.data?.rows ?? []).map((o) => (
               <option key={o.id} value={o.id}>
@@ -654,6 +799,22 @@ function DispatchForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: 
           <label htmlFor="dt">Transporter *</label>
           <input id="dt" value={transporter} onChange={(e) => setTransporter(e.target.value)} />
           <small className="muted">Give the vehicle number or the transporter (for a courier, type its name).</small>
+        </div>
+        <div className="field">
+          <label htmlFor="dd">Driver</label>
+          <input id="dd" value={driver} onChange={(e) => setDriver(e.target.value)} />
+        </div>
+        <div className="field">
+          <label htmlFor="dl">LR / docket no.</label>
+          <input id="dl" value={lrNo} onChange={(e) => setLrNo(e.target.value)} />
+        </div>
+        <div className="field">
+          <label htmlFor="ds">Delivery address</label>
+          <input id="ds" value={shipTo} onChange={(e) => setShipTo(e.target.value)} />
+        </div>
+        <div className="field">
+          <label htmlFor="dkg">Weight (kg)</label>
+          <input id="dkg" type="number" min={0} value={weight} onChange={(e) => setWeight(e.target.value)} />
         </div>
       </div>
       <div className="table-wrap">
@@ -709,6 +870,7 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
   const list = useLoad(() => listDocs('/sales/invoices', { size: 50 }), []);
   const disp = useLoad(() => listDocs('/sales/dispatch', { status: 'Posted', size: 100 }), []);
   const [dispatchId, setDispatchId] = useState('');
+  const [newInvoice, setNewInvoice] = useState(false);
   const [open, setOpen] = useState<Doc | null>(null);
   const [msg, setMsg] = useState('');
   const [reason, setReason] = useState('');
@@ -720,7 +882,7 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
       toast(text);
       list.reload();
     } catch (e) {
-      setMsg(toUiError(e).message);
+      setMsg(toUiMessage(e));
     }
   }
   return (
@@ -730,42 +892,64 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
         sub="Bill a dispatch. Posting books the receivable, the sale and the output GST."
       >
         {actions.add ? (
-          <>
-            <select
-              aria-label="Dispatch to invoice"
-              value={dispatchId}
-              onChange={(e) => setDispatchId(e.target.value)}
-            >
-              <option value="">Choose a dispatch…</option>
+          <button type="button" className="btn primary" onClick={() => setNewInvoice(true)}>
+            ＋ New Invoice
+          </button>
+        ) : null}
+      </PageHead>
+      {newInvoice ? (
+        <Modal
+          title="New Invoice"
+          sub="An invoice bills one dispatch. Choose the dispatch."
+          size="sm"
+          onClose={() => setNewInvoice(false)}
+          footer={
+            <>
+              <button type="button" className="btn" onClick={() => setNewInvoice(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={!dispatchId}
+                onClick={() => {
+                  setMsg('');
+                  createDoc('/sales/invoices', { dispatchId })
+                    .then((d) => {
+                      toast(`Invoice ${s(d.number)} saved as draft`);
+                      setNewInvoice(false);
+                      setDispatchId('');
+                      setOpen(d);
+                      list.reload();
+                    })
+                    .catch((e: unknown) => setMsg(toUiMessage(e)));
+                }}
+              >
+                Create invoice
+              </button>
+            </>
+          }
+        >
+          <ErrorBox message={msg} />
+          <div className="field">
+            <label htmlFor="inv-disp">Dispatch *</label>
+            <select id="inv-disp" value={dispatchId} onChange={(e) => setDispatchId(e.target.value)}>
+              <option value="">
+                {(disp.data?.rows ?? []).length ? 'Choose a dispatch…' : 'No dispatch is waiting to be invoiced'}
+              </option>
               {(disp.data?.rows ?? []).map((d) => (
                 <option key={d.id} value={d.id}>
                   {s(d.number)} · {s(d.customerName)}
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              className="btn primary"
-              disabled={!dispatchId}
-              onClick={() => {
-                setMsg('');
-                createDoc('/sales/invoices', { dispatchId })
-                  .then((d) => {
-                    toast(`Invoice ${s(d.number)} saved as draft`);
-                    setOpen(d);
-                    list.reload();
-                  })
-                  .catch((e: unknown) => setMsg(toUiError(e).message));
-              }}
-            >
-              ＋ Invoice this dispatch
-            </button>
-          </>
-        ) : null}
-      </PageHead>
+          </div>
+        </Modal>
+      ) : null}
       <ErrorBox message={msg || list.error} />
       <V40Register
         pageId="sales-invoices"
+        host
         actions={actions}
         onOpen={(id) => void getDoc('/sales/invoices', id).then(setOpen)}
         reloadKey={list.data}
@@ -821,6 +1005,7 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
           onClose={() => setOpen(null)}
           footer={
             <>
+              <RecordBar doc={open} canEdit={actions.edit} pageId="sales-invoices" />
               {open.status === 'Draft' && actions.submit ? (
                 <button
                   type="button"
@@ -930,6 +1115,7 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
   >([]);
   const [reason, setReason] = useState('');
   const [msg, setMsg] = useState('');
+  const [creating, setCreating] = useState(false);
   async function pick(id: string) {
     setInvoiceId(id);
     setLines([]);
@@ -949,10 +1135,29 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
       <PageHead
         title="Sales Returns"
         sub="Goods a customer sends back. Posting restocks them at the dispatch cost and makes the credit note."
-      />
+      >
+        {actions.add ? (
+          <button type="button" className="btn primary" onClick={() => setCreating(true)}>
+            ＋ New Return
+          </button>
+        ) : null}
+      </PageHead>
       <ErrorBox message={msg || list.error} />
-      {actions.add ? (
-        <div className="card">
+      {creating ? (
+        <Modal
+          title="New Return"
+          sub={
+            (invs.data?.rows ?? []).length === 0 && !invs.loading
+              ? 'A return is raised against a posted invoice: there is none to choose from yet.'
+              : 'Choose the posted invoice, the warehouse and the quantity coming back.'
+          }
+          onClose={() => setCreating(false)}
+          footer={
+            <button type="button" className="btn" onClick={() => setCreating(false)}>
+              Cancel
+            </button>
+          }
+        >
           <div className="form-grid">
             <div className="field">
               <label htmlFor="ri">Invoice *</label>
@@ -1011,17 +1216,21 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
                 .then((d) => {
                   toast(`Return ${s(d.number)} saved as draft`);
                   void d;
+                  setCreating(false);
+                  setInvoiceId('');
+                  setLines([]);
                   list.reload();
                 })
-                .catch((e: unknown) => setMsg(toUiError(e).message));
+                .catch((e: unknown) => setMsg(toUiMessage(e)));
             }}
           >
-            ＋ Save return
+            Save return
           </button>
-        </div>
+        </Modal>
       ) : null}
       <V40Register
         pageId="sales-returns"
+        host
         actions={actions}
         reloadKey={list.data}
         onChanged={list.reload}
@@ -1065,7 +1274,7 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
                                 toast('Return submitted');
                                 list.reload();
                               })
-                              .catch((e: unknown) => setMsg(toUiError(e).message));
+                              .catch((e: unknown) => setMsg(toUiMessage(e)));
                           }}
                         >
                           Submit
@@ -1082,7 +1291,7 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
                                 toast('Return posted');
                                 list.reload();
                               })
-                              .catch((e: unknown) => setMsg(toUiError(e).message));
+                              .catch((e: unknown) => setMsg(toUiMessage(e)));
                           }}
                         >
                           Post
@@ -1108,15 +1317,65 @@ export function CollectionsPage({ actions }: { actions: ActionSet }) {
     [],
   );
   const [paying, setPaying] = useState<Row | null>(null);
+  const [choosing, setChoosing] = useState(false);
+  const [chosen, setChosen] = useState('');
   return (
     <>
       <PageHead
         title="Collections"
         sub="Unpaid invoices by customer, oldest first. Record a receipt against an invoice."
-      />
+      >
+        {actions.post || actions.add ? (
+          <button type="button" className="btn primary" onClick={() => setChoosing(true)}>
+            ＋ New Receipt
+          </button>
+        ) : null}
+      </PageHead>
+      {choosing ? (
+        <Modal
+          title="New Receipt"
+          sub="Choose the unpaid invoice the money is for."
+          size="sm"
+          onClose={() => setChoosing(false)}
+          footer={
+            <>
+              <button type="button" className="btn" onClick={() => setChoosing(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={!chosen}
+                onClick={() => {
+                  setPaying((out.data?.rows ?? []).find((x) => s(x.id) === chosen) ?? null);
+                  setChoosing(false);
+                  setChosen('');
+                }}
+              >
+                Continue
+              </button>
+            </>
+          }
+        >
+          <div className="field">
+            <label htmlFor="rc-inv">Invoice *</label>
+            <select id="rc-inv" value={chosen} onChange={(e) => setChosen(e.target.value)}>
+              <option value="">
+                {(out.data?.rows ?? []).length ? 'Choose an invoice…' : 'Nothing is waiting to be collected'}
+              </option>
+              {(out.data?.rows ?? []).map((r) => (
+                <option key={s(r.id)} value={s(r.id)}>
+                  {s(r.number)} · {s(r.customerName)} · {inr(s(r.outstanding))}
+                </option>
+              ))}
+            </select>
+          </div>
+        </Modal>
+      ) : null}
       <ErrorBox message={out.error} />
       <V40Register
         pageId="sales-collections"
+        host
         actions={actions}
         onAllocate={(id) => setPaying(out.data?.rows.find((x) => x.id === id) ?? null)}
         reloadKey={out.data}
@@ -1219,7 +1478,7 @@ function ReceiptDialog({
               allocations: [{ invoiceId: s(row.id), amount }],
             })
               .then(onDone)
-              .catch((e: unknown) => setMsg(toUiError(e).message));
+              .catch((e: unknown) => setMsg(toUiMessage(e)));
           }}
         >
           Record receipt
@@ -1259,17 +1518,95 @@ function ReceiptDialog({
 }
 
 // ------------------------------------------------------------------------------------------------ delivery scheduling
-export function DeliveryPlanPage() {
+export function DeliveryPlanPage({ actions }: { actions: ActionSet }) {
+  const toast = useToast();
   const plan = useLoad(() => getJson<Row[]>('/sales/demand-plan'), []);
+  const [adding, setAdding] = useState(false);
+  const [itemId, setItemId] = useState('');
+  const [customerId, setCustomerId] = useState('');
+  const [month, setMonth] = useState(todayIso().slice(0, 7));
+  const [qty, setQty] = useState('');
+  const [msg, setMsg] = useState('');
   return (
     <>
       <PageHead
         title="Delivery Scheduling"
         sub="What still has to be delivered, by month: confirmed order balance plus forecasts. This feeds production planning."
-      />
+      >
+        {actions.add ? (
+          <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+            ＋ New Delivery Plan
+          </button>
+        ) : null}
+      </PageHead>
+      {adding ? (
+        <Modal
+          title="New Delivery Plan"
+          sub="Plan a quantity of an item to be delivered in a month. It joins the confirmed orders in the plan."
+          size="sm"
+          onClose={() => setAdding(false)}
+          footer={
+            <>
+              <button type="button" className="btn" onClick={() => setAdding(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={!itemId || !/^\d{4}-\d{2}$/.test(month) || !(Number(qty) > 0)}
+                onClick={() => {
+                  setMsg('');
+                  post('/sales/forecasts', { itemId, month, qty, ...(customerId ? { customerId } : {}) })
+                    .then(() => {
+                      toast('Delivery plan saved.');
+                      setAdding(false);
+                      setItemId('');
+                      setQty('');
+                      plan.reload();
+                    })
+                    .catch((e: unknown) => setMsg(toUiMessage(e)));
+                }}
+              >
+                Save plan
+              </button>
+            </>
+          }
+        >
+          <ErrorBox message={msg} />
+          <div className="field">
+            <label htmlFor="dp-item">Item *</label>
+            <LookupCombo<Ref>
+              id="dp-item"
+              value={itemId}
+              search={lookupItems}
+              label={(o) => `${o.code} · ${o.name}`}
+              onPick={(o) => setItemId(o?.id ?? '')}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="dp-cust">Customer</label>
+            <LookupCombo<Option>
+              id="dp-cust"
+              value={customerId}
+              search={lookupCustomers}
+              label={(o) => o.label}
+              onPick={(o) => setCustomerId(o?.id ?? '')}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="dp-month">Month *</label>
+            <input id="dp-month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="dp-qty">Quantity *</label>
+            <input id="dp-qty" type="number" min={0} value={qty} onChange={(e) => setQty(e.target.value)} />
+          </div>
+        </Modal>
+      ) : null}
       <ErrorBox message={plan.error} />
       <V40Register
         pageId="sales-delivery"
+        host
         reloadKey={plan.data}
         onChanged={plan.reload}
         fallback={
@@ -1309,17 +1646,95 @@ export function DeliveryPlanPage() {
 }
 
 // ------------------------------------------------------------------------------------------------ credit limits
-export function CreditPage() {
+export function CreditPage({ actions }: { actions: ActionSet }) {
+  const toast = useToast();
   const list = useLoad(() => getJson<Row[]>('/sales/credit/overview'), []);
+  const [adding, setAdding] = useState(false);
+  const [customerId, setCustomerId] = useState('');
+  const [limit, setLimit] = useState('');
+  const [days, setDays] = useState('');
+  const [reason, setReason] = useState('');
+  const [msg, setMsg] = useState('');
   return (
     <>
       <PageHead
         title="Credit Limits"
         sub="What each customer owes and has on order against their limit. A new order that goes over the limit needs a manager override."
-      />
+      >
+        {actions.add || actions.edit ? (
+          <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+            ＋ New Credit Limit
+          </button>
+        ) : null}
+      </PageHead>
+      {adding ? (
+        <Modal
+          title="New Credit Limit"
+          sub="Set the credit limit and days for a customer. A higher limit goes to approval; a lower one applies at once."
+          size="sm"
+          onClose={() => setAdding(false)}
+          footer={
+            <>
+              <button type="button" className="btn" onClick={() => setAdding(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={!customerId || (limit === '' && days === '') || reason.trim().length < 5}
+                onClick={() => {
+                  setMsg('');
+                  requestCreditChange(customerId, {
+                    ...(limit !== '' ? { newLimit: Number(limit) } : {}),
+                    ...(days !== '' ? { newDays: Number(days) } : {}),
+                    reason: reason.trim(),
+                  })
+                    .then((r) => {
+                      toast(r.applied ? 'Credit limit updated.' : 'Sent for approval.');
+                      setAdding(false);
+                      setCustomerId('');
+                      setLimit('');
+                      setDays('');
+                      setReason('');
+                      list.reload();
+                    })
+                    .catch((e: unknown) => setMsg(toUiMessage(e)));
+                }}
+              >
+                Save
+              </button>
+            </>
+          }
+        >
+          <ErrorBox message={msg} />
+          <div className="field">
+            <label htmlFor="cl-cust">Customer *</label>
+            <LookupCombo<Option>
+              id="cl-cust"
+              value={customerId}
+              search={lookupCustomers}
+              label={(o) => o.label}
+              onPick={(o) => setCustomerId(o?.id ?? '')}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="cl-limit">Credit limit (₹)</label>
+            <input id="cl-limit" type="number" min={0} value={limit} onChange={(e) => setLimit(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="cl-days">Credit days</label>
+            <input id="cl-days" type="number" min={0} max={365} value={days} onChange={(e) => setDays(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="cl-reason">Reason *</label>
+            <input id="cl-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why is the limit set or changed?" />
+          </div>
+        </Modal>
+      ) : null}
       <ErrorBox message={list.error} />
       <V40Register
         pageId="sales-credit"
+        host
         reloadKey={list.data}
         onChanged={list.reload}
         fallback={
