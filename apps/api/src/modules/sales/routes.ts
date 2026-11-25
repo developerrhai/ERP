@@ -329,6 +329,10 @@ export function createSalesRouter(): Router {
         probability: z.number().int().min(0).max(100).optional(),
         expectedClose: ymd.nullish(),
         ownerId: uuid.nullish(),
+        primaryContact: z.string().trim().max(150).nullish(),
+        competitor: z.string().trim().max(150).nullish(),
+        nextAction: z.string().trim().max(300).nullish(),
+        projectNumber: z.string().trim().max(50).nullish(),
       })
       .strict(),
     { submit: false },
@@ -354,6 +358,11 @@ export function createSalesRouter(): Router {
     h(async (req, res) =>
       res.json({ data: await crmActions.history(callerOf(req), String(req.params.id)) }),
     ),
+  );
+  router.get(
+    '/crm/salespeople',
+    g('crm-opportunities', 'view'),
+    h(async (req, res) => res.json({ data: await crmActions.salespeople(callerOf(req)) })),
   );
   router.get(
     '/crm/pipeline',
@@ -396,11 +405,14 @@ export function createSalesRouter(): Router {
         relatedId: uuid.nullish(),
         customerId: uuid.nullish(),
         subject: z.string().trim().min(2).max(200),
-        kind: z.enum(['Meeting', 'Call']).optional(),
+        kind: z.enum(['Meeting', 'Call', 'Email', 'WhatsApp']).optional(),
         startsAt: ts,
         durationMin: z.number().int().min(1).max(1440).nullish(),
         attendees: z.string().max(300).nullish(),
         ownerId: uuid.nullish(),
+        locationMode: z.string().trim().max(30).nullish(),
+        agenda: z.string().trim().max(1000).nullish(),
+        projectNumber: z.string().trim().max(50).nullish(),
       })
       .strict(),
     { submit: false },

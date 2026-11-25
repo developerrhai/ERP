@@ -86,6 +86,11 @@ export const lookupPos = async (): Promise<Option[]> => {
   }));
 };
 
+export const lookupSalespeople = async (): Promise<Option[]> => {
+  const r = await request<{ id: string; name: string }[]>('/crm/salespeople');
+  return r.data.map((u) => ({ id: u.id, label: u.name }));
+};
+
 export const lookupCustomers = async (q = ''): Promise<Option[]> => {
   const r = await request<{ id: string; code: string; name: string }[]>(
     `/customers${qs({ q, size: 30 })}`,

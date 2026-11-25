@@ -55,6 +55,11 @@ export interface CrudSpec {
   canEdit?: (row: Row) => boolean;
   /** numbering series override */
   series?: string;
+  /** extra columns / joins on the list query (aliases: t = the document) */
+  extraSelect?: string;
+  extraJoin?: string;
+  /** adds display-only fields to a single record (names behind ids) */
+  decorate?: (db: Db, row: Row) => Promise<Row>;
 }
 
 const pick = (src: Row, keys: string[]): Row => {
@@ -101,6 +106,7 @@ export function makeCrud(spec: CrudSpec) {
       ...norm<Row>(h),
       ...(supplierName ? { supplierName } : {}),
       ...(customerName ? { customerName } : {}),
+      ...(spec.decorate ? await spec.decorate(db, h) : {}),
       lines: lines.map((l) => norm<Row>(l)),
     };
   }
@@ -144,9 +150,10 @@ export function makeCrud(spec: CrudSpec) {
       );
       const rows = await query(
         prisma,
-        `SELECT t.*${spec.hasSupplier ? ', s.name AS supplier_name' : ''}${spec.hasCustomer ? ', cu.name AS customer_name' : ''} FROM "${def.table}" t
+        `SELECT t.*${spec.hasSupplier ? ', s.name AS supplier_name' : ''}${spec.hasCustomer ? ', cu.name AS customer_name' : ''}${spec.extraSelect ? `, ${spec.extraSelect}` : ''} FROM "${def.table}" t
           ${spec.hasSupplier ? 'LEFT JOIN suppliers s ON s.id = t.supplier_id' : ''}
           ${spec.hasCustomer ? 'LEFT JOIN customers cu ON cu.id = t.customer_id' : ''}
+          ${spec.extraJoin ?? ''}
           WHERE ${where.join(' AND ')} ORDER BY t.${safe} ${desc ? 'DESC' : 'ASC'}, t.id
           LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
         ...args,

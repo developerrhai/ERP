@@ -2,7 +2,7 @@
 // Rate Contract and Debit Note. A document goes Draft -> Submit -> Approved (-> Post / Cancel where it posts).
 // The list, the "New" form (header fields + line grid) and the detail dialog are driven by a small config per page.
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { EmailDocDialog } from '../../components/EmailDocDialog';
 import { HistoryDrawer, MoveForwardDialog } from '../../components/MoveForward';
 import { docsMailApi, saveFile } from '../../lib/docsMailApi';
@@ -21,6 +21,7 @@ import {
   getDoc,
   listDocs,
   lookupCustomers,
+  lookupSalespeople,
   lookupSuppliers,
   updateDoc,
   verb,
@@ -33,6 +34,8 @@ import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
 import { useFrame } from '../frame/V40TabFrame';
 import { V40Register } from '../sales/V40Register';
+import { DocumentsPanel } from '../generic/DocumentsPanel';
+import type { PageSchema } from '../generic/engineApi';
 import { V40Body } from './V40Body';
 import { SPECS } from './v40Specs';
 import { SALES_V40_IDS } from '../sales/salesV40Api';
@@ -47,7 +50,10 @@ type FieldType =
   | 'select'
   | 'check'
   | 'ref'
-  | 'customer';
+  | 'customer'
+  | 'user'
+  | 'project'
+  | 'datetime';
 export interface FieldCfg {
   key: string;
   label: string;
@@ -58,6 +64,12 @@ export interface FieldCfg {
   refPath?: string;
   /** line only: pre-filled value */
   def?: string;
+  /** shown but never sent: numbers the server gives, or a stage that only Move Forward may change */
+  readOnly?: boolean;
+  /** optional text the user may empty on Edit: a blank is then sent as '' (the server clears it) */
+  clearable?: boolean;
+  /** greyed text inside an empty read-only field */
+  placeholder?: string;
 }
 /** Extra input for an action: asked in a small dialog first; `body` is always sent. */
 export interface MoreExtra {
@@ -73,7 +85,7 @@ export interface DocCfg {
   sub: string;
   path: string;
   add: string;
-  columns: { key: string; label: string; fmt?: 'inr' | 'date' | 'pill' | 'num' }[];
+  columns: { key: string; label: string; fmt?: 'inr' | 'date' | 'pill' | 'num' | 'time' }[];
   header: FieldCfg[];
   lines?: FieldCfg[];
   post?: boolean;
@@ -104,6 +116,12 @@ const s = (v: unknown): string =>
 function show(v: unknown, fmt?: string): string {
   if (fmt === 'inr') return inr(s(v));
   if (fmt === 'date') return dmy(s(v));
+  if (fmt === 'time') {
+    const d = new Date(s(v));
+    return s(v) && !Number.isNaN(d.getTime())
+      ? d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })
+      : '—';
+  }
   return s(v) || '—';
 }
 
@@ -236,7 +254,7 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
                     <tr>
                       <th>Number</th>
                       {cfg.columns.map((c) => (
-                        <th key={c.key}>{c.label}</th>
+                        <th key={c.label}>{c.label}</th>
                       ))}
                       <th>Status</th>
                     </tr>
@@ -255,7 +273,7 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
                           </button>
                         </td>
                         {cfg.columns.map((c) => (
-                          <td key={c.key}>{show(r[c.key], c.fmt)}</td>
+                          <td key={c.label}>{show(r[c.key], c.fmt)}</td>
                         ))}
                         <td>
                           <Pill>{r.status}</Pill>
@@ -392,6 +410,11 @@ function Input({
         : Promise.resolve([]),
     [f.type, f.refPath],
   );
+  const people = useLoad<Option[]>(
+    () => (f.type === 'user' ? lookupSalespeople() : Promise.resolve([])),
+    [f.type],
+  );
+  const navigate = useNavigate();
   const fid = `f-${f.key}${idSuffix}`;
   const common = { 'aria-invalid': error ? true : undefined, id: fid };
   let control;
@@ -414,6 +437,47 @@ function Input({
         label={(o) => o.label}
         onPick={(o) => onChange(o?.id ?? '')}
       />
+    );
+  else if (f.type === 'user')
+    control = (
+      <select {...common} value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">{f.key === 'ownerId' && f.label === 'Organizer' ? 'Choose an organizer…' : 'Choose a salesperson…'}</option>
+        {(people.data ?? []).map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    );
+  else if (f.type === 'project')
+    control = (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input
+          {...common}
+          type="text"
+          style={{ flex: 1 }}
+          placeholder="e.g. PRJ-2026-001"
+          value={value}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+        />
+        <button
+          type="button"
+          className="btn sm"
+          onClick={() =>
+            navigate(
+              value.trim()
+                ? `/m/project-global-history?project=${encodeURIComponent(value.trim())}`
+                : '/m/project-global-history',
+            )
+          }
+        >
+          Load Project History
+        </button>
+      </div>
+    );
+  else if (f.readOnly)
+    control = (
+      <input {...common} type="text" readOnly disabled value={value} placeholder={f.placeholder ?? ''} />
     );
   else if (f.type === 'warehouse')
     control = (
@@ -470,7 +534,9 @@ function Input({
     control = (
       <input
         {...common}
-        type={f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'}
+        type={
+          f.type === 'datetime' ? 'datetime-local' : f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'
+        }
         step={f.type === 'number' ? 'any' : undefined}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -483,6 +549,11 @@ function Input({
         {f.required ? ' *' : ''}
       </label>
       {control}
+      {f.type === 'project' ? (
+        <small className="muted">
+          Same number in every department: the project links this record across Sales, Purchase, Production and Finance.
+        </small>
+      ) : null}
       {error ? <span className="field-error">{error}</span> : null}
     </div>
   );
@@ -543,15 +614,32 @@ function TotalsPanel({ lines }: { lines: Record<string, string>[] }) {
 
 const INT_KEYS = ['leadDays', 'rating', 'probability', 'durationMin', 'score'];
 
-function toBody(fields: FieldCfg[], vals: Record<string, string>): Row {
+/** ISO instant -> the "YYYY-MM-DDTHH:mm" value of a datetime-local input, in the browser's time zone. */
+function localInput(iso: string): string {
+  const d = new Date(iso);
+  if (!iso || Number.isNaN(d.getTime())) return '';
+  const p = (n: number): string => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function toBody(fields: FieldCfg[], vals: Record<string, string>, editing = false): Row {
   const out: Row = {};
   for (const f of fields) {
+    if (f.readOnly) continue;
     const v = vals[f.key] ?? '';
+    if (f.type === 'datetime') {
+      const d = new Date(v);
+      if (v !== '' && !Number.isNaN(d.getTime())) out[f.key] = d.toISOString();
+      continue;
+    }
     if (f.type === 'check') {
       out[f.key] = v === 'true';
       continue;
     }
-    if (v === '') continue;
+    if (v === '') {
+      if (editing && f.clearable) out[f.key] = '';
+      continue;
+    }
     out[f.key] = f.type === 'number' && INT_KEYS.includes(f.key) ? Number(v) : v;
   }
   return out;
@@ -572,7 +660,9 @@ function DocForm({
     const o: Record<string, string> = {};
     for (const f of fields)
       o[f.key] = src
-        ? s(src[f.key])
+        ? f.type === 'datetime'
+          ? localInput(s(src[f.key]))
+          : s(src[f.key])
         : f.type === 'date' && f.key.toLowerCase().includes('date') && !f.def
           ? ''
           : (f.def ?? '');
@@ -603,7 +693,7 @@ function DocForm({
     setMsg('');
     setFields({});
     try {
-      const body: Row = { ...toBody(cfg.header, head) };
+      const body: Row = { ...toBody(cfg.header, head, doc !== null) };
       if (cfg.lines) {
         body.lines = lines.map((l) => ({
           ...toBody(cfg.lines ?? [], l),
@@ -729,10 +819,10 @@ function DocForm({
 
 // ------------------------------------------------------------------------------------------------ detail
 /** V40 record bar on a document: Move Forward, Industry PDF, Word, Email, History (Phase 36 C3). */
-function RecordBar({ doc }: { doc: Doc }) {
+function RecordBar({ doc, canEdit }: { doc: Doc; canEdit: boolean }) {
   const { pageId = '' } = useParams();
   const toast = useToast();
-  const [dlg, setDlg] = useState<'move' | 'email' | 'history' | null>(null);
+  const [dlg, setDlg] = useState<'move' | 'email' | 'history' | 'docs' | null>(null);
   const docNo = s(doc.number);
   async function download(kind: 'standard' | 'word', ext: string) {
     try {
@@ -758,6 +848,27 @@ function RecordBar({ doc }: { doc: Doc }) {
       <button type="button" className="btn" onClick={() => setDlg('history')}>
         History
       </button>
+      <button type="button" className="btn" onClick={() => setDlg('docs')}>
+        Documents
+      </button>
+      {dlg === 'docs' ? (
+        <Modal
+          title={`Documents · ${docNo}`}
+          onClose={() => setDlg(null)}
+          footer={
+            <button type="button" className="btn" onClick={() => setDlg(null)}>
+              Close
+            </button>
+          }
+        >
+          <DocumentsPanel
+            schema={{ pageId } as unknown as PageSchema}
+            row={{ id: doc.id, code: docNo, status: s(doc.status) }}
+            canEdit={canEdit}
+            onChanged={() => undefined}
+          />
+        </Modal>
+      ) : null}
       {dlg === 'move' ? (
         <MoveForwardDialog
           docType={pageId}
@@ -838,7 +949,7 @@ function DocDetail({
       onClose={onClose}
       footer={
         <>
-          <RecordBar doc={doc} />
+          <RecordBar doc={doc} canEdit={actions.edit} />
           {canEditStatus(cfg, String(doc.status)) && actions.edit ? (
             <button type="button" className="btn" onClick={onEdit}>
               Edit
@@ -931,7 +1042,7 @@ function DocDetail({
       <WorkflowStrip docType={cfg.pageId} docId={doc.id} />
       <dl className="kv">
         {cfg.columns.map((c) => (
-          <div key={c.key}>
+          <div key={c.label}>
             <dt>{c.label}</dt>
             <dd>{show(doc[c.key], c.fmt)}</dd>
           </div>

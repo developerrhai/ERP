@@ -198,7 +198,7 @@ export function RecordStrip(p: StripProps) {
 // ----------------------------------------------------------------------------------- Planner and Add Activity
 const CHANNELS: Record<string, string[]> = {
   'crm-followups': ['Call', 'Email', 'Meeting', 'Visit', 'WhatsApp'],
-  'crm-meetings': ['Meeting', 'Call'],
+  'crm-meetings': ['Meeting', 'Call', 'Email', 'WhatsApp'],
 };
 const TIMELINE_TITLE: Record<string, string> = {
   'crm-followups': 'Follow-up Planner',

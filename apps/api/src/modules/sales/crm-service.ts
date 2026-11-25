@@ -85,6 +85,23 @@ export const leadCrud = makeCrud({
     return { header: c.header, lines: [] };
   },
 });
+/** Turns a typed Project Number into project_id (blank clears it; an unknown number is a field error). */
+async function resolveProject(tx: Db, header: Row): Promise<Row> {
+  if (!('projectNumber' in header)) return header;
+  const code = S(header.projectNumber).trim();
+  delete header.projectNumber;
+  if (code === '') header.projectId = null;
+  else {
+    const p = (await query(tx, `SELECT id FROM projects WHERE upper(code)=upper($1) LIMIT 1`, code))[0];
+    if (!p)
+      throw Errors.validation({
+        projectNumber: `No project has the number ${code}. Create it under Projects first, or leave this blank.`,
+      });
+    header.projectId = p.id;
+  }
+  return header;
+}
+
 export const oppCrud = makeCrud({
   hasCustomer: true,
   def: OPP_DEF,
@@ -97,9 +114,33 @@ export const oppCrud = makeCrud({
     'probability',
     'expectedClose',
     'ownerId',
+    'primaryContact',
+    'competitor',
+    'nextAction',
+    'projectNumber',
   ],
   lineKeys: [],
   canEdit: notTerminal(['Won', 'Lost']),
+  extraSelect: 'pj.code AS project_number, ow.name AS owner_name',
+  extraJoin:
+    'LEFT JOIN projects pj ON pj.id = t.project_id LEFT JOIN users ow ON ow.id = t.owner_id',
+  async decorate(db, h) {
+    const r = (
+      await query(
+        db,
+        `SELECT (SELECT code FROM projects WHERE id=$1::uuid) AS project_number, (SELECT name FROM users WHERE id=$2::uuid) AS owner_name`,
+        h.project_id ?? null,
+        h.owner_id ?? null,
+      )
+    )[0];
+    return { projectNumber: r?.project_number ?? null, ownerName: r?.owner_name ?? null };
+  },
+  /** The Project Number is typed by the user; the table stores the project's id. A blank clears the link. */
+  async prepare(c) {
+    const header = await resolveProject(c.tx, { ...c.header });
+    if (!c.existing && !header.ownerId) header.ownerId = c.caller.auth.userId;
+    return { header, lines: [] };
+  },
   async afterSave(c) {
     await insertRow(c.tx, 'opportunity_stage_history', {
       opportunityId: c.id,
@@ -130,9 +171,31 @@ export const meetingCrud = makeCrud({
     'durationMin',
     'attendees',
     'ownerId',
+    'locationMode',
+    'agenda',
+    'projectNumber',
   ],
   lineKeys: [],
   canEdit: notTerminal(['Held', 'Cancelled']),
+  extraSelect: 'pj.code AS project_number, ow.name AS owner_name',
+  extraJoin:
+    'LEFT JOIN projects pj ON pj.id = t.project_id LEFT JOIN users ow ON ow.id = t.owner_id',
+  async decorate(db, h) {
+    const r = (
+      await query(
+        db,
+        `SELECT (SELECT code FROM projects WHERE id=$1::uuid) AS project_number, (SELECT name FROM users WHERE id=$2::uuid) AS owner_name`,
+        h.project_id ?? null,
+        h.owner_id ?? null,
+      )
+    )[0];
+    return { projectNumber: r?.project_number ?? null, ownerName: r?.owner_name ?? null };
+  },
+  async prepare(c) {
+    const header = await resolveProject(c.tx, { ...c.header });
+    if (!c.existing && !header.ownerId) header.ownerId = c.caller.auth.userId;
+    return { header, lines: [] };
+  },
 });
 export const feedbackCrud = makeCrud({
   hasCustomer: true,
@@ -385,6 +448,16 @@ export const crmActions = {
       };
     });
     return { stages: cols };
+  },
+
+  /** Active users a deal can be assigned to (the Salesperson dropdown of the opportunity form). */
+  async salespeople(_caller: Caller) {
+    return (
+      await query(
+        prisma,
+        `SELECT id, name FROM users WHERE status='ACTIVE' ORDER BY name LIMIT 300`,
+      )
+    ).map((r) => ({ id: S(r.id), name: S(r.name) }));
   },
 
   async history(caller: Caller, id: string) {
