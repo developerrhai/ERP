@@ -23,7 +23,7 @@ import {
 } from '../typed';
 import type { ListResult, TypedHandler, TypedListQuery, TypedRecordDto } from '../typed';
 import { itemRepository as repo } from './repository';
-import { itemExtras, itemSchemaFull, resolveItemRefs } from './workspace';
+import { MATERIAL_CLASS, gstChoice, itemExtras, itemSchemaFull, materialClassLabel, resolveItemRefs } from './workspace';
 import type { ItemExtra } from './workspace';
 import { holderScope } from '../../work/holder-filter';
 import { itemStats } from '../v40/stats';
@@ -116,6 +116,8 @@ function toData(row: Item): Record<string, unknown> {
 function extraData(row: Item, e: ItemExtra | undefined): Record<string, unknown> {
   return {
     taxPct: e?.taxPct ?? null,
+    gstPct: e?.gstPct ?? null,
+    materialClass: materialClassLabel(row.materialClass),
     defaultBom: row.defaultBomRef ?? e?.bom ?? null,
     defaultRouting: row.defaultRoutingRef ?? e?.routing ?? null,
     projectNumber: e?.projectNumber ?? null,
@@ -289,6 +291,7 @@ export const itemHandler: TypedHandler = {
       throw Errors.duplicate({ barcode: 'This barcode is already in use.' });
     }
     const refs = await resolveItemRefs(values, [], null);
+    const gst = typeof values.gstPct === 'string' && values.gstPct ? await gstChoice(values.gstPct, hsnId) : {};
     try {
       const created = await prisma.$transaction(async (tx) => {
         const code = explicit ?? (await repo.nextCode(tx));
@@ -296,6 +299,8 @@ export const itemHandler: TypedHandler = {
           {
             ...(createData(values) as Prisma.ItemUncheckedCreateInput),
             ...refs,
+            ...gst,
+            ...(typeof values.materialClass === 'string' ? { materialClass: MATERIAL_CLASS[values.materialClass] ?? null } : {}),
             ...(values.recordStatus === 'Inactive' ? { status: 'INACTIVE' as const } : {}),
             hsnId,
             code,
@@ -369,6 +374,19 @@ export const itemHandler: TypedHandler = {
       );
     }
     const before: Record<string, unknown> = toData(current);
+    if (typeof v.values.materialClass === 'string') data.materialClass = MATERIAL_CLASS[v.values.materialClass] ?? null;
+    else if (v.cleared.includes('materialClass')) data.materialClass = null;
+    if (data.materialClass !== undefined && data.materialClass !== current.materialClass) after.materialClass = data.materialClass;
+    if (typeof v.values.gstPct === 'string' && v.values.gstPct) {
+      const hsn = (data as Record<string, unknown>).hsnId ?? current.hsnId;
+      if (typeof hsn === 'string') {
+        const gst = await gstChoice(v.values.gstPct, hsn);
+        if (gst.gstRateOverrideId !== current.gstRateOverrideId) {
+          Object.assign(data, gst);
+          after.gstPct = v.values.gstPct;
+        }
+      }
+    }
     const changed = Object.keys(after).filter(
       (k) => JSON.stringify(after[k]) !== JSON.stringify(before[k]),
     );

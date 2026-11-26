@@ -56,6 +56,7 @@ const supplierBody = z
   .object({
     ...partyFields,
     supplierType: z.enum(['MATERIAL', 'CONTRACTOR']).optional(),
+    materialClass: z.enum(['DIRECT', 'INDIRECT']).nullish(),
     msmeUdyamNo: z.string().trim().max(25).nullish(),
     msmeCategory: z.enum(['MICRO', 'SMALL', 'MEDIUM']).nullish(),
     msmeActivity: z.enum(['MANUFACTURING', 'SERVICES', 'TRADING']).nullish(),
@@ -113,6 +114,15 @@ export function createMastersRouter(): Router {
             }
           : { ok: false, gstin: normaliseGstin(raw), code: r.code, message: r.message },
       });
+    }),
+  );
+
+  // the state drop-down of a party without a GSTIN (its state cannot be read from a number)
+  router.get(
+    '/statutory/states',
+    asyncHandler(async (_req: Request, res: Response) => {
+      const states = await knownStates();
+      res.json({ data: [...states.names.entries()].map(([code, name]) => ({ code, name })).sort((a, b) => a.name.localeCompare(b.name)) });
     }),
   );
 
@@ -391,6 +401,18 @@ export function createMastersRouter(): Router {
       await runIdempotent(req, res, caller.auth.userId, 'suppliers:create', [body], async () =>
         partyService.createSupplier(caller, clean(body) as never),
       );
+    }),
+  );
+
+  const classBody = z.object({ materialClass: z.enum(['DIRECT', 'INDIRECT']).nullable() }).strict();
+  router.put(
+    '/suppliers/:id/material-class',
+    requirePageAction(SUPPLIER_DOC_TYPE, 'edit'),
+    validate({ params: idParams, body: classBody }),
+    asyncHandler(async (req: Request, res: Response) => {
+      const { id } = validated(res, 'params', idParams);
+      const { materialClass } = validated(res, 'body', classBody);
+      res.json({ data: await partyService.setMaterialClass(callerOf(req), id, materialClass) });
     }),
   );
 

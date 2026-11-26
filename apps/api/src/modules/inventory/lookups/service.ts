@@ -5,6 +5,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { assertUnitChoice } from '../../../core/context/resolve-context';
 import { escapeLike } from '../../../core/http/query-safety';
+import { itemTaxToday } from '../../masters/current-gst';
 import type { Caller } from '../../records/service';
 
 export interface LookupQuery {
@@ -15,7 +16,7 @@ export interface LookupQuery {
 }
 
 export const lookupService = {
-  async items(query: LookupQuery) {
+  async items(query: LookupQuery & { tax?: boolean | undefined }) {
     const like = query.q ? escapeLike(query.q) : null;
     const rows = await prisma.item.findMany({
       where: {
@@ -35,7 +36,14 @@ export const lookupService = {
       take: query.limit,
       select: { id: true, code: true, name: true, baseUom: true },
     });
-    return rows.map((r) => ({ id: r.id, code: r.code, name: r.name, uom: r.baseUom }));
+    const tax = query.tax ? await itemTaxToday(rows.map((r) => r.id)) : null;
+    return rows.map((r) => ({
+      id: r.id,
+      code: r.code,
+      name: r.name,
+      uom: r.baseUom,
+      ...(tax ? { hsnSac: tax.get(r.id)?.hsnSac ?? null, gstPct: tax.get(r.id)?.gstPct ?? null } : {}),
+    }));
   },
 
   async warehouses(caller: Caller, query: LookupQuery) {

@@ -7,6 +7,7 @@ import { Errors } from '../../../core/http/errors';
 import type { FieldMeta } from '../../../engine/field-types';
 import { TYPED_SCHEMAS } from '../definitions';
 import type { TypedSchema } from '../definitions';
+import { itemTaxToday, plainPct } from '../../masters/current-gst';
 
 const field = (key: string, label: string, type: FieldMeta['type'], o: Partial<FieldMeta> = {}): FieldMeta => ({
   key,
@@ -17,10 +18,15 @@ const field = (key: string, label: string, type: FieldMeta['type'], o: Partial<F
   ...o,
 });
 
+const GST_PCT_OPTIONS = ['0', '0.25', '3', '5', '12', '18', '28', '40'];
+
 export const ITEM_WORKSPACE_FIELDS: readonly FieldMeta[] = [
   field('partNumber', 'Part Number', 'text', { maxLength: 60 }),
   field('minStock', 'Minimum Stock', 'qty', { min: 0, max: 99_999_999_999_999 }),
   field('taxPct', 'Tax / GST % (from HSN)', 'text', { readOnly: true }),
+  // REQ-05: chosen on the form (filled from the HSN code); another rate than the code's becomes the item's own rate
+  field('gstPct', 'GST %', 'enum', { options: GST_PCT_OPTIONS }),
+  field('materialClass', 'Material Class', 'enum', { options: ['Direct Material', 'Indirect'] }),
   field('defaultBom', 'Default BOM', 'text', { maxLength: 40 }),
   field('defaultRouting', 'Default Routing', 'text', { maxLength: 40 }),
   field('projectNumber', 'Project Number', 'text', { maxLength: 40 }),
@@ -31,13 +37,55 @@ let full: TypedSchema | null = null;
 export function itemSchemaFull(): TypedSchema {
   if (!full) {
     const base = TYPED_SCHEMAS['inv-items'];
-    full = { ...base, fields: [...base.fields, ...ITEM_WORKSPACE_FIELDS] };
+    // GST % and the material class sit next to the HSN code they belong to; the other fields follow the frozen ones
+    const near = ITEM_WORKSPACE_FIELDS.filter((f) => f.key === 'gstPct' || f.key === 'materialClass');
+    const rest = ITEM_WORKSPACE_FIELDS.filter((f) => !near.includes(f));
+    const fields = base.fields.flatMap((f) => (f.key === 'hsnSac' ? [f, ...near] : [f]));
+    full = { ...base, fields: [...fields, ...rest] };
   }
   return full;
 }
 
+/** The schema the web form gets: GST % must be chosen there (REQ-05). Imports and other callers still derive it from the HSN. */
+export function itemSchemaForWeb(): TypedSchema {
+  const s = itemSchemaFull();
+  return { ...s, fields: s.fields.map((f) => (f.key === 'gstPct' || f.key === 'hsnSac' ? { ...f, required: true } : f)) };
+}
+
+/** The GST percentages a Tax Master rate carries today: what the "GST %" drop-down offers (ended rates are left out). */
+export async function gstPctOptionsToday(): Promise<string[]> {
+  // unpaginated: the few GST percentages of the Tax Master
+  const rows = await prisma.$queryRaw<{ pct: string }[]>`
+    SELECT DISTINCT igst_pct::text AS pct, igst_pct FROM gst_rates WHERE status = 'ACTIVE' AND deleted_at IS NULL
+      AND effective_from <= CURRENT_DATE AND (effective_to IS NULL OR effective_to >= CURRENT_DATE) ORDER BY igst_pct`;
+  return rows.map((r) => String(Number(r.pct)));
+}
+
+export const MATERIAL_CLASS: Record<string, 'DIRECT' | 'INDIRECT'> = { 'Direct Material': 'DIRECT', Indirect: 'INDIRECT' };
+export const materialClassLabel = (v: string | null): string | null => (v === 'DIRECT' ? 'Direct Material' : v === 'INDIRECT' ? 'Indirect' : null);
+
+/**
+ * What the chosen GST % means for the item: nothing of its own when its HSN code carries that rate today, else the Tax
+ * Master rate of that percentage as the item's override (with the reason the database asks for).
+ */
+export async function gstChoice(pct: string, hsnId: string): Promise<{ gstRateOverrideId: string | null; gstOverrideReason: string | null }> {
+  const want = Number(pct);
+  const own = await prisma.$queryRaw<{ n: number }[]>`
+    SELECT count(*)::int AS n FROM hsn_sac_rates r JOIN gst_rates g ON g.id = r.gst_rate_id
+    WHERE r.hsn_id = ${hsnId}::uuid AND g.igst_pct = ${want} AND r.effective_from <= CURRENT_DATE
+      AND (r.effective_to IS NULL OR r.effective_to >= CURRENT_DATE)`;
+  if ((own[0]?.n ?? 0) > 0) return { gstRateOverrideId: null, gstOverrideReason: null };
+  const rate = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT id::text AS id FROM gst_rates WHERE igst_pct = ${want} AND status = 'ACTIVE' AND deleted_at IS NULL
+      AND effective_from <= CURRENT_DATE AND (effective_to IS NULL OR effective_to >= CURRENT_DATE)
+    ORDER BY (kind = 'TAXABLE') DESC, code LIMIT 1`;
+  if (!rate[0]) throw Errors.validation({ gstPct: `There is no GST rate of ${want}% valid today in the Tax Master.` });
+  return { gstRateOverrideId: rate[0].id, gstOverrideReason: `GST ${want}% chosen on the item form.` };
+}
+
 export interface ItemExtra {
   taxPct: string | null;
+  gstPct: string | null;
   bom: string | null;
   routing: string | null;
   projectNumber: string | null;
@@ -60,9 +108,13 @@ export async function itemExtras(rows: readonly Item[]): Promise<Map<string, Ite
       (SELECT r.number FROM mfg_routings r WHERE r.item_id = i.id AND r.deleted_at IS NULL ORDER BY r.version_no DESC LIMIT 1) AS routing,
       (SELECT p.code FROM projects p WHERE p.id = i.project_id) AS project
     FROM items i WHERE i.id = ANY(${ids}::uuid[])`;
+  // the item's own rate wins over the HSN rate
+  const today = await itemTaxToday(ids);
   for (const f of found) {
+    const pct = today.get(f.id)?.gstPct ?? plainPct(f.tax_pct);
     out.set(f.id, {
-      taxPct: f.tax_pct === null ? null : `${Number(f.tax_pct)}%`,
+      gstPct: pct,
+      taxPct: pct === null ? null : `${pct}%`,
       bom: f.bom,
       routing: f.routing,
       projectNumber: f.project,

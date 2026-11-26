@@ -50,6 +50,11 @@ interface Spec {
 const soOf = (alias: string): string =>
   `(SELECT string_agg(so.number, ', ' ORDER BY so.number) FROM sales_orders so WHERE so.project_id = ${alias}.project_id AND so.deleted_at IS NULL)`;
 
+/** The Supplier PO(s) behind an invoice: its own, else those of the goods receipts it bills. */
+const poOfInvoice = `COALESCE(po.number, (SELECT string_agg(DISTINCT p2.number, ', ') FROM purchase_invoice_lines il2
+  JOIN goods_receipt_lines gl2 ON gl2.id = il2.grn_line_id JOIN goods_receipts g2 ON g2.id = gl2.grn_id
+  JOIN purchase_orders p2 ON p2.id = g2.po_id WHERE il2.invoice_id = t.id))`;
+
 const SPECS: Record<V40Kind, Spec> = {
   po: {
     page: 'scm-po',
@@ -71,11 +76,13 @@ const SPECS: Record<V40Kind, Spec> = {
       pt.name AS payment_terms, l.received_qty AS received_quantity, l.accepted_qty AS accepted_quantity,
       l.billed_qty AS billed_quantity, l.closed_qty AS cancelled_quantity,
       GREATEST(l.qty - l.received_qty - l.closed_qty, 0) AS pending_quantity,
-      w.code AS ship_to, cu.name AS buyer, pj.code AS project_number, ${soOf('t')} AS sales_order,
+      w.code AS ship_to, cu.name AS buyer, pj.code AS project_number,
+      COALESCE((SELECT cso.number FROM sales_orders cso WHERE cso.id = t.sales_order_id), ${soOf('t')}) AS sales_order,
+      (SELECT cso.customer_po_no FROM sales_orders cso WHERE cso.id = t.sales_order_id) AS customer_po,
       (l.taxable + l.cgst + l.sgst + l.igst) * LEAST(l.received_qty / NULLIF(l.qty, 0), 1) AS received_value,
       t.created_at`,
     order: 't.created_at DESC, t.number DESC, l.line_no',
-    search: ['t.number', 's.name', 's.code', 'i.code', 'i.name', 'pr.number'],
+    search: ['t.number', 's.name', 's.code', 'i.code', 'i.name', 'pr.number', '(SELECT cso.customer_po_no FROM sales_orders cso WHERE cso.id = t.sales_order_id)'],
     status: 't.status',
   },
   grn: {
@@ -134,7 +141,7 @@ const SPECS: Record<V40Kind, Spec> = {
       LEFT JOIN purchase_orders po ON po.id = t.po_id
       LEFT JOIN units un ON un.id = t.unit_id`,
     select: `t.id::text AS id, t.number, t.status, t.version, s.code AS vendor_id, s.name AS vendor,
-      t.vendor_invoice_no AS vendor_invoice_ref, t.invoice_date, t.due_date, po.number AS po_number,
+      t.vendor_invoice_no AS vendor_invoice_ref, t.invoice_date, t.due_date, ${poOfInvoice} AS po_number,
       (SELECT string_agg(DISTINCT g.number, ', ') FROM purchase_invoice_lines il
         JOIN goods_receipt_lines gl ON gl.id = il.grn_line_id JOIN goods_receipts g ON g.id = gl.grn_id
         WHERE il.invoice_id = t.id) AS grn_number,
@@ -143,10 +150,12 @@ const SPECS: Record<V40Kind, Spec> = {
       (SELECT COALESCE(sum(il.matched_value), 0) FROM purchase_invoice_lines il WHERE il.invoice_id = t.id) AS matched_amount,
       t.payment_status, t.match_state, t.payment_block, t.payment_block_reason, t.supplier_gstin, t.gstr2b_status,
       un.code AS company_code, t.department, t.is_rcm,
+      (SELECT cso.customer_po_no FROM sales_orders cso WHERE cso.id = t.sales_order_id) AS customer_po,
+      (SELECT cso.number FROM sales_orders cso WHERE cso.id = t.sales_order_id) AS sales_order,
       (SELECT count(*)::int FROM invoice_match_exceptions e WHERE e.invoice_id = t.id AND e.state = 'OPEN') AS open_exceptions,
       t.created_at`,
     order: 't.created_at DESC, t.number DESC',
-    search: ['t.number', 's.name', 's.code', 't.vendor_invoice_no', 'po.number'],
+    search: ['t.number', 's.name', 's.code', 't.vendor_invoice_no', poOfInvoice, '(SELECT cso.customer_po_no FROM sales_orders cso WHERE cso.id = t.sales_order_id)'],
     status: 't.status',
   },
   'invoice-exceptions': {
@@ -172,7 +181,8 @@ const SPECS: Record<V40Kind, Spec> = {
         ORDER BY a.is_default DESC, a.type LIMIT 1) ad ON true
       LEFT JOIN LATERAL (SELECT e.quality, e.delivery, e.cost, e.response, e.overall, e.grade, e.period FROM supplier_evaluations e
         WHERE e.supplier_id = t.id ORDER BY e.period DESC, e.created_at DESC LIMIT 1) ev ON true`,
-    select: `t.id::text AS id, t.code AS vendor_id, t.name AS vendor_name, t.legal_name, t.supplier_type, t.status,
+    select: `t.id::text AS id, t.code AS vendor_id, t.name AS vendor_name, t.legal_name, t.supplier_type,
+      CASE t.material_class WHEN 'DIRECT' THEN 'Direct Material' WHEN 'INDIRECT' THEN 'Indirect' END AS material_class, t.status,
       t.version, t.approval_status, t.gstin AS gst_number, t.pan, t.state_code, t.gst_registration_type,
       ct.name AS contact_person, ct.mobile, ct.email,
       NULLIF(concat_ws(', ', ad.line1, ad.city, ad.pincode), '') AS address, pt.name AS payment_terms,
@@ -187,7 +197,7 @@ const SPECS: Record<V40Kind, Spec> = {
       (SELECT count(*)::int FROM purchase_orders p WHERE p.supplier_id = t.id AND p.deleted_at IS NULL) AS po_count,
       t.created_at`,
     order: 't.name, t.id',
-    search: ['t.code', 't.name', 't.gstin', 'ct.name', 'ct.email'],
+    search: ['t.code', 't.name', 't.gstin', 'ct.name', 'ct.email', `CASE t.material_class WHEN 'DIRECT' THEN 'Direct Material' WHEN 'INDIRECT' THEN 'Indirect' END`],
     status: 't.status',
   },
   rfq: {

@@ -35,6 +35,7 @@ import {
 import { LookupCombobox } from './LookupCombobox';
 import { useFormFormat } from '../settings/useFormFormat';
 import { DateField } from '../../ui/components';
+import { lookupHsn, type HsnChoice } from '../../lib/inventoryApi';
 
 interface Props {
   schema: PageSchema;
@@ -180,6 +181,39 @@ export function RecordFormModal({ schema, row: initialRow, defaults, unitId, onC
       });
     }
   };
+
+  // HSN / SAC: suggestions from the Tax Master while typing; choosing a code fills its GST % (REQ-05 / REQ-06)
+  const picksGst = schema.fields.some((f) => f.key === 'gstPct');
+  const hsnKey = schema.fields.find((f) => f.type === 'hsn')?.key;
+  const hsnText = hsnKey ? str(values[hsnKey]).trim() : '';
+  const [hsnChoices, setHsnChoices] = useState<HsnChoice[]>([]);
+  const hsnStart = useRef(hsnText);
+  const hsnHit = hsnChoices.find((c) => c.code === hsnText);
+  useEffect(() => {
+    if (!picksGst || hsnText.length < 2) return undefined;
+    let alive = true;
+    const timer = setTimeout(() => {
+      lookupHsn(hsnText).then(
+        (list) => {
+          if (alive) setHsnChoices(list);
+        },
+        () => undefined,
+      );
+    }, 250);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [picksGst, hsnText]);
+  const hitPct = hsnHit?.gstPct ?? null;
+  const hitCode = hsnHit?.code ?? '';
+  useEffect(() => {
+    // the stored rate of a record being edited is left alone until its code is changed
+    if (hitCode && hitCode !== hsnStart.current && hitPct !== null) {
+      hsnStart.current = hitCode;
+      setValues((prev) => ({ ...prev, gstPct: hitPct }));
+    }
+  }, [hitCode, hitPct]);
 
   const localErrors = (): Record<string, string> => {
     const out: Record<string, string> = {};
@@ -384,6 +418,35 @@ export function RecordFormModal({ schema, row: initialRow, defaults, unitId, onC
               );
             case 'date':
               return <DateField {...c} value={text} onChange={(e) => set(f.key, e.target.value)} />;
+            case 'hsn': {
+              const listId = `${ids.id}-hsn`;
+              return (
+                <>
+                  <input
+                    {...c}
+                    type="text"
+                    list={listId}
+                    autoComplete="off"
+                    placeholder="Type the code or the product name"
+                    value={text}
+                    onChange={(e) => set(f.key, e.target.value)}
+                  />
+                  <datalist id={listId}>
+                    {hsnChoices.map((h) => (
+                      <option key={h.code} value={h.code}>
+                        {`${h.description}${h.gstPct === null ? '' : ` · GST ${h.gstPct}%`}`}
+                      </option>
+                    ))}
+                  </datalist>
+                  {hsnHit ? (
+                    <span className="hint">
+                      {hsnHit.description}
+                      {hsnHit.gstPct === null ? ' · choose the GST % below' : ` · GST ${hsnHit.gstPct}%`}
+                    </span>
+                  ) : null}
+                </>
+              );
+            }
             case 'datetime':
               return (
                 <input
@@ -480,7 +543,8 @@ export function RecordFormModal({ schema, row: initialRow, defaults, unitId, onC
   };
 
   const formId = row ? 'record-edit-form' : 'record-add-form';
-  const shown = schema.fields.filter((f) => (f.type === 'status' ? !!row : true));
+  // the "GST %" the person chooses replaces the read-only "from HSN" figure on the form
+  const shown = schema.fields.filter((f) => (f.type === 'status' ? !!row : !(picksGst && f.key === 'taxPct')));
   return (
     <>
       <Modal

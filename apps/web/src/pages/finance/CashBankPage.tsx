@@ -1,6 +1,7 @@
 // Cash Book (fin-cashbook) and Bank Book (fin-bankbook): the ledger of one cash / bank account with a running
 // balance, plus "New payment / receipt / transfer". A payment is posted at once; undo = Cancel (a mirror journal).
 import { FinV40 } from './FinV40';
+import { SettleBillsModal } from './SettleBills';
 import { useRef, useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
@@ -35,6 +36,8 @@ export function CashBankPage({ cash, actions }: { cash: boolean; actions: Action
     [active, from, to],
   );
   const [dialog, setDialog] = useState<'pay' | 'account' | null>(null);
+  // an entry against open invoices / bills has its own form, opened from the "What happened?" list
+  const [settle, setSettle] = useState<{ side: 'CUSTOMER' | 'SUPPLIER'; bankId: string } | null>(null);
   const done = (msg: string) => {
     setDialog(null);
     book.reload();
@@ -166,6 +169,21 @@ export function CashBankPage({ cash, actions }: { cash: boolean; actions: Action
                 defaultBook={active}
                 onClose={() => setDialog(null)}
                 onSaved={(m) => done(m)}
+                onSettle={(side, bankId) => {
+                  setDialog(null);
+                  setSettle({ side, bankId });
+                }}
+              />
+            ) : null}
+            {settle ? (
+              <SettleBillsModal
+                side={settle.side}
+                bankId={settle.bankId}
+                onClose={() => setSettle(null)}
+                onDone={(m) => {
+                  setSettle(null);
+                  done(m);
+                }}
               />
             ) : null}
             {dialog === 'account' ? (
@@ -187,11 +205,13 @@ function EntryForm({
   defaultBook,
   onClose,
   onSaved,
+  onSettle,
 }: {
   books: BankAccount[];
   defaultBook: string;
   onClose: () => void;
   onSaved: (msg: string) => void;
+  onSettle: (side: 'CUSTOMER' | 'SUPPLIER', bankId: string) => void;
 }) {
   const [kind, setKind] = useState<'RECEIPT' | 'PAYMENT' | 'TRANSFER'>('RECEIPT');
   const [bankAccountId, setBank] = useState(defaultBook);
@@ -273,11 +293,13 @@ function EntryForm({
         <SelectField
           label="What happened? *"
           value={kind}
-          onChange={(v) => setKind(v as typeof kind)}
+          onChange={(v) => (v === 'CUSTOMER' || v === 'SUPPLIER' ? onSettle(v, bankAccountId) : setKind(v as typeof kind))}
         >
           <option value="RECEIPT">Money received</option>
           <option value="PAYMENT">Money paid</option>
           <option value="TRANSFER">Transfer between my accounts</option>
+          <option value="CUSTOMER">Received from a customer (against invoices)</option>
+          <option value="SUPPLIER">Pay a supplier (against bills)</option>
         </SelectField>
         <SelectField
           label={kind === 'TRANSFER' ? 'From account *' : 'Account *'}
@@ -377,8 +399,7 @@ function EntryForm({
         />
         <Field label="Narration" value={narration} onChange={(e) => setNarration(e.target.value)} />
         <p className="v8-sub">
-          Customer receipts are entered in Sales; supplier payments against bills are entered from
-          Accounts Payable.
+          To settle invoices or bills (one entry across several of them), choose it under &quot;What happened?&quot;.
         </p>
       </form>
     </Modal>

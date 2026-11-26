@@ -171,9 +171,15 @@ export const listSuppliers = (
     `/suppliers${qs({ q: q.q, status: q.status, approval: q.approval, page: q.page ?? 1, size: q.size ?? 20 })}`,
   );
 
+export const listStates = () => api<{ code: string; name: string }[]>('/statutory/states');
+
+export const setSupplierMaterialClass = (id: string, materialClass: 'DIRECT' | 'INDIRECT' | null) =>
+  api<{ id: string }>(`/suppliers/${id}/material-class`, { method: 'PUT', body: { materialClass } });
+
 export const createSupplier = (
   input: PartyInput & {
     supplierType?: 'MATERIAL' | 'CONTRACTOR';
+    materialClass?: 'DIRECT' | 'INDIRECT' | null;
     msmeUdyamNo?: string | null;
     msmeCategory?: 'MICRO' | 'SMALL' | 'MEDIUM' | null;
     msmeActivity?: 'MANUFACTURING' | 'SERVICES' | 'TRADING' | null;

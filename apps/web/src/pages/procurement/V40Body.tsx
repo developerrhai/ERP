@@ -316,7 +316,7 @@ function RecordControlsBar({
   activeId: string;
   onSelect: (id: string) => void;
   actions: ActionSet;
-  view: (id: string, row: Row) => void;
+  view: (id: string, row: Row, mode?: 'edit') => void;
   canSubmit: (r: Row) => boolean;
   submitSelected: () => void;
   onDelete: (r: Row) => void;
@@ -616,7 +616,7 @@ function DetailedTable({
   cols: Col[];
   statusKey: string;
   actions: ActionSet;
-  view: (id: string, row: Row) => void;
+  view: (id: string, row: Row, mode?: 'edit') => void;
   onChanged: () => void;
   canSubmit: (r: Row) => boolean;
   extraActions?: (row: Row) => React.ReactNode;
@@ -707,6 +707,8 @@ export interface V40BodyProps {
   /** the host opens its own detail dialog for a record; without it a read-only detail opens here */
   onView?: (id: string) => void;
   /** bump to reload (the host saved something) */
+  /** opens the edit form of a draft record */
+  onEdit?: ((id: string) => void) | undefined;
   reloadKey?: unknown;
   onChanged?: () => void;
   /** page specific extra row buttons (Supplier Master: Bank accounts) */
@@ -717,6 +719,7 @@ export function V40Body({
   pageId,
   actions,
   onView,
+  onEdit,
   reloadKey = 0,
   onChanged,
   extraActions,
@@ -771,7 +774,12 @@ export function V40Body({
     setNonce((x) => x + 1);
     onChanged?.();
   };
-  const view = (id: string, row: Row): void => (onView ? onView(id) : setDetail(row));
+  // "Edit" on a draft opens its form straight away where the page has one; everything else opens the record
+  const view = (id: string, row: Row, mode?: 'edit'): void => {
+    if (mode === 'edit' && onEdit) onEdit(id);
+    else if (onView) onView(id);
+    else setDetail(row);
+  };
 
   const cfg = spec.tabs[tabName] ?? {};
   const colKeys = isReg ? spec.register : (cfg.cols ?? spec.compact);
@@ -1297,7 +1305,7 @@ function RowActions({
   spec: PageSpec;
   row: Row;
   actions: ActionSet;
-  view: (id: string, row: Row) => void;
+  view: (id: string, row: Row, mode?: 'edit') => void;
   onChanged: () => void;
   canSubmit: boolean;
 }) {
@@ -1371,7 +1379,7 @@ function RowActions({
         className="btn sm"
         disabled={!actions.edit}
         aria-label={aria('Edit')}
-        onClick={() => view(id, row)}
+        onClick={() => view(id, row, isDraft ? 'edit' : undefined)}
       >
         Edit
       </button>
@@ -1513,7 +1521,7 @@ interface PanelCtx {
   m: Metrics;
   pageId: string;
   actions: ActionSet;
-  view: (id: string, row: Row) => void;
+  view: (id: string, row: Row, mode?: 'edit') => void;
   reload: () => void;
 }
 

@@ -54,6 +54,7 @@ import { resolveGstPct } from './po-service';
 import '../finance/notes-service';
 import { approvalService } from '../approvals/service';
 import { handlerFor } from '../approvals/handlers';
+import { assertCustomerOrder, customerOrderOfReceipt, customerPoLabels } from './customer-po';
 
 export const PINV_DEF: DocDef = {
   pageId: 'scm-purchaseinvoice',
@@ -141,6 +142,8 @@ export interface InvBody {
   bankAccountId?: string | null;
   advanceTerms?: string | null;
   notes?: string | null;
+  /** the customer order this purchase is for; omitted = the one on the purchase order of the received goods */
+  salesOrderId?: string | null;
   lines: InvLineIn[];
 }
 
@@ -322,6 +325,7 @@ async function saveInvoice(
     }
     const sup = await loadSupplier(tx, b.supplierId);
     assertBuyable(sup);
+    if (b.salesOrderId) await assertCustomerOrder(tx, caller.ctx.unitIds, b.salesOrderId);
     const normNo = normInvNo(b.vendorInvoiceNo);
     if (!normNo) throw Errors.validation({ vendorInvoiceNo: 'Enter the supplier invoice number.' });
     const dup = (
@@ -459,6 +463,11 @@ async function saveInvoice(
       msmeDueDate: msme,
       isRcm: b.isRcm === true,
       poId: b.poId ?? null,
+      salesOrderId:
+        b.salesOrderId !== undefined
+          ? b.salesOrderId
+          : ((cur?.sales_order_id as string | null | undefined) ??
+            (await customerOrderOfReceipt(tx, b.lines.map((l) => l.grnLineId).filter((v): v is string => !!v)))),
       supplierState: sup.stateCode,
       regime: intra ? 'INTRA' : 'INTER',
       taxable: str(h.taxable),
@@ -680,6 +689,9 @@ export async function getInvoice(db: Db, caller: Caller, id: string) {
   const eligibleSince = daysBetween(S(n.invoiceDate), todayIst());
   return {
     ...n,
+    ...(await customerPoLabels(db, h.sales_order_id)),
+    poNumber: (await query(db, `SELECT string_agg(DISTINCT p.number, ', ') AS n FROM purchase_invoice_lines il JOIN goods_receipt_lines gl ON gl.id = il.grn_line_id
+      JOIN goods_receipts g ON g.id = gl.grn_id JOIN purchase_orders p ON p.id = g.po_id WHERE il.invoice_id = $1::uuid`, id))[0]?.n ?? null,
     supplierName: s?.name,
     lines: lines.map((l) => norm<Row>(l)),
     exceptions: ex.map((e) => norm<Row>(e)),
@@ -1146,9 +1158,14 @@ export const invoiceService = {
           : `Nothing on ${S(g.number)} was accepted by inspection, so there is nothing to bill.`,
       );
     }
+    const po = g.po_id
+      ? (await query(prisma, `SELECT number, sales_order_id::text AS sales_order_id FROM purchase_orders WHERE id=$1::uuid`, g.po_id))[0]
+      : undefined;
     return {
       supplierId: g.supplier_id,
       poId: g.po_id,
+      poNumber: po?.number ?? null,
+      salesOrderId: po?.sales_order_id ?? null,
       grnId,
       lines: lines.map((l) => ({
         ...norm<Row>(l),

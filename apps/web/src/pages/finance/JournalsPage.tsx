@@ -29,6 +29,7 @@ import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { FxModal, RecurringModal } from './JournalExtras';
 import { amt, dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from './shared';
+import { NettingButton } from './Netting';
 
 const VOUCHERS = [
   'Journal',
@@ -74,6 +75,7 @@ export function JournalsPage({ actions }: { actions: ActionSet }) {
         title="Journal Entries"
         sub="Record a transaction that no other screen creates. Draft first; the number is given when you post."
       >
+        <NettingButton />
         <button type="button" className="btn" onClick={() => setDialog({ kind: 'fx' })}>
           Exchange rates
         </button>

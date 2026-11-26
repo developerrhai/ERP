@@ -10,7 +10,9 @@ import { asyncHandler } from '../../core/http/async-handler';
 import { parseIfMatch } from '../../core/http/if-match';
 import { validate, validated } from '../../core/http/validate';
 import { prisma } from '../../core/db/prisma';
-import { requirePageAction } from '../../core/rbac/access';
+import { accessUserOf, can, requirePageAction } from '../../core/rbac/access';
+import { requireAuth } from '../../core/auth/auth-context';
+import { Errors } from '../../core/http/errors';
 import type { Action } from '../../core/rbac/permission-model';
 import { runIdempotent } from '../approvals/idempotent';
 import { callerOf, isoDate, pageQuery, uuid } from '../inventory/routes-shared';
@@ -42,6 +44,7 @@ import { evaluateMonth } from './jobs';
 import { V40_KINDS, v40PageOf, v40Register } from './v40-view';
 import type { V40Kind } from './v40-view';
 import type { DocDef, Row } from './core';
+import { customerPos } from './customer-po';
 
 const h = (fn: (req: Request, res: Response) => Promise<unknown>): RequestHandler =>
   asyncHandler(async (req, res) => {
@@ -498,10 +501,27 @@ export function createProcurementRouter(): Router {
         shipToWarehouseId: uuid.nullish(),
         paymentTermId: uuid.nullish(),
         contractId: uuid.nullish(),
+        salesOrderId: uuid.nullish(),
         notes: z.string().max(500).nullish(),
       })
       .strict(),
     poLine,
+  );
+  // REQ-03: the Customer PO drop-down of the purchase order and purchase invoice forms
+  const cpoQ = z.object({ q: z.string().trim().max(60).optional(), size: z.coerce.number().int().min(1).max(100).optional(), page: z.coerce.number().int().min(1).optional() }).strict();
+  const canPickCustomerPo: RequestHandler = asyncHandler(async (req, _res, next) => {
+    const user = accessUserOf(requireAuth(req));
+    for (const page of ['scm-po', 'scm-purchaseinvoice']) if (await can(user, page, 'view')) return next();
+    throw Errors.forbidden();
+  });
+  router.get(
+    '/scm/customer-pos',
+    canPickCustomerPo,
+    validate({ query: cpoQ }),
+    h(async (req, res) => {
+      const rows = await customerPos(callerOf(req), validated(res, 'query', cpoQ).q);
+      res.json({ data: rows, meta: { page: 1, size: rows.length, total: rows.length } });
+    }),
   );
   router.get(
     '/scm/po-delivery',
@@ -779,6 +799,7 @@ export function createProcurementRouter(): Router {
       bankAccountId: uuid.nullish(),
       advanceTerms: z.string().max(300).nullish(),
       notes: z.string().max(500).nullish(),
+      salesOrderId: uuid.nullish(),
       lines: z.array(invLine).min(1).max(300),
     })
     .strict();
@@ -1096,6 +1117,11 @@ export function createProcurementRouter(): Router {
     ),
   );
   router.get(
+    '/fin/ap/proposals',
+    g('fin-ap', 'view'),
+    h(async (req, res) => send(res, await apService.listProposals(callerOf(req)))),
+  );
+  router.get(
     '/fin/ap/proposals/:id',
     g('fin-ap', 'view'),
     validate({ params: idp }),
@@ -1111,7 +1137,8 @@ export function createProcurementRouter(): Router {
     z
       .object({
         dueTill: ymd,
-        invoiceIds: z.array(uuid).optional(),
+        invoiceIds: z.array(uuid).min(1).max(100).optional(),
+        amounts: z.record(z.string().uuid(), z.string().regex(/^\d+(\.\d{1,2})?$/, 'Enter an amount like 1234.50.')).optional(),
         notes: z.string().max(300).optional(),
       })
       .strict(),

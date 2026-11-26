@@ -17,6 +17,8 @@
 .proc-v40 .proc-detail dt { font-size: 11px; color: #64748b; }
 .proc-v40 .proc-detail dd { margin: 0; font-weight: 600; }
 .proc-v40 .proc-row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+/* wide registers squeeze the last column: keep a few buttons per line instead of one under another */
+.proc-v40 td .proc-row-actions { min-width: 264px; }
 .proc-v40 .proc-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; }
 .proc-v40 td.num { text-align: right; white-space: nowrap; }
 .proc-v40 .table-wrap { overflow-x: auto; }

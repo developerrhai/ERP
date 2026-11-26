@@ -138,6 +138,11 @@ function hsnWarningSuffix(d: Doc): string {
   return warnings.length ? ` — ${warnings.join(' ')}` : '';
 }
 
+/** What a picked item brings along, kept to the columns this document has (and `uom`, which every line carries). */
+function ownColumns(lines: FieldCfg[] | undefined, extra: Record<string, string> | undefined): Record<string, string> {
+  return Object.fromEntries(Object.entries(extra ?? {}).filter(([k]) => k === 'uom' || (lines ?? []).some((l) => l.key === k)));
+}
+
 export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
   const toast = useToast();
   const [page, setPage] = useState(1);
@@ -207,6 +212,15 @@ export function DocPage({ cfg, actions }: { cfg: DocCfg; actions: ActionSet }) {
           actions={actions}
           reloadKey={procKey}
           onView={(id) => void open({ id } as Doc)}
+          onEdit={
+            actions.edit
+              ? (id) =>
+                  void getDoc(cfg.path, id).then(
+                    (d) => (canEditStatus(cfg, d.status) ? setEditing(d) : setViewing(d)),
+                    (e: unknown) => setError(toUiMessage(e)),
+                  )
+              : undefined
+          }
           onChanged={list.reload}
         />
       ) : (
@@ -518,7 +532,9 @@ function Input({
         value={value}
         search={lookupItems}
         label={(o) => `${o.code} · ${o.name}`}
-        onPick={(o) => onChange(o?.id ?? '', o ? { uom: o.uom ?? '' } : {})}
+        onPick={(o) =>
+          onChange(o?.id ?? '', o ? { uom: o.uom ?? '', unit: o.uom ?? '', hsnSac: o.hsnSac ?? '', gstPct: o.gstPct ?? '' } : {})
+        }
       />
     );
   else if (f.type === 'ref')
@@ -818,7 +834,7 @@ function DocForm({
                           onChange={(v, extra) =>
                             setLines((ls) =>
                               ls.map((x, j) =>
-                                j === i ? { ...x, [f.key]: v, ...(extra ?? {}) } : x,
+                                j === i ? { ...x, [f.key]: v, ...ownColumns(cfg.lines, extra) } : x,
                               ),
                             )
                           }
@@ -1091,6 +1107,13 @@ function DocDetail({
             <dd>{show(doc[c.key], c.fmt)}</dd>
           </div>
         ))}
+        {/* a purchase made for a customer's order */}
+        {s(doc.salesOrderNo) ? (
+          <div>
+            <dt>Customer PO</dt>
+            <dd>{[s(doc.customerPoNo), s(doc.salesOrderNo)].filter(Boolean).join(' · ')}</dd>
+          </div>
+        ) : null}
         {/* the other things typed on the entry form, once they hold a value */}
         {cfg.header
           .filter((f) => (f.type === 'text' || f.type === 'date' || f.type === 'number') && !cfg.columns.some((c) => c.key === f.key) && s(doc[f.key]) !== '')

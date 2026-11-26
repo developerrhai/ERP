@@ -16,6 +16,7 @@ import {
 import { useLoad } from '../../lib/useLoad';
 import { amt, dmy, Empty, ErrorBox, inr, PageHead, todayIso } from './shared';
 import { DateField } from '../../ui/components';
+import { NettingButton } from './Netting';
 
 const fyStart = (): string => {
   const d = new Date();
@@ -324,6 +325,7 @@ export function AgeingPage({ side }: { side: 'RECEIVABLE' | 'PAYABLE' }) {
         title={side === 'RECEIVABLE' ? 'Accounts Receivable' : 'Accounts Payable'}
         sub={`What each ${who.toLowerCase()} ${side === 'RECEIVABLE' ? 'owes you' : 'is owed'}, by how late it is.`}
       >
+        {fid === 'fin-ar' ? <NettingButton /> : null}
         <DateField aria-label="As on" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
       </PageHead>
       <ErrorBox message={error} />

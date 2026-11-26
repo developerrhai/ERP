@@ -1186,6 +1186,10 @@ a.menu-item {
 .form-grid.one {
   grid-template-columns: 1fr;
 }
+/* a long choice in a drop-down must not push the column wider than the pop-up (phones) */
+.form-grid > * {
+  min-width: 0;
+}
 .empty-row td {
   text-align: center;
   color: var(--muted);

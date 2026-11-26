@@ -44,6 +44,8 @@
 /* Toolbar */
 .fam-v40 .proc-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; }
 .fam-v40 .proc-row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+/* wide registers squeeze the last column: keep a few buttons per line instead of one under another */
+.fam-v40 td .proc-row-actions { min-width: 264px; }
 .fam-v40 td.num { text-align: right; white-space: nowrap; }
 .fam-v40 .table-wrap { overflow-x: auto; }
 

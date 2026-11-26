@@ -121,6 +121,7 @@ const dict = (cols: Col[]): Record<string, Col> => Object.fromEntries(cols.map((
 // ------------------------------------------------------------------------------------------------ purchase order
 const PO_COLS = dict([
   c('number', 'PO Number'),
+  c('customerPo', 'Customer PO'),
   c('prNumber', 'PR Number'),
   c('vendorId', 'Vendor ID'),
   c('vendor', 'Vendor'),
@@ -141,6 +142,7 @@ const PO_COLS = dict([
 ]);
 const PO_BASE = [
   'number',
+  'customerPo',
   'prNumber',
   'vendorId',
   'vendor',
@@ -157,6 +159,7 @@ const PO: PageSpec = {
   cols: PO_COLS,
   register: [
     'number',
+    'customerPo',
     'prNumber',
     'vendorId',
     'vendor',
@@ -487,6 +490,7 @@ const INV_COLS = dict([
   c('invoiceDate', 'Invoice Date', 'date'),
   c('dueDate', 'Due Date', 'date'),
   c('poNumber', 'PO No'),
+  c('customerPo', 'Customer PO'),
   c('grnNumber', 'GRN No'),
   c('taxableValue', 'Taxable Value', 'inr'),
   c('gst', 'GST', 'inr'),
@@ -503,6 +507,7 @@ const INV_BASE = [
   'invoiceDate',
   'dueDate',
   'poNumber',
+  'customerPo',
   'grnNumber',
 ];
 const INV: PageSpec = {
@@ -625,6 +630,7 @@ const INV: PageSpec = {
 const SUP_COLS = dict([
   c('vendorId', 'Vendor ID'),
   c('vendorName', 'Vendor Name'),
+  c('materialClass', 'Material Class'),
   c('contactPerson', 'Contact Person'),
   c('mobile', 'Mobile'),
   c('email', 'Email'),
@@ -644,6 +650,7 @@ const SUP_COLS = dict([
 const SUP_BASE = [
   'vendorId',
   'vendorName',
+  'materialClass',
   'contactPerson',
   'mobile',
   'email',

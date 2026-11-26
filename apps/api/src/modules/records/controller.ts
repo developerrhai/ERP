@@ -20,7 +20,7 @@ import { kitSchemaFor } from '../../kit/registry';
 import { typedAudit } from '../inventory/audit';
 import { typedSchema } from '../inventory/definitions';
 import { buildTypedWorkbook } from '../inventory/export';
-import { itemSchemaFull } from '../inventory/items/workspace';
+import { gstPctOptionsToday, itemSchemaForWeb } from '../inventory/items/workspace';
 import { previewAdjustment, previewTransfer } from '../inventory/stock/service';
 import { typedHandlerFor } from '../inventory/typed-pages';
 import { kindOf } from '../../engine/kinds';
@@ -106,7 +106,7 @@ async function ownTable(pageId: string): Promise<boolean> {
 
 /** The typed schema as the web gets it: Item Master carries its add-form fields on top of the frozen schema. */
 function servedSchema(pageId: string) {
-  return pageId === 'inv-items' ? itemSchemaFull() : typedSchema(pageId);
+  return pageId === 'inv-items' ? itemSchemaForWeb() : typedSchema(pageId);
 }
 
 export const recordsController = {
@@ -120,8 +120,10 @@ export const recordsController = {
       select: { ownerDepartment: true, approvalRequired: true },
     });
     const isReadOnlyCreate = 'readOnlyCreate' in schema && Boolean(schema.readOnlyCreate);
+    const offered = pageId === 'inv-items' ? await gstPctOptionsToday() : [];
     const responseData: Record<string, unknown> = {
       ...schema,
+      ...(offered.length ? { fields: schema.fields.map((f) => (f.key === 'gstPct' ? { ...f, options: offered } : f)) } : {}),
       ownerDepartment: control?.ownerDepartment ?? null,
       approvalRequired: control?.approvalRequired ?? false,
     };

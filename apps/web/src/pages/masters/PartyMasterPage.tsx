@@ -32,8 +32,7 @@ import {
   type GstinDecode,
   type Paged,
   type RegType,
-  type Supplier,
-} from '../../lib/mastersApi';
+  type Supplier, setSupplierMaterialClass, listStates } from '../../lib/mastersApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 
@@ -52,13 +51,68 @@ const approvalLabel: Record<string, string> = {
   REJECTED: 'Rejected',
 };
 
+interface MaterialRow {
+  id: string;
+  code: string;
+  name: string;
+  value: string;
+}
+
+/** REQ-04: marks an existing supplier as Direct Material or Indirect. */
+function MaterialClassDialog({ row, onClose, onSaved }: { row: MaterialRow; onClose: () => void; onSaved: () => void }) {
+  const [value, setValue] = useState(row.value === 'Direct Material' ? 'DIRECT' : row.value === 'Indirect' ? 'INDIRECT' : '');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  return (
+    <Modal
+      title="Material class"
+      sub={`${row.code} · ${row.name}`}
+      size="sm"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn primary"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              setSupplierMaterialClass(row.id, (value || null) as 'DIRECT' | 'INDIRECT' | null)
+                .then(onSaved)
+                .catch((e: unknown) => {
+                  setError(toUiMessage(e));
+                  setBusy(false);
+                });
+            }}
+          >
+            Save
+          </button>
+        </>
+      }
+    >
+      {error ? <p role="alert">{error}</p> : null}
+      <div className="field">
+        <label htmlFor="mc-value">Material class</label>
+        <select id="mc-value" value={value} onChange={(e) => setValue(e.target.value)}>
+          <option value="">Not set</option>
+          <option value="DIRECT">Direct Material</option>
+          <option value="INDIRECT">Indirect</option>
+        </select>
+      </div>
+    </Modal>
+  );
+}
+
 export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: ActionSet }) {
   const toast = useToast();
   const { pageId: routePage = '' } = useParams();
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [dialog, setDialog] = useState<
-    'add' | { credit: Customer } | { bank: Supplier } | { view: Customer } | { edit: Customer } | null
+    'add' | { credit: Customer } | { bank: Supplier } | { material: MaterialRow } | { view: Customer } | { edit: Customer } | null
   >(null);
   const [rowError, setRowError] = useState('');
   /** View / Edit of a register row: the row of this page, else the record by id. */
@@ -126,6 +180,7 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
           onChanged={load.reload}
           extraActions={(r) =>
             actions.edit ? (
+              <>
               <button
                 type="button"
                 className="btn sm"
@@ -142,6 +197,19 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
               >
                 Bank
               </button>
+              <button
+                type="button"
+                className="btn sm"
+                aria-label={`Material class of ${String(r.vendorId)}`}
+                onClick={() =>
+                  setDialog({
+                    material: { id: String(r.id), code: String(r.vendorId), name: String(r.vendorName), value: typeof r.materialClass === 'string' ? r.materialClass : '' },
+                  })
+                }
+              >
+                Material class
+              </button>
+              </>
             ) : null
           }
         />
@@ -315,6 +383,17 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
           }}
         />
       ) : null}
+      {dialog && typeof dialog === 'object' && 'material' in dialog ? (
+        <MaterialClassDialog
+          row={dialog.material}
+          onClose={() => setDialog(null)}
+          onSaved={() => {
+            setDialog(null);
+            toast('Material class saved.');
+            load.reload();
+          }}
+        />
+      ) : null}
       {dialog && typeof dialog === 'object' && 'bank' in dialog ? (
         <BankDialog
           supplier={dialog.bank}
@@ -453,12 +532,16 @@ function PartyForm({
   const [udyam, setUdyam] = useState('');
   const [msmeCategory, setMsmeCategory] = useState('');
   const [supplierType, setSupplierType] = useState<'MATERIAL' | 'CONTRACTOR'>('MATERIAL');
+  const [materialClass, setMaterialClass] = useState<'' | 'DIRECT' | 'INDIRECT'>('');
   const [dups, setDups] = useState<DupHit[]>([]);
   const [different, setDifferent] = useState(false);
   const [error, setError] = useState('');
   const [fields, setFields] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
   const needsGstin = regType === 'REGULAR' || regType === 'COMPOSITION' || regType === 'SEZ';
+  // without a GSTIN the state cannot be read from a number, so the person chooses it
+  const [stateCode, setStateCode] = useState('');
+  const states = useLoad(() => (needsGstin ? Promise.resolve([]) : listStates().catch(() => [])), [needsGstin]);
 
   const onGstinBlur = async (): Promise<void> => {
     const value = gstin.replace(/\s+/g, '').toUpperCase();
@@ -505,7 +588,7 @@ function PartyForm({
       gstin: needsGstin && gstin ? gstin : null,
       city: city || null,
       mobile: mobile || null,
-      stateCode: decoded && decoded.ok ? decoded.stateCode : null,
+      stateCode: needsGstin ? (decoded && decoded.ok ? decoded.stateCode : null) : stateCode || null,
       differentParty: different,
     };
     try {
@@ -514,6 +597,7 @@ function PartyForm({
         : await createSupplier({
             ...base,
             supplierType,
+            ...(materialClass ? { materialClass } : {}),
             msmeUdyamNo: udyam || null,
             msmeCategory: (msmeCategory || null) as 'MICRO' | 'SMALL' | 'MEDIUM' | null,
           });
@@ -580,6 +664,28 @@ function PartyForm({
               ))}
             </select>
           </div>
+          {!needsGstin ? (
+            <div className="field">
+              <label htmlFor="pf-state">State *</label>
+              <select
+                id="pf-state"
+                value={stateCode}
+                onChange={(e) => {
+                  setStateCode(e.target.value);
+                  setFields((f) => ({ ...f, stateCode: '' }));
+                }}
+                aria-invalid={fields.stateCode ? true : undefined}
+              >
+                <option value="">Choose…</option>
+                {(Array.isArray(states.data) ? states.data : []).map((x) => (
+                  <option key={x.code} value={x.code}>
+                    {x.name}
+                  </option>
+                ))}
+              </select>
+              {fields.stateCode ? <span className="field-error">{fields.stateCode}</span> : null}
+            </div>
+          ) : null}
           {needsGstin ? (
             <div className="field">
               <label htmlFor="pf-gstin">GSTIN *</label>
@@ -634,6 +740,14 @@ function PartyForm({
                 >
                   <option value="MATERIAL">Material vendor</option>
                   <option value="CONTRACTOR">Contractor</option>
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="pf-class">Material class</label>
+                <select id="pf-class" value={materialClass} onChange={(e) => setMaterialClass(e.target.value as '' | 'DIRECT' | 'INDIRECT')}>
+                  <option value="">Not set</option>
+                  <option value="DIRECT">Direct Material</option>
+                  <option value="INDIRECT">Indirect</option>
                 </select>
               </div>
               <div className="field">

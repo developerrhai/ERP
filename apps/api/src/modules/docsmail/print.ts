@@ -204,6 +204,8 @@ async function linkedNames(r: Row): Promise<{ facts: { label: string; value: str
     ['item_id', 'Item', "SELECT code || ' - ' || name AS label FROM items WHERE id = $1::uuid"],
     ['asset_id', 'Machine / equipment', "SELECT asset_no || ' - ' || name AS label FROM assets WHERE id = $1::uuid"],
     ['order_id', 'Production order', 'SELECT number AS label FROM mfg_orders WHERE id = $1::uuid'],
+    // REQ-03: a purchase printed for a customer's order names the Customer PO
+    ['sales_order_id', 'Customer PO', "SELECT COALESCE(NULLIF(customer_po_no, ''), number) AS label FROM sales_orders WHERE id = $1::uuid"],
   ];
   const facts: { label: string; value: string }[] = [];
   let order = '';

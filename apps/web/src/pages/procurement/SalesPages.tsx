@@ -30,6 +30,7 @@ import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/
 import { DocPage, LookupCombo, RecordBar } from './DocPage';
 import { V40Register } from '../sales/V40Register';
 import { CRFQ_CFG, SQ_CFG } from './salesConfigs';
+import { SettleBillsModal } from '../finance/SettleBills';
 
 const s = (v: unknown): string =>
   v === null || v === undefined
@@ -1193,12 +1194,11 @@ export function CollectionsPage({ actions }: { actions: ActionSet }) {
   );
   const [paying, setPaying] = useState<Row | null>(null);
   const [choosing, setChoosing] = useState(false);
-  const [chosen, setChosen] = useState('');
   return (
     <>
       <PageHead
         title="Collections"
-        sub="Unpaid invoices by customer, oldest first. Record a receipt against an invoice."
+        sub="Unpaid invoices by customer, oldest first. One receipt can settle several invoices."
       >
         {actions.post || actions.add ? (
           <button type="button" className="btn primary" onClick={() => setChoosing(true)}>
@@ -1207,46 +1207,15 @@ export function CollectionsPage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       {choosing ? (
-        <Modal
-          title="New Receipt"
-          sub="Choose the unpaid invoice the money is for."
-          size="sm"
+        <SettleBillsModal
+          side="CUSTOMER"
           onClose={() => setChoosing(false)}
-          footer={
-            <>
-              <button type="button" className="btn" onClick={() => setChoosing(false)}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                disabled={!chosen}
-                title={chosen ? undefined : 'Choose an invoice first.'}
-                onClick={() => {
-                  setPaying((out.data?.rows ?? []).find((x) => s(x.id) === chosen) ?? null);
-                  setChoosing(false);
-                  setChosen('');
-                }}
-              >
-                Continue
-              </button>
-            </>
-          }
-        >
-          <div className="field">
-            <label htmlFor="rc-inv">Invoice *</label>
-            <select id="rc-inv" value={chosen} onChange={(e) => setChosen(e.target.value)}>
-              <option value="">
-                {(out.data?.rows ?? []).length ? 'Choose an invoice…' : 'Nothing is waiting to be collected'}
-              </option>
-              {(out.data?.rows ?? []).map((r) => (
-                <option key={s(r.id)} value={s(r.id)}>
-                  {s(r.number)} · {s(r.customerName)} · {inr(s(r.outstanding))}
-                </option>
-              ))}
-            </select>
-          </div>
-        </Modal>
+          onDone={(m) => {
+            setChoosing(false);
+            toast(m);
+            out.reload();
+          }}
+        />
       ) : null}
       <ErrorBox message={out.error} />
       <V40Register
@@ -1299,98 +1268,18 @@ export function CollectionsPage({ actions }: { actions: ActionSet }) {
         }
       />
       {paying ? (
-        <ReceiptDialog
-          row={paying}
+        <SettleBillsModal
+          side="CUSTOMER"
+          billId={s(paying.id)}
           onClose={() => setPaying(null)}
-          onDone={() => {
+          onDone={(m) => {
             setPaying(null);
-            toast('Receipt recorded');
+            toast(m);
             out.reload();
           }}
         />
       ) : null}
     </>
-  );
-}
-
-function ReceiptDialog({
-  row,
-  onClose,
-  onDone,
-}: {
-  row: Row;
-  onClose: () => void;
-  onDone: () => void;
-}) {
-  const banks = useLoad(
-    () => getJson<{ id: string; name: string }[]>('/finance/bank-accounts'),
-    [],
-  );
-  const [bank, setBank] = useState('');
-  const [amount, setAmount] = useState(s(row.outstanding));
-  const [ref, setRef] = useState('');
-  const [mode, setMode] = useState('NEFT');
-  const [msg, setMsg] = useState('');
-  return (
-    <Modal
-      title={`Receipt for ${s(row.number)}`}
-      sub={s(row.customerName)}
-      size="sm"
-      onClose={onClose}
-      footer={
-        <button
-          type="button"
-          className="btn primary"
-          disabled={!bank || Number(amount) <= 0}
-          title={!bank ? 'Choose where the money was received.' : Number(amount) <= 0 ? 'Type the amount.' : undefined}
-          onClick={() => {
-            setMsg('');
-            post('/sales/receipts', {
-              customerId: s(row.customerId),
-              bankAccountId: bank,
-              amount,
-              mode,
-              receiptDate: todayIso(),
-              reference: ref || undefined,
-              allocations: [{ invoiceId: s(row.id), amount }],
-            })
-              .then(onDone)
-              .catch((e: unknown) => setMsg(toUiMessage(e)));
-          }}
-        >
-          Record receipt
-        </button>
-      }
-    >
-      <ErrorBox message={msg} />
-      <div className="field">
-        <label htmlFor="rb">Received in *</label>
-        <select id="rb" value={bank} onChange={(e) => setBank(e.target.value)}>
-          <option value="">Choose…</option>
-          {(banks.data ?? []).map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="field">
-        <label htmlFor="rm">Mode *</label>
-        <select id="rm" value={mode} onChange={(e) => setMode(e.target.value)}>
-          {['NEFT', 'RTGS', 'IMPS', 'UPI', 'Cheque', 'Cash'].map((m) => (
-            <option key={m}>{m}</option>
-          ))}
-        </select>
-      </div>
-      <div className="field">
-        <label htmlFor="ra">Amount *</label>
-        <input id="ra" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
-      </div>
-      <div className="field">
-        <label htmlFor="rf">UTR / cheque no.</label>
-        <input id="rf" value={ref} onChange={(e) => setRef(e.target.value)} />
-      </div>
-    </Modal>
   );
 }
 

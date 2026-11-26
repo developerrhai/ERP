@@ -10,6 +10,7 @@ import { asyncHandler } from '../../../core/http/async-handler';
 import { Errors } from '../../../core/http/errors';
 import { validate, validated } from '../../../core/http/validate';
 import { accessUserOf, can, requirePageAction } from '../../../core/rbac/access';
+import { searchHsn } from '../../masters/current-gst';
 import { lookupService } from './service';
 
 const base = {
@@ -17,6 +18,8 @@ const base = {
   limit: z.coerce.number().int().min(1).max(50).default(20),
 };
 const itemsQuery = z.object(base).strict();
+/** `tax=true` adds the item's HSN / SAC code and today's GST %, which document lines fill themselves with. */
+const itemLinesQuery = z.object({ ...base, tax: z.enum(['true', 'false']).transform((v) => v === 'true').optional() }).strict();
 const warehousesQuery = z
   .object({
     ...base,
@@ -48,10 +51,20 @@ export function createLookupsRouter(): Router {
   router.get(
     '/items',
     canPickItems,
+    validate({ query: itemLinesQuery }),
+    asyncHandler(async (_req: Request, res: Response) => {
+      const query = validated(res, 'query', itemLinesQuery);
+      res.json({ data: await lookupService.items(query) });
+    }),
+  );
+
+  router.get(
+    '/hsn-sac',
+    canPickItems,
     validate({ query: itemsQuery }),
     asyncHandler(async (_req: Request, res: Response) => {
       const query = validated(res, 'query', itemsQuery);
-      res.json({ data: await lookupService.items(query) });
+      res.json({ data: await searchHsn(query.q ?? '', query.limit) });
     }),
   );
 

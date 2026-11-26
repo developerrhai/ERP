@@ -10,6 +10,15 @@ export function inr(value: string | number | null | undefined): string {
   return Number.isNaN(n) ? '—' : `₹ ${INR.format(Math.round(n))}`;
 }
 
+const INR_PAISE = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** "58149.4" -> "₹ 58,149.40": for windows where money is settled, so the paise must be seen. */
+export function inrExact(value: string | number | null | undefined): string {
+  if (value === null || value === undefined || value === '') return '—';
+  const n = Number(value);
+  return Number.isNaN(n) ? '—' : `₹ ${INR_PAISE.format(n)}`;
+}
+
 /** Plain number with Indian grouping, no symbol, for table columns. */
 export function amt(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === '') return '';
@@ -23,7 +32,8 @@ export function dmy(iso: string | null | undefined): string {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : '—';
 }
 
-export const todayIso = (): string => new Date().toISOString().slice(0, 10);
+/** Today in India (UTC + 5:30), like the server: before 05:30 the UTC date is still yesterday. */
+export const todayIso = (): string => new Date(Date.now() + 19_800_000).toISOString().slice(0, 10);
 
 export function Pill({ children, tone }: { children: ReactNode; tone?: string }) {
   const cls = (tone ?? (typeof children === 'string' ? children : ''))

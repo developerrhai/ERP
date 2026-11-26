@@ -6,6 +6,7 @@ import type { Db } from '../../core/db/prisma';
 import { Errors } from '../../core/http/errors';
 import type { Caller } from '../records/service';
 import { concreteUnit } from '../inventory/typed';
+import { customerPoLabels } from './customer-po';
 import {
   TX,
   allocateNumber,
@@ -106,6 +107,7 @@ export function makeCrud(spec: CrudSpec) {
       ...norm<Row>(h),
       ...(supplierName ? { supplierName } : {}),
       ...(customerName ? { customerName } : {}),
+      ...(def.table === 'purchase_orders' ? await customerPoLabels(db, h.sales_order_id) : {}),
       ...(spec.decorate ? await spec.decorate(db, h) : {}),
       lines: await withItemLabels(db, lines.map((l) => norm<Row>(l))),
     };

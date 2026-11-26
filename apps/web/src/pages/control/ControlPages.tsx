@@ -366,6 +366,11 @@ export function NumberingPage() {
         </div>
       </div>
 
+      <div className="card" role="note" aria-label="Party codes">
+        <strong>Party codes</strong> — Customers are numbered <b>C-1, C-2, C-3 …</b> and suppliers <b>S-1, S-2, S-3 …</b> automatically.
+        Codes already given are not changed. Suppliers and items are marked Direct Material or Indirect on their own screens.
+      </div>
+
       {/* Split View: Number Series Register + Validation Controls */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
         <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>

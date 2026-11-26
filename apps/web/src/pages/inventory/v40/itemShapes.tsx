@@ -37,8 +37,8 @@ const ITEM_ALLOC = ['stockRecord', 'stockDemand', 'stockAvailable', 'stockAlloca
 export const ITEM_TAB_COLUMNS: Readonly<Record<string, readonly string[]>> = {
   // the compact master grid; every other attribute is in the Detailed Table under it
   'Item Master': ['itemCode', 'itemName', 'itemType', 'baseUom', 'altUom'],
-  'Classification & UOM': ['baseUom', 'altUom', 'altUomFactor', 'itemCode', 'itemName', 'itemType', 'category', 'brand', 'hsnSac', 'status'],
-  'Tax & HSN': ['hsnSac', 'itemCode', 'itemName', 'itemType', 'category', 'brand', 'baseUom', 'status'],
+  'Classification & UOM': ['baseUom', 'altUom', 'altUomFactor', 'itemCode', 'itemName', 'itemType', 'materialClass', 'category', 'brand', 'hsnSac', 'status'],
+  'Tax & HSN': ['hsnSac', 'gstPct', 'itemCode', 'itemName', 'itemType', 'category', 'brand', 'baseUom', 'status'],
   'Planning Parameters': [...ITEM_ALLOC, 'itemCode', 'itemName', 'itemType', 'category', 'brand', 'hsnSac', 'baseUom', 'reorderLevel', 'status'],
   'Traceability Setup': ['status', 'itemCode', 'itemName', 'itemType', 'category', 'brand', 'hsnSac', 'baseUom', 'batchTracked', 'serialTracked', 'qcRequired', 'shelfLifeDays'],
   'Cost & Price': ['standardCost', 'itemCode', 'itemName', 'itemType', 'category', 'brand', 'hsnSac', 'sellingPrice', 'status'],

@@ -29,6 +29,7 @@ import type { DocDef, Row } from './core';
 import { addDays, deliveryStatus, headerTotals, lineTax, netRate } from './math';
 import type { LineTax } from './math';
 import { CMP_DEF, PR_DEF, prActions, releaseAgainstContract } from './sourcing-service';
+import { assertCustomerOrder } from './customer-po';
 
 export const PO_DEF: DocDef = {
   pageId: 'scm-po',
@@ -124,6 +125,7 @@ export const poCrud = makeCrud({
     'paymentTermId',
     'contractId',
     'comparisonId',
+    'salesOrderId',
     'notes',
   ],
   lineKeys: [
@@ -165,6 +167,7 @@ export const poCrud = makeCrud({
       if (!w || w.unit_id !== c.unitId)
         throw Errors.validation({ shipToWarehouseId: 'Choose a warehouse of this unit.' });
     }
+    if (c.header.salesOrderId) await assertCustomerOrder(c.tx, c.caller.ctx.unitIds, S(c.header.salesOrderId));
     const posState = await unitState(c.tx, c.unitId);
     const intra = sup.stateCode === posState;
     const poDate = S(c.header.poDate ?? c.existing?.po_date ?? todayIst());

@@ -54,6 +54,7 @@ export interface CustomerInput extends PartyInput {
 
 export interface SupplierInput extends PartyInput {
   supplierType?: 'MATERIAL' | 'CONTRACTOR';
+  materialClass?: 'DIRECT' | 'INDIRECT' | null;
   msmeUdyamNo?: string | null;
   msmeCategory?: 'MICRO' | 'SMALL' | 'MEDIUM' | null;
   msmeActivity?: 'MANUFACTURING' | 'SERVICES' | 'TRADING' | null;
@@ -117,7 +118,8 @@ function assertNoBlockingDuplicates(hits: readonly DupHit[], different: boolean 
 async function nextCode(db: Db, prefix: 'CUS' | 'SUP'): Promise<string> {
   const seq = prefix === 'CUS' ? 'customer_code_seq' : 'supplier_code_seq';
   const rows = await db.$queryRawUnsafe<{ n: bigint }[]>(`SELECT nextval('${seq}') AS n`);
-  return `${prefix}/${String(rows[0]?.n ?? 1n).padStart(5, '0')}`;
+  // REQ-04: customers are C-1, C-2 …, suppliers S-1, S-2 …; codes already given are never changed
+  return `${prefix === 'CUS' ? 'C' : 'S'}-${String(rows[0]?.n ?? 1n)}`;
 }
 
 async function settingFlag(key: string, fallback: boolean): Promise<boolean> {
@@ -316,6 +318,7 @@ export const partyService = {
           legalName: input.legalName ?? null,
           nameKey: normaliseName(input.name),
           supplierType: input.supplierType ?? 'MATERIAL',
+          materialClass: input.materialClass ?? null,
           supplierGroupId: input.groupId ?? null,
           gstRegistrationType: input.gstRegistrationType,
           gstin: id.gstin,
@@ -344,6 +347,30 @@ export const partyService = {
         tx,
       );
       return created;
+    });
+  },
+
+  /** REQ-04: marks a supplier as Direct Material or Indirect (or clears the mark). */
+  async setMaterialClass(caller: ApprovalCaller, supplierId: string, materialClass: 'DIRECT' | 'INDIRECT' | null): Promise<Supplier> {
+    return prisma.$transaction(async (tx) => {
+      const cur = await tx.supplier.findFirst({ where: { id: supplierId, deletedAt: null } });
+      if (!cur) throw Errors.notFound('Supplier not found.');
+      const updated = await tx.supplier.update({
+        where: { id: supplierId },
+        data: { materialClass, version: { increment: 1 }, updatedById: caller.auth.userId },
+      });
+      await recordAudit(
+        {
+          action: 'SUPPLIER_UPDATED',
+          actorId: caller.auth.userId,
+          targetType: 'Supplier',
+          targetId: supplierId,
+          meta: caller.meta,
+          detail: { code: cur.code, materialClass: { from: cur.materialClass, to: materialClass } },
+        },
+        tx,
+      );
+      return updated;
     });
   },
 

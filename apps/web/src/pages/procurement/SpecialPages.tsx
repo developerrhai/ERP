@@ -22,10 +22,13 @@ import {
 } from '../../lib/scmApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
-import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
+import { dmy, Empty, ErrorBox, inr, inrExact, PageHead, Pill, todayIso } from '../finance/shared';
 import { DateField } from '../../ui/components';
 import { useFrame } from '../frame/V40TabFrame';
 import { V40Body } from './V40Body';
+import { NettingButton } from '../finance/Netting';
+import '../finance/finance-v40.css';
+import { SettleBillsModal } from '../finance/SettleBills';
 
 const s = (v: unknown): string =>
   v === null || v === undefined
@@ -628,6 +631,10 @@ function InvoiceForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: D
   const grns = useLoad(() => listDocs('/scm/grn', { status: 'Posted', size: 100 }), []);
   const [supplierId, setSupplierId] = useState('');
   const [grnId, setGrnId] = useState('');
+  // Supplier PO comes from the goods receipt; Customer PO is filled from that order and may be changed
+  const [poNumber, setPoNumber] = useState('');
+  const [salesOrderId, setSalesOrderId] = useState('');
+  const customerPos = useLoad(() => getJson<Row[]>('/scm/customer-pos').catch(() => [] as Row[]), []);
   const [no, setNo] = useState('');
   const [date, setDate] = useState(todayIst());
   const [lines, setLines] = useState<
@@ -639,10 +646,12 @@ function InvoiceForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: D
     setLines([]);
     if (!id) return;
     try {
-      const r = await getJson<{ supplierId: string; lines: Row[] }>(
+      const r = await getJson<{ supplierId: string; poNumber?: string | null; salesOrderId?: string | null; lines: Row[] }>(
         `/scm/purchaseinvoice/from-grn/${id}`,
       );
       setSupplierId(r.supplierId);
+      setPoNumber(r.poNumber ?? '');
+      setSalesOrderId(r.salesOrderId ?? '');
       setLines(
         r.lines.map((l) => ({
           grnLineId: s(l.grnLineId),
@@ -664,6 +673,7 @@ function InvoiceForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: D
           supplierId,
           vendorInvoiceNo: no,
           invoiceDate: date,
+          ...(salesOrderId ? { salesOrderId } : {}),
           lines: lines.map((l) => ({
             grnLineId: l.grnLineId,
             qty: l.qty,
@@ -717,6 +727,21 @@ function InvoiceForm({ onClose, onSaved }: { onClose: () => void; onSaved: (d: D
             {(sups.data ?? []).map((o) => (
               <option key={o.id} value={o.id}>
                 {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="spo">Supplier PO</label>
+          <input id="spo" value={poNumber} readOnly placeholder="From the goods receipt" />
+        </div>
+        <div className="field">
+          <label htmlFor="cpo">Customer PO</label>
+          <select id="cpo" value={salesOrderId} onChange={(e) => setSalesOrderId(e.target.value)}>
+            <option value="">None</option>
+            {(Array.isArray(customerPos.data) ? customerPos.data : []).map((o) => (
+              <option key={s(o.id)} value={s(o.id)}>
+                {[s(o.customerPoNo), s(o.number), s(o.customerName)].filter(Boolean).join(' · ')}
               </option>
             ))}
           </select>
@@ -798,7 +823,14 @@ function InvoiceDetail({
   return (
     <Modal
       title={`Purchase invoice ${s(inv.number)}`}
-      sub={`${s(inv.supplierName)} · ${s(inv.vendorInvoiceNo)}`}
+      sub={[
+        s(inv.supplierName),
+        s(inv.vendorInvoiceNo),
+        s(inv.poNumber) ? `Supplier PO ${s(inv.poNumber)}` : '',
+        s(inv.salesOrderNo) ? `Customer PO ${s(inv.customerPoNo) || s(inv.salesOrderNo)}` : '',
+      ]
+        .filter(Boolean)
+        .join(' · ')}
       onClose={onClose}
       footer={
         <>
@@ -1174,12 +1206,45 @@ export function ApPage({ actions }: { actions: ActionSet }) {
   const [till, setTill] = useState(todayIso());
   const [msg, setMsg] = useState('');
   const [proposing, setProposing] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [listing, setListing] = useState(false);
   return (
     <>
       <PageHead
         title="Accounts Payable"
         sub="What we owe suppliers: payables, ageing, due calendar and payment proposals."
       >
+        <NettingButton />
+        {actions.add ? (
+          <button type="button" className="btn" onClick={() => setPaying(true)}>
+            Pay chosen bills
+          </button>
+        ) : null}
+        <button type="button" className="btn" onClick={() => setListing(true)}>
+          Payment proposals
+        </button>
+        {listing ? (
+          <ProposalsModal
+            actions={actions}
+            onClose={() => setListing(false)}
+            onChanged={() => {
+              props.reload();
+              pay.reload();
+            }}
+          />
+        ) : null}
+        {paying ? (
+          <SettleBillsModal
+            side="SUPPLIER"
+            onClose={() => setPaying(false)}
+            onDone={(m) => {
+              setPaying(false);
+              toast(m);
+              pay.reload();
+              props.reload();
+            }}
+          />
+        ) : null}
         {actions.add ? (
           <button
             type="button"
@@ -1210,7 +1275,7 @@ export function ApPage({ actions }: { actions: ActionSet }) {
                     setProposing(false);
                     post('/fin/ap/proposals', { dueTill: till })
                       .then(() => {
-                        toast('Payment proposal created: submit it for approval');
+                        toast('Payment proposal created. Open "Payment proposals" to submit it for approval.');
                         props.reload();
                       })
                       .catch((e: unknown) => toast(toUiMessage(e)));
@@ -1392,15 +1457,158 @@ export function ApPage({ actions }: { actions: ActionSet }) {
   );
 }
 
+/** Takes a payment proposal through its steps: submit for approval, make the payment, record it from the bank. */
+function ProposalsModal({ actions, onClose, onChanged }: { actions: ActionSet; onClose: () => void; onChanged: () => void }) {
+  const toast = useToast();
+  const list = useLoad(() => getJson<Row[]>('/fin/ap/proposals'), []);
+  const payments = useLoad(() => listDocs('/fin/ap/payments', { status: 'Approved', size: 50 }), []);
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  const rows = Array.isArray(list.data) ? list.data : [];
+  const waiting = payments.data?.rows ?? [];
+  const reload = (): void => {
+    list.reload();
+    payments.reload();
+    onChanged();
+  };
+  const run = (work: Promise<unknown>, done: string): void => {
+    setMsg('');
+    setBusy(true);
+    work
+      .then(() => {
+        toast(done);
+        reload();
+      })
+      .catch((e: unknown) => setMsg(toUiMessage(e)))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <Modal
+      title="Payment proposals"
+      sub="1. Submit for approval. 2. After approval, make the payment. 3. Record it with the bank account used."
+      onClose={onClose}
+      footer={
+        <button type="button" className="btn" onClick={onClose}>
+          Close
+        </button>
+      }
+    >
+      <ErrorBox message={msg || list.error || payments.error} />
+      <div className="table-wrap proposal-list">
+        <table aria-label="Payment proposals">
+          <thead>
+            <tr>
+              <th>Proposal</th>
+              <th>Supplier</th>
+              <th>Bills and amounts</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && !list.loading ? <Empty cols={6}>No payment proposal yet.</Empty> : null}
+            {rows.map((p) => (
+              <tr key={s(p.id)}>
+                <td>
+                  {s(p.number)}
+                  <br />
+                  <small className="muted">{dmy(s(p.createdOn))}</small>
+                </td>
+                <td>{s(p.supplierNames)}</td>
+                <td>
+                  {s(p.billList)
+                    .split(';')
+                    .map((b) => b.split('|'))
+                    .map(([bill, amount]) => (
+                      <div key={bill}>
+                        {bill} · {inrExact(amount)}
+                      </div>
+                    ))}
+                </td>
+                <td>{inrExact(s(p.total))}</td>
+                <td>
+                  <Pill>{s(p.status) === 'Posted' ? 'Payment made' : s(p.status)}</Pill>
+                </td>
+                <td>
+                  {(p.status === 'Draft' || p.status === 'Rejected') && actions.submit ? (
+                    <button
+                      type="button"
+                      className="btn sm primary"
+                      disabled={busy}
+                      aria-label={`Submit ${s(p.number)} for approval`}
+                      onClick={() => run(verb('/fin/ap/proposals', s(p.id), 'submit', {}, Number(p.version)), `${s(p.number)} sent for approval.`)}
+                    >
+                      Submit for approval
+                    </button>
+                  ) : null}
+                  {p.status === 'Pending Approval' ? <small className="muted">Waiting in the Approval Inbox</small> : null}
+                  {p.status === 'Approved' && actions.post ? (
+                    <button
+                      type="button"
+                      className="btn sm primary"
+                      disabled={busy}
+                      aria-label={`Make payment for ${s(p.number)}`}
+                      onClick={() => run(post(`/fin/ap/proposals/${s(p.id)}/to-payments`, {}), `Payment made ready for ${s(p.number)}. Record it below.`)}
+                    >
+                      Make payment
+                    </button>
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <h3>Payments waiting to be recorded</h3>
+      <div className="table-wrap">
+        <table aria-label="Payments waiting to be recorded">
+          <thead>
+            <tr>
+              <th>Payment</th>
+              <th>Supplier</th>
+              <th>Amount</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {waiting.length === 0 && !payments.loading ? <Empty cols={4}>No payment is waiting.</Empty> : null}
+            {waiting.map((p) => (
+              <tr key={p.id}>
+                <td>{s(p.number)}</td>
+                <td>{s(p.supplierName)}</td>
+                <td>{inrExact(s(p.amount))}</td>
+                <td>
+                  {actions.post ? (
+                    <PostPayment
+                      id={p.id}
+                      onDone={() => {
+                        toast('Payment posted');
+                        reload();
+                      }}
+                    />
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Modal>
+  );
+}
+
 function PostPayment({ id, onDone }: { id: string; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [utr, setUtr] = useState('');
   const [bank, setBank] = useState('');
   const [msg, setMsg] = useState('');
   const banks = useLoad(
-    () => getJson<{ id: string; name: string }[]>('/finance/bank-accounts'),
+    () => getJson<{ id: string; name: string; kind?: string }[]>('/finance/bank-accounts'),
     [],
   );
+  const kind = (banks.data ?? []).find((b) => b.id === bank)?.kind;
+  const paymentMode = kind !== undefined && kind !== 'BANK' ? 'Cash' : 'NEFT';
   if (!open)
     return (
       <button type="button" className="btn sm primary" onClick={() => setOpen(true)}>
@@ -1420,7 +1628,7 @@ function PostPayment({ id, onDone }: { id: string; onDone: () => void }) {
           disabled={!bank}
           onClick={() => {
             setMsg('');
-            verb('/fin/ap/payments', id, 'post', { bankAccountId: bank, paymentMode: 'NEFT', utr })
+            verb('/fin/ap/payments', id, 'post', { bankAccountId: bank, paymentMode, utr })
               .then(() => {
                 setOpen(false);
                 onDone();

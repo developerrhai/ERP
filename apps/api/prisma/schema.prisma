@@ -576,6 +576,8 @@ model Item {
   defaultBomRef     String?        @map("default_bom_ref") @db.VarChar(40)
   defaultRoutingRef String?        @map("default_routing_ref") @db.VarChar(40)
   projectId         String?        @map("project_id") @db.Uuid
+  /// Client requirement REQ-04: DIRECT material or INDIRECT.
+  materialClass     String?        @map("material_class") @db.VarChar(10)
   status            MasterStatus   @default(ACTIVE)
   version           Int            @default(1)
   createdById       String         @map("created_by_id") @db.Uuid
@@ -1423,6 +1425,7 @@ model Supplier {
   legalName             String?               @map("legal_name") @db.VarChar(200)
   nameKey               String                @map("name_key") @db.VarChar(200)
   supplierType          String                @default("MATERIAL") @map("supplier_type") @db.VarChar(12)
+  materialClass         String?               @map("material_class") @db.VarChar(10)
   supplierGroupId       String?               @map("supplier_group_id") @db.Uuid
   gstRegistrationType   String                @default("REGULAR") @map("gst_registration_type") @db.VarChar(12)
   gstin                 String?               @db.VarChar(15)

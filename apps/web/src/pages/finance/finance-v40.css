@@ -118,3 +118,22 @@
 .modal-foot .btn.sm.off { color: var(--muted, #667085); background: var(--card2, #f8fafc); }
 @media (max-width: 600px) { .fv40-table td.row-actions .fv40-wrap { width: 230px; } .fv40-table td.row-actions { position: static; box-shadow: none; } }
 @media (max-width: 600px) { .fv40-table th.row-actions-head { position: static; box-shadow: none; } }
+
+/* "On bills ₹…" at the left of the settle pop-up footer */
+.settle-total {
+  margin-right: auto;
+}
+.settle-box {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.settle-box h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+/* payment proposals: long supplier and bill lists wrap, so status and buttons stay in sight */
+.proposal-list table { min-width: 0; }
+@media (max-width: 600px) { .proposal-list table { min-width: 620px; } }
+.proposal-list th, .proposal-list td { white-space: normal; padding-left: 8px; padding-right: 8px; }
+.proposal-list td:nth-child(1), .proposal-list td:nth-child(5) { white-space: nowrap; }

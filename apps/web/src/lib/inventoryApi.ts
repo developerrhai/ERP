@@ -139,8 +139,17 @@ export interface Ref {
   code: string;
   name: string;
   uom?: string;
+  /** items only: the HSN / SAC code and the GST % valid today (null when the code has no single rate) */
+  hsnSac?: string | null;
+  gstPct?: string | null;
 }
-export const lookupItems = (q: string) => api<Ref[]>(`/lookups/items${qs({ q, limit: 30 })}`);
+export const lookupItems = (q: string) => api<Ref[]>(`/lookups/items${qs({ q, limit: 30, tax: true })}`);
+export interface HsnChoice {
+  code: string;
+  description: string;
+  gstPct: string | null;
+}
+export const lookupHsn = (q: string) => api<HsnChoice[]>(`/lookups/hsn-sac${qs({ q, limit: 20 })}`);
 export const lookupWarehouses = () => api<Ref[]>(`/lookups/warehouses${qs({ limit: 50 })}`);
 export const lookupWarehousesAny = () =>
   api<Ref[]>(`/lookups/warehouses${qs({ limit: 50, any: true })}`);

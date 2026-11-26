@@ -206,17 +206,29 @@ export const apService = {
   // ---------------------------------------------------------------- proposals
   async createProposal(
     caller: Caller,
-    body: { dueTill: string; invoiceIds?: string[]; notes?: string },
+    body: { dueTill: string; invoiceIds?: string[]; amounts?: Record<string, string>; notes?: string },
   ) {
     const unitId = concreteUnit(caller);
     const fy = await fyOfCaller(caller);
     const id = await prisma.$transaction(async (tx) => {
-      const cand = (await outstandingInvoices(caller, { dueTill: body.dueTill })).filter(
+      // bills picked by hand are taken whatever their due date is
+      const cand = (await outstandingInvoices(caller, body.invoiceIds ? {} : { dueTill: body.dueTill })).filter(
         (r) => !body.invoiceIds || body.invoiceIds.includes(S(r.id)),
       );
       if (cand.length === 0)
         throw Errors.validation({ dueTill: 'No unpaid invoices are due till that date.' });
-      const total = cand.reduce((a, r) => a.plus(D(S(r.outstanding))), ZERO);
+      if (body.invoiceIds && cand.length !== new Set(body.invoiceIds).size)
+        throw Errors.validation({ invoiceIds: 'One of these bills is already paid or is held back from payment. Choose again.' });
+      // part payment: a typed amount per bill, never more than what is still open on it
+      const pay = (r: Row): Dec => {
+        const typed = body.amounts?.[S(r.id)];
+        if (typed === undefined) return D(S(r.outstanding));
+        const a = D(typed);
+        if (a.lte(0) || a.gt(D(S(r.outstanding))))
+          throw Errors.validation({ amounts: `Pay more than 0 and at most ₹${S(r.outstanding)} on each bill.` });
+        return a;
+      };
+      const total = cand.reduce((a, r) => a.plus(pay(r)), ZERO);
       const number = await allocateNumber(tx, SPP_DEF, unitId, fy.id);
       const pid = await insertRow(tx, 'supplier_payment_proposals', {
         unitId,
@@ -238,7 +250,7 @@ export const apService = {
           lineNo: n,
           invoiceId: r.id,
           supplierId: r.supplier_id,
-          amount: S(r.outstanding),
+          amount: str(pay(r)),
           selected: true,
         });
       }
@@ -264,6 +276,25 @@ export const apService = {
       id,
     );
     return { ...norm<Row>(h), lines: lines.map((l) => norm<Row>(l)) };
+  },
+
+  /** The newest proposals of the plant, for the screen that submits them and makes the payments. */
+  async listProposals(caller: Caller) {
+    const sc = await scopeSql(caller, 'fin-ap');
+    const rows = await query(
+      prisma,
+      `SELECT t.id::text AS id, t.number, t.status, t.total::text AS total, t.version, t.created_at::date::text AS created_on,
+              count(l.invoice_id)::int AS bills, string_agg(DISTINCT s.name, ', ') AS supplier_names,
+              string_agg(i.number || '|' || l.amount::text, ';' ORDER BY l.line_no) AS bill_list
+         FROM supplier_payment_proposals t
+         JOIN supplier_payment_proposal_lines l ON l.proposal_id = t.id
+         JOIN purchase_invoices i ON i.id = l.invoice_id
+         JOIN suppliers s ON s.id = l.supplier_id
+        WHERE ${sc.sql}
+        GROUP BY t.id ORDER BY t.created_at DESC LIMIT 50`,
+      ...sc.args,
+    );
+    return rows.map((r) => norm<Row>(r));
   },
 
   /** Approved proposal -> one Approved supplier payment per supplier (to be posted with bank + UTR). */

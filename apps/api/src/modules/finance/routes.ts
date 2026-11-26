@@ -28,6 +28,7 @@ import { expenseService } from './expense-service';
 import { fxService } from './fx-service';
 import { limitsService } from './limits-service';
 import { notesApproval, notesService } from './notes-service';
+import { nettingService } from './netting-service';
 import { recurringService } from './recurring-service';
 import { taxService } from './tax-service';
 import { isoDate, money } from './money';
@@ -1000,6 +1001,50 @@ export function createFinanceRouter(): Router {
       ...pageQuery,
     })
     .strict();
+  // ----- netting off a party that is both a customer and a supplier (REQ-01) ----------------------------------------
+  const unitsOf = (req: Request): string[] => req.ctx?.unitIds ?? [];
+  r.get(
+    '/netting',
+    requirePageAction('fin-journal', 'view'),
+    asyncHandler(async (req, res) => {
+      const units = unitsOf(req);
+      res.json({ data: { parties: await nettingService.candidates(units), history: await nettingService.list(units) } });
+    }),
+  );
+  const linkBody = z.object({ customerId: uuid, supplierId: uuid.nullable() }).strict();
+  r.put(
+    '/netting/link',
+    requirePageAction('fin-journal', 'edit'),
+    validate({ body: linkBody }),
+    asyncHandler(async (req, res) => {
+      const b = validated(res, 'body', linkBody);
+      res.json({ data: await nettingService.link(b.customerId, b.supplierId, actorOf(req)) });
+    }),
+  );
+  const netBody = z
+    .object({ unitId: uuid, customerId: uuid, supplierId: uuid, amount: moneyStr, date, narration: z.string().trim().max(300).optional() })
+    .strict();
+  r.post(
+    '/netting',
+    requirePageAction('fin-journal', 'post'),
+    validate({ body: netBody }),
+    asyncHandler(async (req, res) => {
+      const b = validated(res, 'body', netBody);
+      await unitFromBody(req, b.unitId);
+      await runIdempotent(req, res, requireAuth(req).userId, 'finance:netting', [b], async () => nettingService.create(b as never, actorOf(req)));
+    }),
+  );
+  const netCancel = z.object({ reason: z.string().trim().min(5, 'Enter 5 to 300 characters.').max(300) }).strict();
+  r.post(
+    '/netting/:id/cancel',
+    requirePageAction('fin-journal', 'cancel'),
+    validate({ params: idParams, body: netCancel }),
+    asyncHandler(async (req, res) => {
+      const b = validated(res, 'body', netCancel);
+      res.json({ data: await nettingService.cancel(String(req.params.id), b.reason, unitsOf(req), actorOf(req)) });
+    }),
+  );
+
   r.get(
     '/payments',
     requirePageAction('fin-bankbook', 'view'),

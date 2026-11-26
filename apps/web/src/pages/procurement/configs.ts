@@ -121,6 +121,15 @@ export const PO_CFG: DocCfg = {
       options: supplierType,
       def: 'MATERIAL',
     },
+    // the customer's order this purchase is for: shown as "Customer PO" next to this Supplier PO
+    {
+      key: 'salesOrderId',
+      label: 'Customer PO',
+      type: 'ref',
+      refPath: '/scm/customer-pos',
+      refLabel: ['customerPoNo', 'number', 'customerName'],
+      clearable: true,
+    },
     { key: 'notes', label: 'Notes', type: 'text' },
   ],
   lines: [

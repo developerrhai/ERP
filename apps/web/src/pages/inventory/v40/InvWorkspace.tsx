@@ -18,7 +18,7 @@ export const WORKSPACE_PAGES: ReadonlySet<string> = new Set(['inv-items', 'inv-s
 
 /** Columns of the Detailed Table under the main register (V40 order). */
 const DETAIL: Record<string, string[]> = {
-  'inv-items': ['itemCode', 'itemName', 'itemType', 'category', 'brand', 'hsnSac', 'baseUom', 'altUom', 'status'],
+  'inv-items': ['itemCode', 'itemName', 'itemType', 'materialClass', 'category', 'brand', 'hsnSac', 'gstPct', 'baseUom', 'altUom', 'status'],
   'inv-stock': ['itemCode', 'itemName', 'itemType', 'warehouse', 'batch', 'available', 'stockValue', 'status'],
 };
 
