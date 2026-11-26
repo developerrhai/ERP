@@ -20,6 +20,7 @@ import { kitSchemaFor } from '../../kit/registry';
 import { typedAudit } from '../inventory/audit';
 import { typedSchema } from '../inventory/definitions';
 import { buildTypedWorkbook } from '../inventory/export';
+import { itemSchemaFull } from '../inventory/items/workspace';
 import { previewAdjustment, previewTransfer } from '../inventory/stock/service';
 import { typedHandlerFor } from '../inventory/typed-pages';
 import { kindOf } from '../../engine/kinds';
@@ -96,15 +97,22 @@ function need<T>(fn: T | undefined): T {
 
 /** True for a page whose records are not in generic_records but in their own table (Enquiries, Quotations, Orders ... have a print catalog entry). */
 async function ownTable(pageId: string): Promise<boolean> {
-  if (kindOf(pageId) !== 'generic') return false;
-  const { catalogOf } = await import('../docsmail/print.js');
-  return !!catalogOf(pageId);
+  const { catalogOf, hasOwnRecords } = await import('../docsmail/print.js');
+  // typed pages that no engine handler serves (Chart of Accounts, Journal, AR/AP Ageing ...) keep their own tables too,
+  // as do the finance, quality, maintenance and production screens
+  if (kindOf(pageId) === 'typed') return !typedHandlerFor(pageId);
+  return hasOwnRecords(pageId) || (kindOf(pageId) === 'generic' && !!catalogOf(pageId));
+}
+
+/** The typed schema as the web gets it: Item Master carries its add-form fields on top of the frozen schema. */
+function servedSchema(pageId: string) {
+  return pageId === 'inv-items' ? itemSchemaFull() : typedSchema(pageId);
 }
 
 export const recordsController = {
   schema: async (_req: Request, res: Response): Promise<void> => {
     const { pageId } = validated(res, 'params', pageParamsSchema);
-    const schema = typedSchema(pageId) ?? buildPageSchema(pageId);
+    const schema = servedSchema(pageId) ?? buildPageSchema(pageId);
     if (!schema) throw Errors.notFound('Unknown page.');
     // The module control (System Control Center) tells who owns the page and whether it needs approval.
     const control = await prisma.moduleControl.findUnique({
@@ -384,7 +392,7 @@ export const recordsController = {
       return;
     }
     const query = validated(res, 'query', typedExportQuerySchema) as TypedExportQuery;
-    const schema = typedSchema(pageId);
+    const schema = servedSchema(pageId);
     if (!schema) throw Errors.notFound('Unknown page.');
     const { rows, total, totals } = await need(typed.exportRows?.bind(typed))(callerOf(req), {
       ...query,
@@ -418,7 +426,9 @@ export const recordsController = {
         },
       },
     });
-    const buffer = await buildTypedWorkbook(schema, picked, wanted ? undefined : totals);
+    // "Status on Save" is a form control, not a column of the record
+    const columns = { ...schema, fields: schema.fields.filter((f) => f.key !== 'recordStatus') };
+    const buffer = await buildTypedWorkbook(columns, picked, wanted ? undefined : totals);
     sendXlsx(res, buffer, `${pageId}-${new Date().toISOString().slice(0, 10)}.xlsx`);
   },
 

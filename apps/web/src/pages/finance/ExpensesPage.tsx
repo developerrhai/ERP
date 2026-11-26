@@ -1,7 +1,8 @@
 // Expense Management (fin-expenses): raise a claim, submit it for approval, and (Finance) pay it. The category
 // limits are shown while you type; Finance edits them in the "Limits" tab.
+import { uploadDocument } from '../generic/phase4Api';
 import { FinV40 } from './FinV40';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
@@ -9,20 +10,7 @@ import { Pager } from '../../components/Pager';
 import { useToast } from '../../components/Toast';
 import { useAppContext } from '../../lib/context';
 import { toUiError, type UiError } from '../../lib/errors';
-import {
-  cancelClaim,
-  createClaim,
-  deleteClaim,
-  expensePolicies,
-  listBankAccounts,
-  listClaims,
-  payClaim,
-  saveExpensePolicy,
-  submitClaim,
-  listDimension,
-  type Claim,
-  type ExpensePolicy,
-} from '../../lib/financeApi';
+import { cancelClaim, createClaim, deleteClaim, expensePolicies, listBankAccounts, listClaims, payClaim, saveExpensePolicy, submitClaim, listDimension, type Claim, type ExpensePolicy, listAccounts } from '../../lib/financeApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from './shared';
@@ -410,6 +398,10 @@ function ClaimForm({
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [billNo, setBillNo] = useState('');
+  const [accountId, setAccountId] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+  // a person without the chart of accounts keeps "From the category"
+  const accounts = useLoad(() => listAccounts({ postable: true }).catch(() => null), []);
   const [costCenterId, setCc] = useState('');
   const [err, setErr] = useState<UiError | null>(null);
   const [pending, setPending] = useState(false);
@@ -435,6 +427,11 @@ function ClaimForm({
         description: description.trim(),
         ...(billNo.trim() ? { billNo: billNo.trim() } : {}),
         ...(costCenterId ? { costCenterId } : {}),
+        ...(accountId ? { expenseAccountId: accountId } : {}),
+      }).then(async (made) => {
+        const file = fileRef.current?.files?.[0];
+        const id = (made as { id?: string } | undefined)?.id;
+        if (file && id) await uploadDocument('fin-expenses', id, file, { docType: 'INVOICE' }).catch(() => undefined);
       });
       onSaved();
     } catch (caught) {
@@ -491,6 +488,20 @@ function ClaimForm({
           error={err?.fields.description}
         />
         <Field label="Bill number" value={billNo} onChange={(e) => setBillNo(e.target.value)} />
+        <SelectField label="Expense account" value={accountId} onChange={setAccountId}>
+          <option value="">From the category</option>
+          {(accounts.data?.rows ?? [])
+            .filter((a) => a.rootType === 'Expense')
+            .map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.code} · {a.name}
+              </option>
+            ))}
+        </SelectField>
+        <div className="field">
+          <label htmlFor="claim-bill">Bill or receipt (optional)</label>
+          <input id="claim-bill" type="file" ref={fileRef} accept=".pdf,.png,.jpg,.jpeg" />
+        </div>
         <SelectField
           label="Cost centre"
           value={costCenterId}

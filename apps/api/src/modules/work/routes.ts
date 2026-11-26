@@ -10,7 +10,9 @@ import { authenticate, requirePasswordChanged } from '../../core/auth/authentica
 import { resolveContext } from '../../core/context/resolve-context';
 import { asyncHandler } from '../../core/http/async-handler';
 import { validate, validated } from '../../core/http/validate';
-import { requirePageAction } from '../../core/rbac/access';
+import { accessUserOf, can, requirePageAction } from '../../core/rbac/access';
+import { Errors } from '../../core/http/errors';
+import { openHolders } from './holder-filter';
 import { callerOf } from '../inventory/routes-shared';
 import { plantFlowService } from './plantflow';
 import { workService } from './service';
@@ -140,6 +142,13 @@ export function createWorkRouter(): Router {
   }
   r.get('/movements/:id/lines', validate({ params: idParams }), asyncHandler(async (req: Request, res: Response) => {
     ok(res, await workService.lines(validated(res, 'params', idParams).id));
+  }));
+  const holdersQuery = z.object({ docType: z.string().min(1).max(80) }).strict();
+  r.get('/holders', validate({ query: holdersQuery }), asyncHandler(async (req: Request, res: Response) => {
+    const { docType } = validated(res, 'query', holdersQuery);
+    const caller = callerOf(req);
+    if (!(await can(accessUserOf(caller.auth.user), docType, 'view'))) throw Errors.forbidden();
+    ok(res, await openHolders(docType, caller.ctx.unitIds));
   }));
   r.get('/docs/:docType/:docId/movement', validate({ params: docParams }), asyncHandler(async (req: Request, res: Response) => {
     const p = validated(res, 'params', docParams);

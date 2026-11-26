@@ -107,8 +107,20 @@ export function makeCrud(spec: CrudSpec) {
       ...(supplierName ? { supplierName } : {}),
       ...(customerName ? { customerName } : {}),
       ...(spec.decorate ? await spec.decorate(db, h) : {}),
-      lines: lines.map((l) => norm<Row>(l)),
+      lines: await withItemLabels(db, lines.map((l) => norm<Row>(l))),
     };
+  }
+
+  /** A line names its item ("CODE · Name"), so a record view never shows the stored id. */
+  async function withItemLabels(db: Db, lines: Row[]): Promise<Row[]> {
+    const ids = [...new Set(lines.map((l) => l.itemId).filter((v): v is string => typeof v === 'string' && v !== ''))];
+    if (ids.length === 0) return lines;
+    const items = await query(db, `SELECT id::text AS id, code, name FROM items WHERE id = ANY($1::uuid[])`, ids);
+    const names = new Map(items.map((i) => [String(i.id), `${String(i.code)} · ${String(i.name)}`]));
+    return lines.map((l) => {
+      const label = names.get(String(l.itemId));
+      return label ? { ...l, itemLabel: label } : l;
+    });
   }
 
   return {
@@ -185,7 +197,8 @@ export function makeCrud(spec: CrudSpec) {
             fyId: fy.id,
             number,
             department: await departmentOf(tx, def.pageId, caller),
-            status: def.draftStatus ?? 'Draft',
+            // Meetings let the person pick the status on the form; every other document starts as a draft
+            status: (def.pageId === 'crm-meetings' ? (header.status as string | undefined) : undefined) ?? def.draftStatus ?? 'Draft',
             createdById: caller.auth.userId,
             updatedById: caller.auth.userId,
           });

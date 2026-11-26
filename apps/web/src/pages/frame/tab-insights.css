@@ -1,0 +1,99 @@
+/* charts, calendar and report blocks of the Analytics / Calendar / Reports tabs */
+.ti {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+.ti > p {
+  margin: 0;
+}
+.ti-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+.ti-kpi,
+.ti-card,
+.ti-report-head {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px 14px;
+}
+.ti-kpi small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+.ti-kpi b {
+  font-size: 20px;
+}
+.ti-grid,
+.ti-days {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+.ti-card h3,
+.ti-report-head h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.ti-card h3 small {
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: 6px;
+}
+.ti-bars,
+.ti-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.ti-bars li {
+  display: grid;
+  grid-template-columns: minmax(0, 120px) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+.ti-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ti-track {
+  height: 10px;
+  border-radius: 6px;
+  background: #eef2f7;
+  overflow: hidden;
+}
+.ti-fill {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--primary, #1d4ed8);
+}
+.ti-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+.ti-list span {
+  color: var(--muted);
+}
+.ti-report-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+.ti-report-head p {
+  margin: 0;
+}

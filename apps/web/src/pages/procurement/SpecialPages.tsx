@@ -1173,6 +1173,7 @@ export function ApPage({ actions }: { actions: ActionSet }) {
   const props = useLoad(() => listDocs('/fin/ap/payments', { size: 50 }), []);
   const [till, setTill] = useState(todayIso());
   const [msg, setMsg] = useState('');
+  const [proposing, setProposing] = useState(false);
   return (
     <>
       <PageHead
@@ -1185,16 +1186,46 @@ export function ApPage({ actions }: { actions: ActionSet }) {
             className="btn primary"
             onClick={() => {
               setMsg('');
-              post('/fin/ap/proposals', { dueTill: till })
-                .then(() => {
-                  toast('Payment proposal created: submit it for approval');
-                  props.reload();
-                })
-                .catch((e: unknown) => setMsg(toUiMessage(e)));
+              setProposing(true);
             }}
           >
             ＋ New Payment Proposal
           </button>
+        ) : null}
+        {proposing ? (
+          <Modal
+            title="New Payment Proposal"
+            sub="Puts every unpaid supplier invoice due by this date into one proposal. It is saved as a draft to submit for approval."
+            size="sm"
+            onClose={() => setProposing(false)}
+            footer={
+              <>
+                <button type="button" className="btn" onClick={() => setProposing(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => {
+                    setProposing(false);
+                    post('/fin/ap/proposals', { dueTill: till })
+                      .then(() => {
+                        toast('Payment proposal created: submit it for approval');
+                        props.reload();
+                      })
+                      .catch((e: unknown) => toast(toUiMessage(e)));
+                  }}
+                >
+                  Create proposal
+                </button>
+              </>
+            }
+          >
+            <div className="field">
+              <label htmlFor="ap-till">Invoices due till</label>
+              <DateField id="ap-till" value={till} onChange={(e) => setTill(e.target.value)} />
+            </div>
+          </Modal>
         ) : null}
         <DateField aria-label="Invoices due till" title="Invoices due till" value={till} onChange={(e) => setTill(e.target.value)} />
       </PageHead>

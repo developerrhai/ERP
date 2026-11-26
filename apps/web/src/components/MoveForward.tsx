@@ -1,5 +1,6 @@
 // Phase 25: the Move Forward popup (V40 field order), the Return dialog and the History drawer.
 // Nothing moves by itself: every handover is a person pressing a button (R-31).
+import { MOVED_EVENT } from './HolderNote';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../lib/api';
 import { ROUTE_TYPES, WORK_STATUSES, workApi, type DocMovement, type Dept } from '../lib/workApi';
@@ -16,7 +17,7 @@ function ownerDeptOf(docType: string): string {
   if (/^(fin-|tax-)/.test(docType)) return 'Finance';
   if (/^(sales-|crm-)/.test(docType)) return 'Sales';
   if (docType.startsWith('scm-')) return 'Purchase';
-  if (docType.startsWith('qms-')) return 'Quality';
+  if (docType.startsWith('qms-') || docType === 'quality-certificate') return 'Quality';
   if (/^(pay-|hr-)/.test(docType)) return 'HR';
   if (docType.startsWith('mfg-')) return 'Production';
   if (docType.startsWith('proj-')) return 'Projects';
@@ -27,6 +28,17 @@ function ownerDeptOf(docType: string): string {
 const todayIso = (): string => new Date().toISOString().slice(0, 10);
 const RED = { borderColor: '#dc2626', background: '#fef2f2' } as const;
 
+/** Is the record's id one the ERP stores (a calculated report line has none)? */
+const SAVED_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const HELD_TEXT: Record<string, string> = {
+  SENT: 'sent to them, waiting to be marked Received',
+  RECEIVED: 'received by them, waiting to be Accepted',
+  ACCEPTED: 'accepted and being worked on',
+  IN_WORK: 'accepted and being worked on',
+  WAITING_APPROVAL: 'waiting for approval',
+};
+
 const CYCLE_TEXT =
   'Move Forward → next department marks Received → Accepted → works on the record → Send for Approval to a selected department → approval Accepted → Move Forward becomes available again.';
 
@@ -35,6 +47,9 @@ export function MoveForwardDialog({
   docId,
   docNo,
   fromDepartment,
+  title = 'Move Forward',
+  initialWorkStatus,
+  initialNote = '',
   onClose,
   onMoved,
 }: {
@@ -43,6 +58,10 @@ export function MoveForwardDialog({
   docNo?: string;
   /** shown locked; the server decides the real holder */
   fromDepartment?: string;
+  /** Title and button label ("Submit for Approval" sends the same handover for review). */
+  title?: string;
+  initialWorkStatus?: (typeof WORK_STATUSES)[number];
+  initialNote?: string;
   onClose: () => void;
   onMoved: () => void;
 }) {
@@ -53,8 +72,8 @@ export function MoveForwardDialog({
   const [routeType, setRouteType] = useState<string>(ROUTE_TYPES[0]);
   const [priority, setPriority] = useState('Normal');
   const [requiredBy, setRequiredBy] = useState('');
-  const [workStatus, setWorkStatus] = useState<string>(WORK_STATUSES[0]);
-  const [note, setNote] = useState('');
+  const [workStatus, setWorkStatus] = useState<string>(initialWorkStatus ?? WORK_STATUSES[0]);
+  const [note, setNote] = useState(initialNote);
   const [error, setError] = useState('');
   // WF-01: what the server refused, field by field (the generic "fix the highlighted fields" alone told nobody what to fix)
   const [serverFields, setServerFields] = useState<Record<string, string>>({});
@@ -64,6 +83,29 @@ export function MoveForwardDialog({
     fromDepartment ?? getSession().user?.department ?? ownerDeptOf(docType),
   );
   const [submitted, setSubmitted] = useState(false);
+  // where the record is now: shown before the person fills anything, so a refusal is never a surprise
+  const [holder, setHolder] = useState<DocMovement['holder']>(null);
+  const saved = SAVED_ID.test(docId);
+  const waiting = !!holder && ['SENT', 'RECEIVED', 'WAITING_APPROVAL'].includes(holder.state);
+  const blocked = !saved
+    ? 'This line is calculated by a report and is not a saved record, so it cannot be moved between departments. Open the document behind it and move that.'
+    : waiting
+      ? `This record is with ${holder.department}: ${HELD_TEXT[holder.state] ?? holder.state}. ${holder.department} can move it on after accepting it (their Department Inbox: Received, then Accepted).`
+      : '';
+  useEffect(() => {
+    if (!saved) return;
+    void Promise.resolve()
+      .then(() => workApi.doc(docType, docId))
+      .then(
+        (d) => {
+          if (!d?.holder) return;
+          setHolder(d.holder);
+          // the sender is whoever really holds it
+          setFromDept(d.holder.department);
+        },
+        () => undefined,
+      );
+  }, [docType, docId, saved]);
   const fromDeptRef = useRef(fromDept);
   fromDeptRef.current = fromDept;
   // QA ERP-MF-01: what is wrong with the form, field by field (shown in red under the field)
@@ -120,6 +162,7 @@ export function MoveForwardDialog({
   }, [to]);
 
   async function submit() {
+    if (blocked) return;
     setSubmitted(true);
     if (Object.keys(problems).length > 0) return;
     setBusy(true);
@@ -138,6 +181,7 @@ export function MoveForwardDialog({
         workStatus,
         handoverNote: note.trim() || null,
       });
+      window.dispatchEvent(new CustomEvent(MOVED_EVENT));
       onMoved();
     } catch (e) {
       if (e instanceof ApiError && Object.keys(e.fields).length > 0) {
@@ -146,7 +190,8 @@ export function MoveForwardDialog({
         const known = new Set(Object.keys(serverKey));
         const rest = Object.entries(e.fields)
           .filter(([k]) => !known.has(k))
-          .map(([, v]) => v);
+          // a bare "Required" names nothing: say which detail the record is missing
+          .map(([k, v]) => (/^(required|invalid uuid)$/i.test(v) ? `${k === 'docId' ? 'This record id' : k}: ${v}` : v));
         setError(rest.join(' '));
       } else {
         setError(e instanceof ApiError ? e.message : 'Could not move the record.');
@@ -157,7 +202,7 @@ export function MoveForwardDialog({
 
   return (
     <Modal
-      title="Move Forward"
+      title={title}
       sub={docNo ?? docType}
       onClose={onClose}
       footer={
@@ -168,14 +213,24 @@ export function MoveForwardDialog({
           <button
             type="button"
             className="btn primary"
-            disabled={busy}
+            disabled={busy || !!blocked}
+            title={blocked || undefined}
             onClick={() => void submit()}
           >
-            Move Forward
+            {title === 'Move Forward' ? 'Move Forward' : 'Submit'}
           </button>
         </>
       }
     >
+      {blocked ? (
+        <p role="status" className="mf-status wait">
+          {blocked}
+        </p>
+      ) : holder ? (
+        <p role="status" className="mf-status">
+          Now with <b>{holder.department}</b>: {HELD_TEXT[holder.state] ?? holder.state}. Choose where it goes next.
+        </p>
+      ) : null}
       {error ? (
         <p role="alert" className="error-text">
           {error}

@@ -1,9 +1,9 @@
 // Stock vouchers with lines: Opening Stock, Receipt / Issue, Stock Adjustment, Stock Transfer. One screen, four kinds.
 // Draft -> Submit -> (Approve) -> Post (or Dispatch / Receive for transfers) -> Cancel. A cancel needs a reason and a date.
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { INV_HEADS } from './v40/heads';
 import { useInvTab } from './v40/useInvTab';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Modal } from '../../components/Modal';
 import { Pager } from '../../components/Pager';
 import { useToast } from '../../components/Toast';
@@ -79,6 +79,12 @@ interface DraftLine {
   stockStatus: StockStatus;
   reasonCode: string;
 }
+/** The row a new voucher starts from. */
+interface VoucherPrefill {
+  warehouseId: string;
+  item: Ref;
+  countedQty: string;
+}
 const blankLine = (): DraftLine => ({
   item: null,
   qty: '',
@@ -114,6 +120,27 @@ function VouchersList({
   const [cancelling, setCancelling] = useState<Voucher | null>(null);
   const [viewing, setViewing] = useState<Voucher | null>(null);
   const [err, setErr] = useState('');
+  // "?new=1&itemId=…&warehouseId=…" (Stock Balance Add / Edit / Delete): open a new form filled with that row
+  const [params, setParams] = useSearchParams();
+  const [prefill, setPrefill] = useState<VoucherPrefill | null>(null);
+  useEffect(() => {
+    if (params.get('new') !== '1') return;
+    const itemId = params.get('itemId');
+    setPrefill(
+      itemId
+        ? {
+            warehouseId: params.get('warehouseId') ?? '',
+            item: { id: itemId, code: params.get('itemCode') ?? '', name: params.get('itemName') ?? '', uom: params.get('uom') ?? '' },
+            countedQty: params.get('counted') ?? '',
+          }
+        : null,
+    );
+    if (actions.add) setEditing('new');
+    else setErr('You need the Add right on this page to create the voucher.');
+    const next = new URLSearchParams(params);
+    for (const k of ['new', 'itemId', 'warehouseId', 'itemCode', 'itemName', 'uom', 'counted']) next.delete(k);
+    setParams(next, { replace: true });
+  }, [params, setParams, actions.add]);
 
   const act = async (fn: () => Promise<unknown>, msg: string) => {
     setErr('');
@@ -344,9 +371,14 @@ function VouchersList({
         <VoucherForm
           kind={kind}
           voucher={editing === 'new' ? null : editing}
-          onClose={() => setEditing(null)}
+          prefill={editing === 'new' ? prefill : null}
+          onClose={() => {
+            setEditing(null);
+            setPrefill(null);
+          }}
           onSaved={(n) => {
             setEditing(null);
+            setPrefill(null);
             toast(`Saved ${n}.`);
             list.reload();
           }}
@@ -494,16 +526,18 @@ function CancelDialog({
 function VoucherForm({
   kind,
   voucher,
+  prefill,
   onClose,
   onSaved,
 }: {
   kind: VoucherKind;
   voucher: Voucher | null;
+  prefill?: VoucherPrefill | null | undefined;
   onClose: () => void;
   onSaved: (n: string) => void;
 }) {
   const [date, setDate] = useState(voucher?.postingDate ?? todayIso());
-  const [warehouseId, setWarehouseId] = useState(voucher?.warehouse?.id ?? '');
+  const [warehouseId, setWarehouseId] = useState(voucher?.warehouse?.id ?? prefill?.warehouseId ?? '');
   const [toWarehouseId, setTo] = useState(voucher?.toWarehouse?.id ?? '');
   const [txType, setTxType] = useState<'Receipt' | 'Issue'>(voucher?.txType ?? 'Receipt');
   const [reference, setReference] = useState(voucher?.reference ?? '');
@@ -522,7 +556,7 @@ function VoucherForm({
           stockStatus: l.stockStatus,
           reasonCode: l.reasonCode ?? 'Count Correction',
         }))
-      : [blankLine()],
+      : [prefill ? { ...blankLine(), item: prefill.item, countedQty: prefill.countedQty } : blankLine()],
   );
   const [fields, setFields] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState('');
@@ -835,7 +869,9 @@ export function VouchersPage({ kind, actions }: { kind: VoucherKind; actions: Ac
 }
 
 function VouchersPageBody({ kind, actions }: { kind: VoucherKind; actions: ActionSet }) {
-  const [view, setView] = useState<'ledger' | 'vouchers' | 'customer'>('ledger');
+  // a link that asks for a new voucher (Stock Balance "＋ Add Stock") opens on the voucher list, where its form lives
+  const [params] = useSearchParams();
+  const [view, setView] = useState<'ledger' | 'vouchers' | 'customer'>(params.get('new') === '1' ? 'vouchers' : 'ledger');
   if (kind !== 'transactions') return <VouchersList kind={kind} actions={actions} />;
   const toolbar = (
     <div className="tabs" role="tablist">

@@ -7,7 +7,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { MAX_LIMIT, parseLimit } from '../pagination';
 
 /** Routes whose own schema already defines `limit` (lookups max 50, notifications): never rewritten. */
-const NATIVE_LIMIT = /^\/(lookups|notifications|notification-preferences|inventory\/lookups)(\/|$)/;
+const NATIVE_LIMIT = /^\/(lookups|notifications|notification-preferences|inventory\/lookups|projects\/[^/]+\/history)(\/|$)/;
 
 export function listLimitGuard(req: Request, _res: Response, next: NextFunction): void {
   if (req.method !== 'GET' || NATIVE_LIMIT.test(req.path)) return next();

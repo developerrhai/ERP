@@ -126,17 +126,29 @@ export function RecordStrip(p: StripProps) {
         type="button"
         className="btn sm"
         disabled={!row || !p.onLoad}
+        title={!row ? 'There is no record to load.' : !p.onLoad ? 'These records have no separate form: press View in the table.' : undefined}
         onClick={() => row && p.onLoad?.(row.id)}
       >
         Load Selected
       </button>
-      <button type="button" className="btn sm" disabled={!p.actions.add} onClick={add}>
+      <button type="button" className="btn sm" data-add-proxy="" disabled={!p.actions.add} onClick={add}>
         ＋ Add
       </button>
       <button
         type="button"
         className="btn sm"
         disabled={!row || !p.actions.edit || !p.onEdit || !p.canEdit(row.status)}
+        title={
+          !row
+            ? 'There is no record to edit.'
+            : !p.actions.edit
+              ? 'You do not have the right to edit here.'
+              : !p.onEdit
+                ? 'These records are not edited on this page.'
+                : !p.canEdit(row.status)
+                  ? `A ${row.status} record can no longer be edited.`
+                  : undefined
+        }
         onClick={() => row && p.onEdit?.(row.id)}
       >
         Edit
@@ -161,6 +173,15 @@ export function RecordStrip(p: StripProps) {
         type="button"
         className="btn sm primary"
         disabled={!row || !p.canSubmitDoc || !p.actions.submit}
+        title={
+          !row
+            ? 'There is no record to submit.'
+            : !p.canSubmitDoc
+              ? 'These records need no approval.'
+              : !p.actions.submit
+                ? 'You do not have the right to submit here.'
+                : undefined
+        }
         onClick={() => row && p.onSubmit(row.id)}
       >
         Submit Approval
@@ -394,9 +415,12 @@ const pick = (row: V40Row, columns: V40Column[], re: RegExp): string => {
 export function Customer360Workspace({
   rows,
   columns,
+  onOpen,
 }: {
   rows: V40Row[];
   columns: V40Column[];
+  /** the full record pop-up, for "Open" on the customer already shown */
+  onOpen?: ((id: string) => void) | undefined;
 }): ReactNode {
   const [selId, setSelId] = useState('');
   const [moving, setMoving] = useState(false);
@@ -422,6 +446,7 @@ export function Customer360Workspace({
     .filter((c) => c.type !== 'actions' && c.type !== 'docs' && c.source)
     .map((c) => [c.label, sel[c.key] ?? '—'] as const);
   return (
+    <div className="sv40-c360-split">
     <section className="sv40-panel sv40-c360" aria-label="Customer 360 Workspace">
       <h3>Customer 360° Workspace</h3>
       <div className="detail-grid">
@@ -438,7 +463,7 @@ export function Customer360Workspace({
             <b>{pick(r, columns, /company|customer/i) || r.number}</b>
             <small>{r.number}</small>
             <div>
-              <button type="button" className="btn sm" onClick={() => setSelId(r.id)}>
+              <button type="button" className="btn sm" onClick={() => (r.id === sel.id ? onOpen?.(r.id) : setSelId(r.id))}>
                 Open
               </button>
               <button
@@ -455,6 +480,8 @@ export function Customer360Workspace({
           </div>
         ))}
       </div>
+    </section>
+    <section className="sv40-panel" aria-label="Operational Readiness">
       <h3>Operational Readiness</h3>
       <ul className="sv40-checks">
         {checks.map(([label, ok, why]) => (
@@ -483,5 +510,6 @@ export function Customer360Workspace({
         />
       ) : null}
     </section>
+    </div>
   );
 }

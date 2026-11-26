@@ -71,8 +71,8 @@ import {
   SalesInvoicesPage,
   SalesQuotationsPage,
   SalesReturnsPage,
-  SourcesPage,
 } from './procurement/SalesPages';
+import { SourcesPage } from './sales/LeadSourcesPage';
 import {
   ApPage,
   ComparisonPage,
@@ -183,7 +183,8 @@ import { ApiKeysPage, CustomFieldsPage, FormRulesPage, HealthPage, LoginPolicies
 import { BillsPage, ClAttendancePage, ClCommandPage, ClWagesPage, CompliancePage, ContractorsPage, IncidentsPage, ClWorkOrdersPage, WorkersPage } from './contractlabour/ClPages';
 import { CanteenPage, HandoverPage, TasksPage, VisitorsPage } from './ops/OpsPages';
 import { DevicesPage, LiveBoardPage, PoliciesPage, PunchSitesPage } from './attendance/AttendancePages';
-import { CertificatesPage, DeptMailPage, DocumentCenterPage, LettersPage, MailAutomationPage } from './docsmail/DocsMailPages';
+import { DeptMailPage, DocumentCenterPage, LettersPage, MailAutomationPage } from './docsmail/DocsMailPages';
+import { CertificatesPage } from './qms/CertificatesPage';
 import { SCREEN_PAGES } from './screens/screenPages';
 
 // FamV40Body's own register/Add/Edit is local-state-only and never persists — it fakes a success toast
@@ -907,7 +908,7 @@ function PageBody({
     case 'admin-mail-automation':
       return <MailAutomationPage />;
     case 'quality-certificate':
-      return <CertificatesPage />;
+      return <CertificatesPage actions={actions} />;
     case 'hr-offer-letter':
       return <LettersPage />;
     case 'sales-enquiries':

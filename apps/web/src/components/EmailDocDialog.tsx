@@ -1,5 +1,6 @@
 // Phase 21 §5.7: Reusable "Email Document" preview + editable To/CC/Message dialog
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ApiError } from '../lib/api';
 import { phase21Api, type EmailExtraFile } from '../lib/phase21Api';
 import { EMAIL_RE } from '../lib/validators';
@@ -23,9 +24,13 @@ const toBase64 = (file: File): Promise<string> =>
     r.readAsDataURL(file);
   });
 
+/** Page ids that read badly as a module name. */
+const KIND: Record<string, string> = { 'inv-items': 'Item / SKU Master', 'inv-stock': 'Stock Balance', 'crm-sources': 'Lead Source' };
+const kindOf = (docType: string): string => (KIND[docType] ?? docType.replace(/[-_]/g, ' ')).toUpperCase();
+
 /** ERP record summary that pre-fills the Message of the email (Demo ERP layout). */
 export function recordSummary(docType: string, docId: string): string {
-  const kind = docType.replace(/[-_]/g, ' ').toUpperCase();
+  const kind = kindOf(docType);
   return [
     'Dear Sir / Madam,',
     '',
@@ -87,6 +92,13 @@ export function EmailDocDialog({
   const [attachMode, setAttachMode] = useState<'AUTO' | 'ATTACH' | 'LINK'>('AUTO');
   const [subject, setSubject] = useState('');
   const [attachmentFilename, setAttachmentFilename] = useState('');
+  const [docNo, setDocNo] = useState('');
+  // the box the error is about: it is outlined in red and gets the cursor
+  const [bad, setBad] = useState<'to' | 'cc' | 'bcc' | 'subject' | ''>('');
+  const mark = (field: 'to' | 'cc' | 'bcc' | 'subject' | ''): void => {
+    setBad(field);
+    if (field) setTimeout(() => document.querySelector<HTMLInputElement>(`[aria-label="Email Document"] [data-field="${field}"]`)?.focus(), 0);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -100,13 +112,16 @@ export function EmailDocDialog({
           res.subject || `RHAI ERP — ${docType.replace(/[-_]/g, ' ').toUpperCase()} ${docId}`,
         );
         setAttachmentFilename(res.attachmentFilename || `${docId}.pdf`);
+        // the message names the record by its number, unless the person already changed the text
+        if (res.docNo && res.docNo !== docId) {
+          setDocNo(res.docNo);
+          setMessage((m) => (m === recordSummary(docType, docId) ? recordSummary(docType, res.docNo) : m));
+        }
       })
       .catch(() => {
         // Fallback gracefully so the dialog stays usable even for demo / offline records
         const fallbackNo = docId.slice(0, 16);
         setSubject(`RHAI ERP — ${docType.replace(/[-_]/g, ' ').toUpperCase()} ${fallbackNo}`);
-        setToStr('billing@customer.example');
-        setCcStr('accounts@customer.example');
         setAttachmentFilename(`${fallbackNo.replace(/[^A-Za-z0-9_-]/g, '_')}.pdf`);
       })
       .finally(() => setLoading(false));
@@ -122,17 +137,21 @@ export function EmailDocDialog({
     const to = list(toStr);
     const cc = list(ccStr);
     const bcc = list(bccStr);
+    mark('');
     if (to.length === 0) {
       setError('Enter at least one recipient email.');
+      mark('to');
       return;
     }
     const badAddress = [...to, ...cc, ...bcc].find((a) => !EMAIL_RE.test(a));
     if (badAddress) {
       setError(`"${badAddress}" is not a valid email address.`);
+      mark(to.includes(badAddress) ? 'to' : cc.includes(badAddress) ? 'cc' : 'bcc');
       return;
     }
     if (!subject.trim()) {
       setError('Enter the subject of the email.');
+      mark('subject');
       return;
     }
     if (files.length > EMAIL_FILE_MAX_COUNT) {
@@ -165,9 +184,11 @@ export function EmailDocDialog({
       );
       onClose();
     } catch (e) {
-      // A demo record that is not stored in the ERP cannot be resolved by the mail service (404 / 422): the dialog says so plainly.
-      if (e instanceof ApiError && e.status !== 404 && e.status !== 422) {
-        setError(e.message);
+      // A demo record that is not stored in the ERP cannot be resolved by the mail service (404): the dialog says so plainly.
+      if (e instanceof ApiError && e.status !== 404) {
+        setError(Object.values(e.fields)[0] ?? e.message);
+        const key = (Object.keys(e.fields)[0] ?? '').split('.')[0];
+        mark(key === 'to' || key === 'cc' || key === 'bcc' || key === 'subject' ? key : '');
       } else {
         toast(
           `Email prepared for ${to[0]}. This demo record is not stored in the ERP mail queue, so nothing was sent.`,
@@ -179,7 +200,9 @@ export function EmailDocDialog({
     }
   };
 
-  return (
+  // drawn on <body> like every Modal: opened from a table row it would sit inside that row's sticky cell, and the sticky
+  // cells of the other rows would paint over it
+  return createPortal(
     <div className="modal-bg show" role="dialog" aria-modal="true" aria-label="Email Document">
       <div
         className="modal"
@@ -262,7 +285,7 @@ export function EmailDocDialog({
                 Document
               </span>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#0f243d', marginTop: 2 }}>
-                {docType.replace(/[-_]/g, ' ').toUpperCase()} • {docId}
+                {kindOf(docType)} • {docNo || (/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(docId) ? (loading ? '…' : 'record not found') : docId)}
               </div>
             </div>
             <span
@@ -325,6 +348,8 @@ export function EmailDocDialog({
                   id="email-subject"
                   type="text"
                   value={subject}
+                  data-field="subject"
+                  aria-invalid={bad === 'subject' ? true : undefined}
                   onChange={(e) => setSubject(e.target.value)}
                   style={{
                     width: '100%',
@@ -354,8 +379,10 @@ export function EmailDocDialog({
                 <input
                   type="text"
                   value={toStr}
+                  data-field="to"
+                  aria-invalid={bad === 'to' ? true : undefined}
                   onChange={(e) => setToStr(e.target.value)}
-                  placeholder="billing@customer.example"
+                  placeholder="name@company.com"
                   style={{
                     width: '100%',
                     boxSizing: 'border-box',
@@ -384,8 +411,10 @@ export function EmailDocDialog({
                 <input
                   type="text"
                   value={ccStr}
+                  data-field="cc"
+                  aria-invalid={bad === 'cc' ? true : undefined}
                   onChange={(e) => setCcStr(e.target.value)}
-                  placeholder="accounts@customer.example"
+                  placeholder="Optional copy to"
                   style={{
                     width: '100%',
                     boxSizing: 'border-box',
@@ -416,6 +445,8 @@ export function EmailDocDialog({
                   id="email-bcc"
                   type="text"
                   value={bccStr}
+                  data-field="bcc"
+                  aria-invalid={bad === 'bcc' ? true : undefined}
                   onChange={(e) => setBccStr(e.target.value)}
                   placeholder="audit@company.example"
                   style={{
@@ -604,6 +635,7 @@ export function EmailDocDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

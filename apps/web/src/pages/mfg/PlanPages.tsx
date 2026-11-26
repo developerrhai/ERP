@@ -207,6 +207,8 @@ function PlanForm({ onClose, onSaved }: { onClose: () => void; onSaved: (id: str
                   <button
                     type="button"
                     className="btn"
+                    disabled={lines.length <= 1}
+                    title={lines.length <= 1 ? 'At least one line is needed.' : undefined}
                     onClick={() =>
                       setLines((o) => (o.length > 1 ? o.filter((_, j) => j !== i) : o))
                     }

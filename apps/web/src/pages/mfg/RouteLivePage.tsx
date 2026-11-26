@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
+import { RecordActions } from '../../components/workspace/RecordActions';
 import { ApiError } from '../../lib/api';
 import { routingApi } from '../../lib/routingApi';
 import type { LiveRow, PlantCard } from '../../lib/routingApi';
@@ -100,6 +101,9 @@ export function MfgUnitRoutePage() {
           <h1>Multi-Unit Part Routing</h1>
           <p className="muted">Controlled BOM release, plant routing, two-step transfer receipt, quantity reconciliation, quality release and dispatch.</p>
         </div>
+        <div className="actions">
+          <button type="button" className="btn primary" onClick={() => void openAssign()}>＋ Add Job Card Route</button>
+        </div>
       </div>
       <PlantStrip />
       <FlowTabs current={tab === 'wip' ? 'WIP by Plant' : tab === 'quality' ? 'Quality Release' : tab === 'dispatch' ? 'Dispatch Readiness' : 'Live Routing'} />
@@ -166,6 +170,8 @@ export function MfgUnitRoutePage() {
                       <input className="rt-step-input" type="number" min={0} aria-label={`Scrap quantity for ${r.jobNo}`} placeholder="Scrap" value={q.scrap} onChange={(e) => setQty({ ...qty, [r.id]: { ...q, scrap: e.target.value } })} />
                       <ReasonButton label="Record" reason={reason ?? (!q.good && !q.scrap ? 'Enter a good or scrap quantity.' : null)} onClick={() => void act(async () => { const b = await routingApi.record(r.id, { good: Number(q.good || 0), scrap: Number(q.scrap || 0) }); setQty({ ...qty, [r.id]: { good: '', scrap: '' } }); return `Recorded. Balance ${b.balance}.`; })} />
                       <ReasonButton label={last ? 'Complete Route' : 'Move Next Controlled Step'} primary reason={reason} onClick={() => void act(async () => { const b = await routingApi.advance(r.id); return b.transferNo ? `Moved. Transfer note ${b.transferNo} created.` : b.routeStatus === 'COMPLETED' ? 'Route completed.' : 'Moved to the next step.'; })} />
+                      {reason ? <div className="rt-reason">{reason}</div> : null}
+                      <RecordActions docType="mfg-unit-route" id={r.orderId} number={r.jobNo} status={r.routeStatus} />
                     </div>
                   </td>
                 </tr>

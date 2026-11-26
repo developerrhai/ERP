@@ -520,7 +520,7 @@ function AllocateModal({
           <button type="button" className="btn" onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className="btn primary" disabled={pending || !bill} onClick={() => void save()}>
+          <button type="button" className="btn primary" disabled={pending || !bill} title={bill ? undefined : 'Choose the bill to settle first.'} onClick={() => void save()}>
             Allocate
           </button>
         </>

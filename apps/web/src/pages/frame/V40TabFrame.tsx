@@ -18,6 +18,7 @@ import { SALES_V40_IDS } from '../sales/salesV40Api';
 import { FINANCE_V40_IDS, TAX_V40_IDS } from '../finance/finV40Api';
 import { PLANT_V40_IDS } from '../plant/plantV40Api';
 import { FAM_V40_IDS } from '../v40fam/famIds';
+import { auditRecord } from '../../lib/auditRecord';
 
 const SCM_V40_IDS = [
   'scm-po',
@@ -95,7 +96,7 @@ export function AuditPanel({ pageId }: { pageId: string }) {
   const rows = data?.rows ?? [];
   return (
     <div className="table-wrap">
-      <table className="register-table">
+      <table className="register-table plain">
         <thead>
           <tr>
             <th>When</th>
@@ -110,7 +111,7 @@ export function AuditPanel({ pageId }: { pageId: string }) {
               <td>{formatDateTime(r.at)}</td>
               <td>{r.actorName ?? '—'}</td>
               <td>{r.action}</td>
-              <td>{r.targetId ?? '—'}</td>
+              <td>{auditRecord(r.detail, r.targetId)}</td>
             </tr>
           ))}
           {rows.length === 0 ? (
@@ -121,10 +122,10 @@ export function AuditPanel({ pageId }: { pageId: string }) {
         </tbody>
       </table>
       <div className="actions">
-        <button type="button" className="btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+        <button type="button" className="btn" disabled={page <= 1} title={page <= 1 ? 'This is the first page.' : undefined} onClick={() => setPage((p) => p - 1)}>
           Previous
         </button>
-        <button type="button" className="btn" disabled={rows.length < 20} onClick={() => setPage((p) => p + 1)}>
+        <button type="button" className="btn" disabled={rows.length < 20} title={rows.length < 20 ? 'This is the last page.' : undefined} onClick={() => setPage((p) => p + 1)}>
           Next
         </button>
       </div>
@@ -139,7 +140,7 @@ export function ApprovalsPanel({ pageId }: { pageId: string }) {
   const rows: ApprovalRequest[] = data?.rows ?? [];
   return (
     <div className="table-wrap">
-      <table className="register-table">
+      <table className="register-table plain">
         <thead>
           <tr>
             <th>Document</th>
@@ -183,6 +184,7 @@ export function V40TabFrame({ pageId, tabs, children }: { pageId: string; tabs: 
   const open = (i: number): void =>
     setParams((p) => {
       const n = new URLSearchParams(p);
+      n.delete('panel'); // a shortcut panel of the module strip belongs to the tab it was opened on
       if (i === 0) n.delete('tab');
       else n.set('tab', String(i));
       return n;

@@ -9,6 +9,7 @@ import { ErrorMessage } from '../../../components/ErrorMessage';
 import { MoveForwardDialog } from '../../../components/MoveForward';
 import { Pager } from '../../../components/Pager';
 import { useToast } from '../../../components/Toast';
+import { useColumnChoice } from '../../../lib/pageSettings';
 import { useLoad } from '../../../lib/useLoad';
 import type { ActionSet } from '../../../types';
 import { formatMoney, formatQty } from '../../generic/fieldModel';
@@ -29,6 +30,9 @@ export function InvTabView({
   rowAction,
   refresh = 0,
   period,
+  department = '',
+  onRows,
+  bulk,
 }: {
   pageId: string;
   tab: string;
@@ -42,6 +46,12 @@ export function InvTabView({
   refresh?: number;
   /** Valuation: the period the rows are for. */
   period?: { from: string; to: string };
+  /** Department Filter (item pages): only the records now with this department. */
+  department?: string;
+  /** Tells the page the rows on screen (its record strip and Detailed Table show the same ones). Pass a stable function. */
+  onRows?: (rows: V40TabRow[], total: number) => void;
+  /** Buttons for the ticked rows, after Export Selected. */
+  bulk?: (selected: V40TabRow[], clear: () => void) => ReactNode;
 }) {
   const toast = useToast();
   const [q, setQ] = useState('');
@@ -53,9 +63,16 @@ export function InvTabView({
   const [moving, setMoving] = useState<V40TabRow | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const { data, loading, error, reload } = useLoad(
-    () => getV40Tab(pageId, tab, { q, status, page, size, ...(period ?? {}) }),
-    [pageId, tab, q, status, page, size, refresh, period?.from, period?.to],
+    () => getV40Tab(pageId, tab, { q, status, page, size, department, ...(period ?? {}) }),
+    [pageId, tab, q, status, page, size, refresh, period?.from, period?.to, department],
   );
+  useEffect(() => {
+    if (data) onRows?.(data.rows, data.total);
+  }, [data, onRows]);
+  // other rows are on screen after a filter, a page change or a reload: the old ticks would point at them
+  useEffect(() => {
+    setSelected(new Set());
+  }, [q, status, page, size, refresh, department]);
 
   // a different tab starts at the top again
   useEffect(() => {
@@ -71,7 +88,7 @@ export function InvTabView({
     return () => clearTimeout(id);
   }, [search]);
 
-  const cols = data?.columns ?? [];
+  const cols = useColumnChoice(pageId, data?.columns ?? [], (c) => c.format === 'open');
   const rows = useMemo(() => data?.rows ?? [], [data]);
   const total = data?.total ?? 0;
   const isReport = /^reports?$/i.test(tab.trim());
@@ -123,7 +140,7 @@ export function InvTabView({
     if (col.format === 'open') {
       const owner = row.page ?? pageId;
       return (
-        <div className="inv-v40-row-actions">
+        <div className={rowAction ? 'actions row-actions ws-actions compact' : 'inv-v40-row-actions'}>
           {rowAction ? (
             rowAction(row, reload)
           ) : (
@@ -190,6 +207,7 @@ export function InvTabView({
         <button type="button" className="btn" disabled={selected.size === 0} onClick={() => csv(true)}>
           Export Selected
         </button>
+        {bulk?.(rows.filter((_, i) => selected.has(i)), () => setSelected(new Set()))}
         {isReport ? (
           <>
             <button type="button" className="btn" onClick={() => csv(false)}>
@@ -203,7 +221,7 @@ export function InvTabView({
       </div>
       {error ? <ErrorMessage>{error}</ErrorMessage> : null}
       <div className="table-wrap" ref={box}>
-        <table className="register-table inv-v40-table">
+        <table className="register-table inv-v40-table ws-lined">
           <thead>
             <tr>
               <th scope="col">
@@ -217,7 +235,7 @@ export function InvTabView({
                 />
               </th>
               {cols.map((c, ci) => (
-                <th key={`${c.key}-${ci}`} scope="col" className={c.format === 'qty' || c.format === 'money' || c.format === 'days' ? 'num' : undefined}>
+                <th key={`${c.key}-${ci}`} scope="col" className={c.format === 'qty' || c.format === 'money' || c.format === 'days' ? 'num' : c.format === 'open' ? 'sticky-actions' : undefined}>
                   {c.label}
                 </th>
               ))}
@@ -230,7 +248,7 @@ export function InvTabView({
                   <input type="checkbox" className="v8-checkbox" aria-label={`Select row ${i + 1}`} checked={selected.has(i)} onChange={(e) => toggle(i, e.target.checked)} />
                 </td>
                 {cols.map((c, ci) => (
-                  <td key={`${c.key}-${ci}`} className={cellClass(c, r)}>
+                  <td key={`${c.key}-${ci}`} className={c.format === 'open' ? 'sticky-actions' : cellClass(c, r)}>
                     {cell(c, r)}
                   </td>
                 ))}

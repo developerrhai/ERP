@@ -114,6 +114,25 @@ export const certificatesService = {
       return r;
     });
   },
+  /** Correct a certificate that is still waiting for release; a released or rejected one is locked. */
+  async update(caller: Caller, id: string, b: CertificateInput): Promise<Row> {
+    const c = (await query(prisma, `SELECT * FROM quality_certificates WHERE id = $1::uuid AND deleted_at IS NULL`, id))[0];
+    if (!c || !caller.ctx.unitIds.includes(S(c.unit_id))) throw Errors.notFound('Certificate not found.');
+    if (b.acceptedQty + b.rejectedQty > b.sampleQty) throw Errors.validation({ acceptedQty: 'Accepted plus rejected cannot be more than the sample quantity.' });
+    if (b.result === 'Fail' && !b.ncrNo?.trim()) throw Errors.validation({ ncrNo: 'A failed certificate needs the NCR number.' });
+    return prisma.$transaction(async (tx) => {
+      const r = await query(
+        tx,
+        `UPDATE quality_certificates SET job_card_no = $2, part_code = $3, part_name = $4, inspection_date = COALESCE($5::date, inspection_date), sample_qty = $6, accepted_qty = $7, rejected_qty = $8,
+           drawing_revision = $9, inspector = $10, result = $11, ncr_no = $12, remarks = $13, version = version + 1, updated_at = now(), updated_by_id = $14::uuid
+         WHERE id = $1::uuid AND quality_approval = 'Pending' RETURNING *`,
+        id, b.jobCardNo ?? null, b.partCode ?? null, b.partName, b.inspectionDate ?? null, b.sampleQty, b.acceptedQty, b.rejectedQty, b.drawingRevision ?? null, b.inspector ?? null, b.result ?? 'Pass', b.ncrNo ?? null, b.remarks ?? null, caller.auth.user.id,
+      );
+      if (!r[0]) throw Errors.conflict('This certificate was already released or rejected, so it cannot be changed.');
+      await recordAudit({ action: 'certificate.updated', actorId: caller.auth.user.id, targetType: 'quality_certificate', targetId: id, detail: { number: S(c.number), pageId: 'quality-certificate' } }, tx);
+      return r[0];
+    });
+  },
   /** Release approval by quality: not the person who made it. */
   async decide(caller: Caller, id: string, approved: boolean): Promise<Row> {
     const c = (await query(prisma, `SELECT * FROM quality_certificates WHERE id = $1::uuid AND deleted_at IS NULL`, id))[0];

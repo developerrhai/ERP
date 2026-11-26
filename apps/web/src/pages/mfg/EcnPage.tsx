@@ -6,6 +6,7 @@ import type { ActionSet } from '../../types';
 import { s } from '../qms/Shared';
 import { ErrorBox, PageHead } from '../finance/shared';
 import { Grid } from './Ui';
+import { RecordActions } from '../../components/workspace/RecordActions';
 
 export function EcnPage({ actions }: { actions: ActionSet }) {
   void actions;
@@ -30,6 +31,7 @@ export function EcnPage({ actions }: { actions: ActionSet }) {
           { h: 'Reason', r: (r) => s(r.reason) },
           { h: 'Raised by', r: (r) => s(r.raisedByName) },
           { h: 'Date', r: (r) => s(r.createdAt).slice(0, 10) },
+          { h: '', r: (r) => <RecordActions docType="mfg-ecn" id={s(r.id)} number={s(r.number)} /> },
         ]}
       />
     </>

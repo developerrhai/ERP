@@ -8,12 +8,16 @@ import type { FieldMeta, PageSchema, RecordRow } from '../../generic/engineApi';
 import { formatMoney } from '../../generic/fieldModel';
 import { AllocateCell } from './V40Cell';
 
+/** Computed columns the server can still order by; the others get a plain heading (a sort click used to answer 422). */
+const SORTABLE_CALC: ReadonlySet<string> = new Set(['stockRecord', 'itemType', 'location', 'payReference']);
+
 const calc = (key: string, label: string, type: FieldMeta['type'] = 'qty'): FieldMeta => ({
   key,
   label,
   type,
   required: false,
   readOnly: true,
+  ...(SORTABLE_CALC.has(key) ? {} : { sortable: false }),
 });
 
 // ---- Item / SKU Master ---------------------------------------------------------------------------
@@ -31,7 +35,8 @@ const ITEM_ALLOC = ['stockRecord', 'stockDemand', 'stockAvailable', 'stockAlloca
 
 /** V40 tab name -> the register columns (field keys) it shows. */
 export const ITEM_TAB_COLUMNS: Readonly<Record<string, readonly string[]>> = {
-  'Item Master': ['itemCode', 'itemName', 'itemType', 'baseUom', 'altUom', 'category', 'brand', 'hsnSac', 'status'],
+  // the compact master grid; every other attribute is in the Detailed Table under it
+  'Item Master': ['itemCode', 'itemName', 'itemType', 'baseUom', 'altUom'],
   'Classification & UOM': ['baseUom', 'altUom', 'altUomFactor', 'itemCode', 'itemName', 'itemType', 'category', 'brand', 'hsnSac', 'status'],
   'Tax & HSN': ['hsnSac', 'itemCode', 'itemName', 'itemType', 'category', 'brand', 'baseUom', 'status'],
   'Planning Parameters': [...ITEM_ALLOC, 'itemCode', 'itemName', 'itemType', 'category', 'brand', 'hsnSac', 'baseUom', 'reorderLevel', 'status'],
@@ -105,13 +110,13 @@ export function PriceSimulator() {
   );
   return (
     <section className="card inv-v40-sim" aria-label="Cost and price simulation">
-      <div className="inv-v40-bar">
+      <div className="inv-v40-sim-grid">
         {field('Base Amount', base, setBase)}
         {field('Discount %', discount, setDiscount)}
         {field('Tax %', tax, setTax)}
         {field('Target Margin %', margin, setMargin)}
       </div>
-      <div className="inv-v40-totals" aria-live="polite">
+      <div className="inv-v40-sim-totals" aria-live="polite">
         <span>
           <small>Net after discount</small>
           <b>{formatMoney(net)}</b>

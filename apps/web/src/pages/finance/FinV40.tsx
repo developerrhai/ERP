@@ -2,6 +2,7 @@
 // values the API reads from the real tables (GET /finance/v40/:pageId, /tax/v40/:pageId), the selection bar, Previous / Next,
 // the tab's side panel (settlement, ledger, allocation, exceptions, validation), KPI cards and audit entries. Outside the tab
 // frame (or for a page without V40 views) it shows `fallback`, the page's own table, unchanged.
+import { AccountTree } from './AccountTree';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -17,6 +18,8 @@ import { formatDateTime } from '../../lib/format';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { DocumentsPanel } from '../generic/DocumentsPanel';
+import { HolderNote, useHolders } from '../../components/HolderNote';
+import { TabInsights, insightKind } from '../frame/TabInsights';
 import { listPageAudit } from '../generic/engineApi';
 import type { PageSchema } from '../generic/engineApi';
 import { ClassicViewSwitch, useClassic } from '../frame/ClassicView';
@@ -26,6 +29,7 @@ import type { FinCard, FinColumn, FinPanel, FinRow } from './finV40Api';
 import { dmy, ErrorBox, inr, Pill } from './shared';
 import './finance-v40.css';
 import '../tax/tax-v40.css';
+import { auditRecord } from '../../lib/auditRecord';
 
 const num = (v: string | null): string => {
   if (v === null || v === '') return '—';
@@ -45,6 +49,18 @@ const RECORD_PAGE: Record<string, string> = {
   'fin-cashflow': 'fin-coa',
 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Report pages have no entry form of their own: their Add button opens the entry that changes their figures. */
+const ADD_LABEL: Record<string, string> = {
+  'fin-gl': '＋ Add Journal Entry',
+  'fin-trial': '＋ Add Journal Entry',
+  'fin-pnl': '＋ Add Journal Entry',
+  'fin-bs': '＋ Add Journal Entry',
+  'fin-cashflow': '＋ Add Journal Entry',
+  'fin-ar': '＋ Add Receipt',
+  'fin-ageing': '＋ Add Receipt',
+};
+/** Registers that only show figures worked out from the books. */
+const LEDGER_PAGES: ReadonlySet<string> = new Set(['fin-gl', 'fin-trial', 'fin-pnl', 'fin-bs', 'fin-cashflow', 'fin-ageing', 'fin-ap', 'fin-ar']);
 /** The buttons the page's own row may offer that the register shows as one of its own fixed buttons (or never as a proxy). */
 const FIXED = new Set(['View', 'Open', 'Details', 'Docs', 'Email', 'Word', 'Excel', 'PDF', 'Move Forward']);
 
@@ -170,7 +186,7 @@ function AuditEntries({ pageId }: { pageId: string }) {
                 <td>{formatDateTime(r.at)}</td>
                 <td>{r.actorName ?? '—'}</td>
                 <td>{r.action}</td>
-                <td>{r.targetId ?? '—'}</td>
+                <td>{auditRecord(r.detail, r.targetId)}</td>
               </tr>
             ))}
             {rows.length === 0 && !loading ? (
@@ -186,6 +202,7 @@ function AuditEntries({ pageId }: { pageId: string }) {
           type="button"
           className="btn sm"
           disabled={page <= 1}
+          title={page <= 1 ? 'This is the first page.' : undefined}
           onClick={() => setPage((p) => p - 1)}
         >
           Previous
@@ -194,6 +211,7 @@ function AuditEntries({ pageId }: { pageId: string }) {
           type="button"
           className="btn sm"
           disabled={rows.length < 10}
+          title={rows.length < 10 ? 'This is the last page.' : undefined}
           onClick={() => setPage((p) => p + 1)}
         >
           Next
@@ -256,6 +274,7 @@ function Body({
   const [panelRow, setPanelRow] = useState<PanelRow | null>(null);
   const [allocId, setAllocId] = useState<string | null>(null);
   const [hostTick, setHostTick] = useState(0);
+  const holders = useHolders(RECORD_PAGE[pageId] ?? pageId);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -277,6 +296,12 @@ function Body({
   );
   const data = load.data;
   const rows: FinRow[] = useMemo(() => data?.rows ?? [], [data]);
+  // Analytics / Calendar / Reports work from a larger slice of the same register
+  const insight = insightKind(tabName);
+  const wide = useLoad(
+    () => (insight ? getFinV40(pageId, { tab: tabName, first, q, status, page: 1, size: 100 }) : Promise.resolve(null)),
+    [pageId, tabName, first, q, status, insight, reloadKey, tick],
+  );
   const columns = data?.columns ?? [];
   for (const r of rows) if (r.status) seen.current.add(r.status);
   const total = data?.total ?? 0;
@@ -295,6 +320,8 @@ function Body({
   const hostActions = (r: FinRow): string[] => classic?.actionsOf(r.number) ?? [];
   const proxy = (r: FinRow, label: string): void => {
     if (!classic?.press(r.number, label)) toast(`${label} is not available for ${r.number} right now.`);
+    // a button that acts at once opens no pop-up, so the register looks again after the server had time to answer
+    else for (const wait of [1500, 4000]) setTimeout(() => setTick((n) => n + 1), wait);
   };
   void hostTick;
 
@@ -319,10 +346,22 @@ function Body({
   }, []);
 
   const recPage = RECORD_PAGE[pageId] ?? pageId;
-  const isRecord = (r: FinRow): boolean => UUID.test(r.id);
+  /**
+   * The stored record behind a row: normally the row itself; an AR/AP Ageing row is a customer's or a supplier's balance,
+   * so its documents, print and e-mail are the party's.
+   */
+  const recordOf = (r: FinRow): { page: string; id: string } | null => {
+    if (UUID.test(r.id)) return { page: recPage, id: r.id };
+    if (pageId !== 'fin-ageing' || !UUID.test(r.id.slice(0, 36))) return null;
+    const supplier = Object.values(r).some((v) => v === 'Supplier');
+    return { page: supplier ? 'scm-suppliers' : 'master-customers', id: r.id.slice(0, 36) };
+  };
+  const isRecord = (r: FinRow): boolean => recordOf(r) !== null;
   async function printRow(r: FinRow, kind: PrintKind, ext: string): Promise<void> {
+    const rec = recordOf(r);
+    if (!rec) return;
     try {
-      saveFile(await docsMailApi.print(recPage, r.id, kind), `${r.number || 'record'}.${ext}`);
+      saveFile(await docsMailApi.print(rec.page, rec.id, kind), `${r.number || 'record'}.${ext}`);
     } catch (e) {
       toast(toUiMessage(e));
     }
@@ -383,7 +422,18 @@ function Body({
   const showDocs = /^documents$/i.test(tabName);
   const docParam = params.get('doc');
   const docRow = rows.find((r) => r.id === docParam) ?? selectedRows[0] ?? rows[0];
-  const docSchema = useMemo(() => ({ pageId: recPage }) as unknown as PageSchema, [recPage]);
+  const docRec = docRow ? recordOf(docRow) : null;
+  const docPage = docRec?.page ?? recPage;
+  const docSchema = useMemo(() => ({ pageId: docPage }) as unknown as PageSchema, [docPage]);
+
+  /** Why a record's Edit / Delete / Submit can not run: said on the click instead of a silent grey button. */
+  const whyNot = (label: string, r: FinRow): string => {
+    const state = r.status ? `${r.number} is ${r.status}: ` : `${r.number}: `;
+    if (LEDGER_PAGES.has(pageId))
+      return `${state}this line is worked out from posted entries, so it cannot be ${label === 'Submit' ? 'submitted' : label === 'Delete' ? 'deleted' : 'edited'} here. Correct the voucher behind it, or post a journal entry.`;
+    if (label === 'Submit') return `${state}there is nothing to submit. Only a Draft goes for approval.`;
+    return `${state}a posted or approved record is locked to protect the accounts. ${label === 'Delete' ? 'Cancel or reverse it instead.' : 'Cancel or reverse it and enter it again.'}`;
+  };
 
   /** every action of a record, in the order the V40 reference shows them */
   const recordButtons = (r: FinRow, where: 'row' | 'modal'): ReactNode => {
@@ -393,14 +443,9 @@ function Body({
       perm ? (
         <button
           type="button"
-          className={`btn sm${label === 'Delete' ? ' danger' : ''}`}
-          disabled={!has(label)}
-          title={
-            has(label)
-              ? undefined
-              : `${label} is not available for this record here: it is done on the screen that creates it`
-          }
-          onClick={() => proxy(r, label)}
+          className={`btn sm${label === 'Delete' && has(label) ? ' danger' : ''}${has(label) ? '' : ' off'}`}
+          title={has(label) ? undefined : whyNot(label, r)}
+          onClick={() => (has(label) ? proxy(r, label) : toast(whyNot(label, r)))}
         >
           {label}
         </button>
@@ -459,6 +504,30 @@ function Body({
   return (
     <section className="fv40" aria-label={`${tabName || 'Register'} (V40 view)`}>
       <ErrorBox message={load.error} />
+      {actions?.add !== false && ADD_LABEL[pageId] ? (
+        <div className="fv40-head-add">
+          <button
+            type="button"
+            className="btn primary"
+            data-add-proxy=""
+            onClick={() => window.dispatchEvent(new CustomEvent('v40-add-record', { detail: { pageId, handled: false } }))}
+          >
+            {ADD_LABEL[pageId]}
+          </button>
+        </div>
+      ) : null}
+      {insight ? (
+        <TabInsights
+          kind={insight}
+          title="Register"
+          fileName={pageId}
+          columns={wide.data?.columns ?? []}
+          rows={wide.data?.rows ?? []}
+          total={wide.data?.total ?? 0}
+          loading={wide.loading}
+        />
+      ) : null}
+      {pageId === 'fin-coa' && first ? <AccountTree reloadKey={tick} onShow={setQ} /> : null}
       <div className="toolbar fv40-toolbar">
         <select
           aria-label="Select record"
@@ -468,8 +537,8 @@ function Body({
           }}
         >
           <option value="">Select record</option>
-          {rows.map((r) => (
-            <option key={r.id} value={r.number}>
+          {rows.map((r, i) => (
+            <option key={`${r.id}-${i}`} value={r.number}>
               {r.number}
             </option>
           ))}
@@ -507,6 +576,7 @@ function Body({
           type="button"
           className="btn sm"
           disabled={picked.size === 0 || (!onOpen && !classic)}
+          title={picked.size === 0 ? 'Tick a record in the table first.' : undefined}
           onClick={() => {
             const first = selectedRows[0];
             if (!first) return;
@@ -539,7 +609,7 @@ function Body({
               </th>
               {columns.map((c) => (
                 <th
-                  key={c.key}
+                  key={c.key} className={c.type === 'actions' ? 'row-actions-head' : undefined}
                   title={c.source ? undefined : 'No source for this column in the database yet'}
                 >
                   {c.label}
@@ -548,8 +618,8 @@ function Body({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className={picked.has(r.id) ? 'selected' : undefined}>
+            {rows.map((r, i) => (
+              <tr key={`${r.id}-${i}`} className={picked.has(r.id) ? 'selected' : undefined}>
                 <td>
                   <input
                     type="checkbox"
@@ -562,7 +632,10 @@ function Body({
                   if (c.type === 'actions')
                     return (
                       <td key={c.key} className="row-actions">
-                        {recordButtons(r, 'row')}
+                        <div className="fv40-wrap">
+                          <HolderNote holder={holders.get(recordOf(r)?.id ?? r.id)} />
+                          {recordButtons(r, 'row')}
+                        </div>
                       </td>
                     );
                   if (c.type === 'docs')
@@ -588,6 +661,7 @@ function Body({
           type="button"
           className="btn sm"
           disabled={page <= 1}
+          title={page <= 1 ? 'This is the first page.' : undefined}
           onClick={() => setPage((p) => p - 1)}
         >
           Previous
@@ -599,6 +673,7 @@ function Body({
           type="button"
           className="btn sm"
           disabled={page >= pages}
+          title={page >= pages ? 'This is the last page.' : undefined}
           onClick={() => setPage((p) => p + 1)}
         >
           Next
@@ -636,15 +711,16 @@ function Body({
         </Modal>
       ) : null}
       {showDocs ? (
-        docRow ? (
+        docRow && docRec ? (
           <DocumentsPanel
             schema={docSchema}
-            row={{ id: docRow.id, code: docRow.number, status: docRow.status }}
-            canEdit={actions?.edit ?? false}
+            row={{ id: docRec.id, code: docRow.number, status: docRow.status }}
+            // a report line's documents belong to the record behind it: the server checks that page's rights
+            canEdit={(actions?.edit ?? false) || LEDGER_PAGES.has(pageId)}
             onChanged={reload}
           />
         ) : (
-          <p className="v8-sub">Tick a record to see and add its documents.</p>
+          <p className="v8-sub">{docRow ? 'This line is a total worked out from the books, so it has no documents of its own.' : 'There is no record yet to add documents to.'}</p>
         )
       ) : null}
       {data?.audit ? <AuditEntries pageId={pageId} /> : null}
@@ -660,12 +736,12 @@ function Body({
         />
       ) : null}
       {dlg?.kind === 'email' ? (
-        <EmailDocDialog docType={recPage} docId={dlg.row.id} onClose={() => setDlg(null)} />
+        <EmailDocDialog docType={recordOf(dlg.row)?.page ?? recPage} docId={recordOf(dlg.row)?.id ?? dlg.row.id} onClose={() => setDlg(null)} />
       ) : null}
       {dlg?.kind === 'move' ? (
         <MoveForwardDialog
-          docType={recPage}
-          docId={dlg.row.id}
+          docType={recordOf(dlg.row)?.page ?? recPage}
+          docId={recordOf(dlg.row)?.id ?? dlg.row.id}
           docNo={dlg.row.number}
           onClose={() => setDlg(null)}
           onMoved={() => setDlg(null)}
@@ -687,7 +763,7 @@ function Body({
           onClose={() => setDetail(null)}
           footer={
             <>
-              {recordButtons(detail, 'modal')}
+              {recordButtons(rows.find((x) => x.id === detail.id) ?? detail, 'modal')}
               <button type="button" className="btn" onClick={() => setDetail(null)}>
                 Close
               </button>
@@ -697,15 +773,16 @@ function Body({
           <dl className="fv40-detail">
             {columns
               .filter((c) => c.type !== 'actions' && c.type !== 'docs')
-              .map((c) => (
+              .map((c) => [c, rows.find((x) => x.id === detail.id) ?? detail] as const)
+              .map(([c, now]) => (
                 <div key={c.key} className="fv40-detail-row">
                   <dt>{c.label}</dt>
                   <dd>
                     {c.type === 'inr'
-                      ? inr(detail[c.key] ?? null)
+                      ? inr(now[c.key] ?? null)
                       : c.type === 'date'
-                        ? dmy(detail[c.key] ?? null)
-                        : (detail[c.key] ?? '—')}
+                        ? dmy(now[c.key] ?? null)
+                        : (now[c.key] ?? '—')}
                   </dd>
                 </div>
               ))}

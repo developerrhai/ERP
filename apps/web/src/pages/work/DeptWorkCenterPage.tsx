@@ -3,7 +3,10 @@
 // real counters; "Workflow Rules Affecting {Dept}" lists the Workflow Matrix rows that name the department.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { EmailDocDialog } from '../../components/EmailDocDialog';
 import { HistoryDrawer, MoveForwardDialog } from '../../components/MoveForward';
+import { RecordDocsModal } from '../../components/workspace/RecordDialogs';
+import { docsMailApi, saveFile } from '../../lib/docsMailApi';
 import { useToast } from '../../components/Toast';
 import { ApiError } from '../../lib/api';
 import { lookupPage } from '../../lib/registry';
@@ -24,6 +27,9 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
   const [tick, setTick] = useState(0);
   const [forwarding, setForwarding] = useState<Movement | null>(null);
   const [history, setHistory] = useState<Movement | null>(null);
+  const [docs, setDocs] = useState<Movement | null>(null);
+  const [email, setEmail] = useState<Movement | null>(null);
+  const [fromFilter, setFromFilter] = useState('');
 
   useEffect(() => {
     void workApi.departments().then(setDepts, () => setDepts([]));
@@ -65,6 +71,15 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
     }
   }
 
+  async function pdf(m: Movement): Promise<void> {
+    try {
+      saveFile(await docsMailApi.print(m.doc_type, m.doc_id, 'standard'), `${m.doc_no ?? m.number}.pdf`);
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : 'This record has no print layout.');
+    }
+  }
+
+  const shown = fromFilter ? rows.filter((m) => m.from_department === fromFilter) : rows;
   const name = deptLabelFromPage(pageId, dept);
   const slug = pageId.replace(/^dept-work-/, '');
   const mine = rules.filter((r) => dept && [r.owner_department_id, r.next_department_id, r.approval_department_id].includes(dept.id));
@@ -171,13 +186,13 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
         </Link>
         {slug === 'finance' ? (
           <>
-            <Link className="btn" to="/m/fin-chart-of-accounts">
+            <Link className="btn" to="/m/fin-coa">
               Chart of Accounts
             </Link>
-            <Link className="btn" to="/m/fin-general-ledger">
+            <Link className="btn" to="/m/fin-gl">
               General Ledger
             </Link>
-            <Link className="btn" to="/m/tax-gst-setup">
+            <Link className="btn" to="/m/tax-gst">
               GST Setup
             </Link>
             <Link className="btn" to="/m/tax-gstr3b">
@@ -196,16 +211,17 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '12px 0 8px 0' }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <select
-            defaultValue="All Departments"
+            value={fromFilter}
+            onChange={(e) => setFromFilter(e.target.value)}
             aria-label="Department Filter"
             style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, border: '1px solid #cbd5e1' }}
           >
-            <option value="All Departments">All Departments</option>
+            <option value="">All Departments</option>
             {depts.map((d) => (
               <option key={d.id} value={d.name}>{d.name}</option>
             ))}
           </select>
-          <small style={{ color: '#64748b', fontSize: 11 }}>Department Filter for incoming movement streams</small>
+          <small style={{ color: '#64748b', fontSize: 11 }}>Show the work sent by one department</small>
         </div>
       </div>
 
@@ -222,48 +238,7 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
             </tr>
           </thead>
           <tbody>
-            {(!busy && rows.length === 0) ? null : null}
-            {(rows.length > 0 ? rows : [
-              {
-                id: 'mov-demo-1',
-                number: 'MOV-FIN-001',
-                priority: 'High',
-                doc_type: 'fin-ap',
-                doc_no: 'VINV-2026-0001',
-                from_department: 'Purchase',
-                to_department: 'Finance',
-                state: 'ACCEPTED',
-                work_status: 'In Verification',
-                sla_due_at: '2026-11-20T10:00:00Z',
-                is_late: false,
-              },
-              {
-                id: 'mov-demo-2',
-                number: 'MOV-FIN-002',
-                priority: 'Normal',
-                doc_type: 'fin-ar',
-                doc_no: 'SINV-26-0001',
-                from_department: 'Sales',
-                to_department: 'Finance',
-                state: 'IN_WORK',
-                work_status: 'Payment Pending',
-                sla_due_at: '2026-11-22T14:00:00Z',
-                is_late: false,
-              },
-              {
-                id: 'mov-demo-3',
-                number: 'MOV-FIN-003',
-                priority: 'Urgent',
-                doc_type: 'fin-expenses',
-                doc_no: 'EXP-26-0001',
-                from_department: 'Administration',
-                to_department: 'Finance',
-                state: 'WAITING_APPROVAL',
-                work_status: 'Approval Queue',
-                sla_due_at: '2026-11-18T18:00:00Z',
-                is_late: false,
-              },
-            ] as Movement[]).map((m) => (
+            {shown.map((m) => (
               <tr key={m.id}>
                 <td>
                   <b>{m.number}</b>
@@ -281,11 +256,20 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
                 <td>{m.state === 'WAITING_APPROVAL' ? 'Waiting for approval' : m.is_late ? `Late · ${when(m.sla_due_at)}` : m.sla_due_at ? `Due ${when(m.sla_due_at)}` : '—'}</td>
                 <td className="row-actions">
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    <Link to={`/m/${m.doc_type}`} className="btn sm" aria-label={`View ${m.doc_no ?? m.number}`}>
+                      View
+                    </Link>
                     <Link to={`/m/dept-inbox-${slug}`} className="btn sm">
                       Open Inbox
                     </Link>
-                    <button type="button" className="btn sm" onClick={() => toast(`Viewing attachments for ${m.number}...`)}>
-                      Attachment
+                    <button type="button" className="btn sm" onClick={() => setDocs(m)}>
+                      Docs
+                    </button>
+                    <button type="button" className="btn sm" onClick={() => setEmail(m)}>
+                      Email
+                    </button>
+                    <button type="button" className="btn sm" onClick={() => void pdf(m)}>
+                      PDF
                     </button>
                     {m.state !== 'WAITING_APPROVAL' ? (
                       <>
@@ -304,6 +288,13 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
                 </td>
               </tr>
             ))}
+            {shown.length === 0 ? (
+              <tr className="empty-row">
+                <td colSpan={6}>
+                  {busy ? 'Loading…' : `No work is with ${name} right now. Records appear here after the ${name} inbox marks them Received and Accepted.`}
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>
@@ -311,20 +302,7 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
       <section className="card" aria-label={`Workflow Rules Affecting ${name}`}>
         <h3>{`Workflow Rules Affecting ${name}`}</h3>
         <div className="rule-grid">
-          {(mine.length > 0 ? mine : [
-            { module_id: 'fin-ap', owner_department: 'Purchase', next_department: 'Finance', approval_department: 'Finance Manager', route_mode: 'SUGGEST', sla_days: 2 },
-            { module_id: 'fin-ar', owner_department: 'Sales', next_department: 'Finance', approval_department: 'Credit Controller', route_mode: 'AUTO', sla_days: 3 },
-            { module_id: 'fin-expenses', owner_department: 'HR', next_department: 'Finance', approval_department: 'HOD / Director', route_mode: 'SUGGEST', sla_days: 2 },
-            { module_id: 'fin-coa', owner_department: 'Finance', next_department: 'Management', approval_department: 'CFO', route_mode: 'MANUAL', sla_days: 5 },
-            { module_id: 'fin-gl', owner_department: 'Finance', next_department: 'Audit', approval_department: 'Statutory Auditor', route_mode: 'AUTO', sla_days: 1 },
-            { module_id: 'fin-journal', owner_department: 'Accounts', next_department: 'Finance', approval_department: 'Finance Controller', route_mode: 'SUGGEST', sla_days: 2 },
-            { module_id: 'fin-cashbook', owner_department: 'Plant Operations', next_department: 'Finance', approval_department: 'Plant Commercial Head', route_mode: 'AUTO', sla_days: 1 },
-            { module_id: 'fin-bankbook', owner_department: 'Treasury', next_department: 'Finance', approval_department: 'Treasury Head', route_mode: 'AUTO', sla_days: 1 },
-            { module_id: 'fin-bankreco', owner_department: 'Finance', next_department: 'Internal Audit', approval_department: 'Finance Controller', route_mode: 'AUTO', sla_days: 2 },
-            { module_id: 'fin-creditnote', owner_department: 'Sales', next_department: 'Finance', approval_department: 'Finance Director', route_mode: 'SUGGEST', sla_days: 3 },
-            { module_id: 'fin-debitnote', owner_department: 'Purchase', next_department: 'Finance', approval_department: 'SCM Head', route_mode: 'SUGGEST', sla_days: 3 },
-            { module_id: 'fin-costcenter', owner_department: 'Administration', next_department: 'Finance', approval_department: 'Budget Committee', route_mode: 'MANUAL', sla_days: 7 },
-          ] as WorkRule[]).map((r) => (
+          {mine.map((r) => (
             <div className="card" key={r.module_id}>
               <b>{lookupPage(r.module_id)?.item.title ?? r.module_id}</b>
               <small className="muted">Owner: {r.owner_department ?? '—'}</small>
@@ -336,9 +314,12 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
               </small>
             </div>
           ))}
+          {mine.length === 0 ? <p className="muted">No Workflow Matrix rule names {name} yet.</p> : null}
         </div>
       </section>
 
+      {docs ? <RecordDocsModal docType={docs.doc_type} docId={docs.doc_id} docNo={docs.doc_no ?? docs.number} status="" canEdit onClose={() => setDocs(null)} /> : null}
+      {email ? <EmailDocDialog docType={email.doc_type} docId={email.doc_id} onClose={() => setEmail(null)} /> : null}
       {history ? <HistoryDrawer docType={history.doc_type} docId={history.doc_id} title={history.doc_no ?? history.number} onClose={() => setHistory(null)} /> : null}
       {forwarding ? (
         <MoveForwardDialog

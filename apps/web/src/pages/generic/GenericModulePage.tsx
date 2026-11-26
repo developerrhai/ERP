@@ -3,7 +3,7 @@
 // tabs that have real data. Pages the engine does not serve fall back to the placeholder.
 import { ApprovalsTab } from '../approvals/ApprovalsTab';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ContextChips } from '../../components/ContextChips';
 import { ErrorMessage } from '../../components/ErrorMessage';
 import { Modal } from '../../components/Modal';
@@ -16,9 +16,11 @@ import type { ActionSet, User } from '../../types';
 import { ACTION_ICONS, ActionConfirmModal, actionsFor, variantClass } from './RecordActions';
 import { RecordDrawer } from './RecordDrawer';
 import { RecordFormModal } from './RecordFormModal';
-import { genericTabFor, useFrame } from '../frame/V40TabFrame';
+import { genericTabFor, useFrame, v40TabsFor } from '../frame/V40TabFrame';
 import { useInvTab } from '../inventory/v40/useInvTab';
 import { forcedTabFilters, tabShape } from '../inventory/v40/itemShapes';
+import { useInvWorkspace, WORKSPACE_PAGES } from '../inventory/v40/InvWorkspace';
+import { takePendingAdd } from '../frame/ClassicView';
 import { PAGE_SIZES, RegisterTab, type QueryPatch, type RegisterQuery } from './RegisterTab';
 import { AuditTab, DashboardTab, DataQualityTab, PhaseNotice, ReportsTab } from './ModuleTabs';
 import { DocumentsTab } from './DocumentsPanel';
@@ -54,6 +56,12 @@ import {
 } from './fieldModel';
 
 export const UNDO_MS = 10_000;
+
+/** Shortcuts of the strip that are screens of their own. */
+const SHORTCUT_PAGES: Readonly<Record<string, string>> = {
+  'AI Decision Center': '/m/ai-insights',
+  'Automation Studio': '/m/auto-rules',
+};
 
 interface Props {
   pageId: string;
@@ -110,7 +118,9 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
   // Inside the V40 tab strip the frame owns the tabs: V40's first tab is the register, the standard tabs map to ours
   const wanted = frame ? genericTabFor(frame.tabName, frame.index) : null;
   const framedTab = wanted === 'register' ? registerTab : wanted === 'dashboard' ? DASHBOARD_TAB : wanted;
-  const tab = framedTab && tabs.includes(framedTab) ? framedTab : frame ? registerTab : tabs.includes(tabParam) ? tabParam : DASHBOARD_TAB;
+  // a shortcut of the strip with no V40 tab of its own (Module Dashboard, Data Quality, Activity Timeline) shows its panel
+  const panel = frame && frame.index === 0 ? (params.get('panel') ?? '') : '';
+  const tab = panel && tabs.includes(panel) ? panel : framedTab && tabs.includes(framedTab) ? framedTab : frame ? registerTab : tabs.includes(tabParam) ? tabParam : DASHBOARD_TAB;
   const sizeParam = Number(params.get('size'));
   const query: RegisterQuery = {
     q: params.get('q') ?? '',
@@ -124,6 +134,8 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
       ),
       ...(activeView ? { view: activeView.key } : {}),
       ...(frame ? (forcedTabFilters(schema.pageId, frame.tabName, frame.index) ?? {}) : {}),
+      // Department Filter of the item / stock workspaces
+      ...(WORKSPACE_PAGES.has(schema.pageId) ? { department: params.get('department') ?? '' } : {}),
     },
   };
   const setFilter = useCallback(
@@ -172,6 +184,31 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
       { replace: false },
     );
 
+  const navigate = useNavigate();
+  /** Inside the V40 tab strip the V40 tabs own `?tab=`: a shortcut opens the matching V40 tab, its panel, or its screen. */
+  const openShortcut = (t: string): void => {
+    if (!frame) return selectTab(t);
+    const screen = SHORTCUT_PAGES[t];
+    if (screen) return void navigate(screen);
+    const v40 = v40TabsFor(schema.pageId);
+    const same = v40.findIndex((name) =>
+      /^analytics/i.test(t) ? /^analytics/i.test(name) : name.toLowerCase() === t.toLowerCase(),
+    );
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('panel');
+      next.delete('tab');
+      if (same > 0) next.set('tab', String(same));
+      else if (t !== registerTab) next.set('panel', t);
+      return next;
+    });
+  };
+
+  const leadsSomewhere = (t: string): boolean =>
+    isLiveTab(t, schema) ||
+    SHORTCUT_PAGES[t] !== undefined ||
+    v40TabsFor(schema.pageId).some((name) => name.toLowerCase() === t.toLowerCase() || (/^analytics/i.test(t) && /^analytics/i.test(name)));
+
   const [reloadToken, setReloadToken] = useState(0);
   const changed = useCallback(() => setReloadToken((n) => n + 1), []);
   // Item Master: each V40 tab is the same register with that tab's columns
@@ -196,6 +233,10 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
   const readOnly = !!schema.readOnly;
   const canAdd = perms.add && !readOnly && !schema.readOnlyCreate;
   const canEditPerm = perms.edit && !readOnly;
+  // arrived from a register whose records are entered here (Maintenance Spares): open the add form
+  useEffect(() => {
+    if (canAdd && takePendingAdd(schema.pageId ?? '')) setForm({});
+  }, [canAdd, schema.pageId]);
   const canDeletePerm = perms.delete && !readOnly;
 
   const openWorkspace = (row: RecordRow): void => {
@@ -274,8 +315,42 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
     );
   };
 
+  // the top bar's Excel / Export: every matching record from the server, not only the rows drawn on screen
+  const excelRef = useRef(excel);
+  excelRef.current = excel;
+  const canExport = perms.export;
+  useEffect(() => {
+    const onExport = (e: Event): void => {
+      const { detail } = e as CustomEvent<{ pageId?: string; handled: boolean }>;
+      if (detail.pageId !== schema.pageId || !canExport) return;
+      detail.handled = true;
+      excelRef.current();
+    };
+    window.addEventListener('v40-export-register', onExport);
+    return () => window.removeEventListener('v40-export-register', onExport);
+  }, [canExport, schema.pageId]);
+
   const barRow = barRows.find((r) => r.id === barId) ?? barRows[0];
   const unitId = ctx?.current.unitId ?? null;
+  const workspace = useInvWorkspace({
+    schema: viewSchema,
+    registerSchema,
+    perms,
+    active: !invBody && tab === registerTab,
+    tabIndex: frame?.index ?? 0,
+    rows: barRows,
+    activeId: barId,
+    onActive: setBarId,
+    department: params.get('department') ?? '',
+    onDepartment: (department) => setFilter('department', department),
+    reloadToken,
+    onChanged: changed,
+    onAdd: () => setForm({}),
+    onView: setDrawerRow,
+    onEdit: (row) => setForm({ row }),
+    onDelete: setDeleteRow,
+    onAction: startAction,
+  });
   // The ledger columns only apply on the register tab; other tabs show vouchers.
   const drawerSchema = tab === registerTab ? viewSchema : schema;
 
@@ -334,7 +409,8 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
         {...(schema.approvalRequired !== undefined ? { approval: schema.approvalRequired } : {})}
       />
       {headError ? <ErrorMessage>{headError}</ErrorMessage> : null}
-      {tab === registerTab && viewSchema.actions.length > 0 && barRow ? (
+      {workspace.toolbar}
+      {!WORKSPACE_PAGES.has(schema.pageId) && tab === registerTab && viewSchema.actions.length > 0 && barRow ? (
         <div className="recordbar" aria-label="Record actions">
           <b>Record:</b>
           <select aria-label="Record" value={barRow.id} onChange={(e) => setBarId(e.target.value)}>
@@ -357,15 +433,18 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
           ))}
         </div>
       ) : null}
-      <div className="tabs" role="tablist" aria-label="Module views" hidden={frame !== null}>
-        {tabs.map((t) => (
+      <div className="tabs" role="tablist" aria-label="Module views">
+        {tabs
+          // under the V40 tabs the strip lists only the shortcuts that lead somewhere
+          .filter((t) => !frame || leadsSomewhere(t))
+          .map((t) => (
           <button
             key={t}
             type="button"
             role="tab"
             aria-selected={t === tab}
             className={t === tab ? 'tab active' : 'tab'}
-            onClick={() => selectTab(t)}
+            onClick={() => openShortcut(t)}
           >
             {t}
           </button>
@@ -398,6 +477,7 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
             onAction={startAction}
             onNotify={toast}
             onOpenWorkspace={openWorkspace}
+            workspace={workspace.register}
           />
         ) : tab === 'Data Quality' ? (
           schema.kind === 'generic' ? (
@@ -485,6 +565,7 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
           }}
         />
       ) : null}
+      {workspace.dialogs}
       {actionDlg ? (
         <ActionConfirmModal
           schema={schema}

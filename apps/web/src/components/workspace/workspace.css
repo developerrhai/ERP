@@ -1,0 +1,325 @@
+/* V40 master workspace: KPI cards, record toolbar, department filter, Validation Controls and the Detailed Table.
+   Uses the shared tokens and button classes; only the .ws-* classes are new. */
+.ws-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ws-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.ws-kpi small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.ws-kpi b {
+  font-size: 20px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.ws-kpi span {
+  color: var(--success, #16a34a);
+  font-size: 12px;
+}
+.ws-kpi.warn span {
+  color: #b45309;
+}
+
+.recordbar.ws-toolbar {
+  margin-bottom: 10px;
+}
+.recordbar.ws-toolbar > b {
+  font-size: 12px;
+}
+.recordbar.ws-toolbar select {
+  min-width: 220px;
+  max-width: 340px;
+}
+.recordbar.ws-toolbar .btn {
+  white-space: nowrap;
+}
+
+.ws-deptfilter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--card2, #f8fafc);
+}
+.ws-deptfilter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.ws-deptfilter select {
+  min-width: 190px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+.ws-deptfilter small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* register with the Validation Controls panel on its right */
+.ws-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 244px;
+  gap: 12px;
+  align-items: start;
+}
+@media (max-width: 1180px) {
+  .ws-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ws-controls {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 13px;
+}
+.ws-controls h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.ws-controls ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ws-controls li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.ws-controls li:last-child {
+  border-bottom: 0;
+}
+.ws-controls li span {
+  display: block;
+  font-weight: 700;
+}
+.ws-controls li small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.ws-controls li b {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+.ws-controls li b.on {
+  background: #dcfce7;
+  color: #166534;
+}
+.ws-controls li b.opt {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.ws-section {
+  margin-top: 14px;
+}
+.ws-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ws-section-head h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.ws-section-head small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.ws-section-head .ws-spacer {
+  flex: 1 1 auto;
+}
+.ws-add {
+  margin-top: 9px;
+}
+.ws-split > .card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* row buttons: two tidy lines at most instead of one button per line; the short master set stays on one line */
+.register-table .actions.row-actions.ws-actions {
+  display: flex;
+  flex-wrap: wrap;
+  width: max-content;
+  max-width: 292px;
+  gap: 4px;
+}
+.register-table .actions.row-actions.ws-actions.compact {
+  flex-wrap: nowrap;
+  max-width: none;
+}
+.register-table .actions.row-actions.ws-actions .btn.sm {
+  white-space: nowrap;
+  padding: 5px 6px;
+}
+/* wide registers (Product / Raw Material Master) give the data columns a little more room */
+.register-table .actions.row-actions.ws-actions.narrow {
+  max-width: 252px;
+}
+.ws-lined td {
+  vertical-align: middle;
+}
+
+.ws-form-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ws-inline {
+  display: flex;
+  gap: 6px;
+}
+.ws-inline input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ws-inline .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+/* the Detailed Table has no checkbox column: its first two columns are ordinary data */
+.register-table.ws-detail th:first-child,
+.register-table.ws-detail td:first-child,
+.register-table.ws-detail th:nth-child(2),
+.register-table.ws-detail td:nth-child(2) {
+  position: static;
+  width: auto;
+  min-width: 0;
+  white-space: nowrap;
+  box-shadow: none;
+}
+.register-table.ws-detail td:nth-child(2) {
+  white-space: normal;
+}
+
+/* Allocate / Reallocate sit side by side in the register */
+.register-table .inv-v40-row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+/* the record strip stays on one line on a desktop screen */
+.recordbar.ws-toolbar {
+  gap: 5px;
+}
+.recordbar.ws-toolbar .btn.sm {
+  padding: 6px 7px;
+  font-size: 12px;
+}
+.recordbar.ws-toolbar select {
+  min-width: 150px;
+  max-width: 180px;
+}
+
+/* tighter cells so every column of a workspace table fits beside its row buttons */
+.register-table.ws-detail th,
+.register-table.ws-detail td,
+.ws-split .register-table th,
+.ws-split .register-table td {
+  padding-left: 7px;
+  padding-right: 7px;
+}
+
+/* titles and footer buttons inside a card keep the card padding */
+.card > .ws-section-head {
+  margin: 0;
+  padding: 12px 14px 8px;
+}
+.card > .ws-add,
+.ws-split .card > .ws-add {
+  margin: 10px 14px;
+  align-self: flex-start;
+}
+
+/* Email / PDF / Word / Excel / Docs / Move Forward beside a record's own Open button */
+.ws-record-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-start;
+  width: 264px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.ws-record-actions .btn.sm {
+  white-space: nowrap;
+  padding: 4px 7px;
+  font-size: 11px;
+}
+/* a wide register scrolls sideways under the buttons, which stay in sight */
+.main td:has(> .ws-record-actions) {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #fff;
+  min-width: 276px;
+  box-shadow: -8px 0 8px -8px rgba(15, 23, 42, 0.25);
+}
+@media (max-width: 600px) {
+  .ws-record-actions {
+    width: 230px;
+  }
+  .main td:has(> .ws-record-actions) {
+    position: static;
+    min-width: 242px;
+    box-shadow: none;
+  }
+}
+/* the same buttons in a dialog footer use its whole width */
+.modal-foot .ws-record-actions {
+  width: auto;
+  justify-content: flex-end;
+}
+.modal-foot .ws-record-actions .btn.sm {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.main tbody tr:hover > td:has(> .ws-record-actions) {
+  background: #f8fafc;
+}
+.main table:has(td > .ws-record-actions) th:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: var(--card2, #f8fafc);
+}

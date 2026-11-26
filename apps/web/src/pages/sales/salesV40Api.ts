@@ -18,6 +18,7 @@ export interface V40Panel {
   rows: (Record<string, string | null> & { id?: string })[];
 }
 export interface V40Page {
+  recordPage?: string;
   rows: V40Row[];
   columns: V40Column[];
   total: number;
@@ -28,6 +29,8 @@ export interface V40Page {
 export interface V40Params {
   tab: string;
   first: boolean;
+  /** Lead Sources "Department Filter". */
+  department?: string;
   q?: string;
   status?: string;
   page: number;
@@ -79,6 +82,7 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
   });
   if (p.q) qs.set('q', p.q);
   if (p.status) qs.set('status', p.status);
+  if (p.department) qs.set('department', p.department);
 
   // If this is an automation module (auto-workflows, auto-rules, auto-jobs, auto-webhooks), return complete V40 structure
   if (pageId.startsWith('auto-')) {
@@ -178,6 +182,7 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
       panel: meta.panel ?? null,
       audit: Boolean(meta.audit),
       noSource: meta.noSource ?? [],
+      ...(meta.recordPage ? { recordPage: meta.recordPage } : {}),
     };
   } catch {
     const profileFields = registry.profiles[pageId]?.fields ?? [];

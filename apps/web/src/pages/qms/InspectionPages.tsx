@@ -607,6 +607,7 @@ function SheetEditor({
             type="button"
             className="btn"
             disabled={busy || reason.trim().length < 3}
+            title={reason.trim().length < 3 ? 'Type the reason for cancelling first.' : undefined}
             onClick={() => void cancel()}
           >
             Cancel this sheet

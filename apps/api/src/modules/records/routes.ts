@@ -31,6 +31,8 @@ import {
   submitBulkBodySchema,
   statusBodySchema,
 } from './schemas';
+import { hasOwnRecords } from '../docsmail/print';
+import { kindOf } from '../../engine/kinds';
 import { typedSchema } from '../inventory/definitions';
 
 /** 404 NOT_GENERIC for pages served by neither engine (after the id was validated). */
@@ -41,6 +43,13 @@ const requireServedPage: RequestHandler = (req, _res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+/** The Audit Trail tab also exists on screens with their own tables (Finance, Quality ...), which the engine does not serve. */
+const requireAuditedPage: RequestHandler = (req, res, next) => {
+  const pageId = req.params.pageId ?? '';
+  if (hasOwnRecords(pageId) || (kindOf(pageId) === 'typed' && !typedHandlerFor(pageId))) return next();
+  return requireServedPage(req, res, next);
 };
 
 /** Validates the list / export query with the schema of the engine that serves the page. */
@@ -88,7 +97,7 @@ export function createPagesRouter(): Router {
   router.get(
     '/:pageId/audit',
     validate({ params: pageParamsSchema }),
-    requireServedPage,
+    requireAuditedPage,
     requireParamPageAction('view'),
     validate({ query: auditQuerySchema }),
     asyncHandler(recordsController.audit),

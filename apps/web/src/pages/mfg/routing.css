@@ -22,3 +22,36 @@
 .rt-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .rt-reason { font-size: 0.8rem; color: var(--muted, #5b6672); }
 .rt-dialog { display: grid; gap: 10px; padding: 14px; }
+
+.rt-hint { margin: 6px 0 0; font-size: 12px; }
+.rt-page .register-table td .ws-record-actions { justify-content: flex-start; margin-top: 4px; }
+
+/* the same input and card look as the rest of the app */
+.rt-page input:not([type='checkbox']):not([type='radio']),
+.rt-page select,
+.rt-page textarea {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+}
+.rt-page input:focus-visible,
+.rt-page select:focus-visible {
+  outline: 2px solid var(--primary, #1d4ed8);
+  outline-offset: 1px;
+}
+.rt-page > .card:not(.rt-plants):not(.rt-steps) { padding: 14px; }
+.rt-page > .card.rt-tabs { padding: 8px; }
+.rt-page > .card h2 { margin: 0 0 10px; font-size: 15px; }
+.rt-page > .card .table-wrap { margin-top: 10px; }
+.rt-page > .card .rt-toolbar { margin-top: 10px; }
+.rt-page > .card > .rt-toolbar:first-child { margin-top: 0; }
+
+/* wide tables scroll inside their card; the page itself never scrolls sideways */
+.rt-page { grid-template-columns: minmax(0, 1fr); }
+.rt-page > * { min-width: 0; }
+.rt-page .table-wrap { overflow-x: auto; }
+.rt-page .rt-step-input { min-width: 104px; }
+.rt-page .rt-dialog label { display: grid; gap: 4px; max-width: 460px; font-size: 12px; font-weight: 700; }

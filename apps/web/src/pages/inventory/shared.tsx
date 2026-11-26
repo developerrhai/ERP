@@ -124,6 +124,7 @@ export function ItemPicker({
         <input
           value={open ? q : value ? `${value.code} · ${value.name}` : ''}
           placeholder="Type a code or name"
+          data-opens-on-focus=""
           aria-invalid={error ? true : undefined}
           onFocus={() => {
             setOpen(true);

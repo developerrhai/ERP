@@ -4,17 +4,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
 import { ApiError } from '../../lib/api';
-import {
-  saveBlob,
-  spineApi,
-  type Enquiry,
-  type Gate,
-  type ProjectOption,
-} from '../../lib/spineApi';
+import { saveBlob, spineApi, type Enquiry, type Gate, type ProjectOption, ENQUIRY_SOURCES } from '../../lib/spineApi';
 import { useLoad } from '../../lib/useLoad';
 import { Combobox, DateField } from '../../ui/components';
 import { lookupItems, type Ref } from '../../lib/inventoryApi';
-import { lookupCustomers, type Option } from '../../lib/scmApi';
+import { lookupCustomers, type Option, lookupSalespeople } from '../../lib/scmApi';
+import { Modal } from '../../components/Modal';
 import { LookupCombo } from '../procurement/DocPage';
 import type { ActionSet } from '../../types';
 import { V40Register } from '../sales/V40Register';
@@ -148,7 +143,13 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
     contact: '',
     requiredDate: '',
     application: '',
+    source: '',
+    assignedToId: '',
+    priceDiscussion: '',
+    nextFollowUp: '',
+    remarks: '',
   });
+  const people = useLoad(() => (adding ? lookupSalespeople() : Promise.resolve([])), [adding]);
   const [lost, setLost] = useState<Enquiry | null>(null);
   const [reason, setReason] = useState('');
   // an enquiry line is free text with no HSN, so the GST rate is asked for here
@@ -443,87 +444,12 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
         />
       ) : null}
       {adding ? (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Add enquiry">
-          <div className="modal">
-            <h2>New enquiry</h2>
-            <div className="field">
-              <label htmlFor="enq-cust">Customer (from the Customer master)</label>
-              <LookupCombo<Option>
-                id="enq-cust"
-                value={form.customerId}
-                search={lookupCustomers}
-                label={(o) => o.label}
-                onPick={(o) => setForm({ ...form, customerId: o?.id ?? '' })}
-              />
-            </div>
-            <label>
-              Or a new prospect's name
-              <input
-                value={form.prospectName}
-                disabled={!!form.customerId}
-                onChange={(e) => setForm({ ...form, prospectName: e.target.value })}
-              />
-            </label>
-            <div className="field">
-              <label htmlFor="enq-item">Product (from the Item master)</label>
-              <LookupCombo<Ref>
-                id="enq-item"
-                value={form.itemId}
-                search={lookupItems}
-                label={(o) => `${o.code} · ${o.name}`}
-                onPick={(o) =>
-                  setForm({ ...form, itemId: o?.id ?? '', product: o && o.name ? o.name : form.product })
-                }
-              />
-            </div>
-            <label>
-              Product description
-              <input
-                value={form.product}
-                onChange={(e) => setForm({ ...form, product: e.target.value })}
-                placeholder="Filled from the item; type it for a new product"
-              />
-            </label>
-            <label>
-              Contact person
-              <input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} />
-            </label>
-            <label>
-              Expected delivery date
-              <input
-                type="date"
-                value={form.requiredDate}
-                onChange={(e) => setForm({ ...form, requiredDate: e.target.value })}
-              />
-            </label>
-            <label>
-              Application
-              <input
-                value={form.application}
-                onChange={(e) => setForm({ ...form, application: e.target.value })}
-              />
-            </label>
-            <label>
-              Quantity
-              <input
-                inputMode="decimal"
-                value={form.qty}
-                onChange={(e) => setForm({ ...form, qty: e.target.value })}
-              />
-            </label>
-            <label>
-              New product template
-              <select
-                value={form.projectTemplate}
-                onChange={(e) => setForm({ ...form, projectTemplate: e.target.value })}
-              >
-                <option value="">None (ordinary enquiry)</option>
-                <option value="BLDC">BLDC motor</option>
-                <option value="SPPM">SPPM machine</option>
-                <option value="CUSTOM">Custom</option>
-              </select>
-            </label>
-            <div className="modal-actions">
+        <Modal
+          title="New enquiry"
+          sub="Choose a customer or type a new prospect, then say what they asked for."
+          onClose={() => setAdding(false)}
+          footer={
+            <>
               <button type="button" className="btn" onClick={() => setAdding(false)}>
                 Cancel
               </button>
@@ -544,6 +470,11 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
                           requiredDate: form.requiredDate || null,
                           qty: form.qty ? Number(form.qty) : null,
                           projectTemplate: form.projectTemplate || null,
+                          source: form.source || null,
+                          assignedToId: form.assignedToId || null,
+                          priceDiscussion: form.priceDiscussion || null,
+                          nextFollowUp: form.nextFollowUp || null,
+                          remarks: form.remarks || null,
                         })
                         .then(() => {
                           setAdding(false);
@@ -557,6 +488,11 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
                             contact: '',
                             requiredDate: '',
                             application: '',
+                            source: '',
+                            assignedToId: '',
+                            priceDiscussion: '',
+                            nextFollowUp: '',
+                            remarks: '',
                           });
                         }),
                     'Enquiry saved.',
@@ -565,9 +501,98 @@ export function SalesEnquiriesPage({ actions }: { actions?: ActionSet } = {}) {
               >
                 Save
               </button>
+            </>
+          }
+        >
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="enq-cust">Customer (from the Customer master)</label>
+              <LookupCombo<Option>
+                id="enq-cust"
+                value={form.customerId}
+                search={lookupCustomers}
+                label={(o) => o.label}
+                onPick={(o) => setForm({ ...form, customerId: o?.id ?? '' })}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="enq-prospectname">Or a new prospect's name</label>
+              <input id="enq-prospectname" disabled={!!form.customerId} value={form.prospectName} onChange={(e) => setForm({ ...form, prospectName: e.target.value })} />
+            </div>
+            <div className="field">
+              <label htmlFor="enq-contact">Contact person</label>
+              <input id="enq-contact" value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} />
+            </div>
+            <div className="field">
+              <label htmlFor="enq-item">Product (from the Item master)</label>
+              <LookupCombo<Ref>
+                id="enq-item"
+                value={form.itemId}
+                search={lookupItems}
+                label={(o) => `${o.code} · ${o.name}`}
+                onPick={(o) => setForm({ ...form, itemId: o?.id ?? '', product: o && o.name ? o.name : form.product })}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="enq-product">Product description</label>
+              <input id="enq-product" placeholder="Filled from the item; type it for a new product" value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })} />
+            </div>
+            <div className="field">
+              <label htmlFor="enq-application">Application</label>
+              <input id="enq-application" value={form.application} onChange={(e) => setForm({ ...form, application: e.target.value })} />
+            </div>
+            <div className="field">
+              <label htmlFor="enq-qty">Quantity</label>
+              <input id="enq-qty" inputMode="decimal" value={form.qty} onChange={(e) => setForm({ ...form, qty: e.target.value })} />
+            </div>
+            <div className="field">
+              <label htmlFor="enq-requireddate">Expected delivery date</label>
+              <input id="enq-requireddate" type="date" value={form.requiredDate} onChange={(e) => setForm({ ...form, requiredDate: e.target.value })} />
+            </div>
+            <div className="field">
+              <label htmlFor="enq-source">Source</label>
+              <select id="enq-source" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })}>
+                <option value="">Not set</option>
+                {ENQUIRY_SOURCES.map((x) => (
+                  <option key={x}>{x}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="enq-owner">Sales person</label>
+              <select id="enq-owner" value={form.assignedToId} onChange={(e) => setForm({ ...form, assignedToId: e.target.value })}>
+                <option value="">Not assigned</option>
+                {(people.data ?? []).map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="enq-pricediscussion">Price discussion</label>
+              <input id="enq-pricediscussion" placeholder="Target price, quoted range ..." value={form.priceDiscussion} onChange={(e) => setForm({ ...form, priceDiscussion: e.target.value })} />
+            </div>
+            <div className="field">
+              <label htmlFor="enq-nextfollowup">Next follow-up</label>
+              <input id="enq-nextfollowup" type="date" value={form.nextFollowUp} onChange={(e) => setForm({ ...form, nextFollowUp: e.target.value })} />
+            </div>
+            <div className="field">
+              <label htmlFor="enq-template">New product template</label>
+              <select id="enq-template" value={form.projectTemplate} onChange={(e) => setForm({ ...form, projectTemplate: e.target.value })}>
+                <option value="">None (ordinary enquiry)</option>
+                <option value="BLDC">BLDC motor</option>
+                <option value="SPPM">SPPM machine</option>
+                <option value="CUSTOM">Custom</option>
+              </select>
+            </div>
+            <div className="field field-wide">
+              <label htmlFor="enq-remarks">Remarks</label>
+              <textarea id="enq-remarks" rows={2} maxLength={1000} value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} />
             </div>
           </div>
-        </div>
+          <p className="muted">Documents (drawings, specifications) are attached with the Docs button after the enquiry is saved.</p>
+        </Modal>
       ) : null}
       {quoting ? (
         <div

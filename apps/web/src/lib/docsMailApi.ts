@@ -55,8 +55,24 @@ export const docsMailApi = {
   letterAction: (id: string, action: 'approve' | 'issue' | 'email') => api<Letter>(`/hr/letters/${id}/${action}`, { method: 'POST', body: {} }),
   certificates: (q?: string) => api<Certificate[]>(`/qms/certificates${qs({ q })}`),
   addCertificate: (b: Row) => api<Certificate>('/qms/certificates', { method: 'POST', body: b }),
+  updateCertificate: (id: string, b: Row) => api<Certificate>(`/qms/certificates/${id}`, { method: 'PUT', body: b }),
   certAction: (id: string, action: 'approve' | 'reject') => api<Certificate>(`/qms/certificates/${id}/${action}`, { method: 'POST', body: {} }),
 };
+
+/** Opens the browser's print dialog for a PDF the server made. */
+export function printFile(file: { blob: Blob }): void {
+  const url = URL.createObjectURL(new Blob([file.blob], { type: 'application/pdf' }));
+  const frame = document.createElement('iframe');
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  frame.onload = () => frame.contentWindow?.print();
+  frame.src = url;
+  document.body.appendChild(frame);
+  // the dialog needs the frame while it is open; it is removed much later
+  setTimeout(() => {
+    frame.remove();
+    URL.revokeObjectURL(url);
+  }, 600_000);
+}
 
 export function saveFile(file: { blob: Blob; filename: string | null }, fallback: string): void {
   const url = URL.createObjectURL(file.blob);

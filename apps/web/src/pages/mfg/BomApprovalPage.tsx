@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
+import { RecordActions } from '../../components/workspace/RecordActions';
 import { ApiError } from '../../lib/api';
 import { routingApi } from '../../lib/routingApi';
 import type { Flow, FlowTrace } from '../../lib/routingApi';
@@ -131,7 +132,7 @@ export function BomApprovalPage() {
       <div className="table-wrap">
         <table className="register-table">
           <thead>
-            <tr><th>Flow</th><th>Sales Order</th><th>Part / BOM</th><th>Quantity</th><th>Stock</th><th>Shortage</th><th>Sales Approval</th><th>Purchase</th><th>Production Release</th><th>Status</th></tr>
+            <tr><th>Flow</th><th>Sales Order</th><th>Part / BOM</th><th>Quantity</th><th>Stock</th><th>Shortage</th><th>Sales Approval</th><th>Purchase</th><th>Production Release</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody>
             {flows.map((f) => (
@@ -146,9 +147,14 @@ export function BomApprovalPage() {
                 <td>{f.prNumber ?? f.purchaseStatus}</td>
                 <td>{f.manufacturingRelease ? 'Released' : 'Not released'}</td>
                 <td>{f.status}</td>
+                <td className="row-actions">
+                  <RecordActions docType="flow-bom-approval" id={f.id} number={f.flowNo} status={f.status}>
+                    <button type="button" className="btn sm" onClick={() => void choose(f.id)}>View</button>
+                  </RecordActions>
+                </td>
               </tr>
             ))}
-            {flows.length === 0 ? <tr><td colSpan={10}>No BOM flows in this view.</td></tr> : null}
+            {flows.length === 0 ? <tr><td colSpan={11}>No BOM flows in this view.</td></tr> : null}
           </tbody>
         </table>
       </div>

@@ -23,6 +23,8 @@ export interface TypedRecordDto {
   status: string;
   /** null for company-wide rows (items). */
   unitId: string | null;
+  /** Plant code of the row, for the Plant column shown when several plants are chosen. */
+  unitCode?: string;
   fyId: string | null;
   department: string;
   data: Record<string, unknown>;
@@ -34,6 +36,8 @@ export interface TypedRecordDto {
   deletedAt: string | null;
   /** Labels of the lookup-typed fields, by field key. */
   refs: Record<string, RefLabel>;
+  /** The uuid Documents / Print / Move Forward use when the row id is not one (Stock Balance). */
+  recordId?: string;
 }
 
 export interface TypedListQuery {
@@ -46,6 +50,8 @@ export interface TypedListQuery {
   view?: string;
   warehouseId?: string;
   belowReorder?: boolean;
+  /** Department Filter: records currently with this department. */
+  department?: string;
   filters?: Record<string, string | boolean>;
 }
 

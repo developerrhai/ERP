@@ -1,4 +1,5 @@
 // Chart of Accounts (fin-coa): one tree of group and ledger accounts. System accounts cannot be deleted.
+import { uploadDocument } from '../generic/phase4Api';
 import { FinV40 } from './FinV40';
 import { useRef, useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
@@ -17,6 +18,17 @@ import type { ActionSet } from '../../types';
 import { PageHead, Pill, Empty, ErrorBox } from './shared';
 
 const TYPES = ['Asset', 'Liability', 'Equity', 'Income', 'Expense'] as const;
+const SUB_TYPES: [string, string][] = [
+  ['Bank', 'Bank account'],
+  ['Cash', 'Cash'],
+  ['Receivable', 'Trade receivable'],
+  ['Payable', 'Trade payable'],
+  ['Stock', 'Stock'],
+  ['FixedAsset', 'Fixed asset'],
+  ['Revenue', 'Sales revenue'],
+  ['COGS', 'Cost of goods sold'],
+  ['Depreciation', 'Depreciation'],
+];
 
 export function ChartOfAccountsPage({ actions }: { actions: ActionSet }) {
   const toast = useToast();
@@ -188,12 +200,16 @@ function AccountForm({
   onClose: () => void;
   onSaved: (a: Account) => void;
 }) {
+  const toast = useToast();
   const [code, setCode] = useState(item?.code ?? '');
   const [name, setName] = useState(item?.name ?? '');
   const [parentId, setParentId] = useState(item?.parentId ?? '');
   const [isGroup, setIsGroup] = useState(item?.isGroup ?? false);
   const [costCenterRequired, setCcReq] = useState(item?.costCenterRequired ?? false);
   const [status, setStatus] = useState<'Active' | 'Inactive'>(item?.status ?? 'Active');
+  const [subType, setSubType] = useState('');
+  const [controlSide, setControlSide] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
   const [err, setErr] = useState<UiError | null>(null);
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
@@ -213,11 +229,21 @@ function AccountForm({
     setPending(true);
     setErr(null);
     try {
-      if (!item)
-        onSaved(
-          await createAccount({ code, name: name.trim(), parentId, isGroup, costCenterRequired }),
-        );
-      else
+      if (!item) {
+        const made = await createAccount({
+          code,
+          name: name.trim(),
+          parentId,
+          isGroup,
+          costCenterRequired,
+          ...(subType && !isGroup ? { subType } : {}),
+          ...(controlSide && !isGroup ? { partyRequired: true, controlSide: controlSide as 'RECEIVABLE' | 'PAYABLE' } : {}),
+        });
+        const file = fileRef.current?.files?.[0];
+        // the account is saved either way; a refused file is attached again with its Docs button
+        if (file) await uploadDocument('fin-coa', made.id, file, { docType: 'GENERAL' }).catch((x: unknown) => toast(`${made.code} saved, but the file was not attached: ${toUiError(x).message}`));
+        onSaved(made);
+      } else
         onSaved(
           await updateAccount(item.id, item.version, {
             name: name.trim(),
@@ -309,6 +335,29 @@ function AccountForm({
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </SelectField>
+        ) : null}
+        {!item && !isGroup ? (
+          <>
+            <SelectField label="Used for" value={subType} onChange={setSubType}>
+              <option value="">Ordinary ledger account</option>
+              {SUB_TYPES.map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField label="Postings need a customer or supplier" value={controlSide} onChange={setControlSide}>
+              <option value="">No</option>
+              <option value="RECEIVABLE">Yes, a customer (receivable)</option>
+              <option value="PAYABLE">Yes, a supplier (payable)</option>
+            </SelectField>
+          </>
+        ) : null}
+        {!item ? (
+          <div className="field">
+            <label htmlFor="coa-file">Attach a document (optional)</label>
+            <input id="coa-file" type="file" ref={fileRef} accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.csv" />
+          </div>
         ) : null}
         <p className="v8-sub">Types: {TYPES.join(', ')}.</p>
       </form>

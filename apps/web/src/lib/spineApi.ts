@@ -46,7 +46,10 @@ export interface Enquiry {
   qty: string | null; status: 'New' | 'Qualified' | 'Quoted' | 'Won' | 'Lost'; lost_reason: string | null; quotation_id: string | null; project_id: string | null;
   project_template: 'BLDC' | 'SPPM' | 'CUSTOM' | null; assigned_to: string | null; source: string | null;
   contact?: string | null; application?: string | null; required_date?: string | null; version?: number;
+  assigned_to_id?: string | null; price_discussion?: string | null; next_follow_up?: string | null; remarks?: string | null;
 }
+
+export const ENQUIRY_SOURCES = ['Phone', 'Email', 'Website', 'Visit', 'Exhibition', 'Referral', 'Tender', 'Other'];
 
 export const spineApi = {
   options: (q: string) => api<ProjectOption[]>(`/projects/options${qs({ q })}`),

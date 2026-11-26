@@ -556,6 +556,12 @@ body {
 .app {
   grid-template-columns: var(--sw) minmax(0, 1fr);
 }
+/* tablets: the menu slides over the page there (app.css), so the page gets the whole width, not the menu's column */
+@media (max-width: 1000px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .main {
   min-width: 0;
 }
@@ -825,3 +831,33 @@ body {
 .date-field > input[type='text'] { width: 100%; padding-right: 30px; }
 .date-field-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; cursor: pointer; font-size: 14px; line-height: 1; padding: 2px; }
 .date-field-native { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+/* phones and small tablets: the top bar takes a second line, so the plant picker, bell and user menu stay on screen */
+@media (max-width: 820px) {
+  .app {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .top {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .top > .global {
+    flex: 1 1 80px;
+    min-width: 0;
+  }
+  .top .top-actions {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+  }
+  .top .top-actions .health {
+    display: none;
+  }
+  /* the plant picker now starts the second line: its list opens to the right of it, not off the left edge */
+  .top .plant-menu {
+    left: 0;
+    right: auto;
+    max-width: calc(100vw - 26px);
+  }
+}

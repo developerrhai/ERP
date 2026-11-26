@@ -94,6 +94,12 @@ export interface DocMovement {
   movements: Movement[];
 }
 
+export interface HolderRow {
+  doc_id: string;
+  department: string;
+  state: string;
+}
+
 export interface WorkRule {
   module_id: string;
   owner_department_id: string | null;
@@ -189,6 +195,7 @@ export const workApi = {
   act: (id: string, action: 'receive' | 'accept' | 'return' | 'recall' | 'complete', body: Record<string, unknown> = {}) =>
     api<Movement>(`/work/movements/${id}/${action}`, { method: 'POST', body }),
   doc: (docType: string, docId: string) => api<DocMovement>(`/work/docs/${docType}/${docId}/movement`),
+  holders: (docType: string) => api<HolderRow[]>(`/work/holders?docType=${encodeURIComponent(docType)}`),
   suggest: (docType: string) =>
     api<{ departmentId: string | null; department: string | null; source: string }>(`/work/workflow-rules/suggest?docType=${encodeURIComponent(docType)}`),
   rules: () => api<WorkRule[]>('/work/workflow-rules'),

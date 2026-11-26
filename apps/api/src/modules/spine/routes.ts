@@ -21,6 +21,7 @@ const enqBody = z.object({
   customerId: z.string().uuid().nullable().optional(), itemId: z.string().uuid().nullable().optional(), prospectName: z.string().max(120).nullable().optional(), contact: z.string().max(120).nullable().optional(),
   product: z.string().min(1).max(200), application: z.string().max(300).nullable().optional(), qty: num, requiredDate: date.nullable().optional(),
   source: z.string().max(60).nullable().optional(), assignedToId: z.string().uuid().nullable().optional(), projectTemplate: z.enum(['BLDC', 'SPPM', 'CUSTOM']).nullable().optional(),
+  priceDiscussion: z.string().max(300).nullable().optional(), nextFollowUp: date.nullable().optional(), remarks: z.string().max(1000).nullable().optional(),
   unitId: z.string().uuid().optional(),
 }).strict();
 
@@ -43,6 +44,7 @@ export function createSpineRouter(): Router {
     customerId: z.string().uuid().nullable().optional(), itemId: z.string().uuid().nullable().optional(), prospectName: z.string().max(120).nullable().optional(), contact: z.string().max(120).nullable().optional(),
     product: z.string().min(1).max(200).optional(), application: z.string().max(300).nullable().optional(), qty: num.optional(), requiredDate: date.nullable().optional(),
     source: z.string().max(60).nullable().optional(), assignedToId: z.string().uuid().nullable().optional(), projectTemplate: z.enum(['BLDC', 'SPPM', 'CUSTOM']).nullable().optional(),
+    priceDiscussion: z.string().max(300).nullable().optional(), nextFollowUp: date.nullable().optional(), remarks: z.string().max(1000).nullable().optional(),
   }).strict();
   r.put('/sales/enquiries/:id', requirePageAction('sales-enquiries', 'edit'), validate({ params: id, body: enqPatch }), h(async (req, res) => {
     const v = req.get('if-match');

@@ -205,7 +205,13 @@ export const workService = {
       const record = (
         await query(tx, `SELECT unit_id::text AS unit_id, department, data FROM generic_records WHERE id = $1::uuid`, input.docId)
       )[0];
-      const unitId = String(record?.unit_id ?? open?.unit_id ?? caller.ctx.unitId ?? '');
+      // a Stock Balance row belongs to its warehouse's plant, also when "All plants" is chosen
+      const balance =
+        input.docType === 'inv-stock'
+          ? (await query(tx, `SELECT unit_id::text AS unit_id FROM stock_balance_records WHERE id = $1::uuid`, input.docId))[0]
+          : undefined;
+      if (input.docType === 'inv-stock' && !balance) throw Errors.notFound('This stock balance row no longer exists.');
+      const unitId = (record?.unit_id ?? open?.unit_id ?? balance?.unit_id ?? caller.ctx.unitId ?? '') as string;
       if (!unitId) throw Errors.contextInvalid('Choose a plant first.');
       if (!elevated && !caller.ctx.unitIds.includes(unitId)) throw Errors.unitNotAllowed('that plant');
 

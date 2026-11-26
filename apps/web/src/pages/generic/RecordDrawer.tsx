@@ -11,6 +11,9 @@ import { lockAllows, openRecordPdf, submitRecord } from './phase4Api';
 import { toUiError } from '../../lib/errors';
 import { useState } from 'react';
 import { HistoryDrawer, MoveForwardDialog } from '../../components/MoveForward';
+import { WorkflowStrip } from '../../components/WorkflowStrip';
+import { WORKSPACE_PAGES } from '../inventory/v40/InvWorkspace';
+import { docIdOf } from './RegisterTab';
 import { PrintButtons } from '../docsmail/DocsMailPages';
 import { listRecordAudit, type PageAction, type PageSchema, type RecordRow } from './engineApi';
 import { displayValue, isEmptyValue, valueOf } from './fieldModel';
@@ -51,6 +54,10 @@ export function RecordDrawer({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const generic = schema.kind === 'generic';
+  // Item Master and Stock Balance keep their own tables but have documents, print and department movement too
+  const own = WORKSPACE_PAGES.has(schema.pageId);
+  const docId = docIdOf(row);
+  const docRow = own ? { ...row, id: docId } : row;
   const canSubmit =
     generic && perms.submit === true && lockAllows(schema.lock, row.status, 'submit');
   const pendingLock = generic && row.status === 'Pending Approval';
@@ -73,7 +80,7 @@ export function RecordDrawer({
   return (
     <Drawer title={`${schema.title} Details`} onClose={onClose}>
       <div className="drawer-grid">
-        {schema.fields.map((f) => {
+        {schema.fields.filter((f) => f.key !== 'recordStatus').map((f) => {
           const v = valueOf(row, f);
           return (
             <div className="v8-mini" key={f.key}>
@@ -96,7 +103,14 @@ export function RecordDrawer({
         {row.createdBy?.name ? ` by ${row.createdBy.name}` : ''}
         {row.department ? ` • ${row.department}` : ''}
       </p>
-      {generic ? <DocumentsPanel schema={schema} row={row} canEdit={perms.edit === true} /> : null}
+      {own ? <WorkflowStrip docType={schema.pageId} docId={docId} /> : null}
+      {generic || own ? (
+        <DocumentsPanel
+          schema={own ? ({ pageId: schema.pageId } as PageSchema) : schema}
+          row={docRow}
+          canEdit={perms.edit === true}
+        />
+      ) : null}
       {generic ? (
         <RecordApprovalPanel
           pageId={schema.pageId}
@@ -130,13 +144,13 @@ export function RecordDrawer({
         </p>
       ) : null}
       <div className="drawer-actions">
-        {generic && canEdit ? (
+        {(generic && canEdit) || own ? (
           <button type="button" className="btn" onClick={() => setMoving(true)}>
             Move Forward
           </button>
         ) : null}
-        {generic ? <PrintButtons pageId={schema.pageId} id={row.id} /> : null}
-        {generic ? (
+        {generic || own ? <PrintButtons pageId={schema.pageId} id={docId} /> : null}
+        {generic || own ? (
           <button type="button" className="btn" onClick={() => setHistoryOpen(true)}>
             History
           </button>
@@ -201,7 +215,7 @@ export function RecordDrawer({
       {moving ? (
         <MoveForwardDialog
           docType={schema.pageId}
-          docId={row.id}
+          docId={docId}
           docNo={row.code}
           onClose={() => setMoving(false)}
           onMoved={() => {
@@ -211,7 +225,7 @@ export function RecordDrawer({
         />
       ) : null}
       {historyOpen ? (
-        <HistoryDrawer docType={schema.pageId} docId={row.id} title={row.code} onClose={() => setHistoryOpen(false)} />
+        <HistoryDrawer docType={schema.pageId} docId={docId} title={row.code} onClose={() => setHistoryOpen(false)} />
       ) : null}
     </Drawer>
   );

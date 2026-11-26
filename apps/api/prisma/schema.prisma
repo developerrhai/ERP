@@ -570,6 +570,12 @@ model Item {
   gstRateOverrideId String?        @map("gst_rate_override_id") @db.Uuid
   gstOverrideReason String?        @map("gst_override_reason") @db.VarChar(300)
   storageUnits      Decimal        @default(1) @map("storage_units") @db.Decimal(18, 6)
+  /// Product Master fields of the V40 reference form.
+  partNumber        String?        @map("part_number") @db.VarChar(60)
+  minStock          Decimal?       @map("min_stock") @db.Decimal(18, 3)
+  defaultBomRef     String?        @map("default_bom_ref") @db.VarChar(40)
+  defaultRoutingRef String?        @map("default_routing_ref") @db.VarChar(40)
+  projectId         String?        @map("project_id") @db.Uuid
   status            MasterStatus   @default(ACTIVE)
   version           Int            @default(1)
   createdById       String         @map("created_by_id") @db.Uuid

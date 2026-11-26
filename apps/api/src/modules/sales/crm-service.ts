@@ -5,6 +5,10 @@ import { prisma } from '../../core/db/prisma';
 import type { Db } from '../../core/db/prisma';
 import { Errors } from '../../core/http/errors';
 import type { Caller } from '../records/service';
+import { accessUserOf, scopeFor } from '../../core/rbac/access';
+import { hasMinRole } from '../../core/rbac/role-rules';
+import { auditLogRepository } from '../audit-logs/repository';
+import { toAuditLogDto } from '../audit-logs/service';
 import { D, ZERO, round2, str } from '../inventory/money';
 import { makeCrud } from '../procurement/crud';
 import {
@@ -47,6 +51,33 @@ export const FU_DEF: DocDef = {
   title: 'Follow-up',
   amountCol: null,
 };
+/** The statuses a meeting can be given on its form (same list as the database check). */
+export const MEETING_STATUSES = [
+  'Planned',
+  'Draft',
+  'Open',
+  'Active',
+  'Submitted',
+  'Pending',
+  'Pending Approval',
+  'Pending Inspection',
+  'In Progress',
+  'Ready',
+  'Released',
+  'Approved',
+  'Dispatched',
+  'In Transit',
+  'Delivered',
+  'Received',
+  'Accepted',
+  'Partially Accepted',
+  'On Hold',
+  'Rework',
+  'Completed',
+  'Closed',
+  'Held',
+  'Cancelled',
+] as const;
 export const MTG_DEF: DocDef = {
   pageId: 'crm-meetings',
   draftStatus: 'Planned',
@@ -175,6 +206,7 @@ export const meetingCrud = makeCrud({
     'agenda',
     'outcome',
     'projectNumber',
+    'status',
   ],
   lineKeys: [],
   canEdit: notTerminal(['Held', 'Cancelled']),
@@ -221,33 +253,205 @@ export const feedbackCrud = makeCrud({
 });
 
 // ---------------------------------------------------------------------------------------------- lead sources
+export interface SourceInput {
+  name?: string | undefined;
+  status?: 'Active' | 'Inactive' | undefined;
+  channel?: string | null | undefined;
+  campaign?: string | null | undefined;
+  utmSource?: string | null | undefined;
+  utmMedium?: string | null | undefined;
+  monthlyCost?: string | number | null | undefined;
+  effectiveFrom?: string | null | undefined;
+  projectNumber?: string | null | undefined;
+}
+
+// Leads / Qualified / Won / Revenue are counted from the real leads of the source and their won opportunities.
+const SOURCE_SELECT = `
+  SELECT s.*, p.code AS project_number,
+    (SELECT count(*)::int FROM leads l WHERE l.source_id=s.id AND l.deleted_at IS NULL) AS leads,
+    (SELECT count(*)::int FROM leads l WHERE l.source_id=s.id AND l.deleted_at IS NULL AND l.status IN ('Qualified','Converted')) AS qualified,
+    (SELECT count(*)::int FROM opportunities o JOIN leads l ON l.id=o.lead_id
+      WHERE l.source_id=s.id AND l.deleted_at IS NULL AND o.deleted_at IS NULL AND o.status='Won') AS won,
+    (SELECT COALESCE(sum(o.amount),0)::text FROM opportunities o JOIN leads l ON l.id=o.lead_id
+      WHERE l.source_id=s.id AND l.deleted_at IS NULL AND o.deleted_at IS NULL AND o.status='Won') AS revenue
+  FROM lead_sources s LEFT JOIN projects p ON p.id=s.project_id`;
+
+async function sourceById(db: Db, id: string): Promise<Row> {
+  const r = (await query(db, `${SOURCE_SELECT} WHERE s.id=$1::uuid`, id))[0];
+  if (!r) throw Errors.notFound('Source not found.');
+  return norm<Row>(r);
+}
+
+/** Duplicate check: two sources may not carry the same name (any letter case). */
+async function assertNewName(db: Db, name: string, exceptId: string | null): Promise<void> {
+  const hit = (
+    await query(
+      db,
+      `SELECT code FROM lead_sources WHERE lower(btrim(name))=lower(btrim($1)) AND ($2::uuid IS NULL OR id <> $2::uuid) LIMIT 1`,
+      name,
+      exceptId,
+    )
+  )[0];
+  if (hit) throw Errors.duplicate({ name: `The source ${S(hit.code)} already has this name.` });
+}
+
+/** The columns of the optional attributes the caller sent (a blank value clears the column). */
+async function sourceColumns(db: Db, b: SourceInput): Promise<Row> {
+  const out: Row = {};
+  for (const k of ['channel', 'campaign', 'utmSource', 'utmMedium', 'monthlyCost', 'effectiveFrom'] as const) {
+    const v = b[k];
+    if (v !== undefined) out[k] = v === null || String(v).trim() === '' ? null : String(v).trim();
+  }
+  if (b.projectNumber !== undefined) {
+    Object.assign(out, await resolveProject(db, { projectNumber: b.projectNumber ?? '' }));
+  }
+  return out;
+}
+
 export const sourceService = {
-  async list() {
-    return (await query(prisma, `SELECT * FROM lead_sources ORDER BY name`)).map((r) =>
-      norm<Row>(r),
+  async list(held?: { only?: string[]; except?: string[] }) {
+    // unpaginated: the lead source master, a short admin-defined list
+    const rows = (await query(prisma, `${SOURCE_SELECT} ORDER BY s.name`)).map((r) => norm<Row>(r));
+    // Department Filter: the sources currently with the chosen department
+    return rows.filter(
+      (r) => (!held?.only || held.only.includes(S(r.id))) && !held?.except?.includes(S(r.id)),
     );
   },
-  async create(caller: Caller, b: { code: string; name: string }) {
-    const id = await insertRow(prisma, 'lead_sources', {
-      code: b.code.toUpperCase(),
-      name: b.name,
-      createdById: caller.auth.userId,
-      updatedById: caller.auth.userId,
-    });
-    return norm<Row>((await query(prisma, `SELECT * FROM lead_sources WHERE id=$1::uuid`, id))[0]!);
+  async get(id: string) {
+    return sourceById(prisma, id);
   },
-  async update(caller: Caller, id: string, b: { name?: string; status?: 'Active' | 'Inactive' }) {
-    await updateRow(prisma, 'lead_sources', id, {
-      ...b,
-      updatedById: caller.auth.userId,
-      updatedAt: new Date(),
-    });
-    return norm<Row>(
-      (await query(prisma, `SELECT * FROM lead_sources WHERE id=$1::uuid`, id))[0] ??
-        (() => {
-          throw Errors.notFound('Source not found.');
-        })(),
-    );
+  async create(caller: Caller, b: SourceInput & { code: string; name: string }) {
+    const code = b.code.toUpperCase();
+    return prisma.$transaction(async (tx) => {
+      if ((await query(tx, `SELECT 1 FROM lead_sources WHERE upper(code)=$1`, code))[0]) {
+        throw Errors.duplicate({ code: 'This source code is already used.' });
+      }
+      await assertNewName(tx, b.name, null);
+      const id = await insertRow(tx, 'lead_sources', {
+        code,
+        name: b.name,
+        status: b.status ?? 'Active',
+        ...(await sourceColumns(tx, { ...b, effectiveFrom: b.effectiveFrom || todayIst() })),
+        createdById: caller.auth.userId,
+        updatedById: caller.auth.userId,
+      });
+      await audit(tx, caller, caller.auth.userId, 'SCM_CREATED', 'Lead Source', { id, code }, 'crm-sources', {
+        name: b.name,
+      });
+      return sourceById(tx, id);
+    }, TX);
+  },
+  async update(caller: Caller, id: string, b: SourceInput) {
+    return prisma.$transaction(async (tx) => {
+      const cur = (await query(tx, `SELECT * FROM lead_sources WHERE id=$1::uuid FOR UPDATE`, id))[0];
+      if (!cur) throw Errors.notFound('Source not found.');
+      if (b.name !== undefined) await assertNewName(tx, b.name, id);
+      const patch: Row = {
+        ...(b.name !== undefined ? { name: b.name } : {}),
+        ...(b.status !== undefined ? { status: b.status } : {}),
+        ...(await sourceColumns(tx, b)),
+      };
+      await updateRow(tx, 'lead_sources', id, {
+        ...patch,
+        updatedById: caller.auth.userId,
+        updatedAt: new Date(),
+      });
+      await exec(tx, `UPDATE lead_sources SET version=version+1 WHERE id=$1::uuid`, id);
+      await audit(tx, caller, caller.auth.userId, 'SCM_UPDATED', 'Lead Source', { id, code: S(cur.code) }, 'crm-sources', {
+        changed: Object.keys(patch),
+      });
+      return sourceById(tx, id);
+    }, TX);
+  },
+  /** A source that leads already point to keeps its history: it is set Inactive, never deleted. */
+  async remove(caller: Caller, id: string) {
+    await prisma.$transaction(async (tx) => {
+      const cur = (await query(tx, `SELECT * FROM lead_sources WHERE id=$1::uuid FOR UPDATE`, id))[0];
+      if (!cur) throw Errors.notFound('Source not found.');
+      const used = Number(
+        (await query(tx, `SELECT count(*)::int AS n FROM leads WHERE source_id=$1::uuid`, id))[0]?.n ?? 0,
+      );
+      if (used > 0) {
+        throw Errors.inUse(
+          `${used} lead${used === 1 ? ' uses' : 's use'} this source. Edit it and set it to Inactive instead.`,
+        );
+      }
+      const open = (
+        await query(
+          tx,
+          `SELECT 1 FROM work_movements WHERE doc_type='crm-sources' AND doc_id=$1::uuid
+             AND state IN ('SENT','RECEIVED','ACCEPTED','IN_WORK','WAITING_APPROVAL') LIMIT 1`,
+          id,
+        )
+      )[0];
+      if (open) throw Errors.inUse('This source is with a department right now. Complete that work first.');
+      await exec(tx, `DELETE FROM lead_sources WHERE id=$1::uuid`, id);
+      await audit(tx, caller, caller.auth.userId, 'SCM_DELETED', 'Lead Source', { id, code: S(cur.code) }, 'crm-sources', {
+        name: S(cur.name),
+      });
+    }, TX);
+  },
+  /** Audit Trail of the page: the changes to the source master and the department hand-overs of its records. */
+  async audit(caller: Caller, page: { page: number; size: number }) {
+    const own = (await scopeFor(accessUserOf(caller.auth.user), 'crm-sources')) === 'OWN';
+    const mine = own ? caller.auth.userId : null;
+    // `@>` so the jsonb_path_ops index on audit_logs.detail answers both branches
+    const where = `((a.detail @> '{"pageId":"crm-sources"}'::jsonb AND a.target_type='Lead Source')
+        OR a.detail @> '{"docType":"crm-sources"}'::jsonb) AND ($1::uuid IS NULL OR a.actor_id=$1::uuid)`;
+    const [ids, count] = await Promise.all([
+      query(
+        prisma,
+        `SELECT a.id::text AS id FROM audit_logs a WHERE ${where} ORDER BY a.at DESC, a.id DESC LIMIT $2::int OFFSET $3::int`,
+        mine,
+        page.size,
+        (page.page - 1) * page.size,
+      ),
+      query(prisma, `SELECT count(*)::int AS n FROM audit_logs a WHERE ${where}`, mine),
+    ]);
+    const rows = (await auditLogRepository.findByIds(ids.map((r) => S(r.id)))).map(toAuditLogDto);
+    const privileged = hasMinRole(caller.auth.role, 'ADMIN');
+    return {
+      rows: privileged ? rows : rows.map((r) => ({ ...r, ip: null, userAgent: null })),
+      total: Number(count[0]?.n ?? 0),
+    };
+  },
+  /** The KPI cards and the Validation Controls panel of the page. */
+  async summary() {
+    const r = (
+      await query(
+        prisma,
+        `SELECT count(*)::int AS records,
+           COALESCE(sum((channel IS NOT NULL)::int + (campaign IS NOT NULL)::int + (utm_source IS NOT NULL)::int
+             + (utm_medium IS NOT NULL)::int + (monthly_cost IS NOT NULL)::int + (effective_from IS NOT NULL)::int),0)::int AS filled,
+           count(*) FILTER (WHERE status='Active' AND COALESCE(monthly_cost,0) > 0
+             AND NOT EXISTS (SELECT 1 FROM leads l WHERE l.source_id=s.id AND l.deleted_at IS NULL))::int AS at_risk,
+           (SELECT count(*)::int FROM leads l WHERE l.source_id IS NOT NULL AND l.deleted_at IS NULL
+             AND l.status IN ('New','Contacted','Qualified')) AS open_leads
+         FROM lead_sources s`,
+      )
+    )[0];
+    const records = Number(r?.records ?? 0);
+    const atRisk = Number(r?.at_risk ?? 0);
+    return {
+      records,
+      completeness: records ? Math.round((Number(r?.filled ?? 0) / (records * 6)) * 100) : 0,
+      openPending: Number(r?.open_leads ?? 0),
+      atRisk,
+      riskScore: records ? Math.round((atRisk / records) * 100) : 0,
+      hints: {
+        completeness: 'Channel, campaign, UTM source, UTM medium, monthly cost and effective date filled',
+        openPending: 'Open leads (New, Contacted, Qualified) from these sources',
+        atRisk: 'Active sources that cost money every month and have no lead yet',
+      },
+      controls: [
+        { name: 'Unique code', state: 'Enabled', detail: 'Two sources cannot share a code.' },
+        { name: 'Mandatory name', state: 'Enabled', detail: 'A name of at least 2 characters is required.' },
+        { name: 'Effective date', state: 'Enabled', detail: 'A new source is dated today unless another date is entered.' },
+        { name: 'Duplicate check', state: 'Enabled', detail: 'A name already used by another source is refused.' },
+        { name: 'Approval on change', state: 'Optional', detail: 'Changes save at once. Submit Approval sends a source for review.' },
+        { name: 'Audit history', state: 'Enabled', detail: 'Every add, change and delete is written to the Audit Trail.' },
+      ],
+    };
   },
 };
 
@@ -506,7 +710,7 @@ export const crmActions = {
     if (outcome.trim().length < 3) throw Errors.validation({ outcome: 'Write the outcome.' });
     await prisma.$transaction(async (tx) => {
       const m = await loadDoc(tx, caller, MTG_DEF, id, { lock: true });
-      if (m.status !== 'Planned')
+      if (['Held', 'Cancelled'].includes(S(m.status)))
         throw Errors.conflict(`A ${S(m.status)} meeting cannot be closed.`);
       await exec(
         tx,

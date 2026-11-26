@@ -1,7 +1,7 @@
 // The Settings tab of every page: which columns a user hides on a page (kept per user on the server, so it follows the user to
 // any device; nothing is kept in the browser), and the company pick-lists - item, category, vendor and
 // manufacturer - that are managed from that tab. Pages register their columns here so the Settings tab can list them.
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { api } from './api';
 
 export interface ColumnInfo {
@@ -77,6 +77,22 @@ export function setHiddenColumns(pageId: string, keys: string[]): void {
 export function useHiddenColumns(pageId: string): ReadonlySet<string> {
   useSyncExternalStore(subscribe, () => version, () => version);
   return new Set(hiddenOf(pageId));
+}
+
+/**
+ * For a table whose columns come from the server and change with the tab: lists them for the Settings tab (by label, the
+ * only name that stays the same from tab to tab) and returns the ones to draw. `fixed` columns (row buttons) always show.
+ */
+export function useColumnChoice<C extends { label: string }>(pageId: string, columns: readonly C[], fixed: (c: C) => boolean): C[] {
+  const labels = [...new Set(columns.filter((c) => !fixed(c)).map((c) => c.label))];
+  const signature = labels.join('\u0000');
+  useEffect(() => {
+    if (signature) registerColumns(pageId, signature.split('\u0000').map((l) => ({ key: l, label: l })));
+  }, [pageId, signature]);
+  const hidden = useHiddenColumns(pageId);
+  const kept = columns.filter((c) => fixed(c) || !hidden.has(c.label));
+  // ticks made on another tab must never leave this one without a data column
+  return kept.some((c) => !fixed(c)) ? kept : [...columns];
 }
 
 /** The columns registered by the page body (re-renders when a page registers them). */

@@ -12,7 +12,6 @@ import type { FieldErrors } from '../../../core/http/errors';
 import { validateRecordInput } from '../../../engine/record-input';
 import type { PageSchema } from '../../../engine/field-schema';
 import type { Caller } from '../../records/service';
-import { TYPED_SCHEMAS } from '../definitions';
 import { num } from '../money';
 import { countLedgerRows } from '../stock/posting';
 import {
@@ -24,11 +23,14 @@ import {
 } from '../typed';
 import type { ListResult, TypedHandler, TypedListQuery, TypedRecordDto } from '../typed';
 import { itemRepository as repo } from './repository';
+import { itemExtras, itemSchemaFull, resolveItemRefs } from './workspace';
+import type { ItemExtra } from './workspace';
+import { holderScope } from '../../work/holder-filter';
 import { itemStats } from '../v40/stats';
 import type { ItemStat } from '../v40/stats';
 
 const PAGE = 'inv-items';
-const schema = TYPED_SCHEMAS['inv-items'] as unknown as PageSchema;
+const schema = itemSchemaFull() as unknown as PageSchema;
 const TX = { maxWait: 15_000, timeout: 15_000 };
 
 const SORTS: Record<string, string> = {
@@ -42,6 +44,15 @@ const SORTS: Record<string, string> = {
   standardCost: 'standardCost',
   sellingPrice: 'sellingPrice',
   reorderLevel: 'reorderLevel',
+  hsnSac: 'hsnSac',
+  altUom: 'altUom',
+  altUomFactor: 'altUomFactor',
+  barcode: 'barcode',
+  batchTracked: 'batchTracked',
+  serialTracked: 'serialTracked',
+  qcRequired: 'qcRequired',
+  shelfLifeDays: 'shelfLifeDays',
+  stockRecord: 'code',
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -66,6 +77,10 @@ const COLUMNS: Record<string, keyof Prisma.ItemUncheckedUpdateManyInput> = {
   standardCost: 'standardCost',
   sellingPrice: 'sellingPrice',
   reorderLevel: 'reorderLevel',
+  partNumber: 'partNumber',
+  minStock: 'minStock',
+  defaultBom: 'defaultBomRef',
+  defaultRouting: 'defaultRoutingRef',
 };
 
 function toData(row: Item): Record<string, unknown> {
@@ -88,6 +103,22 @@ function toData(row: Item): Record<string, unknown> {
     standardCost: num(row.standardCost),
     sellingPrice: num(row.sellingPrice),
     reorderLevel: num(row.reorderLevel),
+    partNumber: row.partNumber,
+    minStock: num(row.minStock),
+    defaultBom: row.defaultBomRef,
+    defaultRouting: row.defaultRoutingRef,
+    projectId: row.projectId,
+    recordStatus: masterStatusLabel(row.status),
+  };
+}
+
+/** What a row of the list shows on top of its own columns: GST rate, built BOM / routing and the project code. */
+function extraData(row: Item, e: ItemExtra | undefined): Record<string, unknown> {
+  return {
+    taxPct: e?.taxPct ?? null,
+    defaultBom: row.defaultBomRef ?? e?.bom ?? null,
+    defaultRouting: row.defaultRoutingRef ?? e?.routing ?? null,
+    projectNumber: e?.projectNumber ?? null,
   };
 }
 
@@ -108,7 +139,10 @@ async function toDtos(
   rows: Item[],
   stats?: ReadonlyMap<string, ItemStat>,
 ): Promise<TypedRecordDto[]> {
-  const names = await userNames(rows.map((r) => r.createdById));
+  const [names, extras] = await Promise.all([
+    userNames(rows.map((r) => r.createdById)),
+    itemExtras(rows),
+  ]);
   return rows.map((row) => ({
     id: row.id,
     code: row.code,
@@ -116,7 +150,12 @@ async function toDtos(
     unitId: null,
     fyId: null,
     department: INVENTORY_DEPARTMENT,
-    data: { ...toData(row), ...stockData(stats?.get(row.id)), status: masterStatusLabel(row.status) },
+    data: {
+      ...toData(row),
+      ...extraData(row, extras.get(row.id)),
+      ...stockData(stats?.get(row.id)),
+      status: masterStatusLabel(row.status),
+    },
     version: row.version,
     amount: num(row.standardCost),
     createdAt: row.createdAt.toISOString(),
@@ -204,8 +243,16 @@ export const itemHandler: TypedHandler = {
   pageId: PAGE,
 
   async list(caller: Caller, query: TypedListQuery): Promise<ListResult> {
+    const held = query.department
+      ? await holderScope(PAGE, query.department, INVENTORY_DEPARTMENT)
+      : undefined;
     const { rows, total } = await repo.list(
-      { q: query.q, status: statusFilter(query.status), deleted: query.deleted === true },
+      {
+        q: query.q,
+        status: statusFilter(query.status),
+        deleted: query.deleted === true,
+        ...(held ? { held } : {}),
+      },
       orderBy(query.sort),
       { skip: (query.page - 1) * query.size, take: query.size },
     );
@@ -241,12 +288,15 @@ export const itemHandler: TypedHandler = {
     if (barcode && (await repo.findByBarcode(barcode))) {
       throw Errors.duplicate({ barcode: 'This barcode is already in use.' });
     }
+    const refs = await resolveItemRefs(values, [], null);
     try {
       const created = await prisma.$transaction(async (tx) => {
         const code = explicit ?? (await repo.nextCode(tx));
         const row = await repo.create(
           {
             ...(createData(values) as Prisma.ItemUncheckedCreateInput),
+            ...refs,
+            ...(values.recordStatus === 'Inactive' ? { status: 'INACTIVE' as const } : {}),
             hsnId,
             code,
             createdById: caller.auth.userId,
@@ -276,10 +326,18 @@ export const itemHandler: TypedHandler = {
       if (v.values[key] !== undefined) Object.assign(data, { [column]: v.values[key] });
       if (v.cleared.includes(key)) Object.assign(data, { [column]: null });
     }
+    Object.assign(data, await resolveItemRefs(v.values, v.cleared, id));
+    if (typeof v.values.recordStatus === 'string') {
+      data.status = v.values.recordStatus === 'Inactive' ? 'INACTIVE' : 'ACTIVE';
+    }
     // The values the item will have after this write, for the cross-field rules.
-    const after = { ...toData(current) };
+    const after: Record<string, unknown> = { ...toData(current) };
     for (const [key, column] of Object.entries(COLUMNS)) {
       if (column in data) after[key] = (data as Record<string, unknown>)[column];
+    }
+    if (data.projectId !== undefined) after.projectId = data.projectId;
+    if (data.status !== undefined) {
+      after.recordStatus = masterStatusLabel(data.status as 'ACTIVE' | 'INACTIVE');
     }
     assertItemRules({
       altUom: (after.altUom as string | null) ?? null,
@@ -310,7 +368,7 @@ export const itemHandler: TypedHandler = {
         (after.hsnSac as string | null) ?? null,
       );
     }
-    const before = toData(current);
+    const before: Record<string, unknown> = toData(current);
     const changed = Object.keys(after).filter(
       (k) => JSON.stringify(after[k]) !== JSON.stringify(before[k]),
     );

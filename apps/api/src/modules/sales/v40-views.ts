@@ -37,6 +37,10 @@ export interface ViewDef {
   cols?: Record<string, Col>;
   where?: string[];
   order?: string;
+  /** search columns of this tab, when its FROM does not have the page's tables */
+  search?: string[];
+  /** the rows of this tab are records of another page (its documents, print and email apply to them) */
+  recordPage?: string;
   panel?: PanelDef;
   /** the tab also shows the page's audit entries below the table */
   audit?: boolean;
@@ -789,6 +793,8 @@ const COLLECTIONS: PageDef = {
     {
       match: /^overdue$/i,
       from: `sales_invoices t LEFT JOIN customers cu ON cu.id=t.customer_id LEFT JOIN sales_orders so ON so.id=t.order_id`,
+      search: ['t.number', 'cu.name', 'cu.code', 'so.number'],
+      recordPage: 'sales-invoices',
       where: [
         `t.deleted_at IS NULL`,
         `t.status = 'Posted'`,
@@ -1252,20 +1258,31 @@ const SOURCES: PageDef = {
   from: `lead_sources t ${apJoin('crm-sources')}`,
   unit: null,
   soft: null,
+  // a shared master: an employee sees every source, like the list above the table (not only the ones they typed)
+  owner: null,
   number: 't.code',
   status: 't.status',
-  search: ['t.code', 't.name'],
+  search: ['t.code', 't.name', 't.channel', 't.campaign'],
   order: 't.code',
   cols: {
     ...approvalCols('t.code'),
     'Source Code': t('t.code'),
     'Source Name': t('t.name'),
-    'UTM Source': none(),
+    'UTM Source': t('t.utm_source'),
     Status: { e: 't.status', type: 'pill' },
-    Channel: none(),
-    Campaign: none(),
-    'UTM Medium': none(),
-    'Monthly Cost': none('inr'),
+    Channel: t('t.channel'),
+    Campaign: t('t.campaign'),
+    'UTM Medium': t('t.utm_medium'),
+    'Monthly Cost': m('t.monthly_cost'),
+    Qualified: n(
+      `(SELECT count(*) FROM leads l WHERE l.source_id=t.id AND l.status IN ('Qualified','Converted') AND l.deleted_at IS NULL)`,
+    ),
+    Won: n(
+      `(SELECT count(*) FROM opportunities o JOIN leads l ON l.id=o.lead_id WHERE l.source_id=t.id AND l.deleted_at IS NULL AND o.deleted_at IS NULL AND o.status='Won')`,
+    ),
+    Revenue: m(
+      `(SELECT COALESCE(sum(o.amount),0) FROM opportunities o JOIN leads l ON l.id=o.lead_id WHERE l.source_id=t.id AND l.deleted_at IS NULL AND o.deleted_at IS NULL AND o.status='Won')`,
+    ),
     Leads: n(`(SELECT count(*) FROM leads l WHERE l.source_id=t.id AND l.deleted_at IS NULL)`),
     'Converted Leads': n(
       `(SELECT count(*) FROM leads l WHERE l.source_id=t.id AND l.status='Converted' AND l.deleted_at IS NULL)`,
@@ -1275,17 +1292,7 @@ const SOURCES: PageDef = {
     ),
     Actions: ACTIONS,
   },
-  register: [
-    'Source Code',
-    'Source Name',
-    'UTM Source',
-    'Status',
-    'Channel',
-    'Actions',
-    'Campaign',
-    'UTM Medium',
-    'Monthly Cost',
-  ],
+  register: SRC_COMPACT,
   compact: SRC_COMPACT,
   views: [
     {
@@ -1293,6 +1300,7 @@ const SOURCES: PageDef = {
       labels: [
         ...SRC_COMPACT.slice(0, 7),
         'Leads',
+        'Qualified',
         'Converted Leads',
         'Lead Value',
         'Status',
@@ -1304,7 +1312,8 @@ const SOURCES: PageDef = {
       labels: [
         ...SRC_COMPACT.slice(0, 7),
         'Leads',
-        'Converted Leads',
+        'Won',
+        'Revenue',
         'Lead Value',
         'Status',
         'Actions',
@@ -1550,10 +1559,10 @@ const ENQUIRIES: PageDef = {
     Product: t('t.product'),
     Quantity: n('t.qty'),
     'Expected Delivery Date': d('t.required_date'),
-    'Price Discussion': none(),
+    'Price Discussion': t('t.price_discussion'),
     'Sales Person': t('sp.name'),
     'Next Follow-up': d(
-      `(SELECT min(f.due_at) FROM crm_followups f WHERE f.related_type='ENQUIRY' AND f.related_id=t.id AND f.status='Open' AND f.deleted_at IS NULL)`,
+      `COALESCE((SELECT min(f.due_at)::date FROM crm_followups f WHERE f.related_type='ENQUIRY' AND f.related_id=t.id AND f.status='Open' AND f.deleted_at IS NULL), t.next_follow_up)`,
     ),
     Status: { e: 't.status', type: 'pill' },
     'Company Code': t('un.code'),
@@ -2076,6 +2085,8 @@ export function noSourceColumns(pageId: string, pages: Record<string, PageDef> =
 export interface V40Query {
   tab: string;
   first: boolean;
+  /** Department filter: only these record ids, or every id except these. */
+  held?: { only?: string[]; except?: string[] };
   q?: string | undefined;
   status?: string | undefined;
   page: number;
@@ -2089,6 +2100,8 @@ export interface V40Column {
   source: boolean;
 }
 export interface V40Result {
+  /** set when the rows belong to another page than the one asked for */
+  recordPage?: string;
   columns: V40Column[];
   rows: Row[];
   total: number;
@@ -2183,9 +2196,17 @@ export async function runV40View(
     args,
   );
   where.push(...(def.base ?? []), ...(view?.where ?? []));
+  if (q.held?.only) {
+    args.push(q.held.only);
+    where.push(`t.id = ANY($${args.length}::uuid[])`);
+  }
+  if (q.held?.except?.length) {
+    args.push(q.held.except);
+    where.push(`NOT (t.id = ANY($${args.length}::uuid[]))`);
+  }
   if (q.q) {
     args.push(`%${q.q}%`);
-    where.push(`(${def.search.map((s) => `${s}::text ILIKE $${args.length}`).join(' OR ')})`);
+    where.push(`(${(view?.search ?? def.search).map((s) => `${s}::text ILIKE $${args.length}`).join(' OR ')})`);
   }
   if (q.status) {
     args.push(q.status);
@@ -2209,6 +2230,7 @@ export async function runV40View(
     total,
     audit: Boolean(view?.audit),
     view: view?.labels === undefined ? (q.first ? 'register' : 'compact') : q.tab,
+    ...(view?.recordPage ? { recordPage: view.recordPage } : {}),
   };
   const p = view?.panel;
   if (p) {

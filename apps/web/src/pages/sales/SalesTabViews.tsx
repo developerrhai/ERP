@@ -76,7 +76,7 @@ export function SalesAnalyticsView({ pageId, noun }: { pageId: string; noun: str
               <div
                 role="listitem"
                 key={m.month}
-                style={{ flex: 1, textAlign: 'center', fontSize: 11 }}
+                style={{ flex: '1 1 0', maxWidth: 90, textAlign: 'center', fontSize: 11 }}
               >
                 <b>{m.count}</b>
                 <div

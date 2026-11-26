@@ -220,6 +220,9 @@ function DimensionForm({
   const [status, setStatus] = useState<'Active' | 'Inactive'>(item?.status ?? 'Active');
   const [department, setDepartment] = useState(item?.department ?? '');
   const [managerId, setManagerId] = useState(item?.managerId ?? '');
+  const [plantId, setPlantId] = useState('');
+  const [isDefault, setIsDefault] = useState(false);
+  const appContext = ctx;
   const managers = useLoad(listManagers, []);
   const departments = useLoad(() => workApi.departments(), []);
   const [err, setErr] = useState<UiError | null>(null);
@@ -258,7 +261,7 @@ function DimensionForm({
                   department: department || null,
                   managerId: managerId || null,
                 }
-              : { code, name: name.trim(), unitId, managerId: managerId || null },
+              : { code, name: name.trim(), unitId: plantId || unitId, managerId: managerId || null, ...(isDefault ? { isDefault: true } : {}) },
           ),
         );
       } else {
@@ -321,6 +324,21 @@ function DimensionForm({
               </option>
             ))}
           </SelectField>
+        ) : null}
+        {!item && kind === 'profit' ? (
+          <>
+            <SelectField label="Plant" value={plantId} onChange={setPlantId}>
+              <option value="">The plant chosen at the top of the screen</option>
+              {(appContext?.units ?? []).map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </SelectField>
+            <label className="check">
+              <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} /> Default profit center of the plant
+            </label>
+          </>
         ) : null}
         <SelectField label="Manager" value={managerId} onChange={setManagerId}>
           <option value="">(not set)</option>

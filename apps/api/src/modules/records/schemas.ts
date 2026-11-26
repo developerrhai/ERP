@@ -44,6 +44,7 @@ const typedFilters = {
   view: z.enum(['ledger', 'vouchers']).optional(),
   warehouseId: z.string().uuid('Invalid warehouse id.').optional(),
   belowReorder: bool.optional(),
+  department: z.string().trim().min(1).max(60).optional(),
 };
 
 export const typedListQuerySchema = z

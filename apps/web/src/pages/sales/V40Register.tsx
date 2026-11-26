@@ -3,6 +3,7 @@
 // 360° Track, Docs), the selection bar (Load / Export / Submit / Delete Selected), Previous / Next, the page's
 // settlement or exception panel and the audit entries. Outside the tab frame (or for a page without V40 views) it shows
 // `fallback`, the page's own table, unchanged.
+import { HolderNote, useHolders } from '../../components/HolderNote';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -14,6 +15,7 @@ import { docsMailApi, saveFile } from '../../lib/docsMailApi';
 import { toUiMessage } from '../../lib/errors';
 import { formatDateTime } from '../../lib/format';
 import { deleteDoc, getDoc, verb } from '../../lib/scmApi';
+import { useColumnChoice } from '../../lib/pageSettings';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { listPageAudit } from '../generic/engineApi';
@@ -45,6 +47,7 @@ import {
   isCalendarTab,
   isReportsTab,
 } from './SalesTabViews';
+import { auditRecord } from '../../lib/auditRecord';
 import './sales-v40.css';
 
 interface PageCfg {
@@ -249,7 +252,7 @@ function AuditEntries({ pageId }: { pageId: string }) {
                 <td>{formatDateTime(r.at)}</td>
                 <td>{r.actorName ?? '—'}</td>
                 <td>{r.action}</td>
-                <td>{r.targetId ?? '—'}</td>
+                <td>{auditRecord(r.detail, r.targetId)}</td>
               </tr>
             ))}
             {rows.length === 0 && !loading ? (
@@ -305,7 +308,12 @@ export interface V40RegisterProps {
    * the register's buttons and its row actions are offered on every row.
    */
   host?: boolean;
+  /** Extra filters sent with the register query (Lead Sources "Department Filter"). Pass a value that only changes when the filter does. */
+  query?: { department?: string } | undefined;
 }
+
+/** True when the V40 register (with its own search box) replaces the page's table. */
+export const hasV40Register = (pageId: string): boolean => SALES_V40_IDS.has(pageId) || FAM_V40_IDS.has(pageId);
 
 /** Wrap the table of a sales page: `<V40Register pageId=… actions=… fallback={<table…/>} />`. */
 export function V40Register(props: V40RegisterProps) {
@@ -334,13 +342,17 @@ function V40Body({
   onChanged,
   onAllocate,
   rowExtra,
+  query,
   tabName,
   first,
   claim,
 }: V40RegisterProps & { tabName: string; first: boolean; claim: () => void }) {
   const actions: ActionSet = given ?? ({} as ActionSet);
   const cfg = PAGE_CFG[pageId] ?? { noun: 'Records' };
-  const recPage = RECORD_PAGE[pageId] ?? pageId;
+  // a tab whose rows are records of another page (Collections "Overdue" lists invoices) says so with the answer
+  const [otherPage, setOtherPage] = useState('');
+  const recPage = otherPage || (RECORD_PAGE[pageId] ?? pageId);
+  const holders = useHolders(recPage);
   const classic = useClassic();
   const [detail, setDetail] = useState<V40Row | null>(null);
   // a host page whose "＋ New ..." button lives only in its hidden screen gets a visible copy above the register
@@ -380,13 +392,16 @@ function V40Body({
     setPicked(new Set());
   }, [tabName, q, status]);
 
+  const department = query?.department ?? '';
+  useEffect(() => setPage(1), [department]);
   const load = useLoad(
-    () => getSalesV40(pageId, { tab: tabName, first, q, status, page, size: PAGE_SIZE }),
-    [pageId, tabName, first, q, status, page, reloadKey, tick],
+    () => getSalesV40(pageId, { tab: tabName, first, q, status, page, size: PAGE_SIZE, ...(department ? { department } : {}) }),
+    [pageId, tabName, first, q, status, page, reloadKey, tick, department],
   );
   const data = load.data;
+  useEffect(() => setOtherPage(data?.recordPage ?? ''), [data]);
   const rows: V40Row[] = useMemo(() => data?.rows ?? [], [data]);
-  const columns = data?.columns ?? [];
+  const columns = useColumnChoice(pageId, data?.columns ?? [], (c) => c.type === 'actions');
   for (const r of rows) if (r.status) seen.current.add(r.status);
   const total = data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -503,6 +518,11 @@ function V40Body({
   }
   // SE-02: the Docs button remembers its row in the URL (?doc=), because changing tab clears the ticked rows
   const openDocs = (id?: string): void => {
+    if (otherPage) {
+      const there = v40TabsFor(otherPage).findIndex((t) => /^documents$/i.test(t));
+      navigate(`/m/${otherPage}?tab=${Math.max(there, 0)}${id ? `&doc=${id}` : ''}`);
+      return;
+    }
     if (docsTab < 0) return;
     setParams((p) => {
       const n = new URLSearchParams(p);
@@ -621,12 +641,16 @@ function V40Body({
     </>
   );
 
+  const activity = ['crm-followups', 'crm-meetings', 'crm-feedback'].includes(pageId) ? (
+    <ActivityPanel pageId={pageId} rows={rows} columns={columns} canAdd={Boolean(actions.add)} onSaved={reload} />
+  ) : null;
+
   return (
     <section className="sv40" aria-label={`${tabName || cfg.noun} (V40 view)`}>
       <ErrorBox message={msg || load.error} />
       {headAdd && actions.add !== false ? (
         <div className="sv40-head-add">
-          <button type="button" className="btn primary" onClick={() => classic?.pressAdd()}>
+          <button type="button" className="btn primary" data-add-proxy="" onClick={() => classic?.pressAdd()}>
             {headAdd}
           </button>
         </div>
@@ -651,6 +675,9 @@ function V40Body({
               onSubmit={(id) => void submit([id])}
             />
           ) : null}
+          {/* V40 order: the Meeting Calendar / Customer 360 workspace first, the detailed table under it */}
+          {pageId === 'crm-meetings' ? activity : null}
+          {pageId === 'crm-customer360' ? <Customer360Workspace rows={rows} columns={columns} onOpen={onOpen} /> : null}
           <div className="toolbar sv40-toolbar">
             <select
               aria-label="Select record"
@@ -660,8 +687,8 @@ function V40Body({
               }}
             >
               <option value="">{`Select ${cfg.noun}`}</option>
-              {rows.map((r) => (
-                <option key={r.id} value={r.number}>
+              {rows.map((r, i) => (
+                <option key={`${r.id}-${i}`} value={r.number}>
                   {r.number}
                 </option>
               ))}
@@ -689,6 +716,7 @@ function V40Body({
                 type="button"
                 className="btn sm"
                 disabled={picked.size === 0 || !onOpen}
+                title={!onOpen ? 'These records have no separate form: press View in the table.' : picked.size === 0 ? 'Tick a record in the table first.' : undefined}
                 onClick={() => selectedRows[0] && onOpen?.(selectedRows[0].id)}
               >
                 Load Selected
@@ -697,6 +725,7 @@ function V40Body({
                 type="button"
                 className="btn sm"
                 disabled={rows.length === 0}
+                title={rows.length === 0 ? 'There is nothing to export on this tab.' : undefined}
                 onClick={exportSelected}
               >
                 Export Selected
@@ -706,6 +735,7 @@ function V40Body({
                   type="button"
                   className="btn sm"
                   disabled={picked.size === 0}
+                  title={picked.size === 0 ? 'Tick the records to submit first.' : undefined}
                   onClick={() => void submit([...picked])}
                 >
                   Submit Selected
@@ -716,6 +746,7 @@ function V40Body({
                   type="button"
                   className="btn sm danger"
                   disabled={picked.size === 0}
+                  title={picked.size === 0 ? 'Tick the draft records to delete first.' : undefined}
                   onClick={() => setAskDelete([...picked])}
                 >
                   Delete Selected
@@ -737,7 +768,7 @@ function V40Body({
                   </th>
                   {columns.map((c) => (
                     <th
-                      key={c.key}
+                      key={c.key} className={c.type === 'actions' ? 'row-actions-head' : undefined}
                       title={c.source ? undefined : 'No source for this column in the database yet'}
                     >
                       {c.label}
@@ -746,8 +777,8 @@ function V40Body({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id} className={picked.has(r.id) ? 'selected' : undefined}>
+                {rows.map((r, i) => (
+                  <tr key={`${r.id}-${i}`} className={picked.has(r.id) ? 'selected' : undefined}>
                     <td>
                       <input
                         type="checkbox"
@@ -760,7 +791,10 @@ function V40Body({
                       if (c.type === 'actions')
                         return (
                           <td key={c.key} className="row-actions">
-                            {rowButtons(r)}
+                            <div className="sv40-wrap">
+                              <HolderNote holder={holders.get(r.id)} />
+                              {rowButtons(r)}
+                            </div>
                           </td>
                         );
                       if (c.type === 'docs')
@@ -786,6 +820,7 @@ function V40Body({
               type="button"
               className="btn sm"
               disabled={page <= 1}
+              title={page <= 1 ? 'This is the first page.' : undefined}
               onClick={() => setPage((p) => p - 1)}
             >
               Previous
@@ -797,6 +832,7 @@ function V40Body({
               type="button"
               className="btn sm"
               disabled={page >= pages}
+              title={page >= pages ? 'This is the last page.' : undefined}
               onClick={() => setPage((p) => p + 1)}
             >
               Next
@@ -835,18 +871,7 @@ function V40Body({
               </div>
             </section>
           ) : null}
-          {pageId === 'crm-followups' || pageId === 'crm-meetings' || pageId === 'crm-feedback' ? (
-            <ActivityPanel
-              pageId={pageId}
-              rows={rows}
-              columns={columns}
-              canAdd={Boolean(actions.add)}
-              onSaved={reload}
-            />
-          ) : null}
-          {pageId === 'crm-customer360' ? (
-            <Customer360Workspace rows={rows} columns={columns} />
-          ) : null}
+          {pageId === 'crm-followups' || pageId === 'crm-feedback' ? activity : null}
         </>
       )}
       {!view && data?.panel ? <PanelTable panel={data.panel} onAllocate={onAllocate} /> : null}
@@ -947,7 +972,8 @@ function V40Body({
           onClose={() => setDetail(null)}
           footer={
             <>
-              {rowButtons({ ...detail }, true)}
+              {/* the row as it is now: a button pressed here changes the record, so the next press needs the new version */}
+              {rowButtons({ ...(rows.find((x) => x.id === detail.id) ?? detail) }, true)}
               <button type="button" className="btn" onClick={() => setDetail(null)}>
                 Close
               </button>
@@ -960,7 +986,7 @@ function V40Body({
               .map((c) => (
                 <div key={c.key} className="fv40-detail-row">
                   <dt>{c.label}</dt>
-                  <dd>{cellText(c, detail)}</dd>
+                  <dd>{cellText(c, rows.find((x) => x.id === detail.id) ?? detail)}</dd>
                 </div>
               ))}
           </dl>

@@ -8,6 +8,7 @@ import type { Caller } from '../../records/service';
 import { D, num, round2 } from '../money';
 import { unitFilter } from '../typed';
 import type { ListResult, TypedHandler, TypedListQuery, TypedRecordDto } from '../typed';
+import { holderScope, stockRecordId } from '../../work/holder-filter';
 import { pairStats } from '../v40/stats';
 import type { PairStat } from '../v40/stats';
 import { readBalance } from './posting';
@@ -23,9 +24,11 @@ function balanceDto(b: BalanceRow, st?: PairStat): TypedRecordDto {
   const status = b.belowReorder ? 'Below Reorder' : 'OK';
   return {
     id: rowId(b),
+    recordId: stockRecordId(b.itemId, b.warehouseId),
     code: b.itemCode,
     status,
     unitId: b.unitId,
+    unitCode: b.unitCode,
     fyId: null,
     department: 'Warehouse',
     data: {
@@ -122,12 +125,16 @@ export const stockHandler: TypedHandler = {
     if (query.status && !['OK', 'Below Reorder'].includes(query.status)) {
       throw Errors.validation({ status: 'Use OK or Below Reorder.' });
     }
+    const held = query.department
+      ? await holderScope('inv-stock', query.department, 'Warehouse')
+      : undefined;
     const { rows, total, onHand, stockValue } = await stockRepository.balances(
       unitFilter(caller),
       {
         ...(query.q ? { q: query.q } : {}),
         ...(query.status ? { status: query.status } : {}),
         ...(query.belowReorder ? { belowReorder: true } : {}),
+        ...(held ? { held } : {}),
         ...(query.warehouseId
           ? { warehouseId: uuidOrUndefined(query.warehouseId, 'warehouseId') }
           : {}),

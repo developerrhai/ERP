@@ -11,8 +11,11 @@ import { useNavigate } from 'react-router-dom';
 import { findAddButton } from '../../lib/ownAddButton';
 
 export interface ClassicApi {
-  /** Show the page's own screen and open this record (by number) there. */
-  open: (recordNo: string) => void;
+  /**
+   * Open this record (by number) on the page's own screen. In host mode its dialog opens over the register and false
+   * means the page's screen has no Open button for it.
+   */
+  open: (recordNo: string) => boolean;
   /** Show the page's own screen and start its "+ New" form. */
   add: () => void;
   /**
@@ -25,6 +28,8 @@ export interface ClassicApi {
   /** Text of the page's own "＋ New ..." button inside the host ('' when it has none) and a way to press it. */
   addLabel: () => string;
   pressAdd: () => boolean;
+  /** Where a record of this register is entered when the page has no entry form of its own (null when it has one). */
+  elsewhere: () => string | null;
 }
 
 const Ctx = createContext<ClassicApi | null>(null);
@@ -42,8 +47,34 @@ const ADD_ELSEWHERE: Record<string, { page: string; label: string }> = {
   'fin-pnl': { page: 'fin-journal', label: 'journal entry' },
   'fin-bs': { page: 'fin-journal', label: 'journal entry' },
   'fin-cashflow': { page: 'fin-journal', label: 'journal entry' },
+  'fin-ageing': { page: 'fin-bankbook', label: 'receipt entry' },
+  'qms-inspections': { page: 'qms-incoming', label: 'inspection sheet' },
+  'maint-schedule': { page: 'maint-preventive', label: 'PM plan' },
+  'maint-downtime': { page: 'maint-breakdown', label: 'breakdown' },
+  'maint-mtbf': { page: 'maint-breakdown', label: 'breakdown' },
+  'maint-alerts': { page: 'maint-breakdown', label: 'breakdown' },
+  'maint-spares': { page: 'inv-items', label: 'spare item' },
+  'mfg-mrp': { page: 'mfg-plan', label: 'production plan' },
+  'mfg-workorders': { page: 'mfg-orders', label: 'production order' },
+  'mfg-material-issue': { page: 'mfg-orders', label: 'production order' },
+  'mfg-wip': { page: 'mfg-orders', label: 'production order' },
+  'mfg-fg': { page: 'mfg-orders', label: 'production order' },
+  'mfg-costing': { page: 'mfg-orders', label: 'production order' },
+  'mfg-rework': { page: 'mfg-scrap', label: 'scrap entry' },
 };
-const PENDING_ADD = 'v40-add-after-nav';
+export const PENDING_ADD = 'v40-add-after-nav';
+/** True once, on the page another register sent the person to for adding a record. Only a page id is kept. */
+export function takePendingAdd(pageId: string): boolean {
+  try {
+    /* eslint-disable no-restricted-properties */
+    if (window.sessionStorage.getItem(PENDING_ADD) !== pageId) return false;
+    window.sessionStorage.removeItem(PENDING_ADD);
+    /* eslint-enable no-restricted-properties */
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const OPEN_LABEL = /^(open|view|edit|details)$/i;
 type Job = { kind: 'add' } | { kind: 'open'; no: string };
@@ -186,8 +217,14 @@ export function ClassicViewSwitch({
 
   const api: ClassicApi = {
     open: (recordNo) => {
+      if (host) {
+        const hit = hostBox.current ? findOpen(hostBox.current, recordNo) : null;
+        hit?.click();
+        return Boolean(hit);
+      }
       setClassic(true);
       setJob({ kind: 'open', no: recordNo });
+      return true;
     },
     add: () => {
       setClassic(true);
@@ -211,6 +248,7 @@ export function ClassicViewSwitch({
       b.click();
       return true;
     },
+    elsewhere: () => ADD_ELSEWHERE[pageId]?.label ?? null,
     press: (no, label) => {
       const row = hostBox.current ? rowOf(hostBox.current, no) : null;
       const hit = row

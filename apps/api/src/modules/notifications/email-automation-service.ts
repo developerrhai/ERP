@@ -21,8 +21,9 @@ import { logger } from '../../core/logger';
 import { FONT_FILES } from '../../core/pdf';
 import { defaultStorage } from '../../core/storage';
 import { formatInr } from '../approvals/money';
+import { printSourceOf, readableNo } from '../docsmail/print';
 import { companyName, smtpConfigured } from './email';
-import { buildPayslipPassword, renderEscapedTemplate } from './notify-calc';
+import { buildPayslipPassword, escapeHtml, renderEscapedTemplate } from './notify-calc';
 import { activeSseStreamCount } from './realtime';
 import { notificationService } from './service';
 
@@ -158,11 +159,143 @@ export interface ResolvedDocumentContext {
     grossPay: number;
     deductionsTotal: number;
   };
+  /** A master / register record (item, stock balance, lead source): its own facts, no invoice template, no made-up recipient. */
+  ownRecord?: { title: string; facts: [string, string][] };
+}
+
+/** Registers whose rows are emailed from their own table: what to read and how to name it. */
+const OWN_RECORDS: Record<string, { docType: string; title: string; table: string; number: string; name: string; unit: string | null; facts: [string, string][] }> = {
+  'inv-items': {
+    docType: 'ITEM', title: 'Item', table: 'items', number: 'code', name: 'name', unit: null,
+    facts: [['Item type', 'item_type'], ['Category', 'category'], ['Base UOM', 'base_uom'], ['HSN / SAC', 'hsn_sac'], ['Status', 'status']],
+  },
+  'inv-stock': {
+    docType: 'STOCK_BALANCE', title: 'Stock Balance', table: 'stock_balance_records', number: 'number', name: 'item_name', unit: 'unit_id',
+    facts: [['Warehouse', 'warehouse_name'], ['On hand', 'on_hand'], ['Reserved', 'reserved_qty'], ['UOM', 'uom'], ['Stock value', 'stock_value'], ['Status', 'status']],
+  },
+  'crm-sources': {
+    docType: 'LEAD_SOURCE', title: 'Lead Source', table: 'lead_sources', number: 'code', name: 'name', unit: null,
+    facts: [['Channel', 'channel'], ['Campaign', 'campaign'], ['UTM source', 'utm_source'], ['UTM medium', 'utm_medium'], ['Monthly cost', 'monthly_cost'], ['Status', 'status']],
+  },
+};
+
+async function ownRecordContext(pageId: string, docId: string, comp: string): Promise<ResolvedDocumentContext | null> {
+  const own = OWN_RECORDS[pageId];
+  if (!own || !isUuidShape(docId)) return null;
+  // table and column names come from the constant above, never from the request
+  const rows = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+    `SELECT t.* FROM ${own.table} t WHERE t.id = $1::uuid`,
+    docId,
+  );
+  const r = rows[0];
+  if (!r) throw Errors.notFound('Record not found.');
+  const unitId = own.unit && r[own.unit] ? String(r[own.unit]) : null;
+  const unit = unitId ? await prisma.unit.findUnique({ where: { id: unitId } }) : null;
+  // columns come back as text, numbers or decimals (all print through toString)
+  const text = (v: unknown): string =>
+    v === null || v === undefined || v === '' ? '—' : (v as { toString(): string }).toString();
+  return {
+    docType: own.docType,
+    docId,
+    docNo: String(r[own.number]),
+    docDate: new Date().toISOString().slice(0, 10),
+    amount: '',
+    unitId,
+    unitName: unit?.name ?? comp,
+    unitEmail: unit?.email ?? `accounts@${env.MAIL_FROM_DOMAIN}`,
+    partyName: String(r[own.name]),
+    ownerUserId: null,
+    version: 1,
+    defaultTo: [],
+    defaultCc: [],
+    ownRecord: { title: own.title, facts: [['Name', String(r[own.name])], ...own.facts.map(([label, col]): [string, string] => [label, text(r[col])])] },
+  };
+}
+
+/** These keep their own e-mail templates and recipient rules below. */
+const TEMPLATED = new Set(['sales-invoices', 'scm-po']);
+
+/** The mail addresses of the customer or supplier a record belongs to (none is made up). */
+async function partyOf(table: string, r: Record<string, unknown>): Promise<{ name: string; emails: string[] }> {
+  const id = (col: string): string => (r[col] ? String(r[col] as string) : '');
+  const customer = table === 'customers' ? id('id') : id('customer_id');
+  const supplier = table === 'suppliers' ? id('id') : id('supplier_id') || id('vendor_id');
+  if (customer) {
+    const c = await prisma.customer.findUnique({ where: { id: customer }, select: { name: true } });
+    // unpaginated: one customer's own contacts (bounced addresses are left out)
+    const contacts = await prisma.$queryRaw<{ email: string }[]>`
+      SELECT email FROM customer_contacts
+      WHERE customer_id = ${customer}::uuid AND email IS NOT NULL AND email_status = 'OK'
+      ORDER BY is_primary DESC LIMIT 3
+    `;
+    return { name: c?.name ?? '', emails: normalizeEmailList(contacts.map((x) => x.email)) };
+  }
+  if (supplier) {
+    const v = await prisma.supplier.findUnique({ where: { id: supplier }, select: { name: true } });
+    // unpaginated: one supplier's own contacts
+    const contacts = await prisma.supplierContact.findMany({
+      where: { supplierId: supplier, email: { not: null } },
+      orderBy: { isPrimary: 'desc' },
+      select: { email: true },
+    });
+    return { name: v?.name ?? '', emails: normalizeEmailList(contacts.slice(0, 3).map((x) => x.email)) };
+  }
+  return { name: '', emails: [] };
+}
+
+/** Every record the print service can read from its table: number, date, status, party and amount as they are stored. */
+async function tableRecordContext(pageId: string, docId: string, comp: string): Promise<ResolvedDocumentContext | null> {
+  const doc = printSourceOf(pageId);
+  if (!doc || TEMPLATED.has(pageId) || !isUuidShape(docId)) return null;
+  // table and column names come from the print catalogue, never from the request
+  const rows = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+    `SELECT t.* FROM ${doc.table} t WHERE t.id = $1::uuid`,
+    docId,
+  );
+  const r = rows[0];
+  if (!r) throw Errors.notFound('Record not found.');
+  const unitId = doc.unitCol && r[doc.unitCol] ? String(r[doc.unitCol]) : null;
+  const unit = unitId ? await prisma.unit.findUnique({ where: { id: unitId } }) : null;
+  const party = await partyOf(doc.table, r);
+  const text = (v: unknown): string =>
+    v === null || v === undefined || v === '' ? '—' : (v as { toString(): string }).toString();
+  const day = r[doc.dateCol] instanceof Date ? (r[doc.dateCol] as Date).toISOString().slice(0, 10) : text(r[doc.dateCol]).slice(0, 10);
+  const amount = doc.totalCol && r[doc.totalCol] !== null && r[doc.totalCol] !== undefined ? formatInr(text(r[doc.totalCol])) : '';
+  const facts: [string, string][] = [
+    ...(doc.statusCol ? [['Status', text(r[doc.statusCol])] as [string, string]] : []),
+    ...(party.name ? [['Party', party.name] as [string, string]] : []),
+    ...(amount ? [['Amount', amount] as [string, string]] : []),
+  ];
+  return {
+    docType: doc.title.toUpperCase().replace(/[^A-Z0-9]+/g, '_').slice(0, 40),
+    docId,
+    docNo: await readableNo(doc.table, docId, text(r[doc.numberCol])),
+    docDate: day,
+    amount,
+    unitId,
+    unitName: unit?.name ?? comp,
+    unitEmail: unit?.email ?? `accounts@${env.MAIL_FROM_DOMAIN}`,
+    partyName: party.name,
+    ownerUserId: r.created_by_id ? String(r.created_by_id as string) : null,
+    version: Number(r.version ?? 1),
+    defaultTo: party.emails,
+    defaultCc: [],
+    ownRecord: { title: doc.title, facts },
+  };
+}
+
+/** Any uuid, also the derived ids of Stock Balance rows (no version / variant bits). */
+function isUuidShape(val: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 }
 
 async function resolveDocumentContext(docTypeInput: string, docId: string): Promise<ResolvedDocumentContext> {
   const docType = docTypeInput.toUpperCase();
   const comp = await companyName();
+  const own =
+    (await ownRecordContext(docTypeInput.toLowerCase(), docId, comp)) ??
+    (await tableRecordContext(docTypeInput.toLowerCase(), docId, comp));
+  if (own) return own;
 
   if (docType === 'SALES_INVOICE' || docType === 'SALES-INVOICES') {
     // unpaginated: rows of one parent (id)
@@ -208,8 +341,8 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
         partyName: 'Valued Customer',
         ownerUserId: null,
         version: 1,
-        defaultTo: ['billing@customer.example'],
-        defaultCc: ['accounts@customer.example'],
+        defaultTo: [],
+        defaultCc: [],
       };
     }
     // unpaginated: system fan-out/queue worker: must visit every eligible row, runs in a job in batches or per event
@@ -233,13 +366,14 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
       partyName: r.customer_name,
       ownerUserId: r.created_by_id ?? null,
       version: Number(r.version ?? 1),
-      defaultTo: normalizeEmailList(toList.length ? toList : ['billing@customer.example']),
-      defaultCc: ['accounts@customer.example'],
+      defaultTo: normalizeEmailList(toList),
+      defaultCc: [],
     };
   }
 
   if (docType === 'SALES_ORDER' || docType === 'SALES-ORDERS' || docType === 'SALES-ORDER') {
     const rows = isUuid(docId)
+      // unpaginated: one sales order, found by its id or number
       ? await prisma.$queryRaw<any[]>`
           SELECT so.id, so.number, so.order_date, so.grand_total, so.version, so.unit_id,
                  so.created_by_id, so.customer_id,
@@ -280,10 +414,11 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
         partyName: 'Valued Customer',
         ownerUserId: null,
         version: 1,
-        defaultTo: ['billing@customer.example'],
-        defaultCc: ['accounts@customer.example'],
+        defaultTo: [],
+        defaultCc: [],
       };
     }
+    // unpaginated: one customer's own contacts
     const contacts = await prisma.$queryRaw<{ email: string; receives_invoices: boolean; is_primary: boolean; email_status: string }[]>`
       SELECT email, receives_invoices, is_primary, email_status
       FROM customer_contacts
@@ -304,79 +439,8 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
       partyName: r.customer_name,
       ownerUserId: r.created_by_id ?? null,
       version: Number(r.version ?? 1),
-      defaultTo: normalizeEmailList(toList.length ? toList : ['billing@customer.example']),
-      defaultCc: ['accounts@customer.example'],
-    };
-  }
-
-  if (docType === 'SALES_QUOTATION' || docType === 'SALES-QUOTATIONS' || docType === 'SALES-QUOTATION') {
-    const rows = isUuid(docId)
-      ? await prisma.$queryRaw<any[]>`
-          SELECT sq.id, sq.number, sq.quotation_date, sq.grand_total, sq.version, sq.unit_id,
-                 sq.created_by_id, sq.customer_id,
-                 u.name AS unit_name, u.email AS unit_email,
-                 c.name AS customer_name
-          FROM sales_quotations sq
-          JOIN units u ON u.id = sq.unit_id
-          JOIN customers c ON c.id = sq.customer_id
-          WHERE sq.id = ${docId}::uuid
-        `
-      : await prisma.$queryRaw<any[]>`
-          SELECT sq.id, sq.number, sq.quotation_date, sq.grand_total, sq.version, sq.unit_id,
-                 sq.created_by_id, sq.customer_id,
-                 u.name AS unit_name, u.email AS unit_email,
-                 c.name AS customer_name
-          FROM sales_quotations sq
-          JOIN units u ON u.id = sq.unit_id
-          JOIN customers c ON c.id = sq.customer_id
-          WHERE sq.number = ${docId}
-          ORDER BY sq.created_at DESC
-          LIMIT 1
-        `;
-    const r = rows[0];
-    if (!r) {
-      const unitRows = await prisma.$queryRaw<{ id: string; name: string; email: string | null }[]>`
-        SELECT id::text AS id, name, email FROM units ORDER BY created_at ASC LIMIT 1
-      `;
-      const u = unitRows[0];
-      return {
-        docType: 'SALES_QUOTATION',
-        docId,
-        docNo: docId,
-        docDate: new Date().toISOString().slice(0, 10),
-        amount: '₹ 5,50,000',
-        unitId: u?.id ?? null,
-        unitName: u?.name ?? comp,
-        unitEmail: u?.email ?? `sales@${env.MAIL_FROM_DOMAIN}`,
-        partyName: 'Valued Customer',
-        ownerUserId: null,
-        version: 1,
-        defaultTo: ['billing@customer.example'],
-        defaultCc: ['accounts@customer.example'],
-      };
-    }
-    const contacts = await prisma.$queryRaw<{ email: string; receives_invoices: boolean; is_primary: boolean; email_status: string }[]>`
-      SELECT email, receives_invoices, is_primary, email_status
-      FROM customer_contacts
-      WHERE customer_id = ${r.customer_id}::uuid AND email IS NOT NULL
-      ORDER BY is_primary DESC
-    `;
-    const toList = contacts.filter((c) => (c.receives_invoices || c.is_primary) && c.email_status === 'OK').map((c) => c.email);
-
-    return {
-      docType: 'SALES_QUOTATION',
-      docId: r.id,
-      docNo: r.number ?? r.id.slice(0, 8),
-      docDate: new Date(r.quotation_date).toISOString().slice(0, 10),
-      amount: formatInr(r.grand_total),
-      unitId: r.unit_id,
-      unitName: r.unit_name ?? comp,
-      unitEmail: r.unit_email ?? `sales@${env.MAIL_FROM_DOMAIN}`,
-      partyName: r.customer_name,
-      ownerUserId: r.created_by_id ?? null,
-      version: Number(r.version ?? 1),
-      defaultTo: normalizeEmailList(toList.length ? toList : ['billing@customer.example']),
-      defaultCc: ['accounts@customer.example'],
+      defaultTo: normalizeEmailList(toList),
+      defaultCc: [],
     };
   }
 
@@ -423,7 +487,7 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
         partyName: 'Valued Supplier',
         ownerUserId: null,
         version: 1,
-        defaultTo: ['purchase@supplier.example'],
+        defaultTo: [],
         defaultCc: [],
       };
     }
@@ -448,7 +512,7 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
       partyName: r.supplier_name,
       ownerUserId: r.created_by_id ?? null,
       version: Number(r.version ?? 1),
-      defaultTo: normalizeEmailList(toList.length ? toList : ['purchase@supplier.example']),
+      defaultTo: normalizeEmailList(toList),
       defaultCc: [],
     };
   }
@@ -488,7 +552,7 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
         partyName: 'Employee',
         ownerUserId: null,
         version: 1,
-        defaultTo: ['hr@company.example'],
+        defaultTo: [],
         defaultCc: [],
       };
     }
@@ -537,8 +601,8 @@ async function resolveDocumentContext(docTypeInput: string, docId: string): Prom
     partyName: 'Valued Partner',
     ownerUserId: null,
     version: 1,
-    defaultTo: ['billing@customer.example'],
-    defaultCc: ['accounts@customer.example'],
+    defaultTo: [],
+    defaultCc: [],
   };
 }
 
@@ -589,14 +653,16 @@ async function buildFormatFile(
   format: 'word' | 'excel',
 ): Promise<{ buffer: Buffer; filename: string; contentType: string }> {
   const base = ctx.docNo.replace(/[^A-Za-z0-9_-]/g, '_');
-  const facts: [string, string][] = [
-    ['Document', ctx.docType],
-    ['Number', ctx.docNo],
-    ['Date', ctx.docDate],
-    ['Party', ctx.partyName],
-    ['Amount', ctx.amount],
-    ['Plant', ctx.unitName],
-  ];
+  const facts: [string, string][] = ctx.ownRecord
+    ? [['Number', ctx.docNo], ['Date', ctx.docDate], ...ctx.ownRecord.facts, ['Plant', ctx.unitName]]
+    : [
+        ['Document', ctx.docType],
+        ['Number', ctx.docNo],
+        ['Date', ctx.docDate],
+        ['Party', ctx.partyName],
+        ['Amount', ctx.amount],
+        ['Plant', ctx.unitName],
+      ];
   if (format === 'excel') {
     const ExcelJS = (await import('exceljs')).default;
     const wb = new ExcelJS.Workbook();
@@ -701,11 +767,13 @@ async function loadOrBuildDocumentPdf(
   const buffer = await generatePdfBuffer({
     title: `${ctx.unitName} — ${ctx.docType.replace(/_/g, ' ')}`,
     subtitle: `Document No: ${ctx.docNo} | Date: ${ctx.docDate}`,
-    lines: [
-      `Party: ${ctx.partyName}`,
-      ctx.amount ? `Amount: ${ctx.amount}` : 'Status: Posted',
-      `Reference ID: ${ctx.docId}`,
-    ],
+    lines: ctx.ownRecord
+      ? ctx.ownRecord.facts.map(([label, value]) => `${label}: ${value}`)
+      : [
+          `Party: ${ctx.partyName}`,
+          ctx.amount ? `Amount: ${ctx.amount}` : 'Status: Posted',
+          `Reference ID: ${ctx.docId}`,
+        ],
   });
   const sha256 = createHash('sha256').update(buffer).digest('hex');
   return {
@@ -951,11 +1019,13 @@ export const emailAutomationService = {
     const ctx = await resolveDocumentContext(docType, docId);
     const tplCode =
       templateCodeOverride ??
-      (ctx.docType === 'PURCHASE_ORDER'
-        ? 'po_email'
-        : ctx.docType === 'PAYSLIP'
-          ? 'payslip'
-          : 'inv_email');
+      (ctx.ownRecord
+        ? ''
+        : ctx.docType === 'PURCHASE_ORDER'
+          ? 'po_email'
+          : ctx.docType === 'PAYSLIP'
+            ? 'payslip'
+            : 'inv_email');
 
     const tplRows = await prisma.$queryRaw<any[]>`
       SELECT code, subject_tpl, html_tpl, text_tpl FROM message_templates WHERE code = ${tplCode} LIMIT 1
@@ -973,7 +1043,7 @@ export const emailAutomationService = {
     };
     const subject = tpl?.subject_tpl
       ? renderEscapedTemplate(tpl.subject_tpl, vars, false)
-      : `${ctx.unitName} — ${ctx.docType} ${ctx.docNo}`;
+      : `${ctx.unitName} — ${ctx.ownRecord?.title ?? ctx.docType} ${ctx.docNo}`;
     const html = tpl?.html_tpl
       ? renderEscapedTemplate(tpl.html_tpl, vars, true)
       : `<p>Please find document ${ctx.docNo}.</p>`;
@@ -1013,6 +1083,8 @@ export const emailAutomationService = {
       idempotencyKey?: string;
       resendOfId?: string;
       resendReason?: string;
+      /** Prints the record itself (letterhead PDF, Word or Excel); without it a summary of the facts is attached. */
+      render?: (kind: 'letterhead' | 'word' | 'excel') => Promise<{ buffer: Buffer; filename: string; contentType: string }>;
       overridePdfBuffer?: Buffer; // helpful seam for >7MB / stored-PDF testing without creating 7MB on disk unnecessarily
     } = {},
   ) {
@@ -1057,7 +1129,7 @@ export const emailAutomationService = {
 
     const tplCode =
       opts.templateCode ??
-      (ctx.docType === 'PURCHASE_ORDER' ? 'po_email' : ctx.docType === 'PAYSLIP' ? 'payslip' : 'inv_email');
+      (ctx.ownRecord ? '' : ctx.docType === 'PURCHASE_ORDER' ? 'po_email' : ctx.docType === 'PAYSLIP' ? 'payslip' : 'inv_email');
     const tplRows = await prisma.$queryRaw<any[]>`
       SELECT id::text AS id, subject_tpl, html_tpl, text_tpl FROM message_templates WHERE code = ${tplCode} LIMIT 1
     `;
@@ -1077,7 +1149,7 @@ export const emailAutomationService = {
       ? opts.subjectOverride.trim().slice(0, 200)
       : tpl?.subject_tpl
         ? renderEscapedTemplate(tpl.subject_tpl, vars, false)
-        : `${ctx.unitName} — ${ctx.docType} ${ctx.docNo}`;
+        : `${ctx.unitName} — ${ctx.ownRecord?.title ?? ctx.docType} ${ctx.docNo}`;
 
     const safeOutboundDocId = isUuid(ctx.docId) ? ctx.docId : null;
 
@@ -1118,12 +1190,16 @@ export const emailAutomationService = {
     const isPayslip = ctx.docType === 'PAYSLIP' || attachmentKind === 'PAYSLIP_PDF';
     const bodyStored = !isPayslip;
 
+    // a record with no template of its own sends the message the user typed in the dialog
+    const typed = ctx.ownRecord ? (opts.message ?? '').trim() : '';
     let html = tpl?.html_tpl
       ? renderEscapedTemplate(tpl.html_tpl, vars, true)
-      : `<p>Please find ${ctx.docNo}.</p>`;
+      : typed
+        ? `<p>${escapeHtml(typed).replace(/\r?\n/g, '<br>')}</p>`
+        : `<p>Please find ${escapeHtml(ctx.docNo)}.</p>`;
     let text = tpl?.text_tpl
       ? renderEscapedTemplate(tpl.text_tpl, vars, false)
-      : `Please find ${ctx.docNo}.`;
+      : typed || `Please find ${ctx.docNo}.`;
 
     const mimeAttachments: { filename: string; content: Buffer; contentType: string; cid?: string }[] = [];
     const attachmentsMeta: { filename: string; sha256: string; sizeBytes: number; mode: 'ATTACH' | 'LINK'; shareLinkId?: string }[] = [];
@@ -1131,7 +1207,7 @@ export const emailAutomationService = {
 
     const wantFormat = opts.attachFormat && opts.attachFormat !== 'pdf' && !isPayslip ? opts.attachFormat : null;
     if (attachmentKind !== 'NONE' && wantFormat) {
-      const f = await buildFormatFile(ctx, wantFormat);
+      const f = opts.render && ctx.ownRecord ? await opts.render(wantFormat) : await buildFormatFile(ctx, wantFormat);
       mimeAttachments.push({ filename: f.filename, content: f.buffer, contentType: f.contentType });
       attachmentsMeta.push({ filename: f.filename, sha256: createHash('sha256').update(f.buffer).digest('hex'), sizeBytes: f.buffer.length, mode: 'ATTACH' });
     } else if (attachmentKind !== 'NONE') {
@@ -1142,7 +1218,14 @@ export const emailAutomationService = {
             sha256: createHash('sha256').update(opts.overridePdfBuffer).digest('hex'),
             sizeBytes: opts.overridePdfBuffer.length,
           }
-        : await loadOrBuildDocumentPdf(ctx, attachmentKind, caller.userId);
+        : opts.render && ctx.ownRecord
+          ? await opts.render('letterhead').then((f) => ({
+              buffer: f.buffer,
+              filename: f.filename,
+              sha256: createHash('sha256').update(f.buffer).digest('hex'),
+              sizeBytes: f.buffer.length,
+            }))
+          : await loadOrBuildDocumentPdf(ctx, attachmentKind, caller.userId);
 
       const useLink =
         !isPayslip &&

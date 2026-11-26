@@ -505,7 +505,8 @@ export interface NoteSettlement {
 export const noteSettlement = (id: string) => api<NoteSettlement>(`/finance/notes/${id}/settlement`);
 /** The credits (receipts, advances, credit notes) that can settle one payable / receivable invoice. */
 export interface SettleOptions {
-  target: { id: string; docNo: string; outstanding: string; side: 'RECEIVABLE' | 'PAYABLE' };
+  /** `isCredit`: the chosen item is itself an unused payment / receipt / credit, and `credits` are then the open bills */
+  target: { id: string; docNo: string; outstanding: string; side: 'RECEIVABLE' | 'PAYABLE'; isCredit?: boolean };
   credits: { id: string; itemType: string; docNo: string; docDate: string; amount: string; outstanding: string }[];
 }
 export const settleOptions = (id: string) => api<SettleOptions>(`/finance/open-items/${id}/settle-options`);

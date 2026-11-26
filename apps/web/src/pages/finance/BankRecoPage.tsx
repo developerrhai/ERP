@@ -140,18 +140,29 @@ function ImportForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
   const [closingBalance, setClosing] = useState('');
   const [csv, setCsv] = useState('');
   const [err, setErr] = useState('');
+  const [bad, setBad] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
+  /** What is wrong, field by field, before anything is sent (each one is shown in red under its box). */
+  const localProblems = (): Record<string, string> => {
+    const out: Record<string, string> = {};
+    if (!bankAccountId) out.bankAccountId = 'Choose the bank account.';
+    if (!periodFrom) out.periodFrom = 'Pick the first date.';
+    if (!periodTo) out.periodTo = 'Pick the last date.';
+    const number = /^-?\d+(\.\d{1,2})?$/;
+    if (!number.test(openingBalance.trim())) out.openingBalance = 'Enter an amount, for example 12500.00.';
+    if (!number.test(closingBalance.trim())) out.closingBalance = 'Enter an amount, for example 12500.00.';
+    const lines = parseCsv(csv);
+    const wrong = lines.findIndex((l) => !/^\d{4}-\d{2}-\d{2}$/.test(l.txnDate) || (!l.withdrawal && !l.deposit));
+    if (lines.length === 0) out.lines = 'Paste at least one line.';
+    else if (wrong >= 0) out.lines = `Line ${wrong + 1} must be: date as YYYY-MM-DD, description, reference, withdrawal, deposit (fill one of the two amounts).`;
+    return out;
+  };
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (
-      !bankAccountId ||
-      !periodFrom ||
-      !periodTo ||
-      !openingBalance ||
-      !closingBalance ||
-      !csv.trim()
-    ) {
-      setErr('Fill every field and paste the statement lines.');
+    const problems = localProblems();
+    setBad(problems);
+    if (Object.keys(problems).length > 0) {
+      setErr('Please fix the fields marked in red.');
       return;
     }
     setPending(true);
@@ -167,7 +178,15 @@ function ImportForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
       });
       onSaved();
     } catch (caught) {
-      setErr(toUiError(caught).message);
+      const u = toUiError(caught);
+      const marked: Record<string, string> = {};
+      for (const [key, message] of Object.entries(u.fields)) {
+        const line = /^lines\.(\d+)/.exec(key);
+        if (line) marked.lines = `Line ${Number(line[1]) + 1}: ${message}`;
+        else marked[key] = message;
+      }
+      setBad(marked);
+      setErr(u.message);
       setPending(false);
     }
   };
@@ -189,7 +208,7 @@ function ImportForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
     >
       <form id="import-form" onSubmit={(e) => void submit(e)} noValidate>
         <ErrorBox message={err} />
-        <SelectField label="Bank account *" value={bankAccountId} onChange={setBank}>
+        <SelectField label="Bank account *" value={bankAccountId} onChange={setBank} error={bad.bankAccountId}>
           <option value="">Choose…</option>
           {(banks.data ?? [])
             .filter((b) => b.kind === 'BANK')
@@ -204,24 +223,28 @@ function ImportForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
             label="From *"
             type="date"
             value={periodFrom}
+            error={bad.periodFrom}
             onChange={(e) => setFrom(e.target.value)}
           />
           <Field
             label="To *"
             type="date"
             value={periodTo}
+            error={bad.periodTo}
             onChange={(e) => setTo(e.target.value)}
           />
           <Field
             label="Opening balance *"
             inputMode="decimal"
             value={openingBalance}
+            error={bad.openingBalance}
             onChange={(e) => setOpening(e.target.value)}
           />
           <Field
             label="Closing balance *"
             inputMode="decimal"
             value={closingBalance}
+            error={bad.closingBalance}
             onChange={(e) => setClosing(e.target.value)}
           />
         </div>
@@ -231,9 +254,11 @@ function ImportForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
             id="csv"
             rows={8}
             value={csv}
+            aria-invalid={bad.lines ? true : undefined}
             onChange={(e) => setCsv(e.target.value)}
             placeholder="2026-11-05,NEFT to vendor,UTR123,5000.00,"
           />
+          {bad.lines ? <span className="field-error">{bad.lines}</span> : null}
         </div>
       </form>
     </Modal>

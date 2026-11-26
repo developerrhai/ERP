@@ -59,10 +59,19 @@ const BALANCE_FROM = Prisma.sql`
   JOIN warehouses w ON w.id = b.warehouse_id
   JOIN units un ON un.id = w.unit_id`;
 
-function balanceWhere(
-  scope: UnitScope,
-  f: { q?: string; warehouseId?: string; belowReorder?: boolean; status?: string },
-): Prisma.Sql {
+/** The stable record id of a balance row (the view stock_balance_records derives the same value). */
+const RECORD_ID = Prisma.sql`md5(b.item_id::text || ':' || b.warehouse_id::text)::uuid`;
+
+export interface BalanceFilter {
+  q?: string;
+  warehouseId?: string;
+  belowReorder?: boolean;
+  status?: string;
+  /** Department filter: only these record ids, or every id except these. */
+  held?: { only?: string[]; except?: string[] };
+}
+
+function balanceWhere(scope: UnitScope, f: BalanceFilter): Prisma.Sql {
   const where: Prisma.Sql[] = [Prisma.sql`true`];
   if (scope.none) where.push(Prisma.sql`false`);
   else if (scope.unitId) where.push(Prisma.sql`w.unit_id = ${scope.unitId}::uuid`);
@@ -76,6 +85,10 @@ function balanceWhere(
   const below = Prisma.sql`(i.reorder_level IS NOT NULL AND b.on_hand < i.reorder_level)`;
   if (f.belowReorder || f.status === 'Below Reorder') where.push(below);
   if (f.status === 'OK') where.push(Prisma.sql`NOT ${below}`);
+  if (f.held?.only) where.push(Prisma.sql`${RECORD_ID} = ANY(${f.held.only}::uuid[])`);
+  if (f.held?.except?.length) {
+    where.push(Prisma.sql`NOT (${RECORD_ID} = ANY(${f.held.except}::uuid[]))`);
+  }
   return Prisma.sql`WHERE ${Prisma.join(where, ' AND ')}`;
 }
 
@@ -86,6 +99,10 @@ const BALANCE_ORDER: Record<string, Prisma.Sql> = {
   unit: Prisma.sql`un.code`,
   warehouse: Prisma.sql`w.name`,
   uom: Prisma.sql`i.base_uom`,
+  itemType: Prisma.sql`i.item_type`,
+  stockRecord: Prisma.sql`i.code`,
+  payReference: Prisma.sql`i.code`,
+  location: Prisma.sql`w.code`,
   onHand: Prisma.sql`b.on_hand`,
   avgRate: Prisma.sql`b.avg_rate`,
   stockValue: Prisma.sql`b.value`,
@@ -111,7 +128,7 @@ const BALANCE_COLUMNS = Prisma.sql`
 export const stockRepository = {
   async balances(
     scope: UnitScope,
-    filter: { q?: string; warehouseId?: string; belowReorder?: boolean; status?: string },
+    filter: BalanceFilter,
     order: Prisma.Sql,
     page: { offset: number; limit: number },
   ): Promise<{ rows: BalanceRow[]; total: number; onHand: string; stockValue: string }> {

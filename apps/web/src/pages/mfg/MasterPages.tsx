@@ -1,5 +1,7 @@
 // Phase 13 masters: work centres (with calendars and the downtime / scrap reasons), bills of materials (draft -> pending
 // approval -> released, revisions, tree, cost roll-up, import) and routings. Every rule is checked on the server.
+import { Modal } from '../../components/Modal';
+import { RecordActions } from '../../components/workspace/RecordActions';
 import { useState } from 'react';
 import { useToast } from '../../components/Toast';
 import { toUiError } from '../../lib/errors';
@@ -12,7 +14,12 @@ import { RefPicker, Tabs } from '../qms/Shared';
 import { FileButton, FormModal, ORDER_TONE, OptionSelect, s, useWorkCentres } from './Kit';
 import { Act, Dialog, Grid, ReasonAct, num } from './Ui';
 
-const KINDS = ['Machine', 'Assembly', 'Manual', 'Inspection', 'Outside', 'Other'];
+const KINDS = [
+  { id: 'MACHINE', label: 'Machine' },
+  { id: 'LINE', label: 'Line' },
+  { id: 'MANUAL', label: 'Manual' },
+  { id: 'OUTSIDE', label: 'Outside' },
+];
 
 // ------------------------------------------------------------------------------------------------ work centres
 export function WorkCentresPage({ actions }: { actions: ActionSet }) {
@@ -43,6 +50,7 @@ export function WorkCentresPage({ actions }: { actions: ActionSet }) {
 
 function WcList({ actions }: { actions: ActionSet }) {
   const toast = useToast();
+  const [shown, setShown] = useState<Record<string, unknown> | null>(null);
   const [edit, setEdit] = useState<Row | 'new' | null>(null);
   const list = useLoad(() => mlist('/work-centers'), []);
   const cals = useLoad(() => mget<Row[]>('/calendars'), []);
@@ -79,15 +87,63 @@ function WcList({ actions }: { actions: ActionSet }) {
           },
           {
             h: '',
-            r: (r) =>
-              actions.edit ? (
-                <button type="button" className="btn" onClick={() => setEdit(r)}>
-                  Edit
+            r: (r) => (
+              <RecordActions docType="mfg-workcenters" id={s(r.id)} number={s(r.code)} status={s(r.status)}>
+                <button type="button" className="btn sm" onClick={() => setShown(r)}>
+                  View
                 </button>
-              ) : null,
+                {actions.edit ? (
+                  <button type="button" className="btn sm" onClick={() => setEdit(r)}>
+                    Edit
+                  </button>
+                ) : null}
+              </RecordActions>
+            ),
           },
         ]}
       />
+      {shown ? (
+        <Modal
+          title={`Work center ${s(shown.code)}`}
+          sub="Record details"
+          onClose={() => setShown(null)}
+          footer={
+            <>
+              <RecordActions docType="mfg-workcenters" id={s(shown.id)} number={s(shown.code)} status={s(shown.status)} />
+              {actions.edit ? (
+                <button type="button" className="btn primary" onClick={() => { setEdit(shown); setShown(null); }}>
+                  Edit
+                </button>
+              ) : null}
+              <button type="button" className="btn" onClick={() => setShown(null)}>
+                Close
+              </button>
+            </>
+          }
+        >
+          <div className="drawer-grid">
+            {([
+              ['Code', s(shown.code)],
+              ['Name', s(shown.name)],
+              ['Kind', s(shown.kind)],
+              ['Department', s(shown.department)],
+              ['Machines', s(shown.machineCount)],
+              ['Operators', s(shown.labourCount)],
+              ['Shifts × hours', `${s(shown.shiftsPerDay)} × ${s(shown.hoursPerShift)}`],
+              ['Labour rate / hr', num(shown.labourRatePerHr)],
+              ['Overhead rate / hr', num(shown.overheadRatePerHr)],
+              ['OEE target %', num(shown.oeeTargetPct)],
+              ['Efficiency %', num(shown.efficiencyPct)],
+              ['Status', s(shown.status)],
+            ] as [string, string][]).map(([label, value]) => (
+              <div className="v8-mini" key={label}>
+                <small>{label}</small>
+                <b>{value || '—'}</b>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      ) : null}
       {edit ? (
         <FormModal
           title={cur ? `Edit ${s(cur.code)}` : 'New work center'}
@@ -421,9 +477,11 @@ export function BomPage({ actions }: { actions: ActionSet }) {
           {
             h: '',
             r: (r) => (
-              <button type="button" className="btn" onClick={() => setView(s(r.id))}>
-                Open
-              </button>
+              <RecordActions docType="mfg-bom" id={s(r.id)} number={s(r.number)} status={s(r.status)}>
+                <button type="button" className="btn sm" onClick={() => setView(s(r.id))}>
+                  Open
+                </button>
+              </RecordActions>
             ),
           },
         ]}
@@ -827,6 +885,8 @@ function BomForm({
                   <button
                     type="button"
                     className="btn"
+                    disabled={lines.length <= 1}
+                    title={lines.length <= 1 ? 'At least one line is needed.' : undefined}
                     onClick={() =>
                       setLines((o) => (o.length > 1 ? o.filter((_, j) => j !== i) : o))
                     }
@@ -978,9 +1038,11 @@ export function RoutingPage({ actions }: { actions: ActionSet }) {
           {
             h: '',
             r: (r) => (
-              <button type="button" className="btn" onClick={() => setView(s(r.id))}>
-                Open
-              </button>
+              <RecordActions docType="mfg-routing" id={s(r.id)} number={s(r.number)} status={s(r.status)}>
+                <button type="button" className="btn sm" onClick={() => setView(s(r.id))}>
+                  Open
+                </button>
+              </RecordActions>
             ),
           },
         ]}
@@ -1237,6 +1299,8 @@ function RoutingForm({
                   <button
                     type="button"
                     className="btn"
+                    disabled={ops.length <= 1}
+                    title={ops.length <= 1 ? 'At least one line is needed.' : undefined}
                     onClick={() => setOps((x) => (x.length > 1 ? x.filter((_, j) => j !== i) : x))}
                   >
                     Remove

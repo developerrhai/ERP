@@ -1,6 +1,9 @@
 // Config of the CRM and Sales header + lines pages (see DocPage.tsx).
 import type { DocCfg } from './DocPage';
 
+/** The customer has not answered this quotation yet. */
+const undecided = (d: Record<string, unknown>): boolean => !d.customerStatus || d.customerStatus === 'PENDING';
+
 export const LEAD_CFG: DocCfg = {
   title: 'Lead Management',
   sub: 'Enquiries before they are customers. Qualify a lead, then convert it into an opportunity.',
@@ -177,14 +180,45 @@ export const MTG_CFG: DocCfg = {
     { key: 'attendees', label: 'Participants', type: 'text', clearable: true },
     { key: 'agenda', label: 'Agenda', type: 'text', clearable: true },
     { key: 'outcome', label: 'Outcome', type: 'text', clearable: true },
-    { key: 'status', label: 'Status', type: 'text', readOnly: true, def: 'Planned' },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      def: 'Planned',
+      options: [
+        ['Planned', 'Planned'],
+        ['Draft', 'Draft'],
+        ['Open', 'Open'],
+        ['Active', 'Active'],
+        ['Submitted', 'Submitted'],
+        ['Pending', 'Pending'],
+        ['Pending Approval', 'Pending Approval'],
+        ['Pending Inspection', 'Pending Inspection'],
+        ['In Progress', 'In Progress'],
+        ['Ready', 'Ready'],
+        ['Released', 'Released'],
+        ['Approved', 'Approved'],
+        ['Dispatched', 'Dispatched'],
+        ['In Transit', 'In Transit'],
+        ['Delivered', 'Delivered'],
+        ['Received', 'Received'],
+        ['Accepted', 'Accepted'],
+        ['Partially Accepted', 'Partially Accepted'],
+        ['On Hold', 'On Hold'],
+        ['Rework', 'Rework'],
+        ['Completed', 'Completed'],
+        ['Closed', 'Closed'],
+        ['Held', 'Held'],
+        ['Cancelled', 'Cancelled'],
+      ],
+    },
     { key: 'projectNumber', label: 'Project Number', type: 'project', clearable: true },
   ],
   more: [
     [
       'held',
       'Mark held',
-      'Planned',
+      'Planned,Draft,Open,Active,Submitted,Pending,Pending Approval,Pending Inspection,In Progress,Ready,Released,Approved,Dispatched,In Transit,Delivered,Received,Accepted,Partially Accepted,On Hold,Rework,Completed,Closed',
       false,
       { ask: [{ key: 'outcome', label: 'Outcome', type: 'text' }] },
     ],
@@ -303,6 +337,7 @@ export const SQ_CFG: DocCfg = {
   ],
   header: [
     { key: 'customerId', label: 'Customer', type: 'customer', required: true },
+    { key: 'quoteDate', label: 'Quotation date', type: 'date' },
     { key: 'validUntil', label: 'Valid until', type: 'date' },
     { key: 'formatCode', label: 'Quotation format', type: 'text' },
     {
@@ -345,6 +380,7 @@ export const SQ_CFG: DocCfg = {
       {
         body: { decision: 'ACCEPTED' },
         need: 'edit',
+        onlyIf: undecided,
         ask: [{ key: 'customerRef', label: 'Customer’s reference', type: 'text' }],
       },
     ],
@@ -353,7 +389,7 @@ export const SQ_CFG: DocCfg = {
       'Customer rejected',
       'Approved',
       false,
-      { body: { decision: 'REJECTED' }, need: 'edit' },
+      { body: { decision: 'REJECTED' }, need: 'edit', onlyIf: undecided },
     ],
     [
       'to-order',
@@ -381,11 +417,15 @@ export const SO_CFG: DocCfg = {
     { key: 'customerId', label: 'Customer', type: 'customer', required: true },
     { key: 'customerPoNo', label: 'Customer PO number', type: 'text' },
     { key: 'customerPoDate', label: 'Customer PO date', type: 'date' },
+    { key: 'orderDate', label: 'Order date', type: 'date' },
     { key: 'deliveryDate', label: 'Deliver by', type: 'date' },
     { key: 'shipTo', label: 'Ship to', type: 'text' },
+    { key: 'paymentTermId', label: 'Payment terms', type: 'ref', refPath: '/payment-terms', refLabel: ['code', 'name'], clearable: true },
+    { key: 'notes', label: 'Notes', type: 'text' },
   ],
   lines: [
     { key: 'itemId', label: 'Item', type: 'item', required: true },
+    { key: 'description', label: 'Description', type: 'text' },
     { key: 'partNo', label: 'Part no.', type: 'text' },
     { key: 'colour', label: 'Colour / powder', type: 'text' },
     { key: 'qty', label: 'Quantity', type: 'number', required: true },

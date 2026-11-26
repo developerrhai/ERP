@@ -187,7 +187,7 @@ export function ImportDrawer({
           <button type="button" className="btn" onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className="btn primary" disabled={!sheet} onClick={doImport}>
+          <button type="button" className="btn primary" disabled={!sheet} title={sheet ? undefined : 'Choose a file and press Load & Preview first.'} onClick={doImport}>
             Import &amp; Replace Duplicates
           </button>
         </footer>

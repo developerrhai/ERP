@@ -571,6 +571,7 @@ th {
 }
 .toast {
   position: fixed;
+  pointer-events: none;
   right: 15px;
   bottom: 15px;
   background: #0f172a;
@@ -1964,7 +1965,24 @@ fieldset.field[aria-invalid='true'] .unit-check-list {
 }
 .doc-upload label {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
+  min-width: 0;
+  font-size: 12px;
+}
+/* the boxes stay inside their cell on narrow screens and look like the other form fields */
+.doc-upload input,
+.doc-upload select {
+  width: 100%;
+  min-width: 0;
+}
+.doc-upload input[type='text'],
+.doc-upload select {
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--card);
+  color: var(--text);
   font-size: 12px;
 }
 .doc-record-list {
@@ -2358,6 +2376,50 @@ tr.set-start td {
 }
 .field {
   position: relative;
+}
+/* a label that wraps its control: caption above, control full width (like every other field) */
+.modal-body .field > label:has(> input:not([type='checkbox']):not([type='radio']), > select, > textarea) {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+/* a table inside a record side panel fits the panel: text wraps instead of being cut off at the right */
+.drawer table {
+  width: 100%;
+  min-width: 0;
+}
+.drawer table th,
+.drawer table td {
+  white-space: normal;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+/* entry tables inside pop-ups: the boxes look like every other field and the columns fit the pop-up better */
+.modal-body table input:not([type='checkbox']):not([type='radio']),
+.modal-body table select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  background: #fff;
+  min-width: 70px;
+  max-width: 100%;
+}
+.modal-body table:has(input) th,
+.modal-body table:has(input) td {
+  padding-left: 7px;
+  padding-right: 7px;
+}
+.screen-record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+.field > .pick-list {
+  top: 100%;
+  left: 0;
+  min-width: 260px;
 }
 button.link {
   background: none;
@@ -3302,3 +3364,81 @@ select.is-invalid {
   justify-content: flex-end;
   margin: 0 0 8px;
 }
+
+/* a table with no tick-box column (audit entries, approval requests): its first two columns are ordinary data, not the
+   narrow pinned tick-box and number of a register */
+.register-table.plain th:first-child,
+.register-table.plain td:first-child,
+.register-table.plain th:nth-child(2),
+.register-table.plain td:nth-child(2) {
+  position: static;
+  width: auto;
+  min-width: 0;
+  box-shadow: none;
+}
+.register-table.plain td:first-child {
+  white-space: nowrap;
+}
+
+/* Move Forward: where the record is now */
+.mf-status {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 13px;
+}
+.mf-status.wait {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #854d0e;
+}
+
+/* form feedback on screens that build their own add / edit dialogs */
+.form-error {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 700;
+}
+.modal-body .field .field-error {
+  color: #991b1b;
+  font-size: 11.5px;
+}
+.modal-body .field input[aria-invalid='true'] {
+  border-color: #dc2626;
+}
+.register-table td.row-actions .ws-record-actions {
+  justify-content: flex-start;
+}
+form.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+form.filters input, form.filters select { border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; background: #fff; font: inherit; font-size: 12px; }
+form.filters input[type='search'] { min-width: 240px; }
+form.filters .screen-add { margin-left: auto; }
+.toolbar input.qc-search { min-width: 280px; }
+
+/* a table's action cell stays a table cell (a flex cell breaks the row lines); its buttons wrap inside it */
+td.row-actions { display: table-cell; white-space: normal; }
+td.row-actions > .btn,
+td.row-actions > a.btn { margin: 2px 4px 2px 0; }
+/* record view dialogs: label over value, one card each */
+.record-cards { margin: 0 0 12px; }
+.record-cards dt { color: var(--muted); font-size: 11px; }
+.record-cards dd { margin: 2px 0 0; font-weight: 700; font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .record-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.recordbar input[type="search"] { min-width: 280px; border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; background: var(--card); font: inherit; font-size: 12px; }
+
+/* a wide table scrolls inside its card; it never widens the whole page (phones) */
+.dash-page { grid-template-columns: minmax(0, 1fr); }
+.dash-page > * { min-width: 0; }
+.dash-page > .table-wrap { overflow-x: auto; }
+[aria-label='Email Document'] input[aria-invalid='true'] { border-color: #dc2626 !important; box-shadow: 0 0 0 3px #fecaca; }
+/* the small work-queue table of a department page fits its card, so its Open Details button is always in view */
+table.v39-compact-table { min-width: 0; }
+table.v39-compact-table td, table.v39-compact-table th { white-space: normal; }

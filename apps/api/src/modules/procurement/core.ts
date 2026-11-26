@@ -469,6 +469,7 @@ export async function pageRecipients(tx: Db, pageId: string): Promise<string[]> 
 
 /** Active users whose primary or extra department is any of the given department names, for cross-department alerts. */
 export async function departmentRecipients(tx: Db, departments: readonly string[]): Promise<string[]> {
+  // unpaginated: the active users of the named departments, all of whom must get the alert
   const rows = await tx.user.findMany({
     where: {
       status: 'ACTIVE',

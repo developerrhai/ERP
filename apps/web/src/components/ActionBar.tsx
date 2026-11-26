@@ -206,6 +206,9 @@ function WithNavigate(props: Props) {
   return <Bar {...props} go={(to) => (typeof to === 'number' ? navigate(to) : navigate(to))} />;
 }
 
+/** Pages that are views of another page's records: their record dialogs use that page's document type. */
+const DOC_TYPE_OF: Record<string, string> = { 'master-products': 'inv-items', 'master-materials': 'inv-items' };
+
 function Bar({
   actions,
   record = null,
@@ -221,7 +224,8 @@ function Bar({
   const [moving, setMoving] = useState(false);
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<{ id: string; number: string } | null>(null);
-  const [emailing, setEmailing] = useState(false);
+  /** The record the email dialog is open for ('' = closed). */
+  const [emailing, setEmailing] = useState('');
   const [importing, setImporting] = useState(false);
   const [syncedRecord, setSyncedRecord] = useState<{ id: string; docNo: string } | null>(null);
 
@@ -277,6 +281,7 @@ function Bar({
   const effRecordId = recordId || syncedRecord?.id || null;
   const effDocNo = docNo || syncedRecord?.docNo || undefined;
   const haveRecord = !!pageId && !!effRecordId;
+  const docType = pageId ? (DOC_TYPE_OF[pageId] ?? pageId) : '';
   const effectiveRecord: RecordActions | null =
     record !== null
       ? record
@@ -286,6 +291,13 @@ function Bar({
             blocked: {},
           }
         : null;
+
+  /** The record a page's record picker shows, for the buttons that need one when none is ticked. */
+  function shownRecord(): { id: string; docNo: string } | null {
+    const detail: { pageId: string | undefined; record: { id: string; docNo: string } | null } = { pageId, record: null };
+    window.dispatchEvent(new CustomEvent('v40-shown-record', { detail }));
+    return detail.record;
+  }
 
   async function runDefault(label: string): Promise<void> {
     try {
@@ -299,7 +311,7 @@ function Bar({
           // no page listened: press the page's own "+ New" button, if it has one (TC-21: it used to answer with a toast only)
           const own = findAddButton(document.getElementById('main') ?? document.body);
           if (own) own.click();
-          else toast("This screen's own + New button starts a new record here.");
+          else toast('Nothing is typed in on this screen: its records are made from other documents.');
         }
       }
       else if (label === '⇧ Import' || label === 'Import') {
@@ -318,12 +330,16 @@ function Bar({
         if (haveRecord && effRecordId) setMoving(true);
         else setPicking(true);
       } else if (label === 'Send Email') {
-        if (haveRecord && effRecordId) setEmailing(true);
+        if (haveRecord && effRecordId) setEmailing(effRecordId);
         else toast('Select a record first, then press Send Email.');
       } else if (label === '⇩ Export' && !haveRecord) await runDefault('Excel');
       else if ((label === 'Excel' || label === '⇩ Export') && haveRecord && effRecordId)
         saveFile(await docsMailApi.print(pageId ?? '', effRecordId, 'excel'), `${effDocNo ?? 'record'}.xlsx`);
       else if (label === 'Excel') {
+        // a register that can export all its records does so; the rows drawn on screen are only the fallback
+        const detail = { pageId, handled: false };
+        window.dispatchEvent(new CustomEvent('v40-export-register', { detail }));
+        if (detail.handled) return;
         const table = document.querySelector<HTMLTableElement>('.main table');
         if (!table) return void toast('Nothing to export: no table on this page.');
         saveFile(
@@ -334,13 +350,15 @@ function Bar({
           `${pageId ?? 'register'}.csv`,
         );
       } else if (label === 'Industry PDF' || label === 'Word') {
-        const rowId = effRecordId || document.querySelector<HTMLTableRowElement>('table tbody tr')?.getAttribute('data-id');
+        const shownRow = effRecordId ? null : shownRecord();
+        const rowId = effRecordId || shownRow?.id || document.querySelector<HTMLTableRowElement>('table tbody tr')?.getAttribute('data-id');
+        const rowNo = effDocNo ?? shownRow?.docNo;
         const kind: PrintKind = label === 'Word' ? 'word' : 'standard';
         if (rowId && pageId) {
           try {
             saveFile(
               await docsMailApi.print(pageId ?? '', rowId, kind),
-              `${effDocNo ?? 'document'}.${label === 'Word' ? 'docx' : 'pdf'}`,
+              `${rowNo ?? 'document'}.${label === 'Word' ? 'docx' : 'pdf'}`,
             );
             return;
           } catch {
@@ -404,7 +422,10 @@ function Bar({
               onClick={() => {
                 if (needsPick || reason) {
                   if (b.label === 'Send Email') {
-                    setEmailing(true);
+                    const shown = effRecordId ? null : shownRecord();
+                    const target = effRecordId || shown?.id || '';
+                    if (target) setEmailing(target);
+                    else toast(shown ? 'There is no record on this tab to email yet.' : 'Tick or open a record first, then press Send Email.');
                     return;
                   }
                   if (MOVE_LABELS.has(b.label) && pageId) {
@@ -436,7 +457,7 @@ function Bar({
       ) : null}
       {picking && pageId ? (
         <PickDocumentDialog
-          pageId={pageId}
+          pageId={docType}
           onClose={() => setPicking(false)}
           onPick={(r) => {
             setPicking(false);
@@ -444,13 +465,13 @@ function Bar({
           }}
         />
       ) : null}
-      {picked && pageId ? <MoveForwardDialog docType={pageId} docId={picked.id} docNo={picked.number} onClose={() => setPicked(null)} onMoved={() => setPicked(null)} /> : null}
+      {picked && pageId ? <MoveForwardDialog docType={docType} docId={picked.id} docNo={picked.number} onClose={() => setPicked(null)} onMoved={() => setPicked(null)} /> : null}
       {emailing && pageId ? (
-        <EmailDocDialog docType={pageId} docId={effRecordId || pageId} onClose={() => setEmailing(false)} />
+        <EmailDocDialog docType={docType} docId={emailing} onClose={() => setEmailing('')} />
       ) : null}
       {moving && pageId && effRecordId ? (
         <MoveForwardDialog
-          docType={pageId}
+          docType={docType}
           docId={effRecordId}
           docNo={effDocNo}
           onClose={() => setMoving(false)}

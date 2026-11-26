@@ -7,6 +7,7 @@ import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { ScreenFormModal } from './ScreenFormModal';
 import { MoveForwardDialog } from '../../components/MoveForward';
+import { RecordActions as DocButtons } from '../../components/workspace/RecordActions';
 import { ShelfBinsPanel } from './ShelfBinsPanel';
 import { DetailSections } from './DetailSections';
 import { ApiError } from '../../lib/api';
@@ -31,6 +32,9 @@ const NO_FORM: Readonly<Record<string, string>> = {
   Delete: NOT_BUILT,
   'Submit Approval': NOT_BUILT,
 };
+
+/** Screens whose records have a print layout, so a row offers Email / PDF / Word / Excel / Docs beside Move Forward. */
+const PRINTABLE: ReadonlySet<string> = new Set(['qms-5why']);
 
 export function formatCell(v: unknown, type: ColType): string {
   // only plain scalars are shown; anything else is "—" so a made-up value never reaches the screen
@@ -91,6 +95,7 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
   const [movingRow, setMovingRow] = useState<ScreenRow | null>(null);
   const [formMode, setFormMode] = useState<{ editId?: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState<ScreenRow | null>(null);
   const toast = useToast();
   const seq = useRef(0);
   const cursor = stack[stack.length - 1] ?? null;
@@ -144,18 +149,60 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
     else return false;
     return true;
   }
-  const docNoOf = (r?: ScreenRow | null): string => String(r?.code ?? r?.number ?? r?.id ?? '');
+  // the record's code or number; else the first column (a screen may call it "case no"), never the stored id
+  const docNoOf = (r?: ScreenRow | null): string =>
+    String((r?.code ?? r?.number ?? (r && cols[0] ? r[cols[0].key] : null) ?? r?.id ?? '') as string);
+
+  /** View / Edit / Delete of one row (pages with an entry form of their own). */
+  const ownButtons = (r: ScreenRow) => (
+    <>
+      {formDef ? (
+        <>
+          <button type="button" className="btn sm" aria-label={`View ${docNoOf(r)}`} onClick={() => void openRow(r)}>
+            View
+          </button>
+          {actions.edit ? (
+            <button
+              type="button"
+              className="btn sm"
+              aria-label={`Edit ${docNoOf(r)}`}
+              onClick={() => (formDef.noEdit ? toast(formDef.noEdit) : setFormMode({ editId: r.id }))}
+            >
+              Edit
+            </button>
+          ) : null}
+          {actions.delete ? (
+            <button
+              type="button"
+              className="btn sm danger"
+              aria-label={`Delete ${docNoOf(r)}`}
+              onClick={() => {
+                if (formDef.noDelete) return toast(formDef.noDelete);
+                setDeleting(r);
+                setConfirmDelete(true);
+              }}
+            >
+              Delete
+            </button>
+          ) : null}
+        </>
+      ) : null}
+    </>
+  );
 
   async function doDelete() {
-    if (!open) return;
+    const target = deleting ?? open?.row;
+    if (!target) return;
     try {
-      await deleteRow(pageId, open.row.id);
+      await deleteRow(pageId, target.id);
       toast('Deleted.');
       setConfirmDelete(false);
+      setDeleting(null);
       setOpen(null);
       await load();
     } catch (e) {
       setConfirmDelete(false);
+      setDeleting(null);
       setError(e instanceof ApiError ? e.message : 'Could not delete.');
     }
   }
@@ -217,6 +264,11 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
         <button type="submit" className="btn sm">
           Search
         </button>
+        {formDef && actions.add ? (
+          <button type="button" className="btn primary screen-add" onClick={() => setFormMode({})}>
+            {`＋ Add ${String(meta?.things ?? 'record').replace(/s$/, '')}`}
+          </button>
+        ) : null}
       </form>
       <div className="card table-wrap">
         <table>
@@ -249,19 +301,25 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
                       <Cell v={r[c.key]} col={c} />
                     </td>
                   ))}
-                  <td>
-                    <button
-                      type="button"
-                      className="btn sm primary"
-                      aria-label={`Move Forward ${docNoOf(r) ?? ''}`.trim()}
-                      title="Move this record to the next department"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMovingRow(r);
-                      }}
-                    >
-                      Move Forward
-                    </button>
+                  <td className="row-actions" onClick={(e) => e.stopPropagation()}>
+                    {PRINTABLE.has(pageId) ? (
+                      <DocButtons docType={pageId} id={r.id} number={docNoOf(r)} onChanged={() => void load()}>
+                        {ownButtons(r)}
+                      </DocButtons>
+                    ) : (
+                      <>
+                        {ownButtons(r)}{' '}
+                        <button
+                          type="button"
+                          className="btn sm primary"
+                          aria-label={`Move Forward ${docNoOf(r) ?? ''}`.trim()}
+                          title="Move this record to the next department"
+                          onClick={() => setMovingRow(r)}
+                        >
+                          Move Forward
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))
@@ -279,6 +337,7 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
             type="button"
             className="v8-page"
             disabled={stack.length <= 1 || loading}
+            title={stack.length <= 1 ? 'This is the first page.' : undefined}
             onClick={() => setStack((s) => s.slice(0, -1))}
           >
             Previous
@@ -287,6 +346,7 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
             type="button"
             className="v8-page"
             disabled={!meta?.hasMore || loading}
+            title={meta?.hasMore ? undefined : 'This is the last page.'}
             onClick={() => {
               const next = meta?.nextCursor;
               if (next) setStack((s) => [...s, next]);
@@ -298,7 +358,18 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
       </nav>
       {open ? (
         <Drawer title={title} onClose={() => setOpen(null)}>
-          {open.fields && open.values ? (
+          {open.fields && open.values && PRINTABLE.has(pageId) ? (
+            <div className="drawer-grid">
+              {open.fields.map((f) => (
+                <div className="v8-mini" key={f.key}>
+                  <small>{f.label}</small>
+                  <b>
+                    <Cell v={open.values?.[f.key]} col={f} />
+                  </b>
+                </div>
+              ))}
+            </div>
+          ) : open.fields && open.values ? (
             <dl className="kv">
               {open.fields.map((f) => (
                 <div key={f.key}>
@@ -314,7 +385,19 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
           )}
           <DetailSections pageId={pageId} id={open.row.id} />
           {pageId === 'wms-shelves' ? <ShelfBinsPanel shelfId={open.row.id} canEdit={actions.edit} /> : null}
-          <ActionBar actions={actions} record={open.rec ?? null} blocked={blocked} onAction={onAction} pageId={pageId} recordId={open.row.id} docNo={docNoOf(open.row)} />
+          {PRINTABLE.has(pageId) ? (
+            <div className="actions screen-record-actions">
+              <DocButtons docType={pageId} id={open.row.id} number={docNoOf(open.row)} onChanged={() => void load()}>
+                {formDef && actions.edit ? (
+                  <button type="button" className="btn sm" onClick={() => (formDef.noEdit ? toast(formDef.noEdit) : onAction('Edit'))}>
+                    Edit
+                  </button>
+                ) : null}
+              </DocButtons>
+            </div>
+          ) : (
+            <ActionBar actions={actions} record={open.rec ?? null} blocked={blocked} onAction={onAction} pageId={pageId} recordId={open.row.id} docNo={docNoOf(open.row)} />
+          )}
         </Drawer>
       ) : null}
       {formMode && formDef ? (
@@ -331,15 +414,25 @@ export function ScreenPage({ pageId, title, sub, actions }: Props) {
           }}
         />
       ) : null}
-      {confirmDelete && open ? (
+      {confirmDelete && (deleting ?? open) ? (
         <Modal
           title="Delete this record?"
-          sub={formatCell(open.row[cols[0]?.key ?? 'id'], 'text')}
+          sub={formatCell((deleting ?? open?.row)?.[cols[0]?.key ?? 'id'], 'text')}
           size="sm"
-          onClose={() => setConfirmDelete(false)}
+          onClose={() => {
+            setConfirmDelete(false);
+            setDeleting(null);
+          }}
           footer={
             <>
-              <button type="button" className="btn" onClick={() => setConfirmDelete(false)}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setConfirmDelete(false);
+                  setDeleting(null);
+                }}
+              >
                 Cancel
               </button>
               <button type="button" className="btn danger" onClick={() => void doDelete()}>

@@ -28,6 +28,8 @@ export type FieldType =
   | 'longtext';
 
 export interface FieldMeta {
+  /** false = the server cannot order by this column (a computed one): the heading is plain text. */
+  sortable?: boolean;
   key: string;
   label: string;
   type: FieldType;
@@ -160,6 +162,8 @@ export interface PageSchema {
 
 export interface RecordRow {
   id: string;
+  /** The uuid Documents / Print / Move Forward use when `id` is not one (Stock Balance). */
+  recordId?: string;
   code: string;
   status: string;
   unitId: string | null;
@@ -374,7 +378,9 @@ export async function listPageAudit(
   page: number,
   size: number,
 ): Promise<{ rows: AuditLog[]; meta: PageMeta }> {
-  const res = await request<AuditLogDto[]>(`${base(pageId)}/audit?page=${page}&size=${size}`);
+  // the Lead Source master has its own table, so its audit rows come from its own route
+  const path = pageId === 'crm-sources' ? '/crm/sources/audit' : `${base(pageId)}/audit`;
+  const res = await request<AuditLogDto[]>(`${path}?page=${page}&size=${size}`);
   const rows = res.data.map(toAuditLog);
   return { rows, meta: res.meta ?? { page, size, total: rows.length } };
 }

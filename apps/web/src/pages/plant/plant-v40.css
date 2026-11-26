@@ -17,3 +17,15 @@
   .pv40-toolbar > * { flex: 1 1 100%; }
   .pv40-count { margin-left: 0; }
 }
+
+/* the Add button sits at the top right of the register; row buttons wrap into two or three tidy lines */
+.pv40-head-add { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.pv40-table td.row-actions .pv40-wrap { display: flex; flex-wrap: wrap; gap: 4px; width: 252px; white-space: normal; }
+.pv40-table td.row-actions .pv40-wrap .btn.sm { padding: 4px 7px; font-size: 11px; }
+/* the buttons stay in sight when a wide register scrolls sideways */
+.pv40-table th.row-actions-head, .pv40-table td.row-actions { position: sticky; right: 0; z-index: 1; background: #fff; box-shadow: -8px 0 8px -8px rgba(15, 23, 42, 0.25); }
+.pv40-table th.row-actions-head { background: var(--card2, #f8fafc); z-index: 4; }
+.pv40 .btn.sm.off, .modal .btn.sm.off { color: var(--muted, #667085); background: var(--card2, #f8fafc); border-color: var(--line); }
+.pv40-table td { vertical-align: middle; }
+@media (max-width: 600px) { .pv40-table td.row-actions .pv40-wrap { width: 230px; } .pv40-table td.row-actions { position: static; box-shadow: none; } }
+@media (max-width: 600px) { .pv40-table th.row-actions-head { position: static; box-shadow: none; } }

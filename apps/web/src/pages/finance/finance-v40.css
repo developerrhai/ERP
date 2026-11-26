@@ -104,3 +104,17 @@
 .fv40-legacy-bar {
   justify-content: flex-start;
 }
+
+.fv40-head-add { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+/* a button that explains itself on click looks quiet, not broken */
+.fv40 .btn.sm.off { color: var(--muted, #667); background: var(--card2, #f8fafc); }
+
+/* row buttons wrap into tidy lines and stay in sight when a wide register scrolls sideways */
+.fv40-table td.row-actions .fv40-wrap { display: flex; flex-wrap: wrap; gap: 4px; width: 252px; white-space: normal; }
+.fv40-table td.row-actions .fv40-wrap .btn.sm { padding: 4px 7px; font-size: 11px; }
+.fv40-table th.row-actions-head, .fv40-table td.row-actions { position: sticky; right: 0; z-index: 1; background: #fff; box-shadow: -8px 0 8px -8px rgba(15, 23, 42, 0.25); }
+.fv40-table th.row-actions-head { background: var(--card2, #f8fafc); z-index: 4; }
+.fv40-toolbar select { max-width: 280px; }
+.modal-foot .btn.sm.off { color: var(--muted, #667085); background: var(--card2, #f8fafc); }
+@media (max-width: 600px) { .fv40-table td.row-actions .fv40-wrap { width: 230px; } .fv40-table td.row-actions { position: static; box-shadow: none; } }
+@media (max-width: 600px) { .fv40-table th.row-actions-head { position: static; box-shadow: none; } }

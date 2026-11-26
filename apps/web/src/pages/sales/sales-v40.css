@@ -7,7 +7,7 @@
 .sv40-bulk span { font-size: 12px; margin-right: 6px; }
 .sv40-table th, .sv40-table td { white-space: nowrap; }
 .sv40-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.sv40-table .row-actions { display: flex; gap: 4px; flex-wrap: nowrap; }
+.sv40-table td.row-actions { white-space: normal; }
 .sv40-table tr.selected td { background: var(--row-selected, #eef3ff); }
 .sv40-pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
 .sv40-panel h3 { margin: 12px 0 6px; font-size: 14px; }
@@ -28,3 +28,26 @@
 .sv40-card { border: 1px solid var(--line, #dde); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
 .sv40-card.on { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
 .sv40-checks { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+
+/* rows with many buttons (Lead Sources): two lines of buttons instead of one very wide cell */
+.sv40-table .row-actions .sv40-wrap { display: flex; flex-wrap: wrap; gap: 4px; width: 270px; white-space: normal; }
+.sv40-table .row-actions .sv40-wrap .btn.sm { padding: 4px 7px; font-size: 11px; }
+/* the buttons stay in sight when a wide register scrolls sideways */
+.sv40-table th.row-actions-head, .sv40-table td.row-actions { position: sticky; right: 0; z-index: 2; background: #fff; box-shadow: -8px 0 8px -8px rgba(15, 23, 42, 0.25); }
+.sv40-table th.row-actions-head { background: var(--card2, #f8fafc); z-index: 4; }
+@media (max-width: 600px) { .sv40-table .row-actions .sv40-wrap { width: 230px; } .sv40-table td.row-actions { position: static; box-shadow: none; } }
+.sv40-table td { vertical-align: middle; }
+
+/* Meetings calendar and Customer 360 workspace: two cards side by side, above the detailed table */
+.sv40-activity,
+.sv40-c360-split { margin-bottom: 14px; }
+.sv40-c360-split { display: grid; grid-template-columns: minmax(0, 2fr) minmax(250px, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 900px) { .sv40-c360-split { grid-template-columns: minmax(0, 1fr); } }
+.sv40-activity > .sv40-panel,
+.sv40-c360-split > .sv40-panel { border: 1px solid var(--line, #dde); border-radius: 14px; background: var(--card, #fff); box-shadow: var(--shadow); padding: 4px 14px 14px; min-width: 0; }
+.sv40-activity .sv40-timeline { max-height: 360px; overflow: auto; }
+.sv40-checks li { display: flex; gap: 6px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line, #eef); font-size: 12px; }
+.sv40-checks li small { margin-left: auto; }
+@media (max-width: 600px) { .sv40-table th.row-actions-head { position: static; box-shadow: none; } }
+
+.sv40-timeline li .pill, .sv40-timeline li [class*="pill"], .sv40-timeline li .rag { align-self: flex-start; }

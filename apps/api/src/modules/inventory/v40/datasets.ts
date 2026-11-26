@@ -37,6 +37,8 @@ export interface DsQuery {
   variant?: string | undefined;
   from?: string | undefined;
   to?: string | undefined;
+  /** Department filter: only these record ids, or every id except these. */
+  held?: { only?: string[]; except?: string[] } | undefined;
   page: number;
   size: number;
 }
@@ -94,6 +96,8 @@ async function items(caller: Caller, q: DsQuery): Promise<DsResult> {
   const where: Prisma.ItemWhereInput = {
     deletedAt: null,
     ...(status ? { status } : {}),
+    ...(q.held?.only ? { id: { in: q.held.only } } : {}),
+    ...(q.held?.except?.length ? { id: { notIn: q.held.except } } : {}),
     ...(like
       ? {
           OR: [
@@ -144,8 +148,8 @@ async function items(caller: Caller, q: DsQuery): Promise<DsResult> {
 // ---------------------------------------------------------------------------------------------
 // Product Master / Raw Material Master (V40 ERP Process Control): the item master, split by item type
 // ---------------------------------------------------------------------------------------------
-const PRODUCT_TYPES = ['Finished Good', 'Semi-Finished'];
-const MATERIAL_TYPES = ['Raw Material', 'Consumable', 'Packing Material', 'Spare Part'];
+export const PRODUCT_TYPES = ['Finished Good', 'Semi-Finished'];
+export const MATERIAL_TYPES = ['Raw Material', 'Consumable', 'Packing Material', 'Spare Part'];
 
 async function itemMaster(caller: Caller, q: DsQuery, pageId: string): Promise<DsResult> {
   const types = pageId === 'master-products' ? PRODUCT_TYPES : MATERIAL_TYPES;
@@ -154,6 +158,8 @@ async function itemMaster(caller: Caller, q: DsQuery, pageId: string): Promise<D
   if (like) conds.push(Prisma.sql`(i.code ILIKE ${like} OR i.name ILIKE ${like})`);
   if (q.status) conds.push(Prisma.sql`i.status::text = ${q.status === 'Active' ? 'ACTIVE' : 'INACTIVE'}`);
   if (q.variant === 'bom') conds.push(Prisma.sql`EXISTS (SELECT 1 FROM mfg_boms b WHERE b.item_id = i.id AND b.deleted_at IS NULL)`);
+  if (q.held?.only) conds.push(Prisma.sql`i.id = ANY(${q.held.only}::uuid[])`);
+  if (q.held?.except?.length) conds.push(Prisma.sql`NOT (i.id = ANY(${q.held.except}::uuid[]))`);
   const rows = await prisma.$queryRaw<
     {
       id: string;
@@ -172,6 +178,8 @@ async function itemMaster(caller: Caller, q: DsQuery, pageId: string): Promise<D
       routing: string | null;
       vendor: string | null;
       lead_days: number | null;
+      part_number: string | null;
+      project: string | null;
       total: number;
     }[]
   >`
@@ -180,9 +188,11 @@ async function itemMaster(caller: Caller, q: DsQuery, pageId: string): Promise<D
       (SELECT g.igst_pct::text FROM hsn_sac_rates hr JOIN gst_rates g ON g.id = hr.gst_rate_id
         WHERE hr.hsn_id = i.hsn_id AND hr.effective_from <= CURRENT_DATE AND (hr.effective_to IS NULL OR hr.effective_to >= CURRENT_DATE)
         ORDER BY hr.effective_from DESC LIMIT 1) AS tax_pct,
-      (SELECT sum(p.min_qty)::text FROM reorder_policies p WHERE p.item_id = i.id AND p.status = 'Active') AS min_qty,
-      (SELECT b.number FROM mfg_boms b WHERE b.item_id = i.id AND b.deleted_at IS NULL ORDER BY b.is_default DESC, b.version_no DESC LIMIT 1) AS bom,
-      (SELECT r.number FROM mfg_routings r WHERE r.item_id = i.id AND r.deleted_at IS NULL ORDER BY r.version_no DESC LIMIT 1) AS routing,
+      COALESCE((SELECT sum(p.min_qty) FROM reorder_policies p WHERE p.item_id = i.id AND p.status = 'Active'), i.min_stock)::text AS min_qty,
+      COALESCE(i.default_bom_ref, (SELECT b.number FROM mfg_boms b WHERE b.item_id = i.id AND b.deleted_at IS NULL ORDER BY b.is_default DESC, b.version_no DESC LIMIT 1)) AS bom,
+      COALESCE(i.default_routing_ref, (SELECT r.number FROM mfg_routings r WHERE r.item_id = i.id AND r.deleted_at IS NULL ORDER BY r.version_no DESC LIMIT 1)) AS routing,
+      i.part_number,
+      (SELECT p.code FROM projects p WHERE p.id = i.project_id) AS project,
       (SELECT s.name FROM supplier_items si JOIN suppliers s ON s.id = si.supplier_id WHERE si.item_id = i.id ORDER BY si.updated_at DESC LIMIT 1) AS vendor,
       (SELECT si.lead_days FROM supplier_items si WHERE si.item_id = i.id ORDER BY si.updated_at DESC LIMIT 1) AS lead_days,
       count(*) OVER()::int AS total
@@ -222,6 +232,8 @@ async function itemMaster(caller: Caller, q: DsQuery, pageId: string): Promise<D
           defaultRouting: r.routing,
           preferredVendor: r.vendor,
           leadTimeDays: r.lead_days,
+          partNumber: r.part_number,
+          projectNumber: r.project,
           currentStock: s ? s.onHand : null,
           status,
           ...allocCells(r.code, s, s?.location ?? null),
@@ -243,6 +255,7 @@ async function stockPair(caller: Caller, q: DsQuery): Promise<DsResult> {
       ...(q.q ? { q: q.q } : {}),
       ...(q.status ? { status: q.status } : {}),
       ...(q.variant === 'low' ? { belowReorder: true } : {}),
+      ...(q.held ? { held: q.held } : {}),
     },
     order,
     { offset: (q.page - 1) * q.size, limit: q.size },

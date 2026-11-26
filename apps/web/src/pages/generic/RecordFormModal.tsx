@@ -40,6 +40,8 @@ interface Props {
   schema: PageSchema;
   /** The record being edited; absent for Add. */
   row?: RecordRow;
+  /** Add only: values the form starts with (the item type a Product / Material Master adds). */
+  defaults?: Record<string, unknown>;
   /** Context unit, used to narrow warehouse lookups. */
   unitId: string | null;
   onClose: () => void;
@@ -93,10 +95,19 @@ function isDestination(f: FieldMeta): boolean {
 
 const AFFIX: Record<string, string> = { money: '₹', pct: '%' };
 
-export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSaved }: Props) {
+export function RecordFormModal({ schema, row: initialRow, defaults, unitId, onClose, onSaved }: Props) {
   const [row, setRow] = useState<RecordRow | undefined>(initialRow);
   const editable = useMemo(() => schema.fields.filter((f) => !systemManaged(f)), [schema.fields]);
-  const initial = useMemo(() => toFormValues(schema.fields, row), [schema.fields, row]);
+  const startWith = useRef(defaults);
+  const initial = useMemo(
+    () => ({
+      ...toFormValues(schema.fields, row),
+      // a new item starts Active unless the person picks otherwise
+      ...(!row && schema.fields.some((x) => x.key === 'recordStatus') ? { recordStatus: 'Active' } : {}),
+      ...(row ? {} : startWith.current),
+    }),
+    [schema.fields, row],
+  );
   const [values, setValues] = useState<Record<string, unknown>>(initial);
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
@@ -383,6 +394,38 @@ export function RecordFormModal({ schema, row: initialRow, unitId, onClose, onSa
                 />
               );
             default: {
+              // "Project Number" can show the whole history of that project before the record is saved
+              if (f.key === 'projectNumber') {
+                return (
+                  <div className="ws-inline">
+                    <input
+                      {...c}
+                      type="text"
+                      autoComplete="off"
+                      maxLength={f.maxLength}
+                      placeholder="Project Number"
+                      title="The same number links the record across every department"
+                      value={text}
+                      onChange={(e) => set(f.key, e.target.value.toUpperCase())}
+                    />
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() =>
+                        window.open(
+                          text.trim()
+                            ? `/m/project-global-history?project=${encodeURIComponent(text.trim())}`
+                            : '/m/project-global-history',
+                          '_blank',
+                          'noopener',
+                        )
+                      }
+                    >
+                      Load Project History
+                    </button>
+                  </div>
+                );
+              }
               const inputEl = (
                 <input
                   {...c}

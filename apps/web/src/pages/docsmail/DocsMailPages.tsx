@@ -219,61 +219,6 @@ export function MailAutomationPage() {
   );
 }
 
-// ---------------------------------------------------------------------------------------------- Quality Certificates
-export function CertificatesPage() {
-  const toast = useToast();
-  const [q, setQ] = useState('');
-  const list = useLoad(() => docsMailApi.certificates(q || undefined), [q]);
-  const [adding, setAdding] = useState(false);
-  const [f, setF] = useState({ partName: '', partCode: '', jobCardNo: '', sampleQty: '', acceptedQty: '', rejectedQty: '', drawingRevision: '', inspector: '', result: 'Pass', ncrNo: '', remarks: '' });
-  async function run(fn: () => Promise<unknown>, ok: string) {
-    try {
-      await fn();
-      toast(ok);
-      list.reload();
-    } catch (e) {
-      toast(errText(e));
-    }
-  }
-  return (
-    <div className="dash-page">
-      <div className="page-head"><div><h1>Quality Certificates</h1><p className="muted">A certificate is released by a different person from the one who made it.</p></div><button type="button" className="btn primary" onClick={() => setAdding(true)}>＋ Add</button></div>
-      <label>Search<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Number, part or job card" /></label>
-      <table className="register-table">
-        <thead><tr><th>Number</th><th>Part</th><th>Job card</th><th>Sample / Acc / Rej</th><th>Result</th><th>Release</th><th /></tr></thead>
-        <tbody>
-          {(list.data ?? []).map((c) => (
-            <tr key={c.id}>
-              <td>{c.number}</td><td>{c.part_code ? `${c.part_code} · ` : ''}{c.part_name}</td><td>{c.job_card_no ?? '—'}</td><td>{c.sample_qty} / {c.accepted_qty} / {c.rejected_qty}</td>
-              <td><span className={`rag ${c.result === 'Pass' ? 'rag-green' : c.result === 'Fail' ? 'rag-red' : 'rag-amber'}`}>{c.result}</span></td><td>{c.quality_approval}</td>
-              <td className="row-actions">
-                {c.quality_approval === 'Pending' ? <><button type="button" className="btn primary" onClick={() => void run(() => docsMailApi.certAction(c.id, 'approve'), 'Released.')}>Release</button><button type="button" className="btn" onClick={() => void run(() => docsMailApi.certAction(c.id, 'reject'), 'Rejected.')}>Reject</button></> : null}
-                <PrintButtons pageId="quality-certificate" id={c.id} />
-              </td>
-            </tr>
-          ))}
-          {!list.loading && (list.data ?? []).length === 0 ? <tr><td colSpan={7}>No certificates yet.</td></tr> : null}
-        </tbody>
-      </table>
-      {adding ? (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Add certificate">
-          <div className="modal">
-            <h2>New certificate</h2>
-            {([['partName', 'Part name'], ['partCode', 'Part code'], ['jobCardNo', 'Job card no.'], ['sampleQty', 'Sample qty'], ['acceptedQty', 'Accepted qty'], ['rejectedQty', 'Rejected qty'], ['drawingRevision', 'Drawing revision'], ['inspector', 'Inspector'], ['ncrNo', 'NCR no. (needed when it fails)'], ['remarks', 'Remarks']] as const).map(([k, l]) => (
-              <label key={k}>{l}<input value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></label>
-            ))}
-            <label>Result<select value={f.result} onChange={(e) => setF({ ...f, result: e.target.value })}><option>Pass</option><option>Fail</option><option>Conditional</option></select></label>
-            <div className="modal-actions">
-              <button type="button" className="btn" onClick={() => setAdding(false)}>Cancel</button>
-              <button type="button" className="btn primary" onClick={() => void run(() => docsMailApi.addCertificate({ partName: f.partName, partCode: f.partCode || null, jobCardNo: f.jobCardNo || null, sampleQty: Number(f.sampleQty || 0), acceptedQty: Number(f.acceptedQty || 0), rejectedQty: Number(f.rejectedQty || 0), drawingRevision: f.drawingRevision || null, inspector: f.inspector || null, result: f.result, ncrNo: f.ncrNo || null, remarks: f.remarks || null }).then(() => setAdding(false)), 'Certificate saved.')}>Save</button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------------------------- Letters
 export function LettersPage() {
   const toast = useToast();

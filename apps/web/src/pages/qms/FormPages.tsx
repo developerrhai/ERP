@@ -12,6 +12,7 @@ import { dmy, Empty, ErrorBox, PageHead, Pill, todayIso } from '../finance/share
 import { DynamicFields, STATUS_TONE, Tabs, s } from './Shared';
 import { DateField } from '../../ui/components';
 import { withPlantV40 } from '../plant/PlantV40';
+import { RecordActions } from '../../components/workspace/RecordActions';
 
 export type FormKind = 'EIGHT_D' | 'ALERT' | 'MOM' | 'CI';
 export const FORM_LABEL: Record<FormKind, string> = {
@@ -138,6 +139,7 @@ function FormEditor({
               type="button"
               className="btn primary"
               disabled={busy || !tpl || title.trim() === ''}
+              title={!tpl ? 'The form is still loading.' : title.trim() === '' ? 'Type the title first.' : undefined}
               onClick={() => void save()}
             >
               Save
@@ -215,6 +217,7 @@ function FormEditor({
             type="button"
             className="btn"
             disabled={busy || reason.trim().length < 3}
+            title={reason.trim().length < 3 ? 'Type the reason for cancelling first.' : undefined}
             onClick={() => void act('cancel')}
           >
             Cancel
@@ -249,7 +252,7 @@ export function FormList({ kind, actions }: { kind: FormKind; actions: ActionSet
         </select>
         {actions.add ? (
           <button type="button" className="btn primary" onClick={() => setEditing({ id: null })}>
-            + New {FORM_LABEL[kind].toLowerCase()}
+            ＋ Add {FORM_LABEL[kind].toLowerCase()}
           </button>
         ) : null}
       </div>
@@ -263,11 +266,12 @@ export function FormList({ kind, actions }: { kind: FormKind; actions: ActionSet
               <th>Title</th>
               <th>Customer / supplier</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {list.data && list.data.rows.length === 0 && !list.loading ? (
-              <Empty cols={5}>Nothing here yet.</Empty>
+              <Empty cols={6}>Nothing here yet.</Empty>
             ) : null}
             {(list.data?.rows ?? []).map((r) => (
               <tr key={s(r.id)}>
@@ -285,6 +289,19 @@ export function FormList({ kind, actions }: { kind: FormKind; actions: ActionSet
                 <td>{s(r.customerName) || s(r.supplierName)}</td>
                 <td>
                   <Pill tone={STATUS_TONE[s(r.status)]}>{s(r.status)}</Pill>
+                </td>
+                <td className="row-actions">
+                  {kind === 'MOM' ? (
+                    <RecordActions docType="qms-mom" id={s(r.id)} number={s(r.number)} status={s(r.status)} onChanged={list.reload}>
+                      <button type="button" className="btn sm" onClick={() => setEditing({ id: s(r.id) })}>
+                        {s(r.status) === 'Open' && actions.edit ? 'View / Edit' : 'View'}
+                      </button>
+                    </RecordActions>
+                  ) : (
+                    <button type="button" className="btn sm" onClick={() => setEditing({ id: s(r.id) })}>
+                      {s(r.status) === 'Open' && actions.edit ? 'View / Edit' : 'View'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

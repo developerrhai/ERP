@@ -22,6 +22,7 @@ export function buildTypedListQuery(schema?: TypedSchema | null) {
     view: z.enum(['ledger', 'vouchers']).optional(),
     warehouseId: z.string().regex(UUID_REGEX, 'Invalid warehouse id.').optional(),
     belowReorder: bool.optional(),
+    department: z.string().trim().min(1).max(60).optional(),
   };
 
   const declaredFilters = schema?.filters ?? [];

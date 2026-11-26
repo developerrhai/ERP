@@ -45,3 +45,65 @@
     flex: 1 1 100%;
   }
 }
+
+/* Cost & Price simulator: it sits above the register, outside the .inv-v40 table wrapper */
+.inv-v40-sim {
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.inv-v40-sim .inv-v40-sim-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+.inv-v40-sim .field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted, #475569);
+}
+.inv-v40-sim .field input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+.inv-v40-sim .inv-v40-sim-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.inv-v40-sim .inv-v40-sim-totals span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--card2, #f8fafc);
+}
+.inv-v40-sim .inv-v40-sim-totals small {
+  color: var(--muted, #667085);
+  font-size: 12px;
+}
+.inv-v40-sim .inv-v40-sim-totals b {
+  font-size: 18px;
+}
+
+/* the search and select boxes look like every other register toolbar */
+.inv-v40 .inv-v40-bar input[type='search'],
+.inv-v40 .inv-v40-bar select {
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--card);
+  font-size: 12px;
+}

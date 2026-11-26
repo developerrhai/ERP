@@ -6,13 +6,7 @@ import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { useAppContext } from '../../lib/context';
 import { toUiError } from '../../lib/errors';
-import {
-  createBudget,
-  deleteBudget,
-  listAccounts,
-  listBudgets,
-  setBudgetStatus,
-} from '../../lib/financeApi';
+import { createBudget, deleteBudget, listAccounts, listBudgets, setBudgetStatus, listDimension } from '../../lib/financeApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { Empty, ErrorBox, inr, PageHead, Pill } from './shared';
@@ -153,6 +147,9 @@ function BudgetForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
   const [accountId, setAccountId] = useState('');
   const [name, setName] = useState('');
   const [monthly, setMonthly] = useState('');
+  const [costCenterId, setCostCenterId] = useState('');
+  const [byMonth, setByMonth] = useState<Record<number, string>>({});
+  const centers = useLoad(() => listDimension('cost'), []);
   const [err, setErr] = useState('');
   const [pending, setPending] = useState(false);
   const submit = async (e: FormEvent) => {
@@ -168,7 +165,8 @@ function BudgetForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
         unitId: ctx?.current.unitId,
         accountId,
         name: name.trim(),
-        months: MONTHS.map(() => monthly),
+        months: MONTHS.map((_m, i) => byMonth[i]?.trim() || monthly),
+        ...(costCenterId ? { costCenterId } : {}),
       });
       onSaved();
     } catch (caught) {
@@ -179,7 +177,7 @@ function BudgetForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
   return (
     <Modal
       title="New budget"
-      sub="The same amount is set for each of the 12 months; the exact months can be changed later."
+      sub="The monthly amount fills all 12 months; type over any month that differs."
       onClose={onClose}
       footer={
         <>
@@ -211,6 +209,28 @@ function BudgetForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
           value={monthly}
           onChange={(e) => setMonthly(e.target.value)}
         />
+        <SelectField label="Cost centre" value={costCenterId} onChange={setCostCenterId}>
+          <option value="">The whole account</option>
+          {(centers.data?.rows ?? [])
+            .filter((d) => !d.isGroup)
+            .map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.code} · {d.name}
+              </option>
+            ))}
+        </SelectField>
+        <fieldset className="field budget-months">
+          <legend>Month by month (blank = the monthly amount)</legend>
+          <div className="form-grid">
+            {MONTHS.map((m, i) => (
+              <div className="field" key={String(m)}>
+                <label htmlFor={`bm-${i}`}>{String(m)}</label>
+                <input id={`bm-${i}`} inputMode="decimal" placeholder={monthly || '0'} value={byMonth[i] ?? ''} onChange={(e) => setByMonth({ ...byMonth, [i]: e.target.value })} />
+              </div>
+            ))}
+          </div>
+        </fieldset>
+        <p className="v8-sub">Annual budget: ₹ {MONTHS.reduce((a, _m, i) => a + (Number(byMonth[i]?.trim() || monthly) || 0), 0).toLocaleString('en-IN')}</p>
       </form>
     </Modal>
   );

@@ -5,7 +5,7 @@
 // approved; a credit-limit increase goes to approval, a decrease applies at once.
 import { useState, type FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
-import { V40Register } from '../sales/V40Register';
+import { hasV40Register, V40Register } from '../sales/V40Register';
 import { useFrame } from '../frame/V40TabFrame';
 import { V40Body } from '../procurement/V40Body';
 import { ErrorMessage } from '../../components/ErrorMessage';
@@ -71,7 +71,10 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
   };
   const isCustomer = kind === 'CUSTOMER';
   // Supplier Master inside the V40 tab frame: the V40 tabs and columns (procurement/V40Body.tsx)
-  const v40Suppliers = Boolean(useFrame()) && !isCustomer;
+  const inFrame = Boolean(useFrame());
+  const v40Suppliers = inFrame && !isCustomer;
+  // inside the V40 frame the register below has its own search box, which is the one that filters it
+  const ownSearch = !(v40Suppliers || (inFrame && isCustomer && hasV40Register(routePage)));
   const load = useLoad<Paged<Customer | Supplier>>(
     () => (isCustomer ? listCustomers({ q, page }) : listSuppliers({ q, page })),
     [kind, q, page],
@@ -99,18 +102,20 @@ export function PartyMasterPage({ kind, actions }: { kind: Kind; actions: Action
           ) : null}
         </div>
       </div>
-      <div className="recordbar">
-        <input
-          type="search"
-          placeholder="Search by name, code or GSTIN…"
-          aria-label={`Search ${title}`}
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setPage(1);
-          }}
-        />
-      </div>
+      {ownSearch ? (
+        <div className="recordbar">
+          <input
+            type="search"
+            placeholder="Search by name, code or GSTIN…"
+            aria-label={`Search ${title}`}
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+      ) : null}
       {load.error ? <ErrorMessage onReload={load.reload}>{load.error}</ErrorMessage> : null}
       {rowError ? <ErrorMessage onReload={() => setRowError('')}>{rowError}</ErrorMessage> : null}
       {v40Suppliers ? (

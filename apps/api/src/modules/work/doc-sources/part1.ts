@@ -23,6 +23,8 @@ export const PART1: DocSource[] = [
   { pageId: 'scm-suppliers', table: 'suppliers', numberCol: 'code', statusCol: 'status', dateCol: 'created_at', where: "deleted_at IS NULL" },
   { pageId: 'scm-evaluation', table: 'supplier_evaluations', numberCol: 'period', dateCol: 'created_at', unitCol: 'unit_id' },
   { pageId: 'scm-contracts', table: 'purchase_contracts', numberCol: 'number', statusCol: 'status', dateCol: 'created_at', unitCol: 'unit_id', deptCol: 'department', where: "deleted_at IS NULL" },
+  { pageId: 'inv-items', table: 'items', numberCol: 'code', statusCol: 'status', dateCol: 'created_at', where: "deleted_at IS NULL" },
+  { pageId: 'inv-stock', table: 'stock_balance_records', numberCol: 'number', statusCol: 'status', dateCol: 'updated_at', unitCol: 'unit_id' },
   { pageId: 'inv-opening', table: 'stock_vouchers', numberCol: 'number', statusCol: 'status', dateCol: 'posting_date', unitCol: 'unit_id', deptCol: 'department', where: "kind = 'OPENING' AND deleted_at IS NULL" },
   { pageId: 'inv-adjustment', table: 'stock_vouchers', numberCol: 'number', statusCol: 'status', dateCol: 'posting_date', unitCol: 'unit_id', deptCol: 'department', where: "kind = 'ADJUSTMENT' AND deleted_at IS NULL" },
   { pageId: 'inv-transfer', table: 'stock_vouchers', numberCol: 'number', statusCol: 'status', dateCol: 'posting_date', unitCol: 'unit_id', deptCol: 'department', where: "kind = 'TRANSFER' AND deleted_at IS NULL" },

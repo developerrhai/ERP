@@ -168,7 +168,7 @@ export function ReasonAct({
                   .finally(() => setBusy(false));
               }}
             >
-              {label}
+              {label === 'Cancel' ? 'Confirm cancel' : label}
             </button>
           }
         >
@@ -229,8 +229,13 @@ export const num = (v: unknown): string => {
     ? '—'
     : n.toLocaleString('en-IN', { maximumFractionDigits: 3 });
 };
-export const hhmm = (iso: unknown): string =>
-  typeof iso === 'string' && iso.length >= 16 ? iso.slice(0, 16).replace('T', ' ') : '—';
+export const hhmm = (iso: unknown): string => {
+  if (typeof iso !== 'string' || iso.length < 16) return '—';
+  // a stored moment carries its zone (UTC): it is shown in India time, as the registers show it
+  const at = /(Z|[+-]\d\d:?\d\d)$/.test(iso) ? new Date(iso) : null;
+  const text = at && !Number.isNaN(at.getTime()) ? new Date(at.getTime() + 330 * 60_000).toISOString() : iso;
+  return text.slice(0, 16).replace('T', ' ');
+};
 export const addDays = (iso: string, d: number): string => {
   const x = new Date(`${iso}T00:00:00Z`);
   x.setUTCDate(x.getUTCDate() + d);

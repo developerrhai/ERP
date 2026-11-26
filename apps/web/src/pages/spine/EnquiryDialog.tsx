@@ -3,15 +3,19 @@
 import { useEffect, useState } from 'react';
 import { Modal } from '../../components/Modal';
 import { MoveForwardDialog } from '../../components/MoveForward';
+import { RecordActions } from '../../components/workspace/RecordActions';
 import { useToast } from '../../components/Toast';
 import { ApiError } from '../../lib/api';
-import { lookupCustomers } from '../../lib/scmApi';
+import { lookupCustomers, lookupSalespeople } from '../../lib/scmApi';
+import { useLoad } from '../../lib/useLoad';
 import { Combobox } from '../../ui/components';
 import { spineApi, type Enquiry } from '../../lib/spineApi';
 
 const EDITABLE = ['New', 'Qualified'];
 
 const dateOnly = (v?: string | null): string => (v ? v.slice(0, 10) : '');
+/** dd-mm-yyyy, as the registers show dates */
+const shownDate = (v?: string | null): string => dateOnly(v).split('-').reverse().join('-');
 
 export function EnquiryDialog({
   id,
@@ -38,7 +42,12 @@ export function EnquiryDialog({
     qty: '',
     requiredDate: '',
     source: '',
+    assignedToId: '',
+    priceDiscussion: '',
+    nextFollowUp: '',
+    remarks: '',
   });
+  const people = useLoad(() => lookupSalespeople(), []);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   // the customer this enquiry is linked to; a prospect has none until one is picked (BUG-02)
   const [customer, setCustomer] = useState<{ value: string; label: string } | null>(null);
@@ -58,6 +67,10 @@ export function EnquiryDialog({
           qty: r.qty ?? '',
           requiredDate: dateOnly(r.required_date),
           source: r.source ?? '',
+          assignedToId: r.assigned_to_id ?? '',
+          priceDiscussion: r.price_discussion ?? '',
+          nextFollowUp: dateOnly(r.next_follow_up),
+          remarks: r.remarks ?? '',
         });
       },
       (err: unknown) => alive && setError(err instanceof ApiError ? err.message : 'Could not load the enquiry.'),
@@ -87,6 +100,10 @@ export function EnquiryDialog({
         qty,
         requiredDate: form.requiredDate || null,
         source: form.source.trim() || null,
+        assignedToId: form.assignedToId || null,
+        priceDiscussion: form.priceDiscussion.trim() || null,
+        nextFollowUp: form.nextFollowUp || null,
+        remarks: form.remarks.trim() || null,
       });
       setE({ ...e, ...r });
       setEditing(false);
@@ -133,6 +150,7 @@ export function EnquiryDialog({
             </>
           ) : (
             <>
+              {e ? <RecordActions docType="sales-enquiries" id={e.id} number={e.number} status={e.status} onChanged={onChanged} move={false} withPrint /> : null}
               {editable ? (
                 <button type="button" className="btn" onClick={() => setEditing(true)}>
                   Edit
@@ -157,7 +175,7 @@ export function EnquiryDialog({
         ) : null}
         {!e && !error ? <p className="muted">Loading…</p> : null}
         {e && editing ? (
-          <>
+          <div className="form-grid">
             <div className="field">
               <label htmlFor="enq-customer">Customer</label>
               <Combobox
@@ -176,26 +194,46 @@ export function EnquiryDialog({
             {field('qty', 'Quantity', { inputMode: 'decimal' })}
             {field('requiredDate', 'Required date', { type: 'date' })}
             {field('source', 'Source')}
-          </>
+            <div className="field">
+              <label htmlFor="enq-assignedToId">Sales person</label>
+              <select id="enq-assignedToId" value={form.assignedToId} onChange={(ev) => setForm({ ...form, assignedToId: ev.target.value })}>
+                <option value="">Not assigned</option>
+                {(people.data ?? []).map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {field('priceDiscussion', 'Price discussion')}
+            {field('nextFollowUp', 'Next follow-up', { type: 'date' })}
+            {field('remarks', 'Remarks')}
+          </div>
         ) : null}
         {e && !editing ? (
-          <dl className="kv" style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '6px 12px' }}>
-            <dt>Customer / prospect</dt>
-            <dd>{e.customer_name ?? e.prospect_name ?? '—'}</dd>
-            <dt>Contact</dt>
-            <dd>{e.contact ?? '—'}</dd>
-            <dt>Product</dt>
-            <dd>{e.product}</dd>
-            <dt>Application</dt>
-            <dd>{e.application ?? '—'}</dd>
-            <dt>Quantity</dt>
-            <dd>{e.qty ?? '—'}</dd>
-            <dt>Required date</dt>
-            <dd>{dateOnly(e.required_date) || '—'}</dd>
-            <dt>Source</dt>
-            <dd>{e.source ?? '—'}</dd>
-            <dt>Enquiry date</dt>
-            <dd>{dateOnly(e.enq_date)}</dd>
+          <dl className="drawer-grid record-cards">
+            {([
+              ['Enquiry No', e.number],
+              ['Enquiry date', shownDate(e.enq_date)],
+              ['Status', e.status],
+              ['Customer / prospect', e.customer_name ?? e.prospect_name],
+              ['Contact', e.contact],
+              ['Source', e.source],
+              ['Product', e.product],
+              ['Application', e.application],
+              ['Quantity', e.qty],
+              ['Required date', shownDate(e.required_date)],
+              ['Sales person', (people.data ?? []).find((o) => o.id === e.assigned_to_id)?.label],
+              ['Price discussion', e.price_discussion],
+              ['Next follow-up', shownDate(e.next_follow_up)],
+              ['Remarks', e.remarks],
+              ...(e.lost_reason ? [['Lost because', e.lost_reason]] : []),
+            ] as [string, string | null | undefined][]).map(([label, value]) => (
+              <div className="v8-mini" key={label}>
+                <dt>{label}</dt>
+                <dd>{value || '—'}</dd>
+              </div>
+            ))}
           </dl>
         ) : null}
       </Modal>

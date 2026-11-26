@@ -25,7 +25,8 @@ export function AllocateInvoiceDialog({
   const [err, setErr] = useState('');
   const [pending, setPending] = useState(false);
   const credit = data?.credits.find((c) => c.id === creditId);
-  const room = Number(data?.target.outstanding ?? 0);
+  const reverse = Boolean(data?.target.isCredit);
+  const room = reverse ? Math.abs(Number(data?.target.outstanding ?? 0)) : Number(data?.target.outstanding ?? 0);
   const pick = (v: string): void => {
     setCreditId(v);
     const c = data?.credits.find((x) => x.id === v);
@@ -37,7 +38,11 @@ export function AllocateInvoiceDialog({
     setPending(true);
     setErr('');
     try {
-      await allocateNote({ sourceItemId: credit.id, targetItemId: data.target.id, amount });
+      await allocateNote(
+        reverse
+          ? { sourceItemId: data.target.id, targetItemId: credit.id, amount }
+          : { sourceItemId: credit.id, targetItemId: data.target.id, amount },
+      );
       onDone(`${inr(amount)} set against ${data.target.docNo}.`);
     } catch (e) {
       setErr(toUiMessage(e));
@@ -47,7 +52,7 @@ export function AllocateInvoiceDialog({
   return (
     <Modal
       title="Allocate"
-      sub={data ? `Settle ${data.target.docNo} with a credit of the same party.` : ''}
+      sub={data ? (reverse ? `Set ${data.target.docNo} against an open bill of the same party.` : `Settle ${data.target.docNo} with a credit of the same party.`) : ''}
       size="sm"
       onClose={onClose}
       footer={
@@ -55,7 +60,7 @@ export function AllocateInvoiceDialog({
           <button type="button" className="btn" onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className="btn primary" disabled={pending || !credit} onClick={() => void save()}>
+          <button type="button" className="btn primary" disabled={pending || !credit} title={credit ? undefined : reverse ? 'Choose the bill to settle first.' : 'Choose the credit to settle with first.'} onClick={() => void save()}>
             Allocate
           </button>
         </>
@@ -63,15 +68,21 @@ export function AllocateInvoiceDialog({
     >
       <ErrorBox message={error || err} />
       {!data && !error ? <p className="muted">Loading…</p> : null}
-      {data && room <= 0 ? <p>This invoice has nothing open to settle.</p> : null}
+      {data && room <= 0 ? <p>{reverse ? 'Nothing is left to allocate on this entry.' : 'This invoice has nothing open to settle.'}</p> : null}
       {data && room > 0 ? (
         <>
           <p>
             Open on {data.target.docNo}: <b>{inr(String(room))}</b>
           </p>
-          <SelectField label="Against credit *" value={creditId} onChange={pick}>
+          <SelectField label={reverse ? 'Against bill *' : 'Against credit *'} value={creditId} onChange={pick}>
             <option value="">
-              {data.credits.length ? 'Choose a receipt, payment or credit note…' : 'No open credits for this party'}
+              {reverse
+                ? data.credits.length
+                  ? 'Choose a bill…'
+                  : 'No open bills for this party'
+                : data.credits.length
+                  ? 'Choose a receipt, payment or credit note…'
+                  : 'No open credits for this party'}
             </option>
             {data.credits.map((c) => (
               <option key={c.id} value={c.id}>

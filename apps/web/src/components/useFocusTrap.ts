@@ -22,7 +22,8 @@ export function useFocusTrap(
     if (!active || !root) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const first = focusableIn(root).find((el) => !el.classList.contains('close'));
-    (first ?? root).focus();
+    // a type-to-search box opens its list when focused, which would cover the form as soon as it appears
+    (first && !first.matches('[role="combobox"], [data-opens-on-focus]') ? first : root).focus();
 
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {

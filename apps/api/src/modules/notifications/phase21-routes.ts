@@ -11,6 +11,10 @@ import { Errors } from '../../core/http/errors';
 import { validate, validated } from '../../core/http/validate';
 import { ADMIN_LEVEL } from '../../core/rbac/role-rules';
 import { broadcastService } from './broadcast-service';
+import { resolveContext } from '../../core/context/resolve-context';
+import { accessUserOf, can } from '../../core/rbac/access';
+import { printSourceOf, renderPrint } from '../docsmail/print';
+import { callerOf } from '../inventory/routes-shared';
 import { emailAutomationService } from './email-automation-service';
 import { pushService } from './push-service';
 import { sseStreamHandler } from './realtime';
@@ -137,6 +141,13 @@ function p(req: Request, key: string): string {
 }
 
 const guard = [authenticate, requirePasswordChanged];
+
+/** E-mailing a page's record shows its contents, so it needs the View right on that page. */
+async function requireDocumentView(req: Request): Promise<void> {
+  const pageId = req.params.docType ?? '';
+  if (!printSourceOf(pageId)) return;
+  if (!(await can(accessUserOf(requireAuth(req)), pageId, 'view'))) throw Errors.forbidden();
+}
 
 export function createPhase21PublicRouter(): Router {
   const router = Router();
@@ -521,6 +532,7 @@ export function createPhase21Router(): Router {
     '/documents/:docType/:id/email-preview',
     ...guard,
     asyncHandler(async (req: Request, res: Response) => {
+      await requireDocumentView(req);
       res.json({
         data: await emailAutomationService.previewDocumentEmail(p(req, 'docType'), p(req, 'id')),
       });
@@ -530,8 +542,11 @@ export function createPhase21Router(): Router {
   router.post(
     '/documents/:docType/:id/email',
     ...guard,
+    resolveContext,
     validate({ body: sendDocEmailSchema }),
     asyncHandler(async (req: Request, res: Response) => {
+      const pageId = p(req, 'docType');
+      await requireDocumentView(req);
       const body = validated(res, 'body', sendDocEmailSchema);
       const auth = requireAuth(req);
       const sent = await emailAutomationService.sendDocumentEmail(
@@ -545,6 +560,10 @@ export function createPhase21Router(): Router {
           ...(body.subject ? { subjectOverride: body.subject } : {}),
           message: body.message,
           attachMode: body.attachMode,
+          // a page's own record is attached as the same document its PDF / Word / Excel buttons give
+          ...(printSourceOf(pageId)
+            ? { render: (kind: 'letterhead' | 'word' | 'excel') => renderPrint(callerOf(req), pageId, p(req, 'id'), kind) }
+            : {}),
           ...(body.attachFormat ? { attachFormat: body.attachFormat } : {}),
           ...(body.extraFiles
             ? {

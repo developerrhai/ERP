@@ -855,12 +855,14 @@ export function createFinanceRouter(): Router {
       });
       if (!target) throw Errors.notFound('Bill not found.');
       const side = target.side as 'RECEIVABLE' | 'PAYABLE';
-      const credits = target.amount.greaterThan(0)
-        ? (await openItemService.openBills(prisma, side, target.partyId, target.unitId)).filter((b) => Number(b.amount) < 0)
-        : [];
+      // an unused payment / receipt / credit (a negative item) is settled the other way round: against an open bill
+      const isCredit = target.amount.lessThan(0);
+      const credits = target.amount.isZero()
+        ? []
+        : (await openItemService.openBills(prisma, side, target.partyId, target.unitId)).filter((b) => (isCredit ? !b.amount.startsWith('-') : b.amount.startsWith('-')));
       res.json({
         data: {
-          target: { id: target.id, docNo: target.docNo, outstanding: money(target.outstanding), side },
+          target: { id: target.id, docNo: target.docNo, outstanding: money(target.outstanding), side, ...(isCredit ? { isCredit } : {}) },
           credits,
         },
       });

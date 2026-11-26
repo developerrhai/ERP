@@ -21,13 +21,21 @@ export const itemRepository = {
   },
 
   async list(
-    filter: { q?: string; status?: 'ACTIVE' | 'INACTIVE'; deleted: boolean },
+    filter: {
+      q?: string;
+      status?: 'ACTIVE' | 'INACTIVE';
+      deleted: boolean;
+      /** Department filter: only these ids, or every id except these. */
+      held?: { only?: string[]; except?: string[] };
+    },
     orderBy: Prisma.ItemOrderByWithRelationInput[],
     page: { skip: number; take: number },
   ): Promise<{ rows: Item[]; total: number }> {
     const where: Prisma.ItemWhereInput = {
       deletedAt: filter.deleted ? { not: null } : null,
       ...(filter.status ? { status: filter.status } : {}),
+      ...(filter.held?.only ? { id: { in: filter.held.only } } : {}),
+      ...(filter.held?.except?.length ? { id: { notIn: filter.held.except } } : {}),
       ...(filter.q
         ? {
             OR: [

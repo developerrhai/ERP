@@ -1,5 +1,6 @@
 // Shop floor: a tablet view with big buttons (pick your work center, tap a card, start / pause / complete, log downtime) and the
 // supervisor dashboard (OEE against target, rejection %, downtime, good pieces by hour, overdue orders).
+import './shop-floor.css';
 import { useEffect, useState } from 'react';
 import { mget, mlist, mpost } from '../../lib/mfgApi';
 import type { Row } from '../../lib/mfgApi';
@@ -151,23 +152,7 @@ function Dashboard() {
         <p className="ops-empty">No data yet. Figures appear once job cards are logged today.</p>
       ) : null}
       {data ? (
-        <>
-          <section className="ops-card" aria-label="Hourly Production">
-            <h2>Hourly Production</h2>
-            {hourly.length === 0 ? (
-              <p className="ops-empty">No data yet.</p>
-            ) : (
-              <div className="ops-bars" role="img" aria-label="Good pieces by hour">
-                {hourly.map((h) => (
-                  <div key={s(h.hour)} className="ops-bar-col" title={`${s(h.hour)}:00 - ${s(h.good)} good pieces`}>
-                    <b>{num(h.good)}</b>
-                    <div className="ops-bar" style={{ height: `${(Number(h.good) / max) * 140}px` }} />
-                    <small>{s(h.hour).padStart(2, '0')}</small>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+        <div className="sf-stack">
           <div className="ops-summary">
             <div className="ops-stat">
               <small>Good pieces today</small>
@@ -190,6 +175,22 @@ function Dashboard() {
               <span>{orderText || 'none open'}</span>
             </div>
           </div>
+          <section className="ops-card" aria-label="Hourly Production">
+            <h2>Hourly Production</h2>
+            {hourly.length === 0 ? (
+              <p className="ops-empty">No data yet.</p>
+            ) : (
+              <div className="ops-bars" role="img" aria-label="Good pieces by hour">
+                {hourly.map((h) => (
+                  <div key={s(h.hour)} className="ops-bar-col" title={`${s(h.hour)}:00 - ${s(h.good)} good pieces`}>
+                    <b>{num(h.good)}</b>
+                    <div className="ops-bar" style={{ height: `${(Number(h.good) / max) * 140}px` }} />
+                    <small>{s(h.hour).padStart(2, '0')}</small>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
           <section className="ops-card" aria-label="OEE by work center">
             <h3>OEE by work center (availability × performance × quality)</h3>
             <div className="ops-scroll">
@@ -232,7 +233,7 @@ function Dashboard() {
               />
             </div>
           </section>
-        </>
+        </div>
       ) : null}
     </>
   );

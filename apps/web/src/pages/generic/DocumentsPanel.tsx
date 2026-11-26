@@ -35,7 +35,8 @@ export function DocumentsPanel({ schema, row, canEdit, onChanged }: Props) {
   const [docType, setDocType] = useState('GENERAL');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const allowed = canEdit && lockAllows(schema.lock, row.status, 'documents');
+  // a page with its own record table (no lock matrix) lets an editor add documents; the server still enforces its rules
+  const allowed = canEdit && (schema.lock ? lockAllows(schema.lock, row.status, 'documents') : true);
 
   const upload = async (): Promise<void> => {
     const file = fileRef.current?.files?.[0];

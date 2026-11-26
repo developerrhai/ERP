@@ -4,6 +4,7 @@
 // Word / Excel / PDF / "+ Job Card" come from the shell ActionBar.
 import { useCallback, useEffect, useState } from 'react';
 import { useToast } from '../../components/Toast';
+import { RecordActions } from '../../components/workspace/RecordActions';
 import { ApiError } from '../../lib/api';
 import { routingApi } from '../../lib/routingApi';
 import type { AuditEvent, Dispute, Note, NoteCards, NoteOptions } from '../../lib/routingApi';
@@ -63,7 +64,11 @@ export function TransferNotePage() {
         setTick((t) => t + 1);
         return true;
       } catch (e) {
-        toast(e instanceof ApiError ? e.message : 'That did not work.');
+        const message = e instanceof ApiError ? e.message : 'That did not work.';
+        toast(message);
+        // a refusal that needs explaining stays on the screen, not only in the passing message
+        if (message.includes('different GSTINs'))
+          setError(`${message} Why: the two plants have different GST numbers, so by GST law the goods must go with a tax invoice from the sending plant, not a delivery note. You can still record this note by choosing "No stock movement (record only)" as the item, or choose plants that share one GSTIN.`);
         return false;
       } finally {
         setBusy(false);
@@ -83,6 +88,7 @@ export function TransferNotePage() {
         <ReasonButton label="Send" reason={busy ? 'Saving...' : n.stockState !== 'NONE' ? 'Stock was already sent.' : n.receiptStatus !== 'PENDING' ? 'Already received.' : !n.itemId || !n.fromWarehouseId || !n.toWarehouseId ? 'Choose the item and both warehouses when creating the note.' : null} onClick={() => void run('Stock sent to transit.', () => routingApi.sendNote(n.id))} />
         <ReasonButton label="Receive" primary reason={busy ? 'Saving...' : n.receiptStatus !== 'PENDING' ? `Already ${n.receiptStatus.toLowerCase()}.` : null} onClick={() => setRecv({ note: n, qty: n.sentQty, reason: '' })} />
         <ReasonButton label="Reconcile" reason={busy ? 'Saving...' : n.receiptStatus !== 'SHORT' ? 'Only a short receipt needs reconciling.' : n.reconciledAt ? 'Already reconciled.' : null} onClick={() => void run('Short quantity reconciled.', () => routingApi.reconcileNote(n.id))} />
+        <RecordActions docType="mfg-transfer-note" id={n.id} number={n.noteNo} status={n.receiptStatus} />
       </div>
     );
   };
@@ -95,7 +101,7 @@ export function TransferNotePage() {
           <p className="muted">Plant-to-plant material transfer: send to transit, receive in the other plant, reconcile any short quantity.</p>
         </div>
         <div className="actions">
-          <button type="button" className="btn primary" onClick={() => setOpen((o) => !o)}>+ New Transfer Note</button>
+          <button type="button" className="btn primary" onClick={() => setOpen((o) => !o)}>＋ Add Transfer Note</button>
         </div>
       </div>
       <PlantStrip />

@@ -787,6 +787,13 @@ const PHASE_ADDED_PAGES = [
     purpose: 'Project documents by type and revision; the dossier PDF.',
   },
   {
+    id: 'mfg-ecn',
+    title: 'Engineering Change Orders',
+    family: 'Manufacturing',
+    after: 'mfg-bom',
+    purpose: 'ECN/ECO register: every change raised when a released BOM is revised, with the reason and who was alerted.',
+  },
+  {
     id: 'qms-mom',
     title: 'Minutes of Meeting',
     family: 'Quality / QMS',
@@ -795,6 +802,8 @@ const PHASE_ADDED_PAGES = [
       'Minutes of meeting as their own register, not a buried CAPA tab: attendees and action items (owner, due date, status) as real rows, not one free-text block (Quality_Department_ERP_Comparison.pdf, row 8).',
   },
 ] as const;
+
+const NO_SUCH_DEPARTMENT: ReadonlySet<string> = new Set(['dept-work-engineering', 'dept-inbox-engineering']);
 
 const builtFamilies = rawRegistry.families.map((f) => {
   const items = f.items.map((i) => ({ ...i, title: TITLE_OVERRIDES[i.id] ?? i.title }));
@@ -807,14 +816,20 @@ const builtFamilies = rawRegistry.families.map((f) => {
       items.splice(at >= 0 ? at + 1 : items.length, 0, { id: extra.id, title: extra.title });
     }
   }
-  return { ...f, items };
+  return { ...f, items: menuOrder(items) };
 });
+
+/** Owner (QA, Nov 2026): a department's Inbox is the first line of its menu, and there is no Engineering department. */
+function menuOrder<T extends { id: string }>(items: T[]): T[] {
+  const kept = items.filter((i) => !NO_SUCH_DEPARTMENT.has(i.id));
+  const isInbox = (i: T): boolean => i.id.startsWith('dept-inbox-') && kept.some((k) => k.id.startsWith('dept-work-'));
+  return [...kept.filter(isInbox), ...kept.filter((i) => !isInbox(i))];
+}
 
 const DEPT_INBOX_ITEMS = [
   { id: 'dept-inbox-administration', title: 'Administration Inbox (0)' },
   { id: 'dept-inbox-sales', title: 'Sales Inbox (0)' },
   { id: 'dept-inbox-projects', title: 'Projects Inbox (0)' },
-  { id: 'dept-inbox-engineering', title: 'Engineering Inbox (0)' },
   { id: 'dept-inbox-purchase', title: 'Purchase Inbox (0)' },
   { id: 'dept-inbox-warehouse', title: 'Warehouse Inbox (0)' },
   { id: 'dept-inbox-production', title: 'Production Inbox (0)' },

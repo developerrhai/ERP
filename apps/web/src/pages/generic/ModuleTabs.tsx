@@ -20,6 +20,7 @@ import { baseFilters, displayValue, isEmptyValue, listFields, valueOf } from './
 import { statusClass } from './RegisterTab';
 import { PhaseMap, ReportExtras } from './Phase4Tabs';
 import { getSummary } from './phase4Api';
+import { auditRecord } from '../../lib/auditRecord';
 
 export function PhaseNotice({ tab, phase }: { tab: string; phase: number }) {
   return (
@@ -340,7 +341,7 @@ export function AuditTab({
                   <td>
                     <span className="chip">{humanAction(r.action)}</span>
                   </td>
-                  <td>{detailText(r.detail) || r.targetId || '—'}</td>
+                  <td>{detailText(r.detail) || auditRecord(r.detail, r.targetId)}</td>
                   <td>{r.ip ?? '—'}</td>
                 </tr>
               ))}

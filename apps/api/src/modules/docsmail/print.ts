@@ -68,6 +68,11 @@ export const CATALOG: readonly CatalogDoc[] = [
  */
 export const TYPED_DOCS: readonly CatalogDoc[] = [
   { pageId: 'inv-items', title: 'Item Master', group: 'Inventory', table: 'items', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  // Product / Raw Material Master are views of the item table, so their toolbar Word / PDF print the item
+  { pageId: 'master-products', title: 'Product', group: 'Inventory', table: 'items', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'master-materials', title: 'Raw Material', group: 'Inventory', table: 'items', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  // one row per item and warehouse (view stock_balance_records)
+  { pageId: 'inv-stock', title: 'Stock Balance', group: 'Inventory', table: 'stock_balance_records', numberCol: 'number', dateCol: 'updated_at', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'wms-warehouses', title: 'Warehouse', group: 'Inventory', table: 'warehouses', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'inv-batch', title: 'Batch', group: 'Inventory', table: 'batches', numberCol: 'batch_no', dateCol: 'created_at', statusCol: 'status', unitCol: null },
   { pageId: 'inv-serial', title: 'Serial Number', group: 'Inventory', table: 'serial_numbers', numberCol: 'serial_no', dateCol: 'created_at', statusCol: 'status', unitCol: null },
@@ -95,7 +100,53 @@ export const TYPED_DOCS: readonly CatalogDoc[] = [
   { pageId: 'fin-profitcenter', title: 'Profit Center', group: 'Finance', table: 'profit_centers', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'fin-expenses', title: 'Expense Claim', group: 'Finance', table: 'expense_claims', numberCol: 'code', dateCol: 'claim_date', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'fin-budget', title: 'Budget', group: 'Finance', table: 'budgets', numberCol: 'name', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'scm-suppliers', title: 'Supplier', group: 'Procurement', table: 'suppliers', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
   { pageId: 'fin-coa', title: 'Account', group: 'Finance', table: 'accounts', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  // Quality, Maintenance, Production and the register views of Sales / Finance: their rows print, e-mail and take
+  // documents straight from the table row ('' = the table has no status column)
+  { pageId: 'qms-incoming', title: 'Incoming Inspection', group: 'Quality', table: 'qms_inspections', numberCol: 'number', dateCol: 'doc_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'qms-process', title: 'In-Process Inspection', group: 'Quality', table: 'qms_inspections', numberCol: 'number', dateCol: 'doc_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'qms-final', title: 'Final Inspection', group: 'Quality', table: 'qms_inspections', numberCol: 'number', dateCol: 'doc_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'qms-plans', title: 'Inspection Plan', group: 'Quality', table: 'qms_plans', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'qms-ncr', title: 'Non-Conformance Report', group: 'Quality', table: 'qms_rejections', numberCol: 'number', dateCol: 'reject_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'qms-capa', title: 'CAPA Report', group: 'Quality', table: 'qms_forms', numberCol: 'number', dateCol: 'doc_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'qms-mom', title: 'Minutes of Meeting', group: 'Quality', table: 'qms_forms', numberCol: 'number', dateCol: 'doc_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'qms-5why', title: '5 Why Analysis', group: 'Quality', table: 'five_why_cases', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'qms-calibration', title: 'Calibration Record', group: 'Quality', table: 'qms_instruments', numberCol: 'equipment_no', dateCol: 'valid_until', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'maint-machines', title: 'Machine', group: 'Maintenance', table: 'assets', numberCol: 'asset_no', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'maint-equipment', title: 'Equipment', group: 'Maintenance', table: 'assets', numberCol: 'asset_no', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'maint-mtbf', title: 'Reliability Record', group: 'Maintenance', table: 'assets', numberCol: 'asset_no', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'maint-preventive', title: 'Preventive Maintenance Plan', group: 'Maintenance', table: 'pm_plans', numberCol: 'plan_no', dateCol: 'created_at', statusCol: '', unitCol: 'unit_id' },
+  { pageId: 'maint-schedule', title: 'Maintenance Schedule', group: 'Maintenance', table: 'pm_schedules', numberCol: 'generated_key', dateCol: 'due_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'maint-breakdown', title: 'Breakdown Ticket', group: 'Maintenance', table: 'breakdown_tickets', numberCol: 'bd_no', dateCol: 'reported_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'maint-workorders', title: 'Maintenance Work Order', group: 'Maintenance', table: 'maint_work_orders', numberCol: 'mwo_no', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'maint-downtime', title: 'Downtime Record', group: 'Maintenance', table: 'downtime_events', numberCol: 'dt_no', dateCol: 'start_at', statusCol: '', unitCol: 'unit_id' },
+  { pageId: 'maint-alerts', title: 'Maintenance Alert', group: 'Maintenance', table: 'alerts', numberCol: 'message', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'maint-spares', title: 'Spare Part', group: 'Maintenance', table: 'items', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'mfg-bom', title: 'Bill of Materials', group: 'Manufacturing', table: 'mfg_boms', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id', lines: { table: 'mfg_bom_lines', fk: 'bom_id' } },
+  { pageId: 'mfg-routing', title: 'Routing', group: 'Manufacturing', table: 'mfg_routings', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id', lines: { table: 'mfg_routing_ops', fk: 'routing_id' } },
+  { pageId: 'mfg-workcenters', title: 'Work Center', group: 'Manufacturing', table: 'mfg_work_centres', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'mfg-plan', title: 'Production Plan', group: 'Manufacturing', table: 'mfg_production_plans', numberCol: 'number', dateCol: 'plan_date', statusCol: 'status', unitCol: 'unit_id', lines: { table: 'mfg_production_plan_lines', fk: 'plan_id' } },
+  { pageId: 'mfg-wip', title: 'WIP Statement', group: 'Manufacturing', table: 'mfg_orders', numberCol: 'number', dateCol: 'start_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'mfg-unit-route', title: 'Plant Route Sheet', group: 'Manufacturing', table: 'mfg_orders', numberCol: 'number', dateCol: 'start_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'mfg-fg', title: 'Finished Goods Receipt', group: 'Manufacturing', table: 'mfg_production_receipts', numberCol: 'number', dateCol: 'receipt_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'mfg-scrap', title: 'Scrap Note', group: 'Manufacturing', table: 'mfg_scrap', numberCol: 'number', dateCol: 'scrap_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'mfg-rework', title: 'Rework Order', group: 'Manufacturing', table: 'mfg_rework', numberCol: 'number', dateCol: 'rework_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'mfg-ecn', title: 'Engineering Change Order', group: 'Manufacturing', table: 'engineering_change_orders', numberCol: 'number', dateCol: 'created_at', statusCol: '', unitCol: 'unit_id' },
+  { pageId: 'mfg-transfer-note', title: 'Material Transfer Note', group: 'Manufacturing', table: 'transfer_notes', numberCol: 'note_no', dateCol: 'transfer_date', statusCol: 'receipt_status', unitCol: 'unit_id' },
+  { pageId: 'flow-bom-approval', title: 'BOM and Material Approval', group: 'Manufacturing', table: 'bom_material_flows', numberCol: 'flow_no', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'plant-unit-routing', title: 'Plant Route', group: 'Manufacturing', table: 'plant_routes', numberCol: 'code', dateCol: 'created_at', statusCol: '', unitCol: null },
+  { pageId: 'qms-supplier', title: 'Supplier Quality Record', group: 'Quality', table: 'suppliers', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'mfg-mrp', title: 'MRP Suggestion', group: 'Manufacturing', table: 'mfg_mrp_suggestions', numberCol: 'type', dateCol: 'due_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'mfg-workorders', title: 'Job Card', group: 'Manufacturing', table: 'mfg_order_ops', numberCol: 'name', dateCol: 'started_at', statusCol: 'status', unitCol: null },
+  { pageId: 'mfg-material-issue', title: 'Material Issue', group: 'Manufacturing', table: 'mfg_order_materials', numberCol: 'line_no', dateCol: 'order_id', statusCol: '', unitCol: null },
+  { pageId: 'mfg-costing', title: 'Production Cost Sheet', group: 'Manufacturing', table: 'mfg_cost_sheets', numberCol: 'std_total', dateCol: 'updated_at', statusCol: '', unitCol: null },
+  { pageId: 'sales-delivery', title: 'Delivery Plan', group: 'Sales', table: 'sales_orders', numberCol: 'number', dateCol: 'order_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'sales-credit', title: 'Credit Limit', group: 'Sales', table: 'customers', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'fin-trial', title: 'Trial Balance Account', group: 'Finance', table: 'accounts', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'fin-pnl', title: 'Profit and Loss Line', group: 'Finance', table: 'accounts', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'fin-bs', title: 'Balance Sheet Line', group: 'Finance', table: 'accounts', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'fin-cashflow', title: 'Cash Flow Line', group: 'Finance', table: 'accounts', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
 ];
 
 /** The table-backed document of a page: a Document Center type first, then a typed master / register page. */
@@ -105,8 +156,22 @@ export function printSourceOf(pageId: string): CatalogDoc | undefined {
 
 const HIDE = /(^id$|_id$|^version$|^deleted_at$|^created_at$|^updated_at$|^fy_id$|^password|^json|_json$|^body_html$)/;
 
+/** Screens that keep records in tables of their own (Finance, Quality, Maintenance, Manufacturing): their audit rows name the page. */
+const OWN_SCREEN = /^(fin|qms|maint|mfg|plant|flow|quality)-/;
+export function hasOwnRecords(pageId: string): boolean {
+  return OWN_SCREEN.test(pageId) && !!printSourceOf(pageId);
+}
+
 export function catalogOf(pageId: string): CatalogDoc | undefined {
   return CATALOG.find((c) => c.pageId === pageId);
+}
+
+const STORED_ID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+/** The number a person knows a record by. A PM schedule row has none of its own: its plan number and due date name it. */
+export async function readableNo(table: string, id: string, stored: string): Promise<string> {
+  if (table !== 'pm_schedules' || !STORED_ID.test(stored)) return stored;
+  const r = await query(prisma, `SELECT p.plan_no || '/' || to_char(s.due_date, 'YYYYMMDD') AS no FROM pm_schedules s JOIN pm_plans p ON p.id = s.plan_id WHERE s.id = $1::uuid`, id);
+  return r[0]?.no ? String(r[0].no as string) : stored;
 }
 
 const fmtDate = (v: unknown): string => {
@@ -130,6 +195,28 @@ function cell(v: unknown): string {
 }
 
 /** The print model of a record of the catalog, built from its table row and its lines (every record prints). */
+/** The names behind a row's links (customer, supplier, item, production order, machine), so a print says who and what. */
+async function linkedNames(r: Row): Promise<{ facts: { label: string; value: string }[]; order: string }> {
+  const links: [string, string, string][] = [
+    ['customer_id', 'Customer', 'SELECT name AS label FROM customers WHERE id = $1::uuid'],
+    ['supplier_id', 'Supplier', 'SELECT name AS label FROM suppliers WHERE id = $1::uuid'],
+    ['vendor_id', 'Vendor', 'SELECT name AS label FROM suppliers WHERE id = $1::uuid'],
+    ['item_id', 'Item', "SELECT code || ' - ' || name AS label FROM items WHERE id = $1::uuid"],
+    ['asset_id', 'Machine / equipment', "SELECT asset_no || ' - ' || name AS label FROM assets WHERE id = $1::uuid"],
+    ['order_id', 'Production order', 'SELECT number AS label FROM mfg_orders WHERE id = $1::uuid'],
+  ];
+  const facts: { label: string; value: string }[] = [];
+  let order = '';
+  for (const [column, label, sql] of links) {
+    if (!r[column]) continue;
+    const found = (await query(prisma, sql, String(r[column] as string)).catch(() => [] as Row[]))[0]?.label;
+    if (!found) continue;
+    facts.push({ label, value: String(found as string) });
+    if (column === 'order_id') order = String(found as string);
+  }
+  return { facts, order };
+}
+
 async function rowDto(caller: Caller, doc: CatalogDoc, id: string): Promise<PrintDto> {
   const rows = await query(prisma, `SELECT t.* FROM ${doc.table} t WHERE t.id = $1::uuid`, id);
   const r = rows[0];
@@ -162,17 +249,21 @@ async function rowDto(caller: Caller, doc: CatalogDoc, id: string): Promise<Prin
       };
     }
   }
+  const linked = await linkedNames(r);
+  // a line of a production order (job card, material, cost sheet) is named after its order
+  const rawNo = r[doc.numberCol] instanceof Date ? fmtDate(r[doc.numberCol]) : String((r[doc.numberCol] ?? id) as string);
+  const docNo = LINE_TABLES.has(doc.table) && linked.order ? `${linked.order} / ${rawNo}` : await readableNo(doc.table, id, rawNo);
   const total = doc.totalCol && r[doc.totalCol] !== null && r[doc.totalCol] !== undefined ? Number(r[doc.totalCol]) : null;
   const created = r.created_by_id ? (await query(prisma, `SELECT name FROM users WHERE id = $1::uuid`, r.created_by_id))[0] : null;
   return {
     templateKey: 'row',
     title: doc.title,
-    docNo: String(r[doc.numberCol] ?? id),
-    docDate: fmtDate(r[doc.dateCol] ?? new Date()),
+    docNo,
+    docDate: fmtDate(r[doc.dateCol] instanceof Date ? r[doc.dateCol] : (r.created_at ?? new Date())),
     unit: { code: unit?.code ?? '-', name: unit?.name ?? '-', ...(unit?.gstin ? { gstin: unit.gstin } : {}), ...(unit?.address ? { address: [unit.address, unit.city].filter(Boolean).join(', ') } : {}) },
     letterhead: {},
     parties: [],
-    facts: [{ label: 'Status', value: String(r[doc.statusCol] ?? '') }, ...facts],
+    facts: [...(doc.statusCol ? [{ label: 'Status', value: String((r[doc.statusCol] ?? '') as string) }] : []), ...linked.facts, ...facts.filter((f) => f.label !== 'Status')],
     lines,
     sections: [],
     totals: total !== null ? [{ label: 'Total', value: formatInr(total), bold: true }] : [],
@@ -180,6 +271,8 @@ async function rowDto(caller: Caller, doc: CatalogDoc, id: string): Promise<Prin
     signatures: [{ label: 'Prepared by', ...(created?.name ? { name: String(created.name) } : {}) }, { label: 'Checked by' }, { label: 'Approved by' }],
   };
 }
+
+const LINE_TABLES: ReadonlySet<string> = new Set(['mfg_order_ops', 'mfg_order_materials', 'mfg_cost_sheets', 'mfg_mrp_suggestions']);
 
 const POSTED = /^(posted|approved|issued|released|closed|accepted|active|pass)$/i;
 
@@ -317,7 +410,7 @@ export async function renderPrint(caller: Caller, pageId: string, id: string, ki
     contentType = 'application/pdf';
     ext = 'pdf';
   }
-  await recordAudit({ action: 'PRINT_RENDERED', actorId: caller.auth.userId, targetType: 'record', targetId: id, meta: caller.meta, detail: { pageId, kind, copy, ...(caller.ctx.unitId ? { unitId: caller.ctx.unitId } : {}) } });
+  await recordAudit({ action: 'PRINT_RENDERED', actorId: caller.auth.userId, targetType: 'record', targetId: id, meta: caller.meta, detail: { pageId, code: dto.docNo, kind, copy, ...(caller.ctx.unitId ? { unitId: caller.ctx.unitId } : {}) } });
   return { buffer, contentType, filename: `${base}.${ext}` };
 }
 

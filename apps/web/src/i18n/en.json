@@ -27,6 +27,7 @@
   },
   "dpdp": {
     "title": "Data Privacy Notice (DPDP Act, 2023)",
+    "acknowledged": "Privacy notice acknowledged.",
     "acknowledge": "I Acknowledge & Continue",
     "grievanceOfficer": "Grievance Officer",
     "requestRegister": "Data-Principal Request Register (30-Day SLA)",

@@ -3,6 +3,7 @@
 // View (cards + item grid), Edit (the header fields the master allows) and Delete are all on this page.
 import { useState } from 'react';
 import { Modal } from '../../components/Modal';
+import { RecordActions } from '../../components/workspace/RecordActions';
 import { useToast } from '../../components/Toast';
 import { request } from '../../lib/api';
 import { toUiMessage } from '../../lib/errors';
@@ -126,7 +127,7 @@ function PriceListView({ list: l, onClose }: { list: PriceList; onClose: () => v
     [l.id],
   );
   const card = (label: string, value: string) => (
-    <div key={label}>
+    <div className="v8-mini" key={label}>
       <dt>{label}</dt>
       <dd>{value || '—'}</dd>
     </div>
@@ -136,12 +137,15 @@ function PriceListView({ list: l, onClose }: { list: PriceList; onClose: () => v
       title={`${l.code} · ${l.name}`}
       onClose={onClose}
       footer={
-        <button type="button" className="btn" onClick={onClose}>
-          Close
-        </button>
+        <>
+          <RecordActions docType="sales-pricelist" id={l.id} number={l.code} status={l.status} withPrint />
+          <button type="button" className="btn" onClick={onClose}>
+            Close
+          </button>
+        </>
       }
     >
-      <dl className="kv">
+      <dl className="drawer-grid record-cards">
         {card('Price list code', l.code)}
         {card('Name', l.name)}
         {card('Type', l.kind)}

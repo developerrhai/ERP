@@ -275,7 +275,7 @@ export const recordService = {
     const doc = printSourceOf(pageId);
     if (doc && /^[0-9a-f-]{36}$/i.test(id)) {
       const rows = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-        `SELECT t.id::text AS id, t.${doc.numberCol}::text AS code, t.${doc.statusCol}::text AS status${doc.unitCol ? `, t.${doc.unitCol}::text AS unit_id` : ''}
+        `SELECT t.id::text AS id, t.${doc.numberCol}::text AS code, ${doc.statusCol ? `t.${doc.statusCol}::text` : 'NULL::text'} AS status${doc.unitCol ? `, t.${doc.unitCol}::text AS unit_id` : ''}
            FROM ${doc.table} t WHERE t.id = $1::uuid`,
         id,
       );

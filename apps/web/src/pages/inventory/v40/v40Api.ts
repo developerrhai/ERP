@@ -45,9 +45,10 @@ export interface V40Answer {
 export async function getV40Tab(
   pageId: string,
   tab: string,
-  q: { q?: string; status?: string; page: number; size: number; from?: string; to?: string },
+  q: { q?: string; status?: string; page: number; size: number; from?: string; to?: string; department?: string },
 ): Promise<V40Answer> {
   const p = new URLSearchParams({ tab, page: String(q.page), size: String(q.size) });
+  if (q.department) p.set('department', q.department);
   if (q.from) p.set('from', q.from);
   if (q.to) p.set('to', q.to);
   if (q.q) p.set('q', q.q);

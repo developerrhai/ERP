@@ -79,6 +79,8 @@ export interface FieldCfg {
 export interface MoreExtra {
   ask?: { key: string; label: string; type: 'text' | 'number' }[];
   body?: Record<string, unknown>;
+  /** hides the button when the record is past it (the server would refuse) */
+  onlyIf?: (doc: Record<string, unknown>) => boolean;
   /** the action the signed-in user must hold on THIS page for the button to show (the same one the route checks) */
   need?: 'add' | 'edit' | 'delete' | 'submit' | 'post' | 'cancel';
 }
@@ -828,6 +830,7 @@ function DocForm({
                         type="button"
                         className="btn sm danger"
                         disabled={lines.length === 1}
+                        title={lines.length === 1 ? 'A document needs at least one line.' : undefined}
                         onClick={() => setLines((ls) => ls.filter((_x, j) => j !== i))}
                       >
                         Remove
@@ -1033,7 +1036,9 @@ function DocDetail({
           {(cfg.more ?? [])
             .filter(
               ([, , st, , extra]) =>
-                st.split(',').includes(doc.status) && (!extra?.need || actions[extra.need]),
+                st.split(',').includes(doc.status) &&
+                (!extra?.need || actions[extra.need]) &&
+                (!extra?.onlyIf || extra.onlyIf(doc as unknown as Record<string, unknown>)),
             )
             .map(([name, label, , needsReason, extra]) => (
               <button
@@ -1086,6 +1091,15 @@ function DocDetail({
             <dd>{show(doc[c.key], c.fmt)}</dd>
           </div>
         ))}
+        {/* the other things typed on the entry form, once they hold a value */}
+        {cfg.header
+          .filter((f) => (f.type === 'text' || f.type === 'date' || f.type === 'number') && !cfg.columns.some((c) => c.key === f.key) && s(doc[f.key]) !== '')
+          .map((f) => (
+            <div key={f.key}>
+              <dt>{f.label}</dt>
+              <dd>{show(doc[f.key], f.type === 'date' ? 'date' : undefined)}</dd>
+            </div>
+          ))}
       </dl>
       {lines.length > 0 && cfg.lines ? (
         <div className="table-wrap">
@@ -1094,7 +1108,7 @@ function DocDetail({
               <tr>
                 <th>#</th>
                 {cfg.lines.map((f) => (
-                  <th key={f.key}>{f.label}</th>
+                  <th key={f.key}>{f.label.replace(/\s*\(blank[^)]*\)/i, '')}</th>
                 ))}
               </tr>
             </thead>
@@ -1102,7 +1116,7 @@ function DocDetail({
               {lines.map((l) => (
                 <tr key={s(l.id)}>
                   <td>{s(l.lineNo)}</td>
-                  {cfg.lines?.map((f) => <td key={f.key}>{s(l[f.key]) || '—'}</td>)}
+                  {cfg.lines?.map((f) => <td key={f.key}>{(f.type === 'item' ? s(l.itemLabel) || s(l.itemCode) : '') || s(l[f.key]) || '—'}</td>)}
                 </tr>
               ))}
             </tbody>

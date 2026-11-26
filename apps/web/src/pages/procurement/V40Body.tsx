@@ -22,6 +22,7 @@ import { listV40 } from './v40Api';
 import { enrich, RULE_NAMES, SPECS, txt } from './v40Specs';
 import type { Col, Level, PageSpec, Panel, Row } from './v40Specs';
 import './procurement-v40.css';
+import { auditRecord } from '../../lib/auditRecord';
 
 const num = (v: unknown): number => {
   const x = Number(v);
@@ -2436,7 +2437,7 @@ function AuditPanel({ pageId, title }: { pageId: string; title: string }) {
           <div key={r.id} className="v9-event">
             <b>{r.action}</b>
             <small>{`${r.actorName ?? '—'} • ${formatDateTime(r.at)}`}</small>
-            <div className="v9-muted">{r.targetId ?? ''}</div>
+            <div className="v9-muted">{auditRecord(r.detail, r.targetId)}</div>
           </div>
         ))}
         {(a.data?.rows ?? []).length === 0 ? (

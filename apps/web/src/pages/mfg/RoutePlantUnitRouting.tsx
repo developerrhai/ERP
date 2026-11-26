@@ -4,6 +4,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
+import { RecordActions } from '../../components/workspace/RecordActions';
+import { Modal } from '../../components/Modal';
 import { ApiError } from '../../lib/api';
 import { routingApi } from '../../lib/routingApi';
 import type { Dept, RouteCards, RouteRow, RouteSave, RouteStep, Unit } from '../../lib/routingApi';
@@ -115,6 +117,7 @@ export function PlantUnitRoutingPage() {
       setDraft({ id: r.id, code: r.code, name: r.name, itemOrFamily: r.itemOrFamily ?? '', active: r.active, steps: r.steps });
     });
 
+  const [askDelete, setAskDelete] = useState<RouteRow | null>(null);
   const saveReason = !draft.name.trim() ? 'Enter the route name first.' : draft.steps.length === 0 ? 'Add at least one step first.' : draft.steps.some((s) => !s.processName.trim()) ? 'Every step needs a process.' : null;
   const visibleSteps = draft.steps.map((s, i) => ({ s, i })).filter(({ s }) => !filter || s.departmentId === filter);
 
@@ -128,6 +131,7 @@ export function PlantUnitRoutingPage() {
         <div className="actions">
           <Link className="btn" to="/m/maint-part-movement">Process Movements</Link>
           <Link className="btn" to="/m/plant-interplant-movement">Plant-to-Plant</Link>
+          <button type="button" className="btn primary" onClick={() => { setDraft(blank()); document.querySelector<HTMLInputElement>('.rt-form input[data-route-name]')?.focus(); }}>＋ Add Route</button>
         </div>
       </div>
 
@@ -169,7 +173,7 @@ export function PlantUnitRoutingPage() {
         <h2>Route Builder</h2>
         <div className="rt-form">
           <label>Route ID<input value={draft.code} placeholder="Assigned on save" maxLength={30} onChange={(e) => setDraft({ ...draft, code: e.target.value })} /></label>
-          <label>Route Name<input value={draft.name} maxLength={120} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></label>
+          <label>Route Name<input data-route-name value={draft.name} maxLength={120} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></label>
           <label>Product / Family<input value={draft.itemOrFamily} maxLength={120} onChange={(e) => setDraft({ ...draft, itemOrFamily: e.target.value })} /></label>
           <label>Status
             <select value={draft.active ? 'on' : 'off'} onChange={(e) => setDraft({ ...draft, active: e.target.value === 'on' })}>
@@ -228,6 +232,71 @@ export function PlantUnitRoutingPage() {
           <ReasonButton label="+ Add Step" reason={units.length === 0 ? 'No active plant exists yet.' : null} onClick={addStep} />
           <ReasonButton label="Save Route" primary reason={busy ? 'Saving...' : saveReason} onClick={() => void save()} />
           <ReasonButton label="Delete Route" danger reason={draft.id ? null : 'Only a saved route can be deleted.'} onClick={() => void run('Route removed.', async () => { const r = await routingApi.deleteRoute(draft.id!); toast(r.deactivated ? 'The route is used by job cards, so it was switched off.' : 'Route deleted.'); setDraft(blank()); })} />
+        </div>
+        {saveReason ? <p className="muted rt-hint">{`Save Route is waiting: ${saveReason}`}</p> : null}
+      </div>
+
+      {askDelete ? (
+        <Modal
+          title="Delete this route?"
+          sub={`${askDelete.code} · ${askDelete.name}`}
+          size="sm"
+          onClose={() => setAskDelete(null)}
+          footer={
+            <>
+              <button type="button" className="btn" onClick={() => setAskDelete(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={() => {
+                  const r = askDelete;
+                  setAskDelete(null);
+                  void run('Route removed.', async () => { const res = await routingApi.deleteRoute(r.id); toast(res.deactivated ? 'The route is used by job cards, so it was switched off.' : 'Route deleted.'); if (draft.id === r.id) setDraft(blank()); });
+                }}
+              >
+                Delete route
+              </button>
+            </>
+          }
+        >
+          <p>A route used by job cards is switched off instead, so their history stays readable.</p>
+        </Modal>
+      ) : null}
+
+      <div className="card">
+        <h2>Saved Routes</h2>
+        <div className="table-wrap">
+          <table className="register-table">
+            <thead>
+              <tr><th>Route ID</th><th>Route Name</th><th>Product / Family</th><th>Steps</th><th>Job Cards</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {routes.map((r) => (
+                <tr key={r.id}>
+                  <td><b>{r.code}</b></td>
+                  <td>{r.name}</td>
+                  <td>{r.itemOrFamily || '-'}</td>
+                  <td className="rt-num-cell">{r.stepCount}</td>
+                  <td className="rt-num-cell">{r.jobCount}</td>
+                  <td>{r.active ? 'Active' : 'Switched off'}</td>
+                  <td className="row-actions">
+                    <RecordActions docType="plant-unit-routing" id={r.id} number={r.code} status={r.active ? 'Active' : 'Switched off'}>
+                      <button type="button" className="btn sm" onClick={() => { void open(r.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>View / Edit</button>
+                      <button
+                        type="button"
+                        className="btn sm danger"
+                        disabled={busy}
+                        onClick={() => setAskDelete(r)}
+                      >
+                        Delete
+                      </button>
+                    </RecordActions>
+                  </td>
+                </tr>
+              ))}
+              {routes.length === 0 ? <tr><td colSpan={7}>No saved route yet. Add steps above and press Save Route.</td></tr> : null}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

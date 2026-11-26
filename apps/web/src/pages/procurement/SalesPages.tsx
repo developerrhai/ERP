@@ -1,9 +1,9 @@
-// Phase 10 screens that are more than a header + lines form: the pipeline board, lead sources, the quotation page
+// Phase 10 screens that are more than a header + lines form: the pipeline board, the quotation page
 // (customer RFQs + quotations), dispatch with the delivery challan, sales invoices from a dispatch, sales returns,
 // collections (receipts against invoices) and delivery scheduling (open order balance by month).
+import { printFile, saveFile } from '../../lib/docsMailApi';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { EmailDocButton } from '../../components/EmailDocDialog';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { toUiMessage } from '../../lib/errors';
@@ -15,7 +15,6 @@ import {
   getJson,
   listDocs,
   post,
-  putJson,
   updateDoc,
   verb,
   type Doc,
@@ -234,172 +233,6 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
   );
 }
 
-// ------------------------------------------------------------------------------------------------ lead sources
-export function SourcesPage({ actions }: { actions: ActionSet }) {
-  const toast = useToast();
-  const list = useLoad(() => getJson<Row[]>('/crm/sources'), []);
-  const [code, setCode] = useState('');
-  const [name, setName] = useState('');
-  const [msg, setMsg] = useState('');
-  const [viewing, setViewing] = useState<Row | null>(null);
-  const [editing, setEditing] = useState<Row | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editStatus, setEditStatus] = useState('Active');
-  const byId = (id: string): Row | undefined => (list.data ?? []).find((r) => s(r.id) === id);
-  function startEdit(id: string): void {
-    const r = byId(id);
-    if (!r) return;
-    setEditName(s(r.name));
-    setEditStatus(s(r.status) || 'Active');
-    setEditing(r);
-  }
-  function saveEdit(): void {
-    if (!editing) return;
-    setMsg('');
-    putJson(`/crm/sources/${s(editing.id)}`, { name: editName.trim(), status: editStatus })
-      .then(() => {
-        setEditing(null);
-        toast('Source saved');
-        list.reload();
-      })
-      .catch((e: unknown) => setMsg(toUiMessage(e)));
-  }
-  return (
-    <>
-      <PageHead title="Lead Sources" sub="Where enquiries come from." />
-      <ErrorBox message={msg || list.error} />
-      {actions.add ? (
-        <div className="toolbar">
-          <input
-            aria-label="Code"
-            placeholder="Code"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-          />
-          <input
-            aria-label="Name"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <button
-            type="button"
-            className="btn primary"
-            disabled={!code || !name}
-            onClick={() => {
-              setMsg('');
-              post('/crm/sources', { code, name })
-                .then(() => {
-                  setCode('');
-                  setName('');
-                  toast('Source added');
-                  list.reload();
-                })
-                .catch((e: unknown) => setMsg(toUiMessage(e)));
-            }}
-          >
-            ＋ Add source
-          </button>
-        </div>
-      ) : null}
-      <V40Register
-        pageId="crm-sources"
-        actions={actions}
-        onOpen={(id) => setViewing(byId(id) ?? null)}
-        onEdit={actions.edit ? startEdit : undefined}
-        reloadKey={list.data}
-        onChanged={list.reload}
-        fallback={
-          <div className="card table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(list.data ?? []).map((r) => (
-                  <tr key={s(r.id)}>
-                    <td>{s(r.code)}</td>
-                    <td>{s(r.name)}</td>
-                    <td>
-                      <Pill>{s(r.status)}</Pill>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        }
-      />
-      {viewing ? (
-        <Modal
-          title={`Lead source ${s(viewing.code)}`}
-          size="sm"
-          onClose={() => setViewing(null)}
-          footer={
-            <button type="button" className="btn" onClick={() => setViewing(null)}>
-              Close
-            </button>
-          }
-        >
-          <dl className="kv">
-            <div>
-              <dt>Code</dt>
-              <dd>{s(viewing.code)}</dd>
-            </div>
-            <div>
-              <dt>Name</dt>
-              <dd>{s(viewing.name)}</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>{s(viewing.status)}</dd>
-            </div>
-          </dl>
-        </Modal>
-      ) : null}
-      {editing ? (
-        <Modal
-          title={`Edit lead source ${s(editing.code)}`}
-          size="sm"
-          onClose={() => setEditing(null)}
-          footer={
-            <>
-              <button type="button" className="btn" onClick={() => setEditing(null)}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                disabled={editName.trim().length < 2}
-                onClick={saveEdit}
-              >
-                Save
-              </button>
-            </>
-          }
-        >
-          <ErrorBox message={msg} />
-          <div className="field">
-            <label htmlFor="src-name">Name *</label>
-            <input id="src-name" value={editName} onChange={(e) => setEditName(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor="src-status">Status</label>
-            <select id="src-status" value={editStatus} onChange={(e) => setEditStatus(e.target.value)}>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-        </Modal>
-      ) : null}
-    </>
-  );
-}
-
 // ------------------------------------------------------------------------------------------------ quotations page
 export function SalesQuotationsPage({ actions }: { actions: ActionSet }) {
   const [tab, setTab] = useState<'rfq' | 'quote'>('quote');
@@ -454,10 +287,12 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
       setMsg(toUiMessage(e));
     }
   }
-  async function challan(id: string) {
+  async function challan(id: string, number: string) {
     try {
+      // saved with the challan's number and sent to the print dialog (a new window opened after the wait is blocked by browsers)
       const { blob } = await download(`/sales/dispatch/${id}/challan.pdf`);
-      window.open(URL.createObjectURL(blob), '_blank');
+      saveFile({ blob, filename: null }, `Delivery-Challan-${number.replace(/[^A-Za-z0-9]+/g, '-')}.pdf`);
+      printFile({ blob });
     } catch (e) {
       setMsg(toUiMessage(e));
     }
@@ -548,7 +383,7 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
           onClose={() => setOpen(null)}
           footer={
             <>
-              <button type="button" className="btn" onClick={() => void challan(open.id)}>
+              <button type="button" className="btn" onClick={() => void challan(open.id, s(open.number))}>
                 Print challan
               </button>
               {(open.status === 'Draft' || open.status === 'Rejected') && actions.edit ? (
@@ -589,9 +424,6 @@ export function DispatchPage({ actions }: { actions: ActionSet }) {
                 >
                   Post
                 </button>
-              ) : null}
-              {open.status === 'Posted' ? (
-                <EmailDocButton docType="SALES_DISPATCH" docId={s(open.id)} />
               ) : null}
               {open.status === 'Posted' && actions.cancel ? (
                 <button
@@ -677,6 +509,8 @@ function DispatchForm({
   const [lrNo, setLrNo] = useState(doc ? s(doc.lrNo) : '');
   const [shipTo, setShipTo] = useState(doc ? s(doc.shipTo) : '');
   const [weight, setWeight] = useState(doc ? s(doc.weightKg) : '');
+  const [date, setDate] = useState(doc ? s(doc.dispatchDate).slice(0, 10) : '');
+  const [remark, setRemark] = useState(doc ? s(doc.remark) : '');
   const [lines, setLines] = useState<
     { orderLineId: string; label: string; open: string; qty: string; serial: string; id?: string }[]
   >(() =>
@@ -728,6 +562,8 @@ function DispatchForm({
         lrNo: lrNo.trim() || undefined,
         shipTo: shipTo.trim() || undefined,
         ...(Number(weight) > 0 ? { weightKg: weight } : {}),
+        ...(date ? { dispatchDate: date } : {}),
+        remark: remark.trim() || undefined,
         lines: lines
           .filter((l) => Number(l.qty) > 0)
           .map((l) => ({
@@ -760,6 +596,7 @@ function DispatchForm({
             type="button"
             className="btn primary"
             disabled={!orderId || !wh || lines.length === 0}
+            title={!orderId || !wh ? 'Choose the sales order and the warehouse first.' : lines.length === 0 ? 'This order has nothing left to send.' : undefined}
             onClick={() => void save()}
           >
             Save draft
@@ -792,6 +629,11 @@ function DispatchForm({
           </select>
         </div>
         <div className="field">
+          <label htmlFor="ddate">Dispatch date</label>
+          <input id="ddate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <small className="muted">Left blank, today is used.</small>
+        </div>
+        <div className="field">
           <label htmlFor="dv">Vehicle no. *</label>
           <input id="dv" value={vehicle} onChange={(e) => setVehicle(e.target.value)} />
         </div>
@@ -815,6 +657,10 @@ function DispatchForm({
         <div className="field">
           <label htmlFor="dkg">Weight (kg)</label>
           <input id="dkg" type="number" min={0} value={weight} onChange={(e) => setWeight(e.target.value)} />
+        </div>
+        <div className="field field-wide">
+          <label htmlFor="drem">Remarks</label>
+          <input id="drem" maxLength={300} value={remark} onChange={(e) => setRemark(e.target.value)} />
         </div>
       </div>
       <div className="table-wrap">
@@ -871,6 +717,7 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
   const disp = useLoad(() => listDocs('/sales/dispatch', { status: 'Posted', size: 100 }), []);
   const [dispatchId, setDispatchId] = useState('');
   const [newInvoice, setNewInvoice] = useState(false);
+  const [invoiceExtra, setInvoiceExtra] = useState({ invoiceDate: '', freight: '', notes: '' });
   const [open, setOpen] = useState<Doc | null>(null);
   const [msg, setMsg] = useState('');
   const [reason, setReason] = useState('');
@@ -901,7 +748,6 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
         <Modal
           title="New Invoice"
           sub="An invoice bills one dispatch. Choose the dispatch."
-          size="sm"
           onClose={() => setNewInvoice(false)}
           footer={
             <>
@@ -912,13 +758,20 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
                 type="button"
                 className="btn primary"
                 disabled={!dispatchId}
+                title={dispatchId ? undefined : 'Choose the dispatch first.'}
                 onClick={() => {
                   setMsg('');
-                  createDoc('/sales/invoices', { dispatchId })
+                  createDoc('/sales/invoices', {
+                    dispatchId,
+                    ...(invoiceExtra.invoiceDate ? { invoiceDate: invoiceExtra.invoiceDate } : {}),
+                    ...(Number(invoiceExtra.freight) > 0 ? { freight: invoiceExtra.freight } : {}),
+                    ...(invoiceExtra.notes.trim() ? { notes: invoiceExtra.notes.trim() } : {}),
+                  })
                     .then((d) => {
                       toast(`Invoice ${s(d.number)} saved as draft`);
                       setNewInvoice(false);
                       setDispatchId('');
+                      setInvoiceExtra({ invoiceDate: '', freight: '', notes: '' });
                       setOpen(d);
                       list.reload();
                     })
@@ -943,6 +796,21 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="inv-date">Invoice date</label>
+              <input id="inv-date" type="date" value={invoiceExtra.invoiceDate} onChange={(e) => setInvoiceExtra({ ...invoiceExtra, invoiceDate: e.target.value })} />
+              <small className="muted">Left blank, today is used.</small>
+            </div>
+            <div className="field">
+              <label htmlFor="inv-freight">Freight (₹)</label>
+              <input id="inv-freight" type="number" min={0} step="any" value={invoiceExtra.freight} onChange={(e) => setInvoiceExtra({ ...invoiceExtra, freight: e.target.value })} />
+            </div>
+            <div className="field field-wide">
+              <label htmlFor="inv-notes">Notes on the invoice</label>
+              <textarea id="inv-notes" rows={2} maxLength={500} value={invoiceExtra.notes} onChange={(e) => setInvoiceExtra({ ...invoiceExtra, notes: e.target.value })} />
+            </div>
           </div>
         </Modal>
       ) : null}
@@ -1031,9 +899,6 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
                 >
                   Post
                 </button>
-              ) : null}
-              {open.status === 'Posted' ? (
-                <EmailDocButton docType="SALES_INVOICE" docId={s(open.id)} />
               ) : null}
               {open.status === 'Posted' && actions.cancel ? (
                 <button
@@ -1153,9 +1018,45 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
           }
           onClose={() => setCreating(false)}
           footer={
-            <button type="button" className="btn" onClick={() => setCreating(false)}>
-              Cancel
-            </button>
+            <>
+              <button type="button" className="btn" onClick={() => setCreating(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={!invoiceId || !wh || !lines.some((l) => Number(l.qty) > 0)}
+                title={
+                  !invoiceId || !wh
+                    ? 'Choose the invoice and the warehouse first.'
+                    : !lines.some((l) => Number(l.qty) > 0)
+                      ? 'Type the quantity coming back.'
+                      : undefined
+                }
+                onClick={() => {
+                  setMsg('');
+                  createDoc('/sales/returns', {
+                    invoiceId,
+                    warehouseId: wh,
+                    reason: reason || undefined,
+                    lines: lines
+                      .filter((l) => Number(l.qty) > 0)
+                      .map((l) => ({ invoiceLineId: l.invoiceLineId, qty: l.qty })),
+                  })
+                    .then((d) => {
+                      toast(`Return ${s(d.number)} saved as draft`);
+                      void d;
+                      setCreating(false);
+                      setInvoiceId('');
+                      setLines([]);
+                      list.reload();
+                    })
+                    .catch((e: unknown) => setMsg(toUiMessage(e)));
+                }}
+              >
+                Save return
+              </button>
+            </>
           }
         >
           <div className="form-grid">
@@ -1186,6 +1087,7 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
               <input id="rr" value={reason} onChange={(e) => setReason(e.target.value)} />
             </div>
           </div>
+          {lines.length > 0 && !lines.some((l) => Number(l.qty) > 0) ? <p className="muted">Type the quantity coming back to switch on Save.</p> : null}
           {lines.map((l, i) => (
             <div className="field" key={l.invoiceLineId}>
               <label htmlFor={`rq-${i}`}>Return of {l.label}</label>
@@ -1199,33 +1101,6 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
               />
             </div>
           ))}
-          <button
-            type="button"
-            className="btn primary"
-            disabled={!invoiceId || !wh || !lines.some((l) => Number(l.qty) > 0)}
-            onClick={() => {
-              setMsg('');
-              createDoc('/sales/returns', {
-                invoiceId,
-                warehouseId: wh,
-                reason: reason || undefined,
-                lines: lines
-                  .filter((l) => Number(l.qty) > 0)
-                  .map((l) => ({ invoiceLineId: l.invoiceLineId, qty: l.qty })),
-              })
-                .then((d) => {
-                  toast(`Return ${s(d.number)} saved as draft`);
-                  void d;
-                  setCreating(false);
-                  setInvoiceId('');
-                  setLines([]);
-                  list.reload();
-                })
-                .catch((e: unknown) => setMsg(toUiMessage(e)));
-            }}
-          >
-            Save return
-          </button>
         </Modal>
       ) : null}
       <V40Register
@@ -1346,6 +1221,7 @@ export function CollectionsPage({ actions }: { actions: ActionSet }) {
                 type="button"
                 className="btn primary"
                 disabled={!chosen}
+                title={chosen ? undefined : 'Choose an invoice first.'}
                 onClick={() => {
                   setPaying((out.data?.rows ?? []).find((x) => s(x.id) === chosen) ?? null);
                   setChoosing(false);
@@ -1466,6 +1342,7 @@ function ReceiptDialog({
           type="button"
           className="btn primary"
           disabled={!bank || Number(amount) <= 0}
+          title={!bank ? 'Choose where the money was received.' : Number(amount) <= 0 ? 'Type the amount.' : undefined}
           onClick={() => {
             setMsg('');
             post('/sales/receipts', {
@@ -1554,6 +1431,7 @@ export function DeliveryPlanPage({ actions }: { actions: ActionSet }) {
                 type="button"
                 className="btn primary"
                 disabled={!itemId || !/^\d{4}-\d{2}$/.test(month) || !(Number(qty) > 0)}
+                title={!itemId || !/^\d{4}-\d{2}$/.test(month) || !(Number(qty) > 0) ? 'Choose the item, the month and a quantity.' : undefined}
                 onClick={() => {
                   setMsg('');
                   post('/sales/forecasts', { itemId, month, qty, ...(customerId ? { customerId } : {}) })
@@ -1681,7 +1559,16 @@ export function CreditPage({ actions }: { actions: ActionSet }) {
               <button
                 type="button"
                 className="btn primary"
-                disabled={!customerId || (limit === '' && days === '') || reason.trim().length < 5}
+                disabled={!customerId || (limit === '' && days === '') || reason.trim().length < 10}
+                title={
+                  !customerId
+                    ? 'Choose the customer first.'
+                    : limit === '' && days === ''
+                      ? 'Type a credit limit or credit days.'
+                      : reason.trim().length < 10
+                        ? 'Write a reason of at least 10 characters.'
+                        : undefined
+                }
                 onClick={() => {
                   setMsg('');
                   requestCreditChange(customerId, {
@@ -1728,6 +1615,7 @@ export function CreditPage({ actions }: { actions: ActionSet }) {
           <div className="field">
             <label htmlFor="cl-reason">Reason *</label>
             <input id="cl-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why is the limit set or changed?" />
+            <small className="muted">At least 10 characters.</small>
           </div>
         </Modal>
       ) : null}

@@ -43,7 +43,7 @@ export function PrivacyNoticeModal({ open, onClose, forceOnUnaccepted }: Privacy
     try {
       await hardeningApi.acknowledgePrivacy(notice.id);
       setNotice({ ...notice, accepted: true });
-      toast(t('dpdp.acknowledge'));
+      toast(t('dpdp.acknowledged'));
       onClose();
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Could not acknowledge privacy notice.');

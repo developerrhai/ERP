@@ -21,6 +21,7 @@ import {
   FB_DEF,
   FU_DEF,
   LEAD_DEF,
+  MEETING_STATUSES,
   MTG_DEF,
   OPP_DEF,
   crmActions,
@@ -60,6 +61,7 @@ import {
   receiptService,
   returnService,
 } from './fulfilment-service';
+import { holderScope } from '../work/holder-filter';
 
 const V40_GUARD: Record<string, string> = { 'master-customers': 'crm-customer360' };
 
@@ -208,64 +210,92 @@ export function createSalesRouter(): Router {
   }
 
   // ------------------------------------------------------------------ CRM
+  const sourceListQ = z.object({ department: z.string().trim().min(1).max(60).optional() }).strict();
   router.get(
     '/crm/sources',
     g('crm-sources', 'view'),
-    h(async (_req, res) => res.json({ data: await sourceService.list() })),
+    validate({ query: sourceListQ }),
+    h(async (_req, res) => {
+      const { department } = validated(res, 'query', sourceListQ);
+      const held = department ? await holderScope('crm-sources', department, 'Sales') : undefined;
+      res.json({ data: await sourceService.list(held) });
+    }),
   );
+  router.get(
+    '/crm/sources/summary',
+    g('crm-sources', 'view'),
+    h(async (_req, res) => res.json({ data: await sourceService.summary() })),
+  );
+  router.get(
+    '/crm/sources/audit',
+    g('crm-sources', 'view'),
+    validate({ query: z.object(pageQuery).strict() }),
+    h(async (req, res) => {
+      const q = validated(res, 'query', z.object(pageQuery).strict());
+      const { rows, total } = await sourceService.audit(callerOf(req), q);
+      res.json({ data: rows, meta: { page: q.page, size: q.size, total } });
+    }),
+  );
+  router.get(
+    '/crm/sources/:id',
+    g('crm-sources', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) => res.json({ data: await sourceService.get(String(req.params.id)) })),
+  );
+  // the optional attributes of a source; '' or null clears one
+  const sourceAttrs = {
+    status: z.enum(['Active', 'Inactive']).optional(),
+    channel: z.string().trim().max(40).nullish(),
+    campaign: z.string().trim().max(120).nullish(),
+    utmSource: z.string().trim().max(80).nullish(),
+    utmMedium: z.string().trim().max(80).nullish(),
+    monthlyCost: z
+      .union([z.literal(''), z.coerce.number().min(0, 'Must not be negative.').max(9_999_999_999)])
+      .nullish(),
+    effectiveFrom: z
+      .union([z.literal(''), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter a date (YYYY-MM-DD).')])
+      .nullish(),
+    projectNumber: z.string().trim().max(50).nullish(),
+  };
+  const sourceCreate = z
+    .object({
+      code: z
+        .string()
+        .trim()
+        .regex(/^[A-Za-z0-9_-]{2,20}$/, 'Use 2-20 letters or digits.'),
+      name: z.string().trim().min(2, 'Enter at least 2 characters.').max(80),
+      ...sourceAttrs,
+    })
+    .strict();
+  const sourceUpdate = z
+    .object({ name: z.string().trim().min(2, 'Enter at least 2 characters.').max(80).optional(), ...sourceAttrs })
+    .strict();
   router.post(
     '/crm/sources',
     g('crm-sources', 'add'),
-    validate({
-      body: z
-        .object({
-          code: z
-            .string()
-            .trim()
-            .regex(/^[A-Za-z0-9_-]{2,20}$/, 'Use 2-20 letters or digits.'),
-          name: z.string().trim().min(2).max(80),
-        })
-        .strict(),
-    }),
+    validate({ body: sourceCreate }),
     h(async (req, res) =>
-      send(
-        res,
-        await sourceService.create(
-          callerOf(req),
-          validated(res, 'body', z.object({ code: z.string(), name: z.string() })),
-        ),
-        201,
-      ),
+      send(res, await sourceService.create(callerOf(req), validated(res, 'body', sourceCreate)), 201),
     ),
   );
   router.put(
     '/crm/sources/:id',
     g('crm-sources', 'edit'),
-    validate({
-      params: idp,
-      body: z
-        .object({
-          name: z.string().trim().min(2).max(80).optional(),
-          status: z.enum(['Active', 'Inactive']).optional(),
-        })
-        .strict(),
-    }),
+    validate({ params: idp, body: sourceUpdate }),
     h(async (req, res) =>
       res.json({
-        data: await sourceService.update(
-          callerOf(req),
-          String(req.params.id),
-          validated(
-            res,
-            'body',
-            z.object({
-              name: z.string().optional(),
-              status: z.enum(['Active', 'Inactive']).optional(),
-            }),
-          ),
-        ),
+        data: await sourceService.update(callerOf(req), String(req.params.id), validated(res, 'body', sourceUpdate)),
       }),
     ),
+  );
+  router.delete(
+    '/crm/sources/:id',
+    g('crm-sources', 'delete'),
+    validate({ params: idp }),
+    h(async (req, res) => {
+      await sourceService.remove(callerOf(req), String(req.params.id));
+      res.status(204).end();
+    }),
   );
 
   mountDoc(
@@ -431,6 +461,7 @@ export function createSalesRouter(): Router {
         agenda: z.string().trim().max(1000).nullish(),
         outcome: z.string().trim().max(500).nullish(),
         projectNumber: z.string().trim().max(50).nullish(),
+        status: z.enum(MEETING_STATUSES).optional(),
       })
       .strict(),
     { submit: false },
@@ -492,6 +523,8 @@ export function createSalesRouter(): Router {
       first: z.enum(['0', '1']).default('0'),
       q: z.string().trim().max(100).optional(),
       status: z.string().max(24).optional(),
+      /** Lead Sources "Department Filter": the sources currently with this department. */
+      department: z.string().trim().min(1).max(60).optional(),
       ...pageQuery,
     })
     .strict();
@@ -520,6 +553,9 @@ export function createSalesRouter(): Router {
         status: q.status,
         page: q.page,
         size: q.size,
+        ...(q.department && pageId === 'crm-sources'
+          ? { held: await holderScope(pageId, q.department, 'Sales') }
+          : {}),
       });
       res.json({
         data: r.rows,
@@ -531,6 +567,7 @@ export function createSalesRouter(): Router {
           panel: r.panel ?? null,
           audit: r.audit,
           noSource: noSourceColumns(pageId),
+          ...(r.recordPage ? { recordPage: r.recordPage } : {}),
         },
       });
     }),

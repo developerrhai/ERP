@@ -84,7 +84,40 @@ interface Props {
   onOpenWorkspace?: (row: RecordRow) => void;
   /** Optional: draws the cell of a column itself (return undefined for the normal text). Used by pages whose V40 tabs add computed columns. */
   cellRender?: (row: RecordRow, field: FieldMeta) => ReactNode | undefined;
+  /** The V40 master workspace (Item / SKU Master, Stock Balance): KPI cards, side panel and the Detailed Table. */
+  workspace?: RegisterWorkspace | undefined;
 }
+
+export interface RowHandlers {
+  /** Docs opens the record's documents (without it, Docs opens the record). */
+  onDocs?: ((row: RecordRow) => void) | undefined;
+  /** Replace the Edit / Delete of the row (Stock Balance: both go through a Stock Adjustment). */
+  onEditRow?: ((row: RecordRow) => void) | undefined;
+  onDeleteRow?: ((row: RecordRow) => void) | undefined;
+  /** 360° Track, only on the rows that have something to follow. */
+  trackOf?: ((row: RecordRow) => (() => void) | undefined) | undefined;
+}
+
+export interface RegisterWorkspace extends RowHandlers {
+  /** Replaces the summary minis. */
+  kpis?: ReactNode;
+  /** Under the cards: the Department Filter. */
+  filterBar?: ReactNode;
+  /** Row buttons of the main table: the short master set, or none (the Detailed Table carries them). */
+  mainActions: 'master' | 'none';
+  /** Panel on the right of the main table (Validation Controls). */
+  side?: ReactNode;
+  /** Under the main table (＋ Add Master Record). */
+  footer?: ReactNode;
+  detail: { title: string; fields: FieldMeta[] };
+  /** "Submit Selected" for the ticked rows. */
+  onSubmitSelected?: ((rows: RecordRow[]) => void) | undefined;
+}
+
+type RowMode = 'full' | 'master' | 'none';
+
+/** The uuid a row's print / email / movement buttons act on. */
+export const docIdOf = (row: RecordRow): string => row.recordId ?? row.id;
 
 export const statusClass = (s: string): string => s.toLowerCase().replace(/\s+/g, '-');
 
@@ -118,6 +151,7 @@ export function RegisterTab({
   onRows,
   onOpenWorkspace,
   cellRender,
+  workspace,
 }: Props) {
   const allFields = useMemo(() => listFields(schema), [schema]);
   // Settings tab: list the columns there, and leave out the ones this user hid (never all of them)
@@ -147,6 +181,8 @@ export function RegisterTab({
   );
   const rows = useMemo(() => data?.rows ?? [], [data]);
   const total = data?.meta.total ?? 0;
+  // company-wide rows (items) belong to no plant: a column of dashes says nothing, so it is left out
+  const plantColumn = showPlant && (rows.length === 0 || rows.some((r) => !!r.unitCode));
   useEffect(() => {
     onRows?.(data?.rows ?? []);
   }, [data, onRows]);
@@ -252,10 +288,54 @@ export function RegisterTab({
   const canDelete = perms.delete && !schema.readOnly;
   const sortIndicator = (key: string): string =>
     query.sort === key ? ' ▲' : query.sort === `-${key}` ? ' ▼' : '';
+  const mainMode: RowMode = workspace ? workspace.mainActions : 'full';
+  const detailBox = useRef<HTMLDivElement>(null);
+  const [emailPicked, setEmailPicked] = useState<RecordRow | null>(null);
+  const picked = rows.filter((r) => selected.has(r.id));
+  const handlers: RowHandlers = workspace ?? {};
+  const rowProps = {
+    showPlant: plantColumn,
+    schema,
+    perms,
+    onToggle: toggle,
+    onView,
+    onEdit,
+    onDelete,
+    onAction,
+    onOpenWorkspace,
+    handlers,
+    ...(cellRender ? { cellRender } : {}),
+  };
+  /** Send Email of the table strip: the ticked record, else the department mail composer. */
+  const sendEmail = (): void => {
+    if (picked[0]) setEmailPicked(picked[0]);
+    else if (workspace) toastTop('Tick a row first, then press Send Email.');
+    else navigate('/m/dept-mail');
+  };
+  const exportsStrip = (box: () => HTMLDivElement | null, title: string): ReactNode => (
+    <>
+      <button type="button" className="btn sm" onClick={sendEmail}>
+        Send Email
+      </button>
+      <button type="button" className="btn sm" onClick={() => exportTable(box(), title, 'word', toastTop)}>
+        Word
+      </button>
+      <button type="button" className="btn sm" onClick={() => exportTable(box(), title, 'excel', toastTop)}>
+        Excel
+      </button>
+      <button type="button" className="btn sm" onClick={() => exportTable(box(), title, 'pdf', toastTop)}>
+        PDF
+      </button>
+    </>
+  );
 
   return (
+    <>
+    {workspace?.kpis}
+    {workspace?.filterBar}
+    <div className={workspace?.side ? 'ws-split' : undefined}>
     <div className="card">
-      <div className="v8-minis" aria-label="Summary">
+      {workspace ? null : <div className="v8-minis" aria-label="Summary">
         <div className="v8-mini">
           <small>Records</small>
           <b>{data ? total : '…'}</b>
@@ -276,7 +356,7 @@ export function RegisterTab({
           <small>{mini.money ? `${mini.money.label} (this page)` : 'Selected'}</small>
           <b>{mini.money && mini.moneySum !== null ? formatMoney(mini.moneySum) : selected.size}</b>
         </div>
-      </div>
+      </div>}
       {views && views.length > 1 ? (
         <div className="seg" role="group" aria-label="View">
           {views.map((v) => (
@@ -369,6 +449,17 @@ export function RegisterTab({
             {submitting ? 'Submitting…' : 'Submit Selected'}
           </button>
         ) : null}
+        {workspace?.onSubmitSelected ? (
+          <button
+            type="button"
+            className="btn"
+            disabled={picked.length === 0}
+            title={picked.length === 0 ? 'Tick the records to submit' : undefined}
+            onClick={() => workspace.onSubmitSelected?.(picked)}
+          >
+            Submit Selected
+          </button>
+        ) : null}
         {canDelete ? (
           <button
             type="button"
@@ -396,7 +487,7 @@ export function RegisterTab({
                   onChange={(e) => togglePage(e.target.checked)}
                 />
               </th>
-              {showPlant ? (
+              {plantColumn ? (
                 <th scope="col" aria-label="Plant">
                   Plant
                 </th>
@@ -413,48 +504,47 @@ export function RegisterTab({
                         : 'none'
                   }
                 >
-                  <button
-                    type="button"
-                    className="v8-sort"
-                    onClick={() => onQuery({ sort: nextSort(query.sort, f.key), page: 1 })}
-                  >
-                    {f.label}
-                    {sortIndicator(f.key)}
-                  </button>
+                  {f.sortable === false ? (
+                    f.label
+                  ) : (
+                    <button
+                      type="button"
+                      className="v8-sort"
+                      onClick={() => onQuery({ sort: nextSort(query.sort, f.key), page: 1 })}
+                    >
+                      {f.label}
+                      {sortIndicator(f.key)}
+                    </button>
+                  )}
                 </th>
               ))}
-              <th scope="col" className="sticky-actions">
-                Actions
-              </th>
+              {mainMode === 'none' ? null : (
+                <th scope="col" className="sticky-actions">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <RegisterRow
                 key={r.id}
-                showPlant={showPlant}
-                schema={schema}
-                perms={perms}
+                {...rowProps}
                 row={r}
                 fields={fields}
                 checked={selected.has(r.id)}
-                onToggle={toggle}
-                onView={onView}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onAction={onAction}
-                onOpenWorkspace={onOpenWorkspace}
-                {...(cellRender ? { cellRender } : {})}
+                mode={mainMode}
+                selectable
               />
             ))}
             {loading && !data ? (
               <tr className="empty-row">
-                <td colSpan={fields.length + 2 + (showPlant ? 1 : 0)}>Loading…</td>
+                <td colSpan={fields.length + 2 + (plantColumn ? 1 : 0)}>Loading…</td>
               </tr>
             ) : null}
             {data && rows.length === 0 ? (
               <tr className="empty-row">
-                <td colSpan={fields.length + 2 + (showPlant ? 1 : 0)}>
+                <td colSpan={fields.length + 2 + (plantColumn ? 1 : 0)}>
                   {query.q || query.status
                     ? 'No records match these filters.'
                     : `No ${schema.title} records yet.`}
@@ -464,23 +554,16 @@ export function RegisterTab({
           </tbody>
         </table>
       </div>
-      <div className="register-exports" role="group" aria-label={`${schema.title} detailed table actions`}>
-        <b>{`${schema.title} – Detailed Table`}</b>
-        <small className="muted">Table-level actions for the rows shown above.</small>
-        <span className="v8-spacer" />
-        <button type="button" className="btn sm" onClick={() => navigate('/m/dept-mail')}>
-          Send Email
-        </button>
-        <button type="button" className="btn sm" onClick={() => exportTable(tableBox.current, schema.title, 'word', toastTop)}>
-          Word
-        </button>
-        <button type="button" className="btn sm" onClick={() => exportTable(tableBox.current, schema.title, 'excel', toastTop)}>
-          Excel
-        </button>
-        <button type="button" className="btn sm" onClick={() => exportTable(tableBox.current, schema.title, 'pdf', toastTop)}>
-          PDF
-        </button>
-      </div>
+      {workspace ? (
+        workspace.footer
+      ) : (
+        <div className="register-exports" role="group" aria-label={`${schema.title} detailed table actions`}>
+          <b>{`${schema.title} – Detailed Table`}</b>
+          <small className="muted">Table-level actions for the rows shown above.</small>
+          <span className="v8-spacer" />
+          {exportsStrip(() => tableBox.current, schema.title)}
+        </div>
+      )}
       {schema.totals?.length && data?.meta.totals ? (
         <div className="totals-bar" aria-label="Totals">
           {schema.totals.map((t) => {
@@ -507,6 +590,59 @@ export function RegisterTab({
         total={total}
         onPage={(p) => onQuery({ page: p })}
       />
+    </div>
+    {workspace?.side}
+    </div>
+    {workspace ? (
+      <section className="card ws-section" aria-label={workspace.detail.title}>
+        <div className="ws-section-head">
+          <h3>{workspace.detail.title}</h3>
+          <small>
+            {rows.length} of {total} records. All row actions are available here.
+          </small>
+          <span className="ws-spacer" />
+          {exportsStrip(() => detailBox.current, workspace.detail.title)}
+        </div>
+        <div className="table-wrap" ref={detailBox}>
+          <table className="register-table ws-detail ws-lined">
+            <thead>
+              <tr>
+                {workspace.detail.fields.map((f) => (
+                  <th key={f.key} scope="col">
+                    {f.label}
+                  </th>
+                ))}
+                <th scope="col" className="sticky-actions">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <RegisterRow
+                  key={r.id}
+                  {...rowProps}
+                  showPlant={false}
+                  row={r}
+                  fields={workspace.detail.fields}
+                  checked={false}
+                  mode="full"
+                  selectable={false}
+                />
+              ))}
+              {data && rows.length === 0 ? (
+                <tr className="empty-row">
+                  <td colSpan={workspace.detail.fields.length + 1}>No records to show.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ) : null}
+      {emailPicked ? (
+        <EmailDocDialog docType={schema.pageId} docId={docIdOf(emailPicked)} onClose={() => setEmailPicked(null)} />
+      ) : null}
       {bulkOpen ? (
         <BulkDeleteModal
           schema={schema}
@@ -526,7 +662,7 @@ export function RegisterTab({
           }}
         />
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -567,6 +703,9 @@ function RegisterRow({
   onAction,
   onOpenWorkspace,
   cellRender,
+  mode,
+  selectable,
+  handlers,
 }: {
   showPlant: boolean;
   schema: PageSchema;
@@ -574,6 +713,9 @@ function RegisterRow({
   row: RecordRow;
   fields: FieldMeta[];
   checked: boolean;
+  mode: RowMode;
+  selectable: boolean;
+  handlers: RowHandlers;
   onToggle: (id: string, on: boolean) => void;
   onView: (row: RecordRow) => void;
   onEdit: (row: RecordRow) => void;
@@ -591,22 +733,26 @@ function RegisterRow({
   // V40 row buttons (Docs / Email / Word / PDF / Move Forward): each one runs on this row
   async function print(kind: 'word' | 'standard'): Promise<void> {
     try {
-      saveFile(await docsMailApi.print(schema.pageId, row.id, kind), `${row.code}.${kind === 'word' ? 'docx' : 'pdf'}`);
+      saveFile(await docsMailApi.print(schema.pageId, docIdOf(row), kind), `${row.code}.${kind === 'word' ? 'docx' : 'pdf'}`);
     } catch (e) {
       toast(e instanceof Error ? e.message : 'That did not work.');
     }
   }
+  const short = mode === 'master';
+  const track = mode === 'full' ? handlers.trackOf?.(row) : undefined;
   return (
     <tr className={isLowRow(row) ? 'row-low' : undefined}>
-      <td>
-        <input
-          type="checkbox"
-          className="v8-checkbox"
-          aria-label={`Select ${row.code}`}
-          checked={checked}
-          onChange={(e) => onToggle(row.id, e.target.checked)}
-        />
-      </td>
+      {selectable ? (
+        <td>
+          <input
+            type="checkbox"
+            className="v8-checkbox"
+            aria-label={`Select ${row.code}`}
+            checked={checked}
+            onChange={(e) => onToggle(row.id, e.target.checked)}
+          />
+        </td>
+      ) : null}
       {showPlant ? <td>{row.unitCode ?? '—'}</td> : null}
       {fields.map((f) => (
         <td key={f.key}>
@@ -623,8 +769,10 @@ function RegisterRow({
           )}
         </td>
       ))}
+      {mode === 'none' ? null : (
       <td className="sticky-actions">
-        <div className="actions row-actions">
+        <div className={`actions row-actions ws-actions${short ? ' compact' : ''}`}>
+          {short ? null : <>
           {hasRecordPanels && onOpenWorkspace ? (
             <button
               type="button"
@@ -645,7 +793,12 @@ function RegisterRow({
           >
             <span aria-hidden="true">👁</span> View
           </button>
-          <button type="button" className="btn sm" aria-label={`Docs ${row.code}`} title="Documents of this record" onClick={() => onView(row)}>
+          {handlers.onEditRow ? (
+            <button type="button" className="btn sm" title="Correct this balance with a Stock Adjustment" onClick={() => handlers.onEditRow?.(row)}>
+              <span aria-hidden="true">✎</span> Edit
+            </button>
+          ) : null}
+          <button type="button" className="btn sm" aria-label={`Docs ${row.code}`} title="Documents of this record" onClick={() => (handlers.onDocs ?? onView)(row)}>
             Docs
           </button>
           <button type="button" className="btn sm" aria-label={`Email ${row.code}`} title="Email this record" onClick={() => setEmailing(true)}>
@@ -658,6 +811,7 @@ function RegisterRow({
             PDF
           </button>
           <ActionButtons schema={schema} row={row} small perms={perms} onAction={onAction} />
+          </>}
           {perms.edit && editable ? (
             <button
               type="button"
@@ -700,13 +854,24 @@ function RegisterRow({
               <span aria-hidden="true">🗑</span>
             </button>
           ) : null}
+          {handlers.onDeleteRow ? (
+            <button type="button" className="btn sm danger" title="Write this stock off with a Stock Adjustment" onClick={() => handlers.onDeleteRow?.(row)}>
+              <span aria-hidden="true">🗑</span> Delete
+            </button>
+          ) : null}
+          {track ? (
+            <button type="button" className="btn sm" title="Follow the open demand of this record" onClick={track}>
+              360° Track
+            </button>
+          ) : null}
           <button type="button" className="btn sm primary" aria-label={`Move Forward ${row.code}`} title="Move this record to the next department" onClick={() => setMoving(true)}>
             Move Forward
           </button>
         </div>
-        {emailing ? <EmailDocDialog docType={schema.pageId} docId={row.id} onClose={() => setEmailing(false)} /> : null}
-        {moving ? <MoveForwardDialog docType={schema.pageId} docId={row.id} docNo={row.code} onClose={() => setMoving(false)} onMoved={() => setMoving(false)} /> : null}
+        {emailing ? <EmailDocDialog docType={schema.pageId} docId={docIdOf(row)} onClose={() => setEmailing(false)} /> : null}
+        {moving ? <MoveForwardDialog docType={schema.pageId} docId={docIdOf(row)} docNo={row.code} onClose={() => setMoving(false)} onMoved={() => setMoving(false)} /> : null}
       </td>
+      )}
     </tr>
   );
 }
