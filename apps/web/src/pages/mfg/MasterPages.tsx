@@ -305,7 +305,7 @@ function Calendars({ actions }: { actions: ActionSet }) {
             <span>Working days</span>
             <div>
               {DAYS.map((d, i) => (
-                <label key={d} style={{ marginRight: 12 }}>
+                <label key={d} className="x-mr-12px">
                   <input
                     type="checkbox"
                     checked={days.includes(i)}
@@ -956,7 +956,7 @@ function BomImport({ onClose, onDone }: { onClose: () => void; onDone: () => voi
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={'FG-100, RM-1, 2, Kg, 5\nFG-100, RM-2, 1'}
-        style={{ width: '100%' }}
+        className="x-w-100pct"
       />
       {res ? (
         <>

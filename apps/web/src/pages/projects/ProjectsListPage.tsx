@@ -71,10 +71,10 @@ export function ProjectsListPage() {
 
       {error && <div className="notice error">{error}</div>}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+      <div className="x-d-flex x-jc-space-between x-mb-1rem">
+        <div className="x-d-flex x-gap-0_5rem">
           <span className="badge">Total Projects: {projects.length}</span>
-          <span className="badge" style={{ background: '#e6f4ea', color: '#137333' }}>
+          <span className="badge x-bg-he6f4ea x-c-success">
             Active: {projects.filter((p) => p.status === 'ACTIVE').length}
           </span>
         </div>
@@ -141,10 +141,10 @@ export function ProjectsListPage() {
 
       {showModal && (
         <div className="modal-backdrop">
-          <div className="modal" style={{ maxWidth: '500px' }}>
+          <div className="modal x-maxw-500px">
             <h3>New Customer Project</h3>
             <form onSubmit={handleCreate}>
-              <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <div className="form-group x-mb-1rem">
                 <label>Project Name</label>
                 <input
                   type="text"
@@ -152,11 +152,10 @@ export function ProjectsListPage() {
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="e.g. Turnkey Plant Automation"
-                  className="input"
-                  style={{ width: '100%' }}
+                  className="input x-w-100pct"
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="x-d-grid x-cols-1fr-1fr x-gap-1rem x-mb-1rem">
                 <div className="form-group">
                   <label>Start Date</label>
                   <DateField
@@ -176,18 +175,17 @@ export function ProjectsListPage() {
                   />
                 </div>
               </div>
-              <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <div className="form-group x-mb-1rem">
                 <label>Contract Value (₹)</label>
                 <input
                   type="number"
                   required
                   value={form.contractValue}
                   onChange={(e) => setForm({ ...form, contractValue: Number(e.target.value) })}
-                  className="input"
-                  style={{ width: '100%' }}
+                  className="input x-w-100pct"
                 />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <div className="x-d-flex x-jc-flex-end x-gap-0_5rem">
                 <button type="button" className="btn" onClick={() => setShowModal(false)}>
                   Cancel
                 </button>

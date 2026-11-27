@@ -60,7 +60,7 @@ export function TimesheetsPage() {
 
       {error && <div className="notice error">{error}</div>}
 
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid #dadce0' }}>
+      <div className="x-d-flex x-gap-0_5rem x-mb-1_5rem x-bb-1px-solid-line-strong">
         <button
           className={`tab-btn ${activeTab === 'ALL' ? 'active' : ''}`}
           onClick={() => setActiveTab('ALL')}

@@ -164,92 +164,79 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
       </div>
 
       {error ? (
-        <div className="msg error show static" role="alert" style={{ marginBottom: 16 }}>
+        <div className="msg error show static x-mb-16px" role="alert">
           {error}
         </div>
       ) : null}
 
       {/* Top Cards per §2, §7, §13 */}
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 16,
-          marginBottom: 24,
-        }}
+        className="x-d-grid x-cols-repeat-auto-fit-minmax-220px-1fr x-gap-16px x-mb-24px"
       >
-        <div className="card" style={{ padding: 16 }}>
-          <div className="v8-sub" style={{ fontSize: 13, marginBottom: 8 }}>
+        <div className="card x-p-16px">
+          <div className="v8-sub x-fs-13px x-mb-8px">
             Admins without Two-Step
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>
+          <div className="x-fs-28px x-fw-700 x-c-text">
             {adminsWithoutMfa !== null ? adminsWithoutMfa : '—'}
           </div>
-          <div style={{ marginTop: 8 }}>
+          <div className="x-mt-8px">
             <span
-              className={`status ${adminsWithoutMfa === 0 ? 'active' : 'inactive'}`}
-              style={{ fontSize: 11 }}
+              className={`status ${adminsWithoutMfa === 0 ? 'active' : 'inactive'} x-fs-11px`}
             >
               {adminsWithoutMfa === 0 ? 'Protected' : 'Action needed'}
             </span>
           </div>
         </div>
 
-        <div className="card" style={{ padding: 16 }}>
-          <div className="v8-sub" style={{ fontSize: 13, marginBottom: 8 }}>
+        <div className="card x-p-16px">
+          <div className="v8-sub x-fs-13px x-mb-8px">
             Locked Accounts
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>
+          <div className="x-fs-28px x-fw-700 x-c-text">
             {lockedAccountsCount !== null ? lockedAccountsCount : '—'}
           </div>
-          <div style={{ marginTop: 8 }}>
+          <div className="x-mt-8px">
             <span
-              className={`status ${lockedAccountsCount === 0 ? 'active' : 'inactive'}`}
-              style={{ fontSize: 11 }}
+              className={`status ${lockedAccountsCount === 0 ? 'active' : 'inactive'} x-fs-11px`}
             >
               {lockedAccountsCount === 0 ? 'All clear' : 'Locked'}
             </span>
           </div>
         </div>
 
-        <div className="card" style={{ padding: 16 }}>
-          <div className="v8-sub" style={{ fontSize: 13, marginBottom: 8 }}>
+        <div className="card x-p-16px">
+          <div className="v8-sub x-fs-13px x-mb-8px">
             Failed Sign-Ins Today
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>
+          <div className="x-fs-28px x-fw-700 x-c-text">
             {failedLoginsToday !== null ? failedLoginsToday : '—'}
           </div>
-          <div style={{ marginTop: 8 }}>
-            <span className="status active" style={{ fontSize: 11 }}>
+          <div className="x-mt-8px">
+            <span className="status active x-fs-11px">
               Monitored
             </span>
           </div>
         </div>
 
-        <div className="card" style={{ padding: 16 }}>
-          <div className="v8-sub" style={{ fontSize: 13, marginBottom: 8 }}>
+        <div className="card x-p-16px">
+          <div className="v8-sub x-fs-13px x-mb-8px">
             Proxy Check
           </div>
           <div
-            style={{
-              fontSize: 20,
-              fontWeight: 700,
-              color: 'var(--text)',
-              fontFamily: 'monospace',
-            }}
+            className="x-fs-20px x-fw-700 x-c-text x-font-family-monospace"
           >
             {whoAmI ? whoAmI.ip : '—'}
           </div>
-          <div style={{ marginTop: 8 }}>
+          <div className="x-mt-8px">
             <span
-              className={`status ${isProxySecure ? 'active' : 'inactive'}`}
-              style={{ fontSize: 11 }}
+              className={`status ${isProxySecure ? 'active' : 'inactive'} x-fs-11px`}
             >
               {isProxySecure ? 'Secure (Real IP forwarded)' : 'Warning: Loopback IP'}
             </span>
           </div>
           {whoAmI ? (
-            <div className="v8-sub" style={{ fontSize: 11, marginTop: 4 }}>
+            <div className="v8-sub x-fs-11px x-mt-4px">
               Proto: {whoAmI.protocol.toUpperCase()} · TrustProxy: {String(whoAmI.trustProxy)}
             </div>
           ) : null}
@@ -257,61 +244,50 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
       </div>
 
       {/* Tabs */}
-      <div className="card" style={{ padding: 0 }}>
+      <div className="card x-p-0">
         <div
-          className="tabs"
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid var(--border)',
-            padding: '0 16px',
-            gap: 8,
-          }}
+          className="tabs x-d-flex x-bb-1px-solid-border x-p-0-16px x-gap-8px"
         >
           <button
             type="button"
-            className={`btn sm ${tab === 'password' ? 'primary' : ''}`}
+            className={`btn sm ${tab === 'password' ? 'primary' : ''} x-m-8px-0`}
             onClick={() => setTab('password')}
-            style={{ margin: '8px 0' }}
           >
             Password Policy
           </button>
           <button
             type="button"
-            className={`btn sm ${tab === 'mfa' ? 'primary' : ''}`}
+            className={`btn sm ${tab === 'mfa' ? 'primary' : ''} x-m-8px-0`}
             onClick={() => setTab('mfa')}
-            style={{ margin: '8px 0' }}
           >
             MFA (Two-Step)
           </button>
           <button
             type="button"
-            className={`btn sm ${tab === 'sessions' ? 'primary' : ''}`}
+            className={`btn sm ${tab === 'sessions' ? 'primary' : ''} x-m-8px-0`}
             onClick={() => setTab('sessions')}
-            style={{ margin: '8px 0' }}
           >
             Session Controls
           </button>
           <button
             type="button"
-            className={`btn sm ${tab === 'ip' ? 'primary' : ''}`}
+            className={`btn sm ${tab === 'ip' ? 'primary' : ''} x-m-8px-0`}
             onClick={() => setTab('ip')}
-            style={{ margin: '8px 0' }}
           >
             IP Restrictions
           </button>
           <button
             type="button"
-            className={`btn sm ${tab === 'events' ? 'primary' : ''}`}
+            className={`btn sm ${tab === 'events' ? 'primary' : ''} x-m-8px-0`}
             onClick={() => setTab('events')}
-            style={{ margin: '8px 0' }}
           >
             Security Events
           </button>
         </div>
 
-        <form onSubmit={handleSave} style={{ padding: 24 }}>
+        <form onSubmit={handleSave} className="x-p-24px">
           {tab === 'password' && (
-            <div style={{ display: 'grid', gap: 16, maxWidth: 540 }}>
+            <div className="x-d-grid x-gap-16px x-maxw-540px">
               <div className="field">
                 <label htmlFor="sec-min-len">Minimum Password Length (12–128 characters)</label>
                 <input
@@ -326,7 +302,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   }
                   required
                 />
-                <span className="v8-sub" style={{ fontSize: 12 }}>
+                <span className="v8-sub x-fs-12px">
                   NIST SP 800-63B recommends at least 12 characters with no arbitrary character
                   classes.
                 </span>
@@ -346,7 +322,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   }
                   required
                 />
-                <span className="v8-sub" style={{ fontSize: 12 }}>
+                <span className="v8-sub x-fs-12px">
                   Consecutive failed password or MFA attempts before temporary account lockout.
                 </span>
               </div>
@@ -363,7 +339,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   onChange={(e) => setPolicy({ ...policy, lockoutMinutes: Number(e.target.value) })}
                   required
                 />
-                <span className="v8-sub" style={{ fontSize: 12 }}>
+                <span className="v8-sub x-fs-12px">
                   Minutes an account remains locked. An administrator can also unlock immediately.
                 </span>
               </div>
@@ -371,12 +347,12 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
           )}
 
           {tab === 'mfa' && (
-            <div style={{ display: 'grid', gap: 16, maxWidth: 540 }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div className="x-d-grid x-gap-16px x-maxw-540px">
+              <div className="x-d-flex x-ai-flex-start x-gap-12px">
                 <input
                   id="sec-mfa-req"
                   type="checkbox"
-                  style={{ width: 18, height: 18, marginTop: 2 }}
+                  className="x-w-18px x-h-18px x-mt-2px"
                   checked={policy.mfaRequiredForAdmins}
                   disabled={!actions.edit}
                   onChange={(e) => setPolicy({ ...policy, mfaRequiredForAdmins: e.target.checked })}
@@ -384,11 +360,11 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                 <div>
                   <label
                     htmlFor="sec-mfa-req"
-                    style={{ fontWeight: 600, display: 'block', cursor: 'pointer' }}
+                    className="x-fw-600 x-d-block x-cur-pointer"
                   >
                     Require two-step verification for Administrators
                   </label>
-                  <span className="v8-sub" style={{ fontSize: 13, display: 'block', marginTop: 4 }}>
+                  <span className="v8-sub x-fs-13px x-d-block x-mt-4px">
                     When enabled, all Super Admin and Admin accounts must enroll an authenticator
                     app before accessing ERP modules. Users without two-step will be guided directly
                     to setup.
@@ -399,7 +375,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
           )}
 
           {tab === 'sessions' && (
-            <div style={{ display: 'grid', gap: 16, maxWidth: 540 }}>
+            <div className="x-d-grid x-gap-16px x-maxw-540px">
               <div className="field">
                 <label htmlFor="sec-idle-min">Idle Timeout (5–240 minutes)</label>
                 <input
@@ -412,7 +388,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   onChange={(e) => setPolicy({ ...policy, idleMinutes: Number(e.target.value) })}
                   required
                 />
-                <span className="v8-sub" style={{ fontSize: 12 }}>
+                <span className="v8-sub x-fs-12px">
                   Inactivity limit before automatic sign-out. A warning appears 2 minutes prior.
                 </span>
               </div>
@@ -429,7 +405,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   onChange={(e) => setPolicy({ ...policy, absoluteHours: Number(e.target.value) })}
                   required
                 />
-                <span className="v8-sub" style={{ fontSize: 12 }}>
+                <span className="v8-sub x-fs-12px">
                   Maximum total lifetime of a session family before re-authentication is required.
                 </span>
               </div>
@@ -448,7 +424,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
                   }
                   required
                 />
-                <span className="v8-sub" style={{ fontSize: 12 }}>
+                <span className="v8-sub x-fs-12px">
                   When this limit is reached, the oldest session family is signed out automatically.
                 </span>
               </div>
@@ -456,17 +432,12 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
           )}
 
           {tab === 'ip' && (
-            <div style={{ padding: '24px 0', maxWidth: 600 }}>
+            <div className="x-p-24px-0 x-maxw-600px">
               <div
-                style={{
-                  padding: 16,
-                  borderRadius: 4,
-                  background: 'var(--subtle-bg, #f8f9fa)',
-                  border: '1px solid var(--border)',
-                }}
+                className="x-p-16px x-r-6px x-bg-var-subtle-bg-hf8f9fa x-bd-1px-solid-border"
               >
-                <h4 style={{ margin: '0 0 8px 0', fontSize: 15 }}>IP Restrictions</h4>
-                <p className="v8-sub" style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
+                <h4 className="x-m-0-0-8px-0 x-fs-14px">IP Restrictions</h4>
+                <p className="v8-sub x-m-0 x-fs-13px x-lh-1_5">
                   IP allow-listing is scheduled for Phase 20. Access is currently controlled per
                   account and protected by rate limiting and lockout policies.
                 </p>
@@ -475,14 +446,9 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
           )}
 
           {tab === 'events' && (
-            <div style={{ maxWidth: 900 }}>
+            <div className="x-maxw-900px">
               <div
-                style={{
-                  marginBottom: 12,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
+                className="x-mb-12px x-d-flex x-jc-space-between x-ai-center"
               >
                 <span className="v8-sub">Recent login & identity events</span>
                 <a href="/m/admin-audit?preset=login_events" className="btn sm">
@@ -522,7 +488,7 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
           )}
 
           {tab !== 'ip' && tab !== 'events' && actions.edit ? (
-            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+            <div className="x-mt-24px x-pt-16px x-bt-1px-solid-border">
               <button type="submit" className="btn primary" disabled={saving || loading}>
                 {saving ? 'Saving…' : 'Save Security Policy'}
               </button>
@@ -532,11 +498,11 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
       </div>
 
       {/* Security Center Role Permission Matrix */}
-      <div className="card table-wrap" style={{ margin: '18px 0', padding: 14 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <div className="card table-wrap x-m-18px-0 x-p-14px">
+        <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
           <div>
-            <h3 style={{ margin: 0, fontSize: 15, color: '#1e293b' }}>Security Center Role Permission Matrix</h3>
-            <p style={{ margin: '4px 0 0 0', fontSize: 12, color: '#64748b' }}>Cross-role security baseline and privilege tier authorization.</p>
+            <h3 className="x-m-0 x-fs-14px x-c-text">Security Center Role Permission Matrix</h3>
+            <p className="x-m-4px-0-0-0 x-fs-12px x-c-muted">Cross-role security baseline and privilege tier authorization.</p>
           </div>
           <button
             type="button"
@@ -601,9 +567,9 @@ export function SecurityCenterPage({ actions = { view: true, edit: true } }: Pro
 
       {/* Security Center Detailed Table */}
       <div className="card table-wrap">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 6px 14px' }}>
-          <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Security Center Detailed Audit Ledger</h3>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Real-time cryptographic authentication telemetry</span>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-p-12px-14px-6px-14px">
+          <h3 className="x-m-0 x-fs-14px x-c-text">Security Center Detailed Audit Ledger</h3>
+          <span className="x-fs-12px x-c-muted">Real-time cryptographic authentication telemetry</span>
         </div>
         <table>
           <thead>

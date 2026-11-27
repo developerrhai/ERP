@@ -115,19 +115,13 @@ export function PayloadDialog({
       aria-modal="true"
       aria-labelledby="payload-dlg-title"
     >
-      <div className="modal" style={{ maxWidth: '480px' }}>
+      <div className="modal x-maxw-480px">
         <h3 id="payload-dlg-title">{title}</h3>
 
         {generalError ? (
           <div
-            className="notice bad"
+            className="notice bad x-mb-12px x-p-8px-12px x-fs-11px x-r-6px"
             role="alert"
-            style={{
-              marginBottom: '12px',
-              padding: '8px 12px',
-              fontSize: '11px',
-              borderRadius: '6px',
-            }}
           >
             {generalError}
           </div>
@@ -135,8 +129,7 @@ export function PayloadDialog({
 
         <form onSubmit={handleSubmit}>
           <div
-            className="form-grid"
-            style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
+            className="form-grid x-d-flex x-fd-column x-gap-10px"
           >
             {fields.map((f) => {
               const err = fieldErrors[f.key] ?? fieldErrors[`payload.${f.key}`];
@@ -146,7 +139,7 @@ export function PayloadDialog({
                 <div key={f.key} className="field">
                   <label htmlFor={`payload-f-${f.key}`}>
                     {f.label}
-                    {f.required ? <span style={{ color: '#dc2626' }}> *</span> : null}
+                    {f.required ? <span className="x-c-danger-hover"> *</span> : null}
                   </label>
 
                   {f.type === 'longtext' ? (
@@ -156,7 +149,7 @@ export function PayloadDialog({
                       value={String(val ?? '')}
                       onChange={(e) => updateField(f.key, e.target.value)}
                       aria-invalid={err ? true : undefined}
-                      style={{ width: '100%' }}
+                      className="x-w-100pct"
                     />
                   ) : f.type === 'enum' && f.options ? (
                     <select
@@ -164,7 +157,7 @@ export function PayloadDialog({
                       value={String(val ?? '')}
                       onChange={(e) => updateField(f.key, e.target.value)}
                       aria-invalid={err ? true : undefined}
-                      style={{ width: '100%' }}
+                      className="x-w-100pct"
                     >
                       <option value="">Select {f.label}…</option>
                       {f.options.map((opt) => (
@@ -194,20 +187,14 @@ export function PayloadDialog({
                       value={val !== undefined && val !== null ? String(val) : ''}
                       onChange={(e) => updateField(f.key, e.target.value)}
                       aria-invalid={err ? true : undefined}
-                      style={{ width: '100%' }}
+                      className="x-w-100pct"
                     />
                   )}
 
                   {err ? (
                     <small
-                      className="field-error"
+                      className="field-error x-c-danger-hover x-fs-10px x-d-block x-mt-3px"
                       role="alert"
-                      style={{
-                        color: '#dc2626',
-                        fontSize: '9px',
-                        display: 'block',
-                        marginTop: '3px',
-                      }}
                     >
                       {err}
                     </small>
@@ -218,13 +205,7 @@ export function PayloadDialog({
           </div>
 
           <div
-            className="actions"
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '8px',
-              marginTop: '16px',
-            }}
+            className="actions x-d-flex x-jc-flex-end x-gap-8px x-mt-16px"
           >
             <button type="button" className="btn" disabled={submitting} onClick={onClose}>
               Cancel

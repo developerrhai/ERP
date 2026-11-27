@@ -64,7 +64,7 @@ export function InlineCell({ rowId, initialValue, editable, onCall }: InlineCell
   };
 
   return (
-    <div className="inline-cell-wrap" style={{ display: 'inline-block', minWidth: '70px' }}>
+    <div className="inline-cell-wrap x-d-inline-block x-minw-70px">
       <input
         type={editable.type === 'text' ? 'text' : 'number'}
         className="inline-input"
@@ -89,15 +89,8 @@ export function InlineCell({ rowId, initialValue, editable, onCall }: InlineCell
       />
       {error ? (
         <small
-          className="field-error"
+          className="field-error x-d-block x-c-danger-hover x-fs-10px x-mt-2px x-lh-1_2"
           role="alert"
-          style={{
-            display: 'block',
-            color: '#dc2626',
-            fontSize: '9px',
-            marginTop: '2px',
-            lineHeight: 1.2,
-          }}
         >
           {error}
         </small>

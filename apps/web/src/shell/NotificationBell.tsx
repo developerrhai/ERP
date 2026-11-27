@@ -127,7 +127,7 @@ export function NotificationBell() {
       </button>
       {open ? (
         <Drawer title="Notifications" onClose={() => setOpen(false)}>
-          <div className="bell-actions" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+          <div className="bell-actions x-d-flex x-gap-6px x-wrap-wrap x-mb-8px">
             <button type="button" className="btn sm" onClick={markAll} disabled={count === 0}>
               Mark all read
             </button>
@@ -152,7 +152,7 @@ export function NotificationBell() {
               Settings
             </button>
           </div>
-          <div className="chips" role="tablist" aria-label="Notification categories" style={{ marginBottom: 10 }}>
+          <div className="chips x-mb-10px" role="tablist" aria-label="Notification categories">
             {(
               [
                 ['ALL', 'All'],

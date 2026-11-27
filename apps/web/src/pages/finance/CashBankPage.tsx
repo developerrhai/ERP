@@ -2,6 +2,7 @@
 // balance, plus "New payment / receipt / transfer". A payment is posted at once; undo = Cancel (a mirror journal).
 import { FinV40 } from './FinV40';
 import { SettleBillsModal } from './SettleBills';
+import { CancelEntriesButton } from './UndoWindows';
 import { useRef, useState, type FormEvent } from 'react';
 import { Field, SelectField } from '../../components/Field';
 import { Modal } from '../../components/Modal';
@@ -54,6 +55,15 @@ export function CashBankPage({ cash, actions }: { cash: boolean; actions: Action
             : 'Every rupee in and out of your bank accounts, with the balance after each entry.'
         }
       >
+        <CancelEntriesButton
+          cash={cash}
+          books={mine}
+          bookId={active}
+          onChanged={() => {
+            book.reload();
+            books.reload();
+          }}
+        />
         {actions.add && mine.length > 0 ? (
           <button type="button" className="btn primary" onClick={() => setDialog('pay')}>
             ＋ New Entry
@@ -82,7 +92,7 @@ export function CashBankPage({ cash, actions }: { cash: boolean; actions: Action
               </div>
             ) : null}
             {mine.length > 0 ? (
-              <div className="recordbar" style={{ marginBottom: 16 }}>
+              <div className="recordbar x-mb-16px">
                 <select
                   aria-label="Account"
                   value={active}

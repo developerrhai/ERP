@@ -7,9 +7,9 @@ export function HelpDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   if (!open) return null;
   return (
     <Drawer title={t('app.help')} onClose={onClose}>
-      <section style={{ marginBottom: 16 }}>
-        <h3 style={{ marginTop: 0, fontSize: 15 }}>{t('app.whatsNew')} (Phase 20)</h3>
-        <ul style={{ paddingLeft: 18, fontSize: 13, lineHeight: 1.6 }}>
+      <section className="x-mb-16px">
+        <h3 className="x-mt-0 x-fs-14px">{t('app.whatsNew')} (Phase 20)</h3>
+        <ul className="x-pl-18px x-fs-13px x-lh-1_6">
           <li>Hindi UI (`EN / हिं`) saved to your user profile.</li>
           <li>Multi-process HA runtime with PostgreSQL rate limits & LISTEN/NOTIFY permission sync.</li>
           <li>Opening-balance cut-over reconciliation PDF & CFO/Dept Head sign-off.</li>
@@ -18,8 +18,8 @@ export function HelpDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         </ul>
       </section>
       <section>
-        <h3 style={{ fontSize: 15 }}>Quick Guides & Role Runbooks</h3>
-        <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+        <h3 className="x-fs-14px">Quick Guides & Role Runbooks</h3>
+        <p className="x-fs-13px x-c-muted">
           Department role guides (EN / HI / MR) live in <code>docs/guides/</code>: Finance, Sales,
           Purchase, Warehouse, Production, Quality, Maintenance, HR/Payroll, Logistics, Admin.
         </p>

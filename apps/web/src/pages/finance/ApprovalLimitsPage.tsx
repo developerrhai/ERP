@@ -81,7 +81,7 @@ export function ApprovalLimitsPage({ actions }: { actions: ActionSet }) {
         ) : null}
       </PageHead>
       <ErrorBox message={error || err?.message || ''} />
-      <div className="card" style={{ padding: 16, maxWidth: 560 }}>
+      <div className="card x-p-16px x-maxw-560px">
         <Field
           label="Manual journals — approval from (₹)"
           inputMode="decimal"

@@ -86,12 +86,7 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
     <>
       <Drawer title={`User: ${user.name} (${user.loginId})`} onClose={onClose}>
         <div
-          style={{
-            display: 'flex',
-            gap: '0.5rem',
-            borderBottom: '1px solid #e2e8f0',
-            marginBottom: '1.25rem',
-          }}
+          className="x-d-flex x-gap-0_5rem x-bb-1px-solid-line x-mb-1_25rem"
         >
           <button
             type="button"
@@ -126,21 +121,21 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
         </div>
 
         {error ? (
-          <div className="msg error show" style={{ marginBottom: '1rem' }}>
+          <div className="msg error show x-mb-1rem">
             {error}
           </div>
         ) : null}
 
         {tab === 'auth' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="x-d-flex x-fd-column x-gap-1_25rem">
             {/* Lock State */}
-            <div style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+            <div className="x-p-1rem x-bd-1px-solid-line x-r-6px">
               <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                className="x-d-flex x-jc-space-between x-ai-center"
               >
                 <div>
-                  <b style={{ fontSize: '0.9375rem' }}>Account Lock State</b>
-                  <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '0.25rem' }}>
+                  <b className="x-fs-14px">Account Lock State</b>
+                  <div className="x-fs-13px x-c-muted x-mt-0_25rem">
                     {isLocked
                       ? 'Account is currently locked due to failed login attempts.'
                       : 'Account is active and not locked.'}
@@ -150,7 +145,7 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
                   {isLocked ? 'Locked' : 'Unlocked'}
                 </span>
               </div>
-              <div style={{ marginTop: '0.75rem' }}>
+              <div className="x-mt-0_75rem">
                 <button
                   type="button"
                   className="btn sm secondary"
@@ -160,11 +155,11 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
                   Unlock
                 </button>
                 {isSelf ? (
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '0.5rem' }}>
+                  <span className="x-fs-12px x-c-muted x-ml-0_5rem">
                     Use My Account → Security for your own account.
                   </span>
                 ) : !isLocked ? (
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '0.5rem' }}>
+                  <span className="x-fs-12px x-c-muted x-ml-0_5rem">
                     Account is not locked.
                   </span>
                 ) : null}
@@ -172,13 +167,13 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
             </div>
 
             {/* MFA State */}
-            <div style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+            <div className="x-p-1rem x-bd-1px-solid-line x-r-6px">
               <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                className="x-d-flex x-jc-space-between x-ai-center"
               >
                 <div>
-                  <b style={{ fontSize: '0.9375rem' }}>Two-Step Verification</b>
-                  <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '0.25rem' }}>
+                  <b className="x-fs-14px">Two-Step Verification</b>
+                  <div className="x-fs-13px x-c-muted x-mt-0_25rem">
                     {user.mfaEnabled
                       ? 'Two-step verification is enabled.'
                       : 'Two-step verification is not enabled.'}
@@ -188,7 +183,7 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
                   {user.mfaEnabled ? 'Enabled' : 'Disabled'}
                 </span>
               </div>
-              <div style={{ marginTop: '0.75rem' }}>
+              <div className="x-mt-0_75rem">
                 <button
                   type="button"
                   className="btn sm danger"
@@ -198,15 +193,15 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
                   Reset Two-Step
                 </button>
                 {isSelf ? (
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '0.5rem' }}>
+                  <span className="x-fs-12px x-c-muted x-ml-0_5rem">
                     Use My Account → Security for your own account.
                   </span>
                 ) : !user.mfaEnabled ? (
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '0.5rem' }}>
+                  <span className="x-fs-12px x-c-muted x-ml-0_5rem">
                     Two-step verification is not enabled.
                   </span>
                 ) : !canResetMfa ? (
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '0.5rem' }}>
+                  <span className="x-fs-12px x-c-muted x-ml-0_5rem">
                     Only SUPER_ADMIN can reset two-step verification for an administrator.
                   </span>
                 ) : null}
@@ -214,12 +209,12 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
             </div>
 
             {/* Password Reset */}
-            <div style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-              <b style={{ fontSize: '0.9375rem' }}>Password Management</b>
-              <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '0.25rem' }}>
+            <div className="x-p-1rem x-bd-1px-solid-line x-r-6px">
+              <b className="x-fs-14px">Password Management</b>
+              <div className="x-fs-13px x-c-muted x-mt-0_25rem">
                 Set a temporary password. The user will be required to change it upon sign-in.
               </div>
-              <div style={{ marginTop: '0.75rem' }}>
+              <div className="x-mt-0_75rem">
                 <button
                   type="button"
                   className="btn sm secondary"
@@ -229,7 +224,7 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
                   Reset Password
                 </button>
                 {isSelf ? (
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '0.5rem' }}>
+                  <span className="x-fs-12px x-c-muted x-ml-0_5rem">
                     Use My Account → Security for your own account.
                   </span>
                 ) : null}
@@ -238,18 +233,13 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
 
             {/* Last Sign-in info */}
             <div
-              style={{
-                padding: '1rem',
-                backgroundColor: '#f8fafc',
-                borderRadius: '6px',
-                fontSize: '0.8125rem',
-              }}
+              className="x-p-1rem x-bgc-card2 x-r-6px x-fs-13px"
             >
               <div>
                 Last Sign-In: <b>{formatIstDateTime(user.lastLoginAt) || 'Never'}</b>
               </div>
               {user.previousLoginAt ? (
-                <div style={{ marginTop: '0.25rem' }}>
+                <div className="x-mt-0_25rem">
                   Previous Sign-In: <b>{formatIstDateTime(user.previousLoginAt)}</b>
                   {user.previousLoginIp ? ` from ${user.previousLoginIp}` : ''}
                 </div>
@@ -260,14 +250,9 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
           /* Session History Tab */
           <div>
             <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '1rem',
-              }}
+              className="x-d-flex x-jc-space-between x-ai-center x-mb-1rem"
             >
-              <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
+              <span className="x-fs-14px x-c-muted">
                 {sessions.length} recorded session{sessions.length === 1 ? '' : 's'}
               </span>
               <button
@@ -280,7 +265,7 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
               </button>
             </div>
             {isSelf ? (
-              <p style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem' }}>
+              <p className="x-fs-12px x-c-muted x-mb-0_5rem">
                 Use My Account → Security to manage your own sessions.
               </p>
             ) : null}
@@ -303,7 +288,7 @@ export function UserDrawer({ user, currentUser, onClose, onReload }: Props) {
                           {s.userAgent ?? 'Unknown'}
                         </div>
                         {s.mfaVerified ? (
-                          <span style={{ fontSize: '0.6875rem', color: '#16a34a' }}>
+                          <span style={{ fontSize: '0.6875rem', color: '#15803d' }}>
                             ✓ 2FA Verified
                           </span>
                         ) : null}

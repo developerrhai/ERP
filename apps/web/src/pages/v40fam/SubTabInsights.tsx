@@ -107,37 +107,30 @@ export function SubTabInsights({
 
   return (
     <div
-      className="v9-grid subtab-insights"
-      style={{ marginTop: 12 }}
+      className="v9-grid subtab-insights x-mt-12px"
       data-testid="subtab-insights"
       aria-label={`${tab} workspace`}
     >
       <div className="v9-section">
         <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            marginBottom: 10,
-          }}
+          className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px"
         >
           <div>
-            <h3 style={{ margin: 0 }}>{tab} — Stage Status &amp; Weekly Trend</h3>
+            <h3 className="x-m-0">{tab} — Stage Status &amp; Weekly Trend</h3>
             <div
-              style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}
+              className="x-fs-11px x-c-muted"
             >{`${total} ${noun.toLowerCase()} in scope · weekly activity Monday to Sunday`}</div>
           </div>
         </div>
         <div
-          style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}
+          className="x-d-flex x-gap-6px x-wrap-wrap x-mb-12px"
           aria-label="Stage status"
         >
           {stages.length === 0 ? <span className="chip">No records yet</span> : null}
           {stages.map((s) => (
             <span
               key={s.status}
-              className={`chip${DONE.test(s.status) ? ' ok' : ''}`}
-              style={{ fontSize: 11 }}
+              className={`chip${DONE.test(s.status) ? ' ok' : ''} x-fs-11px`}
             >
               {s.status} <b>{s.count}</b>
             </span>
@@ -146,28 +139,14 @@ export function SubTabInsights({
         <div
           role="img"
           aria-label={`Weekly bar chart: ${WEEK.map((d, i) => `${d} ${week[i]}`).join(', ')}`}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(7, 1fr)',
-            gap: 8,
-            alignItems: 'end',
-            height: 120,
-            padding: '0 4px',
-            borderBottom: '1px solid #e2e8f0',
-          }}
+          className="x-d-grid x-cols-repeat-7-1fr x-gap-8px x-ai-end x-h-120px x-p-0-4px x-bb-1px-solid-line"
         >
           {week.map((n, i) => (
             <div
               key={WEEK[i]}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-end',
-                alignItems: 'center',
-                height: '100%',
-              }}
+              className="x-d-flex x-fd-column x-jc-flex-end x-ai-center x-h-100pct"
             >
-              <small style={{ fontSize: 10, color: '#334155', fontWeight: 700 }}>{n}</small>
+              <small className="x-fs-11px x-c-textn2 x-fw-700">{n}</small>
               <div
                 style={{
                   width: '70%',
@@ -181,15 +160,7 @@ export function SubTabInsights({
           ))}
         </div>
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(7, 1fr)',
-            gap: 8,
-            padding: '4px 4px 0',
-            textAlign: 'center',
-            fontSize: 10,
-            color: '#64748b',
-          }}
+          className="x-d-grid x-cols-repeat-7-1fr x-gap-8px x-p-4px-4px-0 x-ta-center x-fs-11px x-c-muted"
         >
           {WEEK.map((d) => (
             <span key={d}>{d}</span>
@@ -226,11 +197,11 @@ export function SubTabInsights({
         </table>
       </div>
       <div className="v9-section">
-        <h3 style={{ margin: '0 0 4px 0' }}>{queueTitle(pageId, noun)}</h3>
+        <h3 className="x-m-0-0-4px-0">{queueTitle(pageId, noun)}</h3>
         <div
-          style={{ fontSize: 11, color: 'var(--muted, #64748b)', marginBottom: 10 }}
+          className="x-fs-11px x-c-muted x-mb-10px"
         >{`${open.length} open · live queue of this tab`}</div>
-        <div style={{ display: 'grid', gap: 8 }}>
+        <div className="x-d-grid x-gap-8px">
           {queue.map((r) => (
             <div
               key={r.id}
@@ -243,27 +214,15 @@ export function SubTabInsights({
               }}
             >
               <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 8,
-                  alignItems: 'center',
-                }}
+                className="x-d-flex x-jc-space-between x-gap-8px x-ai-center"
               >
-                <b style={{ fontSize: 12 }}>{r.number || r.id}</b>
-                <span className="chip" style={{ fontSize: 10 }}>
+                <b className="x-fs-12px">{r.number || r.id}</b>
+                <span className="chip x-fs-11px">
                   {r.status || 'Active'}
                 </span>
               </div>
               <div
-                style={{
-                  fontSize: 11,
-                  color: '#64748b',
-                  margin: '3px 0 6px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
+                className="x-fs-11px x-c-muted x-m-3px-0-6px x-ov-hidden x-text-overflow-ellipsis x-ws-nowrap"
               >
                 {sub(r)}
               </div>

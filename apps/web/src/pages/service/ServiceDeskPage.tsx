@@ -90,10 +90,10 @@ export function ServiceDeskPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: selectedTicket ? '1fr 400px' : '1fr', gap: '1.5rem' }}>
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="x-d-flex x-jc-space-between x-mb-1rem">
+            <div className="x-d-flex x-gap-0_5rem">
               <span className="badge">Total Tickets: {tickets.length}</span>
-              <span className="badge" style={{ background: '#fce8e6', color: '#c5221f' }}>
+              <span className="badge x-bg-hfce8e6 x-c-danger-hover">
                 Open: {tickets.filter((t) => t.status !== 'RESOLVED' && t.status !== 'CLOSED').length}
               </span>
             </div>
@@ -129,7 +129,7 @@ export function ServiceDeskPage() {
                   >
                     <td>
                       <strong>{t.ticket_no}</strong>
-                      <div style={{ fontSize: '11px', color: '#5f6368' }}>{t.subject}</div>
+                      <div style={{ fontSize: '11px', color: '#5b6980' }}>{t.subject}</div>
                     </td>
                     <td>{t.customer_name || '—'}</td>
                     <td>
@@ -184,25 +184,19 @@ export function ServiceDeskPage() {
         {/* Ticket Details & Timeline Drawer */}
         {selectedTicket && (
           <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #dadce0',
-              borderRadius: '6px',
-              padding: '1.25rem',
-              height: 'fit-content',
-            }}
+            className="x-bg-card x-bd-1px-solid-line-strong x-r-6px x-p-1_25rem x-h-fit-content"
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-1rem">
               <div>
-                <h3 style={{ margin: 0 }}>{selectedTicket.ticket_no}</h3>
-                <div style={{ fontSize: '13px', color: '#5f6368' }}>{selectedTicket.subject}</div>
+                <h3 className="x-m-0">{selectedTicket.ticket_no}</h3>
+                <div className="x-fs-13px x-c-muted">{selectedTicket.subject}</div>
               </div>
               <button className="btn small" onClick={() => setSelectedTicket(null)}>
                 ✕
               </button>
             </div>
 
-            <div style={{ background: '#f8f9fa', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '12px' }}>
+            <div className="x-bg-card2 x-p-0_75rem x-r-6px x-mb-1rem x-fs-12px">
               <div><strong>Customer:</strong> {selectedTicket.customer_name}</div>
               <div><strong>Site Address:</strong> {selectedTicket.site_address}</div>
               <div><strong>Entitlement:</strong> {selectedTicket.entitlement}</div>
@@ -212,7 +206,7 @@ export function ServiceDeskPage() {
             </div>
 
             {/* Quick Actions */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            <div className="x-d-flex x-fd-column x-gap-0_5rem x-mb-1_25rem">
               {!selectedTicket.assigned_technician_id && (
                 <button className="btn primary" onClick={() => handleAutoAssign(selectedTicket.id)}>
                   ⚡ Auto-Dispatch Technician
@@ -237,12 +231,12 @@ export function ServiceDeskPage() {
 
             {/* Timeline */}
             <h4>Timeline & Events</h4>
-            <div style={{ borderLeft: '2px solid #e0e0e0', paddingLeft: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="x-bl-2px-solid-he0e0e0 x-pl-0_75rem x-d-flex x-fd-column x-gap-0_75rem">
               {selectedTicket.events?.map((e: any) => (
-                <div key={e.id} style={{ fontSize: '12px' }}>
-                  <div style={{ fontWeight: 600 }}>{e.kind}: {e.to_status || ''}</div>
-                  <div style={{ color: '#5f6368' }}>{e.body}</div>
-                  <div style={{ fontSize: '10px', color: '#80868b' }}>
+                <div key={e.id} className="x-fs-12px">
+                  <div className="x-fw-600">{e.kind}: {e.to_status || ''}</div>
+                  <div className="x-c-muted">{e.body}</div>
+                  <div className="x-fs-11px x-c-h80868b">
                     {new Date(e.event_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>

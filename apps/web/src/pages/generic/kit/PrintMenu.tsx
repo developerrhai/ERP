@@ -83,8 +83,7 @@ export const PrintMenu: React.FC<PrintMenuProps> = ({
 
   return (
     <div
-      className="print-menu-wrap"
-      style={{ position: 'relative', display: 'inline-block' }}
+      className="print-menu-wrap x-pos-relative x-d-inline-block"
       ref={menuRef}
     >
       <button
@@ -100,21 +99,8 @@ export const PrintMenu: React.FC<PrintMenuProps> = ({
 
       {open && (
         <div
-          className="dropdown-menu"
+          className="dropdown-menu x-pos-absolute x-top-100pct x-left-0 x-mt-4px x-bg-var-panel-bg-hfff x-bd-1px-solid-var-border-color-hccc x-r-6px x-box-shadow-0-4px-12px-rgba-0-0-0-0_15 x-z-index-1000 x-minw-180px x-p-4px-0"
           role="menu"
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            marginTop: '4px',
-            background: 'var(--panel-bg, #fff)',
-            border: '1px solid var(--border-color, #ccc)',
-            borderRadius: '4px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            zIndex: 1000,
-            minWidth: '180px',
-            padding: '4px 0',
-          }}
         >
           {visibleTemplates.map((t) => (
             <button
@@ -141,10 +127,10 @@ export const PrintMenu: React.FC<PrintMenuProps> = ({
                 e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
-              <span style={{ marginRight: '8px' }}>{t.kind === 'pdf' ? '📄' : '🖨'}</span>
+              <span className="x-mr-8px">{t.kind === 'pdf' ? '📄' : '🖨'}</span>
               <span>{t.label}</span>
               {t.kind === 'pdf' && (
-                <span style={{ marginLeft: 'auto', fontSize: '10px', color: '#888' }}>PDF</span>
+                <span className="x-ml-auto x-fs-11px x-c-h888">PDF</span>
               )}
             </button>
           ))}
@@ -154,24 +140,10 @@ export const PrintMenu: React.FC<PrintMenuProps> = ({
       {/* Render print view modal when web template dto is loaded */}
       {activeDto && (
         <div
-          className="print-modal-overlay"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            background: 'rgba(0,0,0,0.6)',
-            overflowY: 'auto',
-            padding: '20px',
-          }}
+          className="print-modal-overlay x-pos-fixed x-inset-0 x-z-index-9999 x-bg-rgba-0-0-0-0_6 x-ovy-auto x-p-20px"
         >
           <div
-            style={{
-              maxWidth: '900px',
-              margin: '0 auto',
-              background: '#fff',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
-              borderRadius: '6px',
-            }}
+            className="x-maxw-900px x-m-0-auto x-bg-card x-box-shadow-0-8px-30px-rgba-0-0-0-0_3 x-r-6px"
           >
             <PrintLayout
               dto={activeDto}

@@ -57,13 +57,12 @@ export function ProjectGanttPage() {
 
       {error && <div className="notice error">{error}</div>}
 
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div className="x-d-flex x-gap-1rem x-ai-center x-mb-1_5rem">
         <label>Select Project:</label>
         <select
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="input"
-          style={{ width: '320px' }}
+          className="input x-w-320px"
         >
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
@@ -72,8 +71,8 @@ export function ProjectGanttPage() {
           ))}
         </select>
         {ganttData && (
-          <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
-            <span className="badge" style={{ background: '#fad2cf', color: '#c5221f', fontWeight: 'bold' }}>
+          <div className="x-d-flex x-gap-0_5rem x-ml-auto">
+            <span className="badge x-bg-hfad2cf x-c-danger-hover x-fw-bold">
               Critical Path Duration: {ganttData.projectDurationDays} Days
             </span>
             <span className="badge">
@@ -86,12 +85,12 @@ export function ProjectGanttPage() {
       {loading ? (
         <p>Calculating CPM schedule...</p>
       ) : ganttData && ganttData.tasks.length > 0 ? (
-        <div style={{ border: '1px solid #dadce0', borderRadius: '4px', overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', background: '#f8f9fa' }}>
-            <div style={{ padding: '0.75rem 1rem', fontWeight: 600, borderRight: '1px solid #dadce0' }}>
+        <div className="x-bd-1px-solid-line-strong x-r-6px x-ov-hidden">
+          <div className="x-d-grid x-cols-320px-1fr x-bg-card2">
+            <div className="x-p-0_75rem-1rem x-fw-600 x-br-1px-solid-line-strong">
               Task (WBS)
             </div>
-            <div style={{ overflowX: 'auto', padding: '0.5rem 0' }}>
+            <div className="x-ovx-auto x-p-0_5rem-0">
               <svg width={chartWidth} height={30}>
                 {Array.from({ length: maxDays + 1 }).map((_, i) => (
                   <g key={i}>
@@ -105,9 +104,9 @@ export function ProjectGanttPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', maxHeight: '500px', overflowY: 'auto' }}>
+          <div className="x-d-grid x-cols-320px-1fr x-maxh-500px x-ovy-auto">
             {/* Task Names List */}
-            <div style={{ borderRight: '1px solid #dadce0', background: '#ffffff' }}>
+            <div className="x-br-1px-solid-line-strong x-bg-card">
               {ganttData.tasks.map((t) => (
                 <div
                   key={t.id}
@@ -123,13 +122,13 @@ export function ProjectGanttPage() {
                   <span style={{ fontWeight: t.isCritical ? 600 : 400, color: t.isCritical ? '#c5221f' : '#202124' }}>
                     {t.name} ({t.duration_days}d)
                   </span>
-                  {t.isCritical && <span style={{ fontSize: '10px', color: '#c5221f', fontWeight: 700 }}>CRITICAL</span>}
+                  {t.isCritical && <span className="x-fs-11px x-c-danger-hover x-fw-700">CRITICAL</span>}
                 </div>
               ))}
             </div>
 
             {/* SVG Gantt Chart */}
-            <div style={{ overflowX: 'auto', background: '#fafafa' }}>
+            <div className="x-ovx-auto x-bg-card2">
               <svg width={chartWidth} height={ganttData.tasks.length * rowHeight}>
                 {/* Vertical grid lines */}
                 {Array.from({ length: maxDays + 1 }).map((_, i) => (
@@ -175,7 +174,7 @@ export function ProjectGanttPage() {
           </div>
         </div>
       ) : (
-        <p style={{ textAlign: 'center', padding: '2rem' }}>
+        <p className="x-ta-center x-p-2rem">
           No tasks found for this project. Add tasks to see the CPM Gantt chart.
         </p>
       )}

@@ -95,34 +95,34 @@ export function CurrencyMasterPage({ actions }: { actions: ActionSet }) {
       </div>
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Currencies</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{data.length} Active</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Configured in system</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Currencies</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{data.length} Active</b>
+          <span className="x-fs-11px x-c-success">Configured in system</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Base Currency</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>INR (₹)</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Default legal currency</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Base Currency</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">INR (₹)</b>
+          <span className="x-fs-11px x-c-primary">Default legal currency</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Forex Sync</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>Synced Daily</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Automated ECB / RBI feed</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Forex Sync</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">Synced Daily</b>
+          <span className="x-fs-11px x-c-success">Automated ECB / RBI feed</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>ISO 4217 compliant</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">ISO 4217 compliant</span>
         </div>
       </div>
 
       {/* Split view: Currency Master list + Validation Controls panel */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Currency Master Register</h3>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Currency Master Register</h3>
             <button
               type="button"
               className="btn sm primary"
@@ -131,14 +131,14 @@ export function CurrencyMasterPage({ actions }: { actions: ActionSet }) {
               ＋ Add Master Record
             </button>
           </div>
-          <div className="recordbar" style={{ marginBottom: 12 }}>
+          <div className="recordbar x-mb-12px">
             <input
               type="search"
               placeholder="Search currency code, name or symbol…"
               value={search}
               aria-label="Search currencies"
               onChange={(e) => setSearch(e.target.value)}
-              style={{ padding: '6px 10px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 6, width: '100%' }}
+              className="x-p-6px-10px x-fs-12px x-bd-1px-solid-line-strong x-r-6px x-w-100pct"
             />
           </div>
           <table className="register-table">
@@ -174,40 +174,39 @@ export function CurrencyMasterPage({ actions }: { actions: ActionSet }) {
           </table>
         </div>
 
-        <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Forex governance, exchange tolerance and accounting integration controls.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+        <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Validation Controls</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px">Forex governance, exchange tolerance and accounting integration controls.</p>
+          <div className="x-d-flex x-fd-column x-gap-8px x-fs-12px">
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>Base Currency Lock:</span>
-              <b style={{ color: '#15803d' }}>Enabled (INR)</b>
+              <b className="x-c-success">Enabled (INR)</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>ISO 4217 Validation:</span>
-              <b style={{ color: '#15803d' }}>Strict</b>
+              <b className="x-c-success">Strict</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>Daily Forex Sync:</span>
-              <b style={{ color: '#15803d' }}>Active (ECB / RBI)</b>
+              <b className="x-c-success">Active (ECB / RBI)</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>Cross-Currency Tolerance:</span>
               <b>±2.5%</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>Gain/Loss Ledger:</span>
-              <b style={{ color: '#15803d' }}>Mapped (GL-4810)</b>
+              <b className="x-c-success">Mapped (GL-4810)</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0">
               <span>Revaluation Frequency:</span>
               <b>Monthly Close</b>
             </div>
           </div>
-          <div style={{ marginTop: 14 }}>
+          <div className="x-mt-14px">
             <button
               type="button"
-              className="btn primary"
-              style={{ width: '100%' }}
+              className="btn primary x-w-100pct"
               onClick={() => toast('Forex Rates updated from live RBI reference feed.')}
             >
               Run Forex Sync Now
@@ -217,8 +216,8 @@ export function CurrencyMasterPage({ actions }: { actions: ActionSet }) {
       </div>
 
       {/* Detailed Table at Bottom with Full Row Actions */}
-      <div className="card table-wrap" style={{ marginTop: 16 }}>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="card table-wrap x-mt-16px">
+        <div className="x-p-10px-14px x-bb-1px-solid-line x-d-flex x-jc-space-between x-ai-center">
           <b>Currency Master • Detailed Table</b>
           <button type="button" className="btn sm" onClick={() => window.print()}>Print Register</button>
         </div>
@@ -445,8 +444,8 @@ function CurrencyFormModal({ item, onReload, onClose, onSaved }: FormProps) {
               <option value="INACTIVE">Inactive</option>
             </SelectField>
           ) : null}
-          <div className="field" style={{ gridColumn: '1 / -1', marginTop: 8 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <div className="field x-grid-column-1-n1 x-mt-8px">
+            <label className="x-d-flex x-ai-center x-gap-6px x-cur-pointer">
               <input
                 type="checkbox"
                 checked={isBase}

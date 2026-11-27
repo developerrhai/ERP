@@ -36,22 +36,18 @@ export function TimelineSection({
             return (
               <div key={`${e.at}-${idx}`} className="v9-event" role="listitem">
                 <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                  }}
+                  className="x-d-flex x-jc-space-between x-ai-flex-start"
                 >
                   <b style={{ color: dotColor }}>{e.title}</b>
-                  <small style={{ fontSize: '9px', color: 'var(--muted)', marginLeft: '8px' }}>
+                  <small className="x-fs-10px x-c-muted x-ml-8px">
                     {e.at}
                   </small>
                 </div>
                 {e.detail ? (
-                  <p style={{ margin: '4px 0 0', fontSize: '10px' }}>{e.detail}</p>
+                  <p className="x-m-4px-0-0 x-fs-11px">{e.detail}</p>
                 ) : null}
                 {e.by ? (
-                  <small style={{ display: 'block', color: 'var(--muted)', marginTop: '4px' }}>
+                  <small className="x-d-block x-c-muted x-mt-4px">
                     by {e.by}
                   </small>
                 ) : null}

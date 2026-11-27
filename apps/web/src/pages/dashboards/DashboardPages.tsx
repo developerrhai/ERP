@@ -139,17 +139,17 @@ const CONNECTED_CHAIN_STAGES = [
 
 export function ConnectedChainBanner() {
   return (
-    <section aria-label="Connected Transaction Chain" className="ops-card ops-chain-flow" style={{ marginBottom: '14px', padding: '14px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+    <section aria-label="Connected Transaction Chain" className="ops-card ops-chain-flow x-mb-14px x-p-14px-16px">
+      <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px x-wrap-wrap x-gap-8px">
         <div>
-          <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>Connected Transaction Chain Flow</h2>
-          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>13 connected operational stages from Sales Order to Customer Payment</span>
+          <h2 className="x-m-0 x-fs-14px x-fw-800">Connected Transaction Chain Flow</h2>
+          <span className="x-fs-11px x-c-muted">13 connected operational stages from Sales Order to Customer Payment</span>
         </div>
-        <span className="ops-stat is-green" style={{ display: 'inline-flex', padding: '3px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: 800 }}>
+        <span className="ops-stat is-green x-d-inline-flex x-p-3px-8px x-r-999px x-fs-11px x-fw-800">
           13 / 13 Stages Active
         </span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
+      <div className="x-d-grid x-cols-repeat-auto-fit-minmax-130px-1fr x-gap-8px">
         {CONNECTED_CHAIN_STAGES.map((s) => (
           <Link
             key={s.num}
@@ -166,11 +166,11 @@ export function ConnectedChainBanner() {
               gap: '3px',
             }}
           >
-            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary, #1d4ed8)' }}>{s.num}. {s.name}</span>
-            <span style={{ fontSize: '9px', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <span className="x-fs-11px x-fw-800 x-c-primary">{s.num}. {s.name}</span>
+            <span className="x-fs-10px x-c-muted x-ws-nowrap x-ov-hidden x-text-overflow-ellipsis">
               Connected: {s.parent}
             </span>
-            <span className="ops-stat is-green" style={{ fontSize: '9px', padding: '1px 5px', width: 'fit-content', marginTop: '2px', borderRadius: '4px' }}>
+            <span className="ops-stat is-green x-fs-10px x-p-1px-5px x-w-fit-content x-mt-2px x-r-6px">
               {s.status}
             </span>
           </Link>

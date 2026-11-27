@@ -40,12 +40,12 @@ export function AiInsightsPage({ pageId = 'ai-copilot' }: { pageId?: string }) {
 
   return (
     <div className="bi-dash">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div className="x-d-flex x-jc-space-between x-ai-center x-mb-16px">
         <div>
-          <h1 style={{ margin: 0 }}>{AI_TITLES[pageId] || 'Advanced AI Business Analysis'}</h1>
-          <p className="bi-purpose" style={{ margin: '4px 0 0 0' }}>Cross-functional predictive, diagnostic, prescriptive and automation intelligence based on ERP data.</p>
+          <h1 className="x-m-0">{AI_TITLES[pageId] || 'Advanced AI Business Analysis'}</h1>
+          <p className="bi-purpose x-m-4px-0-0-0">Cross-functional predictive, diagnostic, prescriptive and automation intelligence based on ERP data.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="x-d-flex x-gap-8px x-ai-center">
           <button type="button" className="btn" data-pdf-ai onClick={() => window.print()}>
             AI Report PDF
           </button>

@@ -121,7 +121,7 @@ export function PeriodClosePage({ actions }: { actions: ActionSet }) {
               </tbody>
             </table>
           </div>
-          <h2 style={{ marginTop: 24 }}>Year-end</h2>
+          <h2 className="x-mt-24px">Year-end</h2>
           {v.fy.status === 'CLOSED' ? (
             <div className="notice" role="note">
               {v.fy.code} is closed. No more entries can be posted to it.

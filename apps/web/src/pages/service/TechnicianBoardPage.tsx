@@ -75,7 +75,7 @@ export function TechnicianBoardPage() {
         sub="Dispatch lanes per technician with real-time job load, skill levels, and unassigned backlog."
       />
 
-      <div style={{ marginBottom: '0.75rem' }}>
+      <div className="x-mb-0_75rem">
         <button type="button" className="btn primary" onClick={() => void openAdd()}>
           + Add technician
         </button>
@@ -86,23 +86,22 @@ export function TechnicianBoardPage() {
       {loading ? (
         <p>Loading technician board...</p>
       ) : board ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1.5rem' }}>
+        <div className="x-d-grid x-cols-300px-1fr x-gap-1_5rem">
           {/* Unassigned Tickets Queue */}
-          <div style={{ background: '#fce8e6', borderRadius: '6px', border: '1px solid #fad2cf', overflow: 'hidden' }}>
-            <div style={{ padding: '0.75rem 1rem', background: '#fad2cf', fontWeight: 700, color: '#c5221f' }}>
+          <div className="x-bg-hfce8e6 x-r-6px x-bd-1px-solid-hfad2cf x-ov-hidden">
+            <div className="x-p-0_75rem-1rem x-bg-hfad2cf x-fw-700 x-c-danger-hover">
               Unassigned Backlog ({board.unassignedTickets.length})
             </div>
-            <div style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '600px', overflowY: 'auto' }}>
+            <div className="x-p-0_75rem x-d-flex x-fd-column x-gap-0_75rem x-maxh-600px x-ovy-auto">
               {board.unassignedTickets.map((t) => (
-                <div key={t.id} style={{ background: '#ffffff', border: '1px solid #fad2cf', borderRadius: '4px', padding: '0.75rem' }}>
-                  <div style={{ fontWeight: 600, color: '#c5221f' }}>{t.ticket_no}</div>
-                  <div style={{ fontSize: '12px', marginBottom: '0.25rem' }}>{t.subject}</div>
-                  <div style={{ fontSize: '11px', color: '#5f6368', marginBottom: '0.5rem' }}>{t.customer_name}</div>
-                  <div style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={t.id} className="x-bg-card x-bd-1px-solid-hfad2cf x-r-6px x-p-0_75rem">
+                  <div className="x-fw-600 x-c-danger-hover">{t.ticket_no}</div>
+                  <div className="x-fs-12px x-mb-0_25rem">{t.subject}</div>
+                  <div className="x-fs-11px x-c-muted x-mb-0_5rem">{t.customer_name}</div>
+                  <div className="x-fs-11px x-d-flex x-jc-space-between x-ai-center">
                     <span className="badge">P{t.priority}</span>
                     <button
-                      className="btn small primary"
-                      style={{ padding: '1px 6px', fontSize: '11px' }}
+                      className="btn small primary x-p-1px-6px x-fs-11px"
                       onClick={() => serviceApi.autoAssignTicket(t.id).then(loadBoard)}
                     >
                       ⚡ Auto Dispatch
@@ -111,7 +110,7 @@ export function TechnicianBoardPage() {
                 </div>
               ))}
               {board.unassignedTickets.length === 0 && (
-                <p style={{ textAlign: 'center', color: '#70757a', fontSize: '12px', marginTop: '2rem' }}>
+                <p className="x-ta-center x-c-h70757a x-fs-12px x-mt-2rem">
                   No unassigned tickets
                 </p>
               )}
@@ -129,24 +128,17 @@ export function TechnicianBoardPage() {
               return (
                 <div
                   key={tech.id}
-                  style={{
-                    background: '#f8f9fa',
-                    border: '1px solid #dadce0',
-                    borderRadius: '6px',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
+                  className="x-bg-card2 x-bd-1px-solid-line-strong x-r-6px x-ov-hidden x-d-flex x-fd-column"
                 >
-                  <div style={{ padding: '0.75rem 1rem', background: '#e8eaed', borderBottom: '1px solid #dadce0' }}>
-                    <div style={{ fontWeight: 700 }}>{tech.name}</div>
-                    <div style={{ fontSize: '11px', color: '#5f6368', display: 'flex', justifyContent: 'space-between' }}>
+                  <div className="x-p-0_75rem-1rem x-bg-he8eaed x-bb-1px-solid-line-strong">
+                    <div className="x-fw-700">{tech.name}</div>
+                    <div className="x-fs-11px x-c-muted x-d-flex x-jc-space-between">
                       <span>{tech.empCode}</span>
                       <span style={{ fontWeight: 600, color: isFull ? '#c5221f' : '#137333' }}>
                         Load: {load}/{max}
                       </span>
                     </div>
-                    <div style={{ marginTop: '0.4rem', display: 'flex', gap: '0.4rem' }}>
+                    <div className="x-mt-0_4rem x-d-flex x-gap-0_4rem">
                       <button type="button" className="btn small" onClick={() => setForm(tech)}>
                         Edit
                       </button>
@@ -156,20 +148,20 @@ export function TechnicianBoardPage() {
                     </div>
                   </div>
 
-                  <div style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, maxHeight: '600px', overflowY: 'auto' }}>
+                  <div className="x-p-0_75rem x-d-flex x-gap-0_75rem x-flex-1 x-maxh-600px x-ovy-auto">
                     {lane.assignedTickets.map((t) => (
-                      <div key={t.id} style={{ background: '#ffffff', border: '1px solid #dadce0', borderRadius: '4px', padding: '0.75rem' }}>
-                        <div style={{ fontWeight: 600 }}>{t.ticket_no}</div>
-                        <div style={{ fontSize: '12px', marginBottom: '0.25rem' }}>{t.subject}</div>
-                        <div style={{ fontSize: '11px', color: '#5f6368', marginBottom: '0.5rem' }}>{t.customer_name}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div key={t.id} className="x-bg-card x-bd-1px-solid-line-strong x-r-6px x-p-0_75rem">
+                        <div className="x-fw-600">{t.ticket_no}</div>
+                        <div className="x-fs-12px x-mb-0_25rem">{t.subject}</div>
+                        <div className="x-fs-11px x-c-muted x-mb-0_5rem">{t.customer_name}</div>
+                        <div className="x-d-flex x-jc-space-between x-ai-center">
                           <Pill tone={t.status === 'IN_PROGRESS' ? 'info' : 'warning'}>{t.status}</Pill>
                           <span className="badge">P{t.priority}</span>
                         </div>
                       </div>
                     ))}
                     {lane.assignedTickets.length === 0 && (
-                      <p style={{ textAlign: 'center', color: '#70757a', fontSize: '12px', marginTop: '2rem' }}>
+                      <p className="x-ta-center x-c-h70757a x-fs-12px x-mt-2rem">
                         No assigned active jobs
                       </p>
                     )}

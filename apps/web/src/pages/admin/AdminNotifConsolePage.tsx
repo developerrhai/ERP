@@ -89,7 +89,7 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
   };
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="x-d-grid x-gap-16px">
       <div className="page-head">
         <div>
           <h1>Notification &amp; Email Control</h1>
@@ -123,9 +123,9 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
       {tab === 'TYPES' ? (
         <>
           {settings ? (
-            <section className="card" style={{ padding: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0 }}>Global Channel Switches</h3>
+            <section className="card x-p-16px">
+              <div className="x-d-flex x-jc-space-between x-ai-center">
+                <h3 className="x-m-0">Global Channel Switches</h3>
                 <button
                   type="button"
                   className="btn sm"
@@ -139,8 +139,8 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
                   Reset Defaults
                 </button>
               </div>
-              <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 12 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div className="x-d-flex x-gap-18px x-wrap-wrap x-mt-12px">
+                <label className="x-d-flex x-ai-center x-gap-6px">
                   <input
                     type="checkbox"
                     checked={settings.emailEnabled}
@@ -152,7 +152,7 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
                   />
                   Email Enabled
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <label className="x-d-flex x-ai-center x-gap-6px">
                   <input
                     type="checkbox"
                     checked={settings.pushEnabled}
@@ -164,7 +164,7 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
                   />
                   Web Push Enabled
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <label className="x-d-flex x-ai-center x-gap-6px">
                   <input
                     type="checkbox"
                     checked={settings.smsEnabled}
@@ -186,7 +186,7 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
             </section>
           ) : null}
 
-          <section className="card" style={{ padding: 16, overflowX: 'auto' }}>
+          <section className="card x-p-16px x-ovx-auto">
             <table className="table">
               <thead>
                 <tr>
@@ -244,9 +244,9 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
 
       {tab === 'BROADCASTS' ? (
         <>
-          <section className="card" style={{ padding: 16, display: 'grid', gap: 10 }}>
-            <h3 style={{ margin: 0 }}>New Broadcast Announcement</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+          <section className="card x-p-16px x-d-grid x-gap-10px">
+            <h3 className="x-m-0">New Broadcast Announcement</h3>
+            <div className="x-d-grid x-cols-repeat-auto-fit-minmax-220px-1fr x-gap-10px">
               <label>
                 Title
                 <input value={bTitle} onChange={(e) => setBTitle(e.target.value)} maxLength={120} />
@@ -264,8 +264,8 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
               Message
               <textarea rows={3} value={bBody} onChange={(e) => setBBody(e.target.value)} maxLength={4000} />
             </label>
-            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-              <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <div className="x-d-flex x-gap-14px x-wrap-wrap x-ai-center">
+              <label className="x-d-flex x-gap-6px x-ai-center">
                 <input type="checkbox" checked={bAll} onChange={(e) => setBAll(e.target.checked)} />
                 All Active Staff
               </label>
@@ -276,15 +276,15 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
                   onChange={(e) => setBUnits(e.target.value)}
                 />
               ) : null}
-              <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <label className="x-d-flex x-gap-6px x-ai-center">
                 <input type="checkbox" checked={bPin} onChange={(e) => setBPin(e.target.checked)} />
                 Pin Banner
               </label>
-              <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <label className="x-d-flex x-gap-6px x-ai-center">
                 <input type="checkbox" checked={bAck} onChange={(e) => setBAck(e.target.checked)} />
                 Require Ack Modal
               </label>
-              <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <label className="x-d-flex x-gap-6px x-ai-center">
                 <input type="checkbox" checked={bEmergency} onChange={(e) => setBEmergency(e.target.checked)} />
                 Emergency Bypass (Super User / Admin only)
               </label>
@@ -299,7 +299,7 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
                 />
               </label>
             ) : null}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div className="x-d-flex x-gap-8px x-ai-center">
               <button type="button" className="btn sm" onClick={() => void previewAudience()}>
                 Preview Audience
               </button>
@@ -315,7 +315,7 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
             </div>
           </section>
 
-          <section className="card" style={{ padding: 16, overflowX: 'auto' }}>
+          <section className="card x-p-16px x-ovx-auto">
             <table className="table">
               <thead>
                 <tr>
@@ -389,7 +389,7 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
               </tbody>
             </table>
             {selectedReport ? (
-              <div className="notice" style={{ marginTop: 12 }}>
+              <div className="notice x-mt-12px">
                 <strong>Report {selectedReport.broadcast.number}:</strong> Delivered {selectedReport.totals.delivered},
                 Read {selectedReport.totals.read}, Acked {selectedReport.totals.acked}
               </div>
@@ -399,7 +399,7 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
       ) : null}
 
       {tab === 'EMAIL_RULES' ? (
-        <section className="card" style={{ padding: 16, overflowX: 'auto' }}>
+        <section className="card x-p-16px x-ovx-auto">
           <table className="table">
             <thead>
               <tr>
@@ -436,8 +436,8 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
       ) : null}
 
       {tab === 'SUPPRESSIONS' ? (
-        <section className="card" style={{ padding: 16 }}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <section className="card x-p-16px">
+          <div className="x-d-flex x-gap-8px x-mb-12px">
             <input
               type="email"
               placeholder="address@example.com"
@@ -495,27 +495,27 @@ export function AdminNotifConsolePage({ initialTab = 'TYPES' }: { initialTab?: T
       ) : null}
 
       {tab === 'HEALTH' && health ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-          <div className="card" style={{ padding: 16 }}>
+        <div className="x-d-grid x-cols-repeat-auto-fit-minmax-220px-1fr x-gap-16px">
+          <div className="card x-p-16px">
             <small>Live SSE Streams</small>
-            <h2 style={{ margin: '6px 0' }}>{health.sseActiveStreams}</h2>
+            <h2 className="x-m-6px-0">{health.sseActiveStreams}</h2>
             <small>SW Version: v{SW_VERSION}</small>
           </div>
-          <div className="card" style={{ padding: 16 }}>
+          <div className="card x-p-16px">
             <small>Web Push Devices / 24h Sent</small>
-            <h2 style={{ margin: '6px 0' }}>{health.push.activeDevices} / {health.push.sent24h}</h2>
+            <h2 className="x-m-6px-0">{health.push.activeDevices} / {health.push.sent24h}</h2>
             <small>Revoked 24h: {health.push.revoked24h}</small>
           </div>
-          <div className="card" style={{ padding: 16 }}>
+          <div className="card x-p-16px">
             <small>Email 24h (Sent / Delivered / Bounces)</small>
-            <h2 style={{ margin: '6px 0' }}>
+            <h2 className="x-m-6px-0">
               {health.email.sent24h} / {health.email.delivered24h} / {health.email.bounces24h}
             </h2>
             <small>Complaint rate: {health.email.complaintRatePct}%</small>
           </div>
-          <div className="card" style={{ padding: 16 }}>
+          <div className="card x-p-16px">
             <small>Domain Auth ({health.email.domain.domain})</small>
-            <h2 style={{ margin: '6px 0' }}>
+            <h2 className="x-m-6px-0">
               {health.email.domain.configured ? (health.email.domain.dkimVerified ? 'DKIM OK' : 'Pending DNS') : 'Local/SMTP'}
             </h2>
             <small>Suppressions active: {health.email.suppressionsActive}</small>

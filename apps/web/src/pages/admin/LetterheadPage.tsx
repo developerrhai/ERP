@@ -232,17 +232,11 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
               <div className="field">
                 <label htmlFor="logo-upload">Company Logo</label>
                 {value.logoFileId ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+                  <div className="x-d-flex x-ai-center x-gap-12px x-mt-4px">
                     <img
                       src={`/api/v1/files/${value.logoFileId}`}
                       alt="Logo preview"
-                      style={{
-                        height: 44,
-                        objectFit: 'contain',
-                        border: '1px solid var(--line)',
-                        borderRadius: 6,
-                        padding: 4,
-                      }}
+                      className="x-h-44px x-object-fit-contain x-bd-1px-solid-line x-r-6px x-p-4px"
                     />
                     {canEdit ? (
                       <button type="button" className="btn sm danger" onClick={onRemoveLogo}>
@@ -265,7 +259,7 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
               </div>
               <div className="field">
                 <label htmlFor="primary-color">Primary Accent Color</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <div className="x-d-flex x-ai-center x-gap-8px x-mt-4px">
                   <input
                     id="primary-color"
                     type="color"
@@ -286,7 +280,7 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
                     value={value.primaryColor || '#1B365D'}
                     maxLength={7}
                     readOnly={!canEdit}
-                    style={{ width: 100 }}
+                    className="x-w-100px"
                     onChange={(e) => setValue({ ...value, primaryColor: e.target.value })}
                   />
                 </div>
@@ -308,10 +302,9 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
                 />
               ))}
               <div
-                className="field"
-                style={{ gridColumn: '1 / -1', display: 'flex', gap: 24, marginTop: 8 }}
+                className="field x-grid-column-1-n1 x-d-flex x-gap-24px x-mt-8px"
               >
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                <label className="x-d-flex x-ai-center x-gap-6px x-cur-pointer">
                   <input
                     type="checkbox"
                     checked={value.showGstin !== false}
@@ -320,7 +313,7 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
                   />
                   Show GSTIN
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                <label className="x-d-flex x-ai-center x-gap-6px x-cur-pointer">
                   <input
                     type="checkbox"
                     checked={value.showPan !== false}
@@ -329,7 +322,7 @@ export function LetterheadPage({ actions }: { actions: ActionSet }) {
                   />
                   Show PAN
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                <label className="x-d-flex x-ai-center x-gap-6px x-cur-pointer">
                   <input
                     type="checkbox"
                     checked={value.showCin !== false}
@@ -382,7 +375,7 @@ export function LetterheadPreview({ value }: { value: Letterhead }) {
             <img
               src={`/api/v1/files/${value.logoFileId}`}
               alt="Letterhead Logo"
-              style={{ maxHeight: 44, objectFit: 'contain', marginBottom: 8 }}
+              className="x-maxh-44px x-object-fit-contain x-mb-8px"
             />
           ) : null}
           <h2>{value.companyName || 'Company Name'}</h2>

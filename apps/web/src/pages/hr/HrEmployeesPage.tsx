@@ -194,7 +194,7 @@ export function HrEmployeesPage() {
 
       <ErrorBox message={error} />
 
-      <div className="recordbar" style={{ marginBottom: 16 }}>
+      <div className="recordbar hr-toolbar">
         <input
           type="search"
           aria-label="Search employees"
@@ -207,9 +207,9 @@ export function HrEmployeesPage() {
         </button>
       </div>
 
-      <div className="grid2" style={{ alignItems: 'start', gap: 16 }}>
+      <div className="grid2 hr-layout">
         <div className="card table-wrap">
-          <table>
+          <table className="hr-table">
             <thead>
               <tr>
                 <th scope="col">Code</th>
@@ -228,11 +228,7 @@ export function HrEmployeesPage() {
                   <tr
                     key={emp.id}
                     onClick={() => void handleSelect(emp)}
-                    style={{
-                      cursor: 'pointer',
-                      background:
-                        selectedEmp?.id === emp.id ? 'var(--primary-subtle, #eef2ff)' : undefined,
-                    }}
+                    className={selectedEmp?.id === emp.id ? 'hr-row is-selected' : 'hr-row'}
                   >
                     <td>
                       <strong>{emp.empCode}</strong>
@@ -253,12 +249,12 @@ export function HrEmployeesPage() {
           </table>
         </div>
 
-        <div className="card" style={{ padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Employee Details & Vault</h3>
+        <div className="card hr-detail">
+          <h3>Employee Details & Vault</h3>
           {selectedEmp ? (
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div className="hr-detail-body">
               <div>
-                <div style={{ fontWeight: 700, fontSize: 16 }}>
+                <div className="hr-name">
                   {selectedEmp.firstName} {selectedEmp.lastName}
                 </div>
                 <div className="v8-sub">
@@ -267,7 +263,7 @@ export function HrEmployeesPage() {
                 </div>
               </div>
 
-              <div className="grid2" style={{ fontSize: 13, gap: 8 }}>
+              <div className="grid2 hr-facts">
                 <div>
                   <span className="v8-sub">DOJ:</span> {dmy(selectedEmp.joiningDate)}
                 </div>
@@ -282,16 +278,8 @@ export function HrEmployeesPage() {
                 </div>
               </div>
 
-              <div
-                style={{
-                  background: 'var(--card2, #f8fafc)',
-                  border: '1px solid var(--line)',
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 13,
-                }}
-              >
-                <div style={{ fontWeight: 600, marginBottom: 6 }}>
+              <div className="hr-vault">
+                <div className="hr-vault-title">
                   Identity & Statutory Vault (DPDP Masked)
                 </div>
                 <div>
@@ -309,20 +297,12 @@ export function HrEmployeesPage() {
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12, display: 'grid', gap: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 600 }}>
+              <div className="hr-reveal">
+                <div className="hr-reveal-title">
                   Audited Sensitive Reveal (PII Logged)
                 </div>
                 {revealedAadhaar ? (
-                  <div
-                    style={{
-                      background: '#fffbeb',
-                      border: '1px solid #fcd34d',
-                      borderRadius: 8,
-                      padding: 10,
-                      fontSize: 13,
-                    }}
-                  >
+                  <div className="hr-revealed">
                     <strong>REVEALED (LOGGED TO AUDIT):</strong> Aadhaar {revealedAadhaar}
                   </div>
                 ) : (

@@ -397,7 +397,7 @@ function TabBody({ pageId, data, tab, cfg, graphsView }: { pageId: string; data:
             </ChartCard>
             <ChartCard title={rightTitle}>{right ?? <Empty>Nothing to compare.</Empty>}</ChartCard>
           </div>
-          <div className="card panel" style={{ marginTop: 12 }}>
+          <div className="card panel x-mt-12px">
             <h3>Analysis Summary</h3>
             <div className="detail-grid">
               <div className="detail"><small>Minimum</small><b>{f(st.min)}</b></div>
@@ -411,32 +411,32 @@ function TabBody({ pageId, data, tab, cfg, graphsView }: { pageId: string; data:
         </>
       )}
       {pageId === 'bi-profit' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-          <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-            <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Profitability Summary Simulator</h3>
-            <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Interactive sensitivity model for contract pricing, discounts, margins and tax impact.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 14 }}>
+        <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+          <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+            <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Profitability Summary Simulator</h3>
+            <p className="x-fs-12px x-c-muted x-m-0-0-12px">Interactive sensitivity model for contract pricing, discounts, margins and tax impact.</p>
+            <div className="x-d-grid x-cols-repeat-auto-fit-minmax-130px-1fr x-gap-10px x-mb-14px">
               <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Base Amount (₹)</label>
-                <input type="number" value={baseAmt} onChange={(e) => setBaseAmt(Number(e.target.value))} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+                <label className="x-d-block x-fs-11px x-c-muted x-mb-4px">Base Amount (₹)</label>
+                <input type="number" value={baseAmt} onChange={(e) => setBaseAmt(Number(e.target.value))} className="x-w-100pct x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px x-fs-12px" />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Discount %</label>
-                <input type="number" value={discPct} onChange={(e) => setDiscPct(Number(e.target.value))} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+                <label className="x-d-block x-fs-11px x-c-muted x-mb-4px">Discount %</label>
+                <input type="number" value={discPct} onChange={(e) => setDiscPct(Number(e.target.value))} className="x-w-100pct x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px x-fs-12px" />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Tax %</label>
-                <input type="number" value={taxPct} onChange={(e) => setTaxPct(Number(e.target.value))} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+                <label className="x-d-block x-fs-11px x-c-muted x-mb-4px">Tax %</label>
+                <input type="number" value={taxPct} onChange={(e) => setTaxPct(Number(e.target.value))} className="x-w-100pct x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px x-fs-12px" />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Target Margin %</label>
-                <input type="number" value={targetMargin} onChange={(e) => setTargetMargin(Number(e.target.value))} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+                <label className="x-d-block x-fs-11px x-c-muted x-mb-4px">Target Margin %</label>
+                <input type="number" value={targetMargin} onChange={(e) => setTargetMargin(Number(e.target.value))} className="x-w-100pct x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px x-fs-12px" />
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+            <div className="x-d-flex x-jc-space-between x-ai-center x-bg-card2 x-p-10px-14px x-r-8px x-bd-1px-solid-line">
               <div>
-                <small style={{ color: '#64748b', display: 'block' }}>Net Realization: <b>₹ {finalRealization.toLocaleString('en-IN')}</b></small>
-                <small style={{ color: '#64748b', display: 'block' }}>Estimated Margin: <b style={{ color: '#15803d' }}>₹ {marginAmt.toLocaleString('en-IN')}</b></small>
+                <small className="x-c-muted x-d-block">Net Realization: <b>₹ {finalRealization.toLocaleString('en-IN')}</b></small>
+                <small className="x-c-muted x-d-block">Estimated Margin: <b className="x-c-success">₹ {marginAmt.toLocaleString('en-IN')}</b></small>
               </div>
               <button
                 type="button"
@@ -448,55 +448,55 @@ function TabBody({ pageId, data, tab, cfg, graphsView }: { pageId: string; data:
             </div>
           </div>
 
-          <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-            <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Commercial Guardrails</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Minimum Margin:</span><b>15.0% (Strict)</b></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Max Discount Allowed:</span><b>12.0%</b></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Escalation Threshold:</span><b>₹ 10,00,000</b></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Simulation Status:</span><b style={{ color: marginApproved ? '#15803d' : '#b91c1c' }}>{marginApproved ? 'Compliant' : 'Requires Approval'}</b></div>
+          <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+            <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Commercial Guardrails</h3>
+            <div className="x-d-flex x-fd-column x-gap-8px x-fs-12px">
+              <div className="x-d-flex x-jc-space-between"><span>Minimum Margin:</span><b>15.0% (Strict)</b></div>
+              <div className="x-d-flex x-jc-space-between"><span>Max Discount Allowed:</span><b>12.0%</b></div>
+              <div className="x-d-flex x-jc-space-between"><span>Escalation Threshold:</span><b>₹ 10,00,000</b></div>
+              <div className="x-d-flex x-jc-space-between"><span>Simulation Status:</span><b style={{ color: marginApproved ? '#15803d' : '#b91c1c' }}>{marginApproved ? 'Compliant' : 'Requires Approval'}</b></div>
             </div>
           </div>
         </div>
       ) : null}
 
       {pageId === 'bi-branch' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-          <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Branch Scorecard Master</h3>
+        <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+          <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+            <div className="x-d-flex x-jc-space-between x-ai-center x-mb-10px">
+              <h3 className="x-m-0 x-fs-14px x-c-text">Branch Scorecard Master</h3>
               <button type="button" className="btn sm primary" onClick={() => alert('+ Add Master Record: Open branch register form')}>
                 ＋ Add Master Record
               </button>
             </div>
-            <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Operational health, sales execution, and profitability per manufacturing branch.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-              <div style={{ padding: 10, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', display: 'block' }}>Pune HQ / Talwade</small>
-                <b style={{ fontSize: 15, color: '#1e293b' }}>₹ 14.20 Cr</b>
-                <span className="bi-badge ok" style={{ marginTop: 4, display: 'inline-block' }}>Target Met</span>
+            <p className="x-fs-12px x-c-muted x-m-0-0-12px">Operational health, sales execution, and profitability per manufacturing branch.</p>
+            <div className="x-d-grid x-cols-repeat-3-1fr x-gap-10px">
+              <div className="x-p-10px x-bg-card2 x-r-8px x-bd-1px-solid-line">
+                <small className="x-c-muted x-d-block">Pune HQ / Talwade</small>
+                <b className="x-fs-14px x-c-text">₹ 14.20 Cr</b>
+                <span className="bi-badge ok x-mt-4px x-d-inline-block">Target Met</span>
               </div>
-              <div style={{ padding: 10, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', display: 'block' }}>Sawardari Plant</small>
-                <b style={{ fontSize: 15, color: '#1e293b' }}>₹ 8.84 Cr</b>
-                <span className="bi-badge ok" style={{ marginTop: 4, display: 'inline-block' }}>Target Met</span>
+              <div className="x-p-10px x-bg-card2 x-r-8px x-bd-1px-solid-line">
+                <small className="x-c-muted x-d-block">Sawardari Plant</small>
+                <b className="x-fs-14px x-c-text">₹ 8.84 Cr</b>
+                <span className="bi-badge ok x-mt-4px x-d-inline-block">Target Met</span>
               </div>
-              <div style={{ padding: 10, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', display: 'block' }}>Varale Plant</small>
-                <b style={{ fontSize: 15, color: '#1e293b' }}>₹ 6.42 Cr</b>
-                <span className="bi-badge warn" style={{ marginTop: 4, display: 'inline-block' }}>Near Target</span>
+              <div className="x-p-10px x-bg-card2 x-r-8px x-bd-1px-solid-line">
+                <small className="x-c-muted x-d-block">Varale Plant</small>
+                <b className="x-fs-14px x-c-text">₹ 6.42 Cr</b>
+                <span className="bi-badge warn x-mt-4px x-d-inline-block">Near Target</span>
               </div>
             </div>
           </div>
 
-          <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-            <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Branch Code Unique:</span><b style={{ color: '#15803d' }}>Enabled</b></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Plant Code Mapping:</span><b style={{ color: '#15803d' }}>Validated</b></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Turnover Threshold:</span><b style={{ color: '#15803d' }}>Active</b></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>P&L Integration:</span><b style={{ color: '#15803d' }}>Live</b></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Period Lock:</span><b style={{ color: '#64748b' }}>Optional</b></div>
+          <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+            <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Validation Controls</h3>
+            <div className="x-d-flex x-fd-column x-gap-8px x-fs-12px">
+              <div className="x-d-flex x-jc-space-between"><span>Branch Code Unique:</span><b className="x-c-success">Enabled</b></div>
+              <div className="x-d-flex x-jc-space-between"><span>Plant Code Mapping:</span><b className="x-c-success">Validated</b></div>
+              <div className="x-d-flex x-jc-space-between"><span>Turnover Threshold:</span><b className="x-c-success">Active</b></div>
+              <div className="x-d-flex x-jc-space-between"><span>P&L Integration:</span><b className="x-c-success">Live</b></div>
+              <div className="x-d-flex x-jc-space-between"><span>Period Lock:</span><b className="x-c-muted">Optional</b></div>
             </div>
           </div>
         </div>

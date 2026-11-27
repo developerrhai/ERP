@@ -255,7 +255,7 @@ function CapForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
           />
         </div>
         {Number(residual) > 5 ? (
-          <div className="field" style={{ gridColumn: '1 / -1' }}>
+          <div className="field x-grid-column-1-n1">
             <label htmlFor="cap-why">Why is the residual above 5 %? *</label>
             <textarea id="cap-why" rows={2} value={why} onChange={(e) => setWhy(e.target.value)} />
           </div>

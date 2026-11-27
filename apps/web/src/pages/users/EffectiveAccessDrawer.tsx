@@ -64,8 +64,7 @@ export function EffectiveAccessDrawer({ user, onClose }: Props) {
       aria-labelledby="eff-title"
     >
       <div
-        className="drawer"
-        style={{ maxWidth: '960px', width: '90vw' }}
+        className="drawer x-maxw-960px x-w-90vw"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="drawer-head">
@@ -85,15 +84,15 @@ export function EffectiveAccessDrawer({ user, onClose }: Props) {
         </div>
 
         <div className="drawer-body">
-          <div className="v8-table-toolbar" style={{ marginBottom: '12px' }}>
-            <label htmlFor="eff-family-select" style={{ marginRight: '8px', fontSize: '13px' }}>
+          <div className="v8-table-toolbar x-mb-12px">
+            <label htmlFor="eff-family-select" className="x-mr-8px x-fs-13px">
               Filter Family:
             </label>
             <select
               id="eff-family-select"
               value={family}
               onChange={(e) => setFamily(e.target.value)}
-              style={{ width: '220px' }}
+              className="x-w-220px"
             >
               <option value="">All Families</option>
               {families.map((f) => (
@@ -116,17 +115,12 @@ export function EffectiveAccessDrawer({ user, onClose }: Props) {
 
           {selectedPage ? (
             <div
-              className="card"
-              style={{
-                marginBottom: '16px',
-                background: 'var(--bg-subtle, #f8f9fa)',
-                padding: '12px',
-              }}
+              className="card x-mb-16px x-bg-var-bg-subtle-hf8f9fa x-p-12px"
             >
               <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                className="x-d-flex x-jc-space-between x-ai-center"
               >
-                <h4 style={{ margin: 0 }}>
+                <h4 className="x-m-0">
                   Decision for: <strong>{selectedPage.title}</strong> ({selectedPage.family}) —
                   Scope: <strong>{selectedPage.scope}</strong>
                 </h4>
@@ -134,7 +128,7 @@ export function EffectiveAccessDrawer({ user, onClose }: Props) {
                   Hide details
                 </button>
               </div>
-              <ul style={{ margin: '8px 0 0 16px', padding: 0, fontSize: '13px', lineHeight: 1.6 }}>
+              <ul className="x-m-8px-0-0-16px x-p-0 x-fs-13px x-lh-1_6">
                 {selectedPage.reasons.map((r, i) => (
                   <li key={i}>{r}</li>
                 ))}
@@ -142,7 +136,7 @@ export function EffectiveAccessDrawer({ user, onClose }: Props) {
             </div>
           ) : null}
 
-          <div className="table-wrap" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          <div className="table-wrap x-maxh-60vh x-ovy-auto">
             <table>
               <thead>
                 <tr>

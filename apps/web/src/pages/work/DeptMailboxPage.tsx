@@ -429,8 +429,7 @@ export function DeptMailboxPage({
   return (
     <div className="dash-page">
       <div
-        className="v40-top-toolbar"
-        style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 8 }}
+        className="v40-top-toolbar x-d-flex x-jc-flex-end x-gap-6px x-mb-8px"
       >
         <button className="btn" type="button" onClick={() => window.history.back()} title="Return">
           ← Return
@@ -456,7 +455,7 @@ export function DeptMailboxPage({
           <small>{name.toUpperCase()} DEPARTMENT WORKSPACE</small>
           <h1>Welcome, {user?.name || 'ERP Administrator'}</h1>
           <h2
-            style={{ fontSize: 16, margin: '2px 0 6px', color: '#93c5fd' }}
+            className="x-fs-16px x-m-2px-0-6px x-c-h93c5fd"
           >{`${name} Inbox (${needs})`}</h2>
           <p>
             A simple working dashboard for documents, approvals, employee activity and project
@@ -472,9 +471,8 @@ export function DeptMailboxPage({
 
       <div className="v39-metrics">
         <div
-          className="v39-metric danger"
+          className="v39-metric danger x-cur-pointer"
           onClick={() => setView('receipt')}
-          style={{ cursor: 'pointer' }}
           title="View Pending Receipt"
         >
           <div>
@@ -484,9 +482,8 @@ export function DeptMailboxPage({
           <i aria-hidden="true">↓</i>
         </div>
         <div
-          className="v39-metric warn"
+          className="v39-metric warn x-cur-pointer"
           onClick={() => setView('acceptance')}
-          style={{ cursor: 'pointer' }}
           title="View Pending Acceptance"
         >
           <div>
@@ -496,9 +493,8 @@ export function DeptMailboxPage({
           <i aria-hidden="true">✓</i>
         </div>
         <div
-          className="v39-metric"
+          className="v39-metric x-cur-pointer"
           onClick={() => setView('work')}
-          style={{ cursor: 'pointer' }}
           title="View Active Department Work"
         >
           <div>
@@ -508,9 +504,8 @@ export function DeptMailboxPage({
           <i aria-hidden="true">⚙</i>
         </div>
         <div
-          className="v39-metric good"
+          className="v39-metric good x-cur-pointer"
           onClick={() => setView('approval')}
-          style={{ cursor: 'pointer' }}
           title="View Approval Inbox"
         >
           <div>
@@ -554,22 +549,14 @@ export function DeptMailboxPage({
       </div>
 
       <div
-        className="v39-two-tables"
-        style={{ display: 'grid', gridTemplateColumns: '1.25fr 0.75fr', gap: 12, marginBottom: 12 }}
+        className="v39-two-tables x-d-grid x-cols-1_25fr-0_75fr x-gap-12px x-mb-12px"
       >
-        <div className="card table-wrap" style={{ margin: 0 }}>
+        <div className="card table-wrap x-m-0">
           <div
-            className="v39-simple-title"
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '10px 14px',
-              borderBottom: '1px solid #e2e8f0',
-            }}
+            className="v39-simple-title x-d-flex x-jc-space-between x-ai-center x-p-10px-14px x-bb-1px-solid-line"
           >
-            <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Department Work Queue</h3>
-            <span style={{ fontSize: 10, color: '#64748b' }}>
+            <h3 className="x-m-0 x-fs-13px x-fw-700">Department Work Queue</h3>
+            <span className="x-fs-11px x-c-muted">
               Receive → Accept → Work → Approve / Move
             </span>
           </div>
@@ -586,7 +573,7 @@ export function DeptMailboxPage({
               <tr>
                 <td>
                   <b>Receive Documents</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>
+                  <small style={{ display: 'block', color: '#5b6980' }}>
                     Sent to {name} and waiting for receipt
                   </small>
                 </td>
@@ -594,7 +581,7 @@ export function DeptMailboxPage({
                   {effectiveCounts.pendingReceipt}
                 </td>
                 <td>
-                  <span className="rag rag-red" style={{ fontSize: 9, padding: '2px 6px' }}>
+                  <span className="rag rag-red" style={{ fontSize: 10, padding: '2px 6px' }}>
                     High
                   </span>
                 </td>
@@ -602,7 +589,7 @@ export function DeptMailboxPage({
                   <button
                     type="button"
                     className="btn primary"
-                    style={{ fontSize: 10, padding: '3px 8px' }}
+                    style={{ fontSize: 11, padding: '3px 8px' }}
                     onClick={() => setView('receipt')}
                   >
                     Open Details
@@ -612,7 +599,7 @@ export function DeptMailboxPage({
               <tr>
                 <td>
                   <b>Accept Responsibility</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>
+                  <small style={{ display: 'block', color: '#5b6980' }}>
                     Received records waiting for acceptance
                   </small>
                 </td>
@@ -620,7 +607,7 @@ export function DeptMailboxPage({
                   {effectiveCounts.pendingAcceptance}
                 </td>
                 <td>
-                  <span className="rag rag-amber" style={{ fontSize: 9, padding: '2px 6px' }}>
+                  <span className="rag rag-amber" style={{ fontSize: 10, padding: '2px 6px' }}>
                     High
                   </span>
                 </td>
@@ -628,7 +615,7 @@ export function DeptMailboxPage({
                   <button
                     type="button"
                     className="btn primary"
-                    style={{ fontSize: 10, padding: '3px 8px' }}
+                    style={{ fontSize: 11, padding: '3px 8px' }}
                     onClick={() => setView('acceptance')}
                   >
                     Open Details
@@ -638,7 +625,7 @@ export function DeptMailboxPage({
               <tr>
                 <td>
                   <b>Complete Department Work</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>
+                  <small style={{ display: 'block', color: '#5b6980' }}>
                     Accepted documents currently under work
                   </small>
                 </td>
@@ -646,7 +633,7 @@ export function DeptMailboxPage({
                   {effectiveCounts.work}
                 </td>
                 <td>
-                  <span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>
+                  <span className="rag rag-blue" style={{ fontSize: 10, padding: '2px 6px' }}>
                     Normal
                   </span>
                 </td>
@@ -654,7 +641,7 @@ export function DeptMailboxPage({
                   <button
                     type="button"
                     className="btn primary"
-                    style={{ fontSize: 10, padding: '3px 8px' }}
+                    style={{ fontSize: 11, padding: '3px 8px' }}
                     onClick={() => setView('work')}
                   >
                     Open Details
@@ -664,7 +651,7 @@ export function DeptMailboxPage({
               <tr>
                 <td>
                   <b>Approval Required</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>
+                  <small style={{ display: 'block', color: '#5b6980' }}>
                     Department approvals waiting for decision
                   </small>
                 </td>
@@ -672,7 +659,7 @@ export function DeptMailboxPage({
                   {effectiveCounts.approval}
                 </td>
                 <td>
-                  <span className="rag rag-red" style={{ fontSize: 9, padding: '2px 6px' }}>
+                  <span className="rag rag-red" style={{ fontSize: 10, padding: '2px 6px' }}>
                     High
                   </span>
                 </td>
@@ -680,7 +667,7 @@ export function DeptMailboxPage({
                   <button
                     type="button"
                     className="btn primary"
-                    style={{ fontSize: 10, padding: '3px 8px' }}
+                    style={{ fontSize: 11, padding: '3px 8px' }}
                     onClick={() => setView('approval')}
                   >
                     Open Details
@@ -690,7 +677,7 @@ export function DeptMailboxPage({
               <tr>
                 <td>
                   <b>Employee Tasks</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>
+                  <small style={{ display: 'block', color: '#5b6980' }}>
                     Open tasks assigned to department employees
                   </small>
                 </td>
@@ -698,7 +685,7 @@ export function DeptMailboxPage({
                   13
                 </td>
                 <td>
-                  <span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>
+                  <span className="rag rag-blue" style={{ fontSize: 10, padding: '2px 6px' }}>
                     Normal
                   </span>
                 </td>
@@ -706,7 +693,7 @@ export function DeptMailboxPage({
                   <Link
                     to="/m/ops-tasks"
                     className="btn primary"
-                    style={{ fontSize: 10, padding: '3px 8px' }}
+                    style={{ fontSize: 11, padding: '3px 8px' }}
                   >
                     Open Details
                   </Link>
@@ -715,7 +702,7 @@ export function DeptMailboxPage({
               <tr>
                 <td>
                   <b>Shift & Handover</b>
-                  <small style={{ display: 'block', color: '#64748b' }}>
+                  <small style={{ display: 'block', color: '#5b6980' }}>
                     Current master rotation and handover
                   </small>
                 </td>
@@ -723,7 +710,7 @@ export function DeptMailboxPage({
                   11
                 </td>
                 <td>
-                  <span className="rag rag-blue" style={{ fontSize: 9, padding: '2px 6px' }}>
+                  <span className="rag rag-blue" style={{ fontSize: 10, padding: '2px 6px' }}>
                     Normal
                   </span>
                 </td>
@@ -731,7 +718,7 @@ export function DeptMailboxPage({
                   <Link
                     to="/m/ops-shift-roster"
                     className="btn primary"
-                    style={{ fontSize: 10, padding: '3px 8px' }}
+                    style={{ fontSize: 11, padding: '3px 8px' }}
                   >
                     Open Details
                   </Link>
@@ -741,41 +728,21 @@ export function DeptMailboxPage({
           </table>
         </div>
 
-        <div className="card table-wrap" style={{ margin: 0 }}>
+        <div className="card table-wrap x-m-0">
           <div
-            className="v39-simple-title"
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '10px 14px',
-              borderBottom: '1px solid #e2e8f0',
-            }}
+            className="v39-simple-title x-d-flex x-jc-space-between x-ai-center x-p-10px-14px x-bb-1px-solid-line"
           >
-            <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Department Quick Filter</h3>
-            <span style={{ fontSize: 10, color: '#64748b' }}>Scope: {name}</span>
+            <h3 className="x-m-0 x-fs-13px x-fw-700">Department Quick Filter</h3>
+            <span className="x-fs-11px x-c-muted">Scope: {name}</span>
           </div>
-          <div style={{ padding: '16px 14px' }}>
+          <div className="x-p-16px-14px">
             <label
-              style={{
-                display: 'block',
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#475569',
-                marginBottom: 6,
-              }}
+              className="x-d-block x-fs-11px x-fw-700 x-c-textn2 x-mb-6px"
             >
               Department Filter
             </label>
             <select
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                fontSize: 12,
-                borderRadius: 8,
-                border: '1px solid #cbd5e1',
-                marginBottom: 8,
-              }}
+              className="x-w-100pct x-p-8px-10px x-fs-12px x-r-8px x-bd-1px-solid-line-strong x-mb-8px"
               value={dept?.id || ''}
               onChange={(e) => {
                 const targetDept = depts.find((d) => d.id === e.target.value);
@@ -791,19 +758,14 @@ export function DeptMailboxPage({
                 </option>
               ))}
             </select>
-            <span style={{ display: 'block', fontSize: 10, color: '#64748b', marginBottom: 16 }}>
+            <span className="x-d-block x-fs-11px x-c-muted x-mb-16px">
               Quick filter for department-wise records on this page.
             </span>
-            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12 }}>
+            <div className="x-bt-1px-solid-line x-pt-12px">
               <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 8,
-                }}
+                className="x-d-flex x-jc-space-between x-ai-center x-mb-8px"
               >
-                <span style={{ fontSize: 11, color: '#64748b' }}>Internal Mail:</span>
+                <span className="x-fs-11px x-c-muted">Internal Mail:</span>
                 <span
                   style={{
                     fontSize: 11,
@@ -815,22 +777,17 @@ export function DeptMailboxPage({
                 </span>
               </div>
               <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 8,
-                }}
+                className="x-d-flex x-jc-space-between x-ai-center x-mb-8px"
               >
-                <span style={{ fontSize: 11, color: '#64748b' }}>Ready to Move:</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8' }}>
+                <span className="x-fs-11px x-c-muted">Ready to Move:</span>
+                <span className="x-fs-11px x-fw-700 x-c-primary">
                   {effectiveCounts.ready}
                 </span>
               </div>
               <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                className="x-d-flex x-jc-space-between x-ai-center"
               >
-                <span style={{ fontSize: 11, color: '#64748b' }}>Returned / Rework:</span>
+                <span className="x-fs-11px x-c-muted">Returned / Rework:</span>
                 <span
                   style={{
                     fontSize: 11,
@@ -846,7 +803,7 @@ export function DeptMailboxPage({
         </div>
       </div>
 
-      <div className="v28-admin-same" style={{ marginBottom: 12 }}>
+      <div className="v28-admin-same x-mb-12px">
         <b>Interconnected:</b> Invoice, PO, BOM, GRN, DC, quotation, quality records, project
         documents and other ERP documents stay linked to one movement ID, department route,
         timestamps and approval history.
@@ -912,7 +869,7 @@ export function DeptMailboxPage({
           </label>
           <label>
             Sent Date
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            <div className="x-d-grid x-cols-1fr-1fr x-gap-6px">
               <input
                 type="date"
                 aria-label="Sent date from"
@@ -929,13 +886,12 @@ export function DeptMailboxPage({
           </label>
         </div>
         <div className="v27-filter-actions">
-          <button type="submit" className="btn primary" style={{ borderRadius: 8 }}>
+          <button type="submit" className="btn primary x-r-8px">
             Apply Filters
           </button>
           <button
             type="button"
-            className="btn"
-            style={{ borderRadius: 8 }}
+            className="btn x-r-8px"
             onClick={() => {
               setDraft(NO_FILTERS);
               setF(NO_FILTERS);
@@ -1096,7 +1052,7 @@ function MovementRow({
       <td>
         <div className="v28-mail-subject">{m.doc_no ?? m.doc_type}</div>
         {m.handover_note ? <div className="v28-message-preview">{m.handover_note}</div> : null}
-        <small style={{ color: '#64748b' }}>{m.number}</small>
+        <small className="x-c-muted">{m.number}</small>
       </td>
       <td>
         <span className="v28-attach">
@@ -1110,10 +1066,10 @@ function MovementRow({
         <div className="v28-mail-from">{m.route_type}</div>
       </td>
       <td>
-        <small style={{ display: 'block' }}>
+        <small className="x-d-block">
           Received: {m.received_at ? when(m.received_at) : 'Pending'}
         </small>
-        <small style={{ display: 'block' }}>
+        <small className="x-d-block">
           Accepted: {m.accepted_at ? when(m.accepted_at) : 'Pending'}
         </small>
       </td>
@@ -1126,7 +1082,7 @@ function MovementRow({
       <td>
         <span className={`rag ${stateClass}`}>{pretty(m.state)}</span>
         {/* WF-03: say what comes next, so "Received" is not read as finished */}
-        <small style={{ display: 'block', color: '#64748b', marginTop: 4 }}>
+        <small className="x-d-block x-c-muted x-mt-4px">
           {NEXT_STEP[m.state] ?? ''}
         </small>
       </td>
@@ -1193,7 +1149,7 @@ function MailRowView({ row }: { row: MailRow }) {
         {n > 0 ? (
           <span className="v28-attach">{n} attached</span>
         ) : (
-          <small style={{ color: '#94a3b8' }}>No attachment</small>
+          <small className="x-c-h94a3b8">No attachment</small>
         )}
       </td>
       <td>

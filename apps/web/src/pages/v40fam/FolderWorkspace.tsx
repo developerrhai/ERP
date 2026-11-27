@@ -109,7 +109,7 @@ export function FolderWorkspace() {
     const value = String(draft[key] ?? '');
     const set = (v: string): void => setDraft((d) => ({ ...d, [key]: v }));
     return (
-      <label key={key} style={{ display: 'grid', gap: 4, fontSize: 12, fontWeight: 600 }}>
+      <label key={key} className="x-d-grid x-gap-4px x-fs-12px x-fw-600">
         {label}
         {kind === 'date' ? (
           <input type="date" value={value} style={style} onChange={(e) => set(e.target.value)} />
@@ -137,7 +137,7 @@ export function FolderWorkspace() {
         ) : (
           <input type="text" value={value} style={style} onChange={(e) => set(e.target.value)} />
         )}
-        {bad ? <span role="alert" style={{ color: '#dc2626', fontSize: 11 }}>{bad}</span> : null}
+        {bad ? <span role="alert" className="x-c-danger-hover x-fs-11px">{bad}</span> : null}
       </label>
     );
   };
@@ -160,8 +160,7 @@ export function FolderWorkspace() {
             <button
               type="button"
               aria-label={isOpen ? `Collapse ${n.name}` : `Expand ${n.name}`}
-              className="btn sm"
-              style={{ padding: '0 6px' }}
+              className="btn sm x-p-0-6px"
               onClick={(e) => {
                 e.stopPropagation();
                 toggle(n.code);
@@ -170,11 +169,11 @@ export function FolderWorkspace() {
               {isOpen ? '▾' : '▸'}
             </button>
           ) : (
-            <span style={{ width: 26 }} />
+            <span className="x-w-26px" />
           )}
           <span>{kids.length ? '📂' : '📄'}</span>
           <span style={{ fontWeight: active ? 700 : 500 }}>{n.name}</span>
-          <span style={{ marginLeft: 'auto', color: '#64748b', fontSize: 11 }}>{n.code}</span>
+          <span className="x-ml-auto x-c-muted x-fs-11px">{n.code}</span>
         </div>
         {isOpen ? kids.map((c) => render(c, depth + 1)) : null}
       </div>
@@ -183,17 +182,17 @@ export function FolderWorkspace() {
 
   return (
     <>
-      <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Folder Tree</h3>
-        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10 }}>Folders → Parent → Child → Dependency. Click a node to edit it.</div>
+      <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+        <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Folder Tree</h3>
+        <div className="x-fs-11px x-c-muted x-mb-10px">Folders → Parent → Child → Dependency. Click a node to edit it.</div>
         <div role="tree" aria-label="Folder tree">
           {render(root, 0)}
         </div>
       </div>
-      <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Selected Node</h3>
-        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10 }}>Editing {current.code}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+      <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+        <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Selected Node</h3>
+        <div className="x-fs-11px x-c-muted x-mb-10px">Editing {current.code}</div>
+        <div className="x-d-grid x-cols-repeat-2-minmax-0-1fr x-gap-10px">
           {field('code', 'Code', 'text')}
           {field('name', 'Name', 'text')}
           {field('effectiveFrom', 'Effective From', 'date')}
@@ -201,7 +200,7 @@ export function FolderWorkspace() {
           {field('dependency', 'Dependency', 'select')}
           {field('status', 'Status', 'status')}
         </div>
-        <div style={{ marginTop: 12 }}>
+        <div className="x-mt-12px">
           <button type="button" className="btn primary" onClick={update}>
             Update Node
           </button>

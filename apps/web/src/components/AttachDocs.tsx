@@ -65,20 +65,14 @@ export function AttachDocs({
   };
 
   return (
-    <div className="attach-docs" data-testid="attach-docs" style={{ gridColumn: '1 / -1' }}>
+    <div className="attach-docs x-grid-column-1-n1" data-testid="attach-docs">
       <label
         htmlFor={id}
-        style={{
-          display: 'block',
-          fontSize: 12,
-          fontWeight: 600,
-          color: '#334155',
-          marginBottom: 5,
-        }}
+        className="x-d-block x-fs-12px x-fw-600 x-c-textn2 x-mb-5px"
       >
         {label}
       </label>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="x-d-flex x-gap-10px x-ai-center x-wrap-wrap">
         <button type="button" className="btn sm" onClick={() => input.current?.click()}>
           {buttonLabel}
         </button>
@@ -92,41 +86,27 @@ export function AttachDocs({
           onChange={(e) => pick(e.target.files)}
           aria-label={label}
         />
-        <span style={{ fontSize: 11, color: '#64748b' }}>
+        <span className="x-fs-11px x-c-muted">
           Excel (.xlsx .xls .csv) · Word (.docx .doc) · PDF (.pdf) · Text (.txt) — up to{' '}
           {DOC_MAX_MB} MB each
         </span>
       </div>
       {files.length > 0 ? (
-        <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, display: 'grid', gap: 4 }}>
+        <ul className="x-list-style-none x-m-8px-0-0 x-p-0 x-d-grid x-gap-4px">
           {files.map((f, i) => (
             <li
               key={`${f.name}-${i}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: 12,
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: 6,
-                padding: '4px 8px',
-              }}
+              className="x-d-flex x-ai-center x-gap-8px x-fs-12px x-bg-card2 x-bd-1px-solid-line x-r-6px x-p-4px-8px"
             >
-              <span className="chip" style={{ fontSize: 10 }}>
+              <span className="chip x-fs-11px">
                 {docKind(f.name)}
               </span>
               <span
-                style={{
-                  flex: 1,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
+                className="x-flex-1 x-ov-hidden x-text-overflow-ellipsis x-ws-nowrap"
               >
                 {f.name}
               </span>
-              <span style={{ color: '#64748b' }}>{kb(f.size)}</span>
+              <span className="x-c-muted">{kb(f.size)}</span>
               <button
                 type="button"
                 className="btn sm"
@@ -140,7 +120,7 @@ export function AttachDocs({
         </ul>
       ) : null}
       {problem ? (
-        <div role="alert" style={{ color: '#b91c1c', fontSize: 12, marginTop: 6 }}>
+        <div role="alert" className="x-c-danger-hover x-fs-12px x-mt-6px">
           {problem}
         </div>
       ) : null}

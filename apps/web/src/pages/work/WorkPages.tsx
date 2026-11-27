@@ -365,73 +365,73 @@ export function WorkflowMatrixPage({ actions }: { actions: ActionSet }) {
 
   return (
     <div className="dash-page">
-      <div className="v39-dash-hero" style={{ background: 'linear-gradient(135deg, #09233d, #144d73 62%, #0f766e)', color: '#fff', borderRadius: 14, padding: '16px 20px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="v39-dash-hero x-bg-linear-gradient-135deg-h09233d-h144d73-62pct-h0f x-c-hfff x-r-14px x-p-16px-20px x-mb-14px x-d-flex x-jc-space-between x-ai-center">
         <div>
-          <small style={{ color: '#93c5fd', textTransform: 'uppercase', letterSpacing: 0.5, fontSize: 11, fontWeight: 700 }}>Administration &amp; Operations</small>
-          <h1 style={{ margin: '4px 0 6px', fontSize: 20, color: '#fff' }}>Flexible Department Workflow Matrix</h1>
-          <p style={{ margin: 0, color: '#dbeafe', fontSize: 13, maxWidth: 640 }}>
+          <small className="x-c-h93c5fd x-text-transform-uppercase x-letter-spacing-0_5px x-fs-11px x-fw-700">Administration &amp; Operations</small>
+          <h1 className="x-m-4px-0-6px x-fs-20px x-c-hfff">Flexible Department Workflow Matrix</h1>
+          <p className="x-m-0 x-c-hdbeafe x-fs-13px x-maxw-640px">
             Governs which department owns each document, handoff rules, routing modes and SLA thresholds. Active movements grant controlled work access across ERP families.
           </p>
         </div>
-        <div style={{ textAlign: 'right', background: 'rgba(255,255,255,0.12)', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)' }}>
-          <b style={{ display: 'block', fontSize: 14 }}>Automation Engine</b>
-          <span style={{ fontSize: 12, color: '#dbeafe' }}>V40 Full Process Flow</span>
+        <div className="x-ta-right x-bg-rgba-255-255-255-0_12 x-p-10px-14px x-r-10px x-bd-1px-solid-rgba-255-255-255-0_2">
+          <b className="x-d-block x-fs-14px">Automation Engine</b>
+          <span className="x-fs-12px x-c-hdbeafe">V40 Full Process Flow</span>
         </div>
       </div>
 
       {/* 5 Summary Counters (Demo ERP Baseline) */}
-      <div className="v39-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 14 }}>
-        <div className="v39-metric" style={{ background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #cbd5e1' }}>
+      <div className="v39-metrics x-d-grid x-cols-repeat-5-1fr x-gap-10px x-mb-14px">
+        <div className="v39-metric x-bg-card x-p-12px x-r-10px x-bd-1px-solid-line-strong">
           <div>
-            <small style={{ color: '#64748b' }}>Document Workflows</small>
-            <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{rawRows.length} Active</b>
-            <span style={{ fontSize: 11, color: '#15803d' }}>System defined</span>
+            <small className="x-c-muted">Document Workflows</small>
+            <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{rawRows.length} Active</b>
+            <span className="x-fs-11px x-c-success">System defined</span>
           </div>
         </div>
-        <div className="v39-metric" style={{ background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #cbd5e1' }}>
+        <div className="v39-metric x-bg-card x-p-12px x-r-10px x-bd-1px-solid-line-strong">
           <div>
-            <small style={{ color: '#64748b' }}>Cross-Dept Handoffs</small>
-            <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>32 Handled</b>
-            <span style={{ fontSize: 11, color: '#2563eb' }}>Seamless transfer</span>
+            <small className="x-c-muted">Cross-Dept Handoffs</small>
+            <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">32 Handled</b>
+            <span className="x-fs-11px x-c-primary">Seamless transfer</span>
           </div>
         </div>
-        <div className="v39-metric" style={{ background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #cbd5e1' }}>
+        <div className="v39-metric x-bg-card x-p-12px x-r-10px x-bd-1px-solid-line-strong">
           <div>
-            <small style={{ color: '#64748b' }}>Avg Routing SLA</small>
-            <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>1.5 Days</b>
-            <span style={{ fontSize: 11, color: '#15803d' }}>Standard TAT</span>
+            <small className="x-c-muted">Avg Routing SLA</small>
+            <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">1.5 Days</b>
+            <span className="x-fs-11px x-c-success">Standard TAT</span>
           </div>
         </div>
-        <div className="v39-metric" style={{ background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #cbd5e1' }}>
+        <div className="v39-metric x-bg-card x-p-12px x-r-10px x-bd-1px-solid-line-strong">
           <div>
-            <small style={{ color: '#64748b' }}>Approval Gates</small>
-            <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{rawRows.filter((r) => r.approval_department_id).length} Rules</b>
-            <span style={{ fontSize: 11, color: '#b45309' }}>Multi-level review</span>
+            <small className="x-c-muted">Approval Gates</small>
+            <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{rawRows.filter((r) => r.approval_department_id).length} Rules</b>
+            <span className="x-fs-11px x-c-warn">Multi-level review</span>
           </div>
         </div>
-        <div className="v39-metric" style={{ background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #cbd5e1' }}>
+        <div className="v39-metric x-bg-card x-p-12px x-r-10px x-bd-1px-solid-line-strong">
           <div>
-            <small style={{ color: '#64748b' }}>Matrix Compliance</small>
-            <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-            <span style={{ fontSize: 11, color: '#15803d' }}>Audited &amp; locked</span>
+            <small className="x-c-muted">Matrix Compliance</small>
+            <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+            <span className="x-fs-11px x-c-success">Audited &amp; locked</span>
           </div>
         </div>
       </div>
 
       {/* Filter Row: Search / Family / Department */}
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
+      <div className="x-d-flex x-gap-12px x-ai-center x-mb-12px x-wrap-wrap">
         <input
           type="search"
           placeholder="Filter document or module ID (e.g. so, po, pr)..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: '6px 12px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6, flex: 1, minWidth: 260 }}
+          className="x-p-6px-12px x-fs-13px x-bd-1px-solid-line-strong x-r-6px x-flex-1 x-minw-260px"
           aria-label="Filter module ID"
         />
         <select
           value={familyFilter}
           onChange={(e) => setFamilyFilter(e.target.value)}
-          style={{ padding: '6px 10px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6 }}
+          className="x-p-6px-10px x-fs-13px x-bd-1px-solid-line-strong x-r-6px"
           aria-label="Filter by family"
         >
           <option value="ALL">All Families</option>
@@ -445,7 +445,7 @@ export function WorkflowMatrixPage({ actions }: { actions: ActionSet }) {
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          style={{ padding: '6px 10px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6 }}
+          className="x-p-6px-10px x-fs-13px x-bd-1px-solid-line-strong x-r-6px"
           aria-label="Filter by department"
         >
           <option value="ALL">All Departments</option>
@@ -456,7 +456,7 @@ export function WorkflowMatrixPage({ actions }: { actions: ActionSet }) {
       </div>
 
       {rules.error ? <p role="alert">{rules.error}</p> : null}
-      <div className="table-wrap card" style={{ padding: 12, marginBottom: 16 }}>
+      <div className="table-wrap card x-p-12px x-mb-16px">
         <table className="register-table">
           <thead>
             <tr>
@@ -516,9 +516,9 @@ export function WorkflowMatrixPage({ actions }: { actions: ActionSet }) {
       </div>
 
       {/* Bottom Department Access Matrix (Demo ERP Baseline) */}
-      <div className="card panel" style={{ padding: 16, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-        <h3 style={{ margin: '0 0 8px', fontSize: 15, color: '#1e293b' }}>Department Access Matrix</h3>
-        <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 14px' }}>Cross-department visibility and handoff permissions across primary business workflows.</p>
+      <div className="card panel x-p-16px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+        <h3 className="x-m-0-0-8px x-fs-14px x-c-text">Department Access Matrix</h3>
+        <p className="x-fs-12px x-c-muted x-m-0-0-14px">Cross-department visibility and handoff permissions across primary business workflows.</p>
         <div className="table-wrap">
           <table className="register-table">
             <thead>

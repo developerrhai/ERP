@@ -90,34 +90,34 @@ export function FinancialYearsPage({ actions }: { actions: ActionSet }) {
         </div>
       ) : null}
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Active Financial Year</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{data?.find(y => y.isCurrent)?.label || 'FY 2026-27'}</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Current Active Period</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Active Financial Year</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{data?.find(y => y.isCurrent)?.label || 'FY 2026-27'}</b>
+          <span className="x-fs-11px x-c-success">Current Active Period</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Assessment Year</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>AY 2027-28</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Statutory Tax Assessment</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Assessment Year</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">AY 2027-28</b>
+          <span className="x-fs-11px x-c-primary">Statutory Tax Assessment</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Period Status</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{data?.filter(y => y.status === 'OPEN').length || 1} Open Years</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>General Ledger Active</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Period Status</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{data?.filter(y => y.status === 'OPEN').length || 1} Open Years</b>
+          <span className="x-fs-11px x-c-success">General Ledger Active</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Continuous Timeline</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">Continuous Timeline</span>
         </div>
       </div>
 
       {/* Split View: Financial Year Master + Validation Controls */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Financial Year Master</h3>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Financial Year Master</h3>
             {canChange ? (
               <button
                 type="button"
@@ -154,28 +154,27 @@ export function FinancialYearsPage({ actions }: { actions: ActionSet }) {
           </table>
         </div>
 
-        <div className="card" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+        <div className="card x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Validation Controls</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             Period locking, statutory fiscal boundaries and year-end carry forwards.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <div className="x-d-flex x-fd-column x-gap-10px x-fs-12px">
+            <label className="x-d-flex x-ai-center x-gap-8px x-cur-pointer">
               <input type="checkbox" defaultChecked />
               <span>Block postings to closed financial years</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <label className="x-d-flex x-ai-center x-gap-8px x-cur-pointer">
               <input type="checkbox" defaultChecked />
               <span>Enforce consecutive chronological FY boundaries</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <label className="x-d-flex x-ai-center x-gap-8px x-cur-pointer">
               <input type="checkbox" defaultChecked />
               <span>Strict 1-April to 31-March Indian fiscal standard</span>
             </label>
             <button
               type="button"
-              className="btn sm"
-              style={{ marginTop: 8 }}
+              className="btn sm x-mt-8px"
               onClick={() => toast('Financial Year validations checked: 100% compliant.')}
             >
               Run Period Validation
@@ -185,9 +184,9 @@ export function FinancialYearsPage({ actions }: { actions: ActionSet }) {
       </div>
 
       <div className="card table-wrap">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 6px 14px' }}>
-          <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Financial Year Detailed Register</h3>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Showing all fiscal years with audit actions</span>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-p-12px-14px-6px-14px">
+          <h3 className="x-m-0 x-fs-14px x-c-text">Financial Year Detailed Register</h3>
+          <span className="x-fs-12px x-c-muted">Showing all fiscal years with audit actions</span>
         </div>
         <table>
           <thead>

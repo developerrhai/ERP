@@ -52,13 +52,12 @@ export function ProjectProfitabilityPage() {
 
       {error && <div className="notice error">{error}</div>}
 
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div className="x-d-flex x-gap-1rem x-ai-center x-mb-1_5rem">
         <label>Select Project:</label>
         <select
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="input"
-          style={{ width: '320px' }}
+          className="input x-w-320px"
         >
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
@@ -73,35 +72,35 @@ export function ProjectProfitabilityPage() {
       ) : profitability ? (
         <div>
           {/* Key Financial KPIs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div className="card" style={{ padding: '1rem', background: '#e8f0fe', border: '1px solid #aecbfa' }}>
-              <div style={{ fontSize: '12px', color: '#174ea6' }}>Total Revenue</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#174ea6' }}>
+          <div className="x-d-grid x-cols-repeat-4-1fr x-gap-1rem x-mb-1_5rem">
+            <div className="card x-p-1rem x-bg-he8f0fe x-bd-1px-solid-haecbfa">
+              <div className="x-fs-12px x-c-h174ea6">Total Revenue</div>
+              <div className="x-fs-24px x-fw-700 x-c-h174ea6">
                 {inr(profitability.revenue)}
               </div>
             </div>
-            <div className="card" style={{ padding: '1rem', background: '#fce8e6', border: '1px solid #fad2cf' }}>
-              <div style={{ fontSize: '12px', color: '#c5221f' }}>Total Cost (GL Booked)</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#c5221f' }}>
+            <div className="card x-p-1rem x-bg-hfce8e6 x-bd-1px-solid-hfad2cf">
+              <div className="x-fs-12px x-c-danger-hover">Total Cost (GL Booked)</div>
+              <div className="x-fs-24px x-fw-700 x-c-danger-hover">
                 {inr(profitability.totalCost)}
               </div>
             </div>
-            <div className="card" style={{ padding: '1rem', background: '#e6f4ea', border: '1px solid #ceead6' }}>
-              <div style={{ fontSize: '12px', color: '#137333' }}>Contribution Margin</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#137333' }}>
+            <div className="card x-p-1rem x-bg-he6f4ea x-bd-1px-solid-hceead6">
+              <div className="x-fs-12px x-c-success">Contribution Margin</div>
+              <div className="x-fs-24px x-fw-700 x-c-success">
                 {inr(profitability.contribution)}
               </div>
             </div>
-            <div className="card" style={{ padding: '1rem', background: '#fef7e0', border: '1px solid #feefc3' }}>
-              <div style={{ fontSize: '12px', color: '#b06000' }}>Margin %</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#b06000' }}>
+            <div className="card x-p-1rem x-bg-hfef7e0 x-bd-1px-solid-hfeefc3">
+              <div className="x-fs-12px x-c-hb06000">Margin %</div>
+              <div className="x-fs-24px x-fw-700 x-c-hb06000">
                 {profitability.marginPct}
               </div>
             </div>
           </div>
 
           {/* Budget vs Actual Comparison */}
-          <div style={{ marginBottom: '2rem' }}>
+          <div className="x-mb-2rem">
             <h4>Budget vs Actual by Cost Head</h4>
             <table className="table">
               <thead>

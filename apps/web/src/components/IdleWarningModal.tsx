@@ -76,43 +76,24 @@ export function IdleWarningModal({ idleMinutes = DEFAULT_IDLE_MINUTES }: { idleM
 
   return (
     <div
-      className="modal-overlay"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-      }}
+      className="modal-overlay x-pos-fixed x-inset-0 x-bgc-rgba-0-0-0-0_5 x-d-flex x-ai-center x-jc-center x-z-index-9999"
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="idle-warning-title"
     >
       <div
-        className="card"
-        style={{
-          maxWidth: '420px',
-          width: '90%',
-          padding: '1.5rem',
-          textAlign: 'center',
-          backgroundColor: 'var(--color-bg-surface, #ffffff)',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          borderRadius: '8px',
-        }}
+        className="card x-maxw-420px x-w-90pct x-p-1_5rem x-ta-center x-bgc-var-color-bg-surface-hffffff x-box-shadow-0-20px-25px-n5px-rgba-0-0-0-0_1-0-10px-10px-n5px x-r-8px"
       >
-        <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>⏱️</div>
-        <h2 id="idle-warning-title" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
+        <div className="x-fs-32px x-mb-0_75rem">⏱️</div>
+        <h2 id="idle-warning-title" className="x-fs-20px x-mb-0_5rem">
           Session Idle Warning
         </h2>
-        <p style={{ color: 'var(--color-muted, #64748b)', marginBottom: '1.5rem', fontSize: '0.9375rem' }}>
+        <p className="x-c-var-color-muted-h64748b x-mb-1_5rem x-fs-14px">
           You will be signed out in {timeFormatted} because nothing happened for a while.
         </p>
         <button
           type="button"
-          className="btn primary"
-          style={{ width: '100%', padding: '0.625rem 1rem' }}
+          className="btn primary x-w-100pct x-p-0_625rem-1rem"
           onClick={() => void staySignedIn()}
         >
           Stay signed in

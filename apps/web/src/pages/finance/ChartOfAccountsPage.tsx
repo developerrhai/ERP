@@ -75,7 +75,7 @@ export function ChartOfAccountsPage({ actions }: { actions: ActionSet }) {
         actions={actions}
         fallback={
           <>
-            <div className="recordbar" style={{ marginBottom: 16 }}>
+            <div className="recordbar x-mb-16px">
               <input
                 type="search"
                 placeholder="Search by code or name…"

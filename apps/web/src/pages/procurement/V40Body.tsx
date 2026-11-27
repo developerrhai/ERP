@@ -273,7 +273,7 @@ function ConnectedManufacturingRibbon({
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 7, fontSize: 11, color: '#52677f' }}>
+      <div className="x-mt-7px x-fs-11px x-c-h52677f">
         <b>{completeCount} / {stages.length} stages complete</b> • Parent {soNo} • Auto-synchronization active
       </div>
       {drawer === 'track' ? (
@@ -336,7 +336,7 @@ function RecordControlsBar({
 
   return (
     <div className="recordbar">
-      <b style={{ fontSize: 11 }}>Record:</b>
+      <b className="x-fs-11px">Record:</b>
       <select
         aria-label="Select Record"
         value={activeRow ? String(activeRow.id) : ''}
@@ -507,7 +507,7 @@ function ComparisonSummaryPanel({ spec: _spec, m }: { spec: PageSpec; m: Metrics
   const top = Math.max(1, ...statuses.map(([, v]) => v));
 
   return (
-    <div style={{ marginBottom: 14 }}>
+    <div className="x-mb-14px">
       <div className="v8-graph-grid">
         <div className="v8-graph-card">
           <h3>Comparison Sheet • 20-Point Trend & Forecast</h3>
@@ -532,7 +532,7 @@ function ComparisonSummaryPanel({ spec: _spec, m }: { spec: PageSpec; m: Metrics
         <div className="v8-graph-card">
           <h3>Status / Business Distribution</h3>
           <div className="v8-sub">Distribution of quotations across vendors and status</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+          <div className="x-d-flex x-fd-column x-gap-6px x-mt-10px">
             {(statuses.length
               ? statuses
               : [
@@ -541,28 +541,23 @@ function ComparisonSummaryPanel({ spec: _spec, m }: { spec: PageSpec; m: Metrics
                   ['Under Review', 3],
                 ]
             ).map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', alignItems: 'center', fontSize: 11 }}>
+              <div key={k} className="x-d-flex x-ai-center x-fs-11px">
                 <span
-                  style={{
-                    width: 90,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
+                  className="x-w-90px x-ov-hidden x-text-overflow-ellipsis x-ws-nowrap"
                 >
                   {k}
                 </span>
                 <div className="proc-bar">
                   <i style={{ width: `${Math.round((Number(v) / (top || 8)) * 100)}%` }} />
                 </div>
-                <b style={{ width: 24, textAlign: 'right' }}>{v}</b>
+                <b className="x-w-24px x-ta-right">{v}</b>
               </div>
             ))}
           </div>
         </div>
       </div>
-      <div className="card panel" style={{ marginTop: 12, padding: 14 }}>
-        <h3 style={{ margin: '0 0 10px', fontSize: 13, color: '#17365d' }}>Analysis Summary</h3>
+      <div className="card panel x-mt-12px x-p-14px">
+        <h3 className="x-m-0-0-10px x-fs-13px x-c-h17365d">Analysis Summary</h3>
         <div className="detail-grid">
           <div className="detail">
             <small>Minimum</small>
@@ -630,7 +625,7 @@ function DetailedTable({
           <h3>{`${spec.title} Register • Detailed Table`}</h3>
           <small>{`${Math.min(20, rows.length)} working records • full actions available`}</small>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="x-d-flex x-gap-8px">
           <button type="button" className="btn sm" onClick={onExportCsv}>
             Excel
           </button>
@@ -1906,7 +1901,7 @@ function RevisionPanel({ spec, rows, pageId, actions, reload }: PanelCtx) {
   ];
 
   return (
-    <div style={{ marginBottom: 12 }}>
+    <div className="x-mb-12px">
       <Section
         title="Approval Hierarchy & Workflow"
         hint="Approval and revision control with authority levels, value thresholds and audit history."
@@ -1934,7 +1929,7 @@ function RevisionPanel({ spec, rows, pageId, actions, reload }: PanelCtx) {
           ))}
         </div>
       </Section>
-      <div className="proc-split" style={{ marginTop: 12 }}>
+      <div className="proc-split x-mt-12px">
         <Section
           title="Records awaiting decision"
           hint="Requests waiting in the approval chain for this page."
@@ -2122,7 +2117,7 @@ function SimulationPanel({ spec, rows }: { spec: PageSpec; rows: Row[] }) {
             </div>
           ))}
         </div>
-        <div className="detail-grid" style={{ marginTop: 12 }}>
+        <div className="detail-grid x-mt-12px">
           {[
             ['Net Value', inr(Math.round(net * 100) / 100)],
             ['Tax', inr(Math.round(gst * 100) / 100)],
@@ -2137,7 +2132,7 @@ function SimulationPanel({ spec, rows }: { spec: PageSpec; rows: Row[] }) {
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 14 }}>
+        <div className="x-mt-14px">
           <button
             type="button"
             className="btn primary"

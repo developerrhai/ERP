@@ -24,8 +24,7 @@ export function FilterControl({
     case 'bool':
       return (
         <label
-          className="filter-check"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+          className="filter-check x-d-inline-flex x-ai-center x-gap-4px"
         >
           <input
             type="checkbox"
@@ -72,13 +71,13 @@ export function FilterControl({
           title={filter.label}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          style={{ minWidth: '120px' }}
+          className="x-minw-120px"
         />
       );
 
     case 'lookup':
       return (
-        <div style={{ display: 'inline-block', minWidth: '140px' }}>
+        <div className="x-d-inline-block x-minw-140px">
           <LookupCombobox
             label=""
             kind={filter.lookup ?? 'items'}
@@ -97,7 +96,7 @@ export function FilterControl({
           placeholder={`Filter ${filter.label}…`}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          style={{ minWidth: '110px' }}
+          className="x-minw-110px"
         />
       );
   }
@@ -108,8 +107,7 @@ export function FilterBar({ filters, activeFilters, onFilterChange }: FilterBarP
 
   return (
     <div
-      className="filter-bar"
-      style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}
+      className="filter-bar x-d-inline-flex x-gap-8px x-ai-center x-wrap-wrap"
     >
       {filters.map((f) => (
         <FilterControl

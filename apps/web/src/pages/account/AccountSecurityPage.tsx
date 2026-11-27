@@ -242,35 +242,31 @@ export function AccountSecurityPage({ user }: Props) {
   };
 
   return (
-    <div style={{ maxWidth: '960px', margin: '0 auto', padding: '1.5rem 1rem' }}>
-      <div className="page-head" style={{ marginBottom: '1.5rem' }}>
+    <div className="x-maxw-960px x-m-0-auto x-p-1_5rem-1rem">
+      <div className="page-head x-mb-1_5rem">
         <div>
           <h1>Account Security</h1>
           <p>Manage your password, two-step verification and signed-in devices.</p>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="x-d-flex x-fd-column x-gap-1_5rem">
         {/* CARD 1: Password */}
-        <div className="card" style={{ padding: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Change Password</h2>
+        <div className="card x-p-1_5rem">
+          <h2 className="x-fs-20px x-mb-0_5rem">Change Password</h2>
           <p
-            style={{
-              color: 'var(--color-muted, #64748b)',
-              fontSize: '0.875rem',
-              marginBottom: '1.25rem',
-            }}
+            className="x-c-var-color-muted-h64748b x-fs-14px x-mb-1_25rem"
           >
             Choose a unique phrase of at least 12 characters that you do not use anywhere else.
           </p>
 
           {pwError ? (
-            <div className="msg error show" role="alert" style={{ marginBottom: '1rem' }}>
+            <div className="msg error show x-mb-1rem" role="alert">
               {pwError}
             </div>
           ) : null}
 
-          <form onSubmit={(e) => void onPasswordSubmit(e)} style={{ maxWidth: '420px' }}>
+          <form onSubmit={(e) => void onPasswordSubmit(e)} className="x-maxw-420px">
             <div className="field">
               <label htmlFor="current-pw">Current Password</label>
               <input
@@ -312,9 +308,8 @@ export function AccountSecurityPage({ user }: Props) {
 
             <button
               type="submit"
-              className="btn primary"
+              className="btn primary x-mt-1_25rem"
               disabled={pwPending || newPassword.length < 12 || newPassword !== confirmPassword}
-              style={{ marginTop: '1.25rem' }}
             >
               {pwPending ? 'Updating…' : 'Update Password'}
             </button>
@@ -322,29 +317,22 @@ export function AccountSecurityPage({ user }: Props) {
         </div>
 
         {/* CARD 2: Two-Step Verification */}
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="card x-p-1_5rem">
           <div
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+            className="x-d-flex x-jc-space-between x-ai-flex-start"
           >
             <div>
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
+              <h2 className="x-fs-20px x-mb-0_5rem">
                 Two-Step Verification (MFA)
               </h2>
-              <p style={{ color: 'var(--color-muted, #64748b)', fontSize: '0.875rem' }}>
+              <p className="x-c-var-color-muted-h64748b x-fs-14px">
                 Protect your account with a 6-digit code from Google Authenticator or Microsoft
                 Authenticator.
               </p>
             </div>
             {mfaStatus?.enabled ? (
               <span
-                style={{
-                  backgroundColor: '#dcfce7',
-                  color: '#15803d',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '9999px',
-                  fontWeight: 600,
-                  fontSize: '0.8125rem',
-                }}
+                className="x-bgc-hdcfce7 x-c-success x-p-0_25rem-0_75rem x-r-9999px x-fw-600 x-fs-13px"
               >
                 Active
               </span>
@@ -353,14 +341,7 @@ export function AccountSecurityPage({ user }: Props) {
 
           {mfaStatus?.required ? (
             <div
-              style={{
-                backgroundColor: '#eff6ff',
-                color: '#1d4ed8',
-                padding: '0.75rem 1rem',
-                borderRadius: '6px',
-                marginTop: '1rem',
-                fontSize: '0.875rem',
-              }}
+              className="x-bgc-heff6ff x-c-primary x-p-0_75rem-1rem x-r-6px x-mt-1rem x-fs-14px"
             >
               ℹ Two-step verification is required for all administrators.
             </div>
@@ -368,13 +349,13 @@ export function AccountSecurityPage({ user }: Props) {
 
           {mfaWizardStep === null ? (
             /* Idle state: show status & actions */
-            <div style={{ marginTop: '1.25rem' }}>
+            <div className="x-mt-1_25rem">
               {mfaStatus?.enabled ? (
                 <div>
-                  <p style={{ fontSize: '0.9375rem', marginBottom: '0.5rem' }}>
+                  <p className="x-fs-14px x-mb-0_5rem">
                     Recovery codes remaining: <b>{mfaStatus.recoveryCodesRemaining} of 10</b>
                   </p>
-                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                  <div className="x-d-flex x-gap-0_75rem x-mt-1rem">
                     <button
                       type="button"
                       className="btn secondary"
@@ -403,13 +384,13 @@ export function AccountSecurityPage({ user }: Props) {
             /* Wizard Step 1: Confirm Password */
             <form
               onSubmit={(e) => void onStartMfaSetup(e)}
-              style={{ maxWidth: '420px', marginTop: '1.25rem' }}
+              className="x-maxw-420px x-mt-1_25rem"
             >
-              <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
+              <p className="x-fs-14px x-mb-1rem">
                 Step 1 of 3: Enter your current password to begin.
               </p>
               {mfaError ? (
-                <div className="msg error show" style={{ marginBottom: '1rem' }}>
+                <div className="msg error show x-mb-1rem">
                   {mfaError}
                 </div>
               ) : null}
@@ -423,7 +404,7 @@ export function AccountSecurityPage({ user }: Props) {
                   onChange={(e) => setMfaCurrentPassword(e.target.value)}
                 />
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="x-d-flex x-gap-0_75rem x-mt-1rem">
                 <button
                   type="submit"
                   className="btn primary"
@@ -444,38 +425,28 @@ export function AccountSecurityPage({ user }: Props) {
             /* Wizard Step 2: Scan QR & Enter 6-digit Code */
             <form
               onSubmit={(e) => void onVerifyMfaSetup(e)}
-              style={{ maxWidth: '420px', marginTop: '1.25rem' }}
+              className="x-maxw-420px x-mt-1_25rem"
             >
-              <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
+              <p className="x-fs-14px x-mb-1rem">
                 Step 2 of 3: Scan this QR code with your phone&apos;s Authenticator app, then enter
                 the 6-digit code.
               </p>
               {mfaError ? (
-                <div className="msg error show" style={{ marginBottom: '1rem' }}>
+                <div className="msg error show x-mb-1rem">
                   {mfaError}
                 </div>
               ) : null}
 
               {qrCodeData ? (
-                <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                <div className="x-ta-center x-mb-1rem">
                   <img
                     src={qrCodeData}
                     alt="TOTP QR Code"
-                    style={{
-                      width: '180px',
-                      height: '180px',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '4px',
-                    }}
+                    className="x-w-180px x-h-180px x-bd-1px-solid-line x-r-6px"
                   />
                   {totpSecret ? (
                     <p
-                      style={{
-                        fontSize: '0.75rem',
-                        color: '#64748b',
-                        marginTop: '0.5rem',
-                        wordBreak: 'break-all',
-                      }}
+                      className="x-fs-12px x-c-muted x-mt-0_5rem x-word-break-break-all"
                     >
                       Secret key: <code>{totpSecret}</code>
                     </p>
@@ -493,11 +464,11 @@ export function AccountSecurityPage({ user }: Props) {
                   autoFocus
                   value={verifyCode}
                   onChange={(e) => setVerifyCode(e.target.value)}
-                  style={{ textAlign: 'center', fontSize: '1.25rem', letterSpacing: '0.25em' }}
+                  className="x-ta-center x-fs-20px x-letter-spacing-0_25em"
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="x-d-flex x-gap-0_75rem x-mt-1rem">
                 <button
                   type="submit"
                   className="btn primary"
@@ -516,42 +487,26 @@ export function AccountSecurityPage({ user }: Props) {
             </form>
           ) : (
             /* Wizard Step 3: Save Recovery Codes */
-            <div style={{ maxWidth: '480px', marginTop: '1.25rem' }}>
+            <div className="x-maxw-480px x-mt-1_25rem">
               <p
-                style={{
-                  fontSize: '0.875rem',
-                  marginBottom: '0.75rem',
-                  color: '#16a34a',
-                  fontWeight: 600,
-                }}
+                className="x-fs-14px x-mb-0_75rem x-c-success x-fw-600"
               >
                 ✓ Step 3 of 3: Save your 10 single-use recovery codes.
               </p>
-              <p style={{ fontSize: '0.8125rem', color: '#64748b', marginBottom: '1rem' }}>
+              <p className="x-fs-13px x-c-muted x-mb-1rem">
                 If you ever lose access to your phone, each recovery code can be used once to sign
                 in. Store them safely.
               </p>
 
               <div
-                style={{
-                  backgroundColor: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '6px',
-                  padding: '1rem',
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '0.5rem',
-                  fontFamily: 'monospace',
-                  fontSize: '1rem',
-                  marginBottom: '1rem',
-                }}
+                className="x-bgc-card2 x-bd-1px-solid-line x-r-6px x-p-1rem x-d-grid x-cols-1fr-1fr x-gap-0_5rem x-font-family-monospace x-fs-16px x-mb-1rem"
               >
                 {recoveryCodes.map((code) => (
                   <div key={code}>{code}</div>
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div className="x-d-flex x-gap-0_75rem x-mb-1_25rem">
                 <button type="button" className="btn secondary" onClick={downloadCodes}>
                   📥 Download
                 </button>
@@ -561,14 +516,7 @@ export function AccountSecurityPage({ user }: Props) {
               </div>
 
               <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.875rem',
-                  marginBottom: '1.25rem',
-                  cursor: 'pointer',
-                }}
+                className="x-d-flex x-ai-center x-gap-0_5rem x-fs-14px x-mb-1_25rem x-cur-pointer"
               >
                 <input
                   type="checkbox"
@@ -595,18 +543,13 @@ export function AccountSecurityPage({ user }: Props) {
         </div>
 
         {/* CARD 3: Devices Table */}
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="card x-p-1_5rem">
           <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '1rem',
-            }}
+            className="x-d-flex x-jc-space-between x-ai-center x-mb-1rem"
           >
             <div>
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>My Signed-In Devices</h2>
-              <p style={{ color: 'var(--color-muted, #64748b)', fontSize: '0.875rem' }}>
+              <h2 className="x-fs-20px x-mb-0_25rem">My Signed-In Devices</h2>
+              <p className="x-c-var-color-muted-h64748b x-fs-14px">
                 All devices currently signed into your account.
               </p>
             </div>
@@ -688,24 +631,15 @@ export function AccountSecurityPage({ user }: Props) {
       {/* Disable Modal */}
       {showDisableModal ? (
         <div
-          className="modal-overlay"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-          }}
+          className="modal-overlay x-pos-fixed x-inset-0 x-bgc-rgba-0-0-0-0_5-2 x-d-flex x-ai-center x-jc-center x-z-index-9999"
         >
-          <div className="card" style={{ maxWidth: '420px', width: '90%', padding: '1.5rem' }}>
+          <div className="card x-maxw-420px x-w-90pct x-p-1_5rem">
             <h2>Turn Off Two-Step Verification</h2>
-            <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 1rem' }}>
+            <p className="x-c-muted x-fs-14px x-m-0_5rem-0-1rem">
               Confirm your password and enter a 6-digit code to turn off two-step verification.
             </p>
             {actionError ? (
-              <div className="msg error show" style={{ marginBottom: '1rem' }}>
+              <div className="msg error show x-mb-1rem">
                 {actionError}
               </div>
             ) : null}
@@ -729,7 +663,7 @@ export function AccountSecurityPage({ user }: Props) {
                   onChange={(e) => setActionCode(e.target.value)}
                 />
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="x-d-flex x-gap-0_75rem x-mt-1rem">
                 <button
                   type="submit"
                   className="btn danger"
@@ -756,24 +690,15 @@ export function AccountSecurityPage({ user }: Props) {
       {/* Regenerate Modal */}
       {showRegenModal ? (
         <div
-          className="modal-overlay"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-          }}
+          className="modal-overlay x-pos-fixed x-inset-0 x-bgc-rgba-0-0-0-0_5-2 x-d-flex x-ai-center x-jc-center x-z-index-9999"
         >
-          <div className="card" style={{ maxWidth: '420px', width: '90%', padding: '1.5rem' }}>
+          <div className="card x-maxw-420px x-w-90pct x-p-1_5rem">
             <h2>Regenerate Recovery Codes</h2>
-            <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 1rem' }}>
+            <p className="x-c-muted x-fs-14px x-m-0_5rem-0-1rem">
               Generating new recovery codes will invalidate all existing ones.
             </p>
             {actionError ? (
-              <div className="msg error show" style={{ marginBottom: '1rem' }}>
+              <div className="msg error show x-mb-1rem">
                 {actionError}
               </div>
             ) : null}
@@ -797,7 +722,7 @@ export function AccountSecurityPage({ user }: Props) {
                   onChange={(e) => setActionCode(e.target.value)}
                 />
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="x-d-flex x-gap-0_75rem x-mt-1rem">
                 <button
                   type="submit"
                   className="btn primary"

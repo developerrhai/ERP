@@ -160,7 +160,7 @@ function Cell({
   if (children) return <td>{children}</td>;
   if (col.type === 'inr') return <td className="num">{inr(v)}</td>;
   if (col.type === 'num') return <td className="num">{num(v)}</td>;
-  if (col.type === 'date') return <td>{dmy(v)}</td>;
+  if (col.type === 'date') return <td className="cell-date">{dmy(v)}</td>;
   if (col.type === 'pill') return <td>{v ? <Pill>{v}</Pill> : '—'}</td>;
   if (v !== null && /^-?\d+\.\d+$/.test(v.trim())) {
     const n = Number(v.trim());
@@ -878,7 +878,7 @@ function V40Body({
       {showDocs ? (
         docRow ? (
           <>
-            <label className="v8-sub" style={{ display: 'block', margin: '8px 0' }}>
+            <label className="v8-sub sv40-doc-pick">
               Record{' '}
               <select
                 aria-label="Record for documents"

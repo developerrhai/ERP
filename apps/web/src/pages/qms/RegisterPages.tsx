@@ -171,7 +171,7 @@ function Rejections({ actions }: { actions: ActionSet }) {
       </div>
       <ErrorBox message={msg || list.error || sum.error} />
       {sum.data ? (
-        <div className="card" style={{ padding: 12, marginBottom: 12 }}>
+        <div className="card x-p-12px x-mb-12px">
           <b>
             Monthly summary: {s((sum.data.total as Row).entries)} entries,{' '}
             {s((sum.data.total as Row).qty)} pieces on hold
@@ -385,7 +385,7 @@ function Ppm({ actions }: { actions: ActionSet }) {
         </table>
       </div>
       {actions.edit ? (
-        <div className="card" style={{ padding: 12, marginTop: 12 }}>
+        <div className="card x-p-12px x-mt-12px">
           <h4>Enter the figures of a month</h4>
           <div className="form-grid">
             {(
@@ -535,7 +535,7 @@ function QualityCost({ actions }: { actions: ActionSet }) {
         </table>
       </div>
       {actions.add ? (
-        <div className="card" style={{ padding: 12, marginTop: 12 }}>
+        <div className="card x-p-12px x-mt-12px">
           <div className="form-grid">
             <div className="field">
               <label htmlFor="qc-cat">Category</label>

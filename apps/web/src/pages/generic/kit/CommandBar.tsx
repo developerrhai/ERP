@@ -63,7 +63,7 @@ export function CommandBar({ schema, perms, onDone }: CommandBarProps) {
 
   return (
     <>
-      <div className="command-bar" style={{ display: 'inline-flex', gap: '8px' }}>
+      <div className="command-bar x-d-inline-flex x-gap-8px">
         {visibleCommands.map((cmd) => (
           <button
             key={cmd.key}
@@ -94,12 +94,11 @@ export function CommandBar({ schema, perms, onDone }: CommandBarProps) {
           aria-modal="true"
           aria-labelledby="confirm-cmd-title"
         >
-          <div className="modal" style={{ maxWidth: '420px', padding: '20px' }}>
+          <div className="modal x-maxw-420px x-p-20px">
             <h3 id="confirm-cmd-title">{confirmCmd.label}</h3>
-            <p style={{ margin: '12px 0 20px', fontSize: '13px' }}>{confirmCmd.confirm}</p>
+            <p className="x-m-12px-0-20px x-fs-13px">{confirmCmd.confirm}</p>
             <div
-              className="actions"
-              style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}
+              className="actions x-d-flex x-jc-flex-end x-gap-8px"
             >
               <button
                 type="button"

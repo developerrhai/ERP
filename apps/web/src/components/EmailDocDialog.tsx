@@ -205,51 +205,23 @@ export function EmailDocDialog({
   return createPortal(
     <div className="modal-bg show" role="dialog" aria-modal="true" aria-label="Email Document">
       <div
-        className="modal"
-        style={{
-          maxWidth: 620,
-          width: '100%',
-          borderRadius: 16,
-          boxShadow: '0 20px 45px rgba(15, 23, 42, 0.22)',
-          border: '1px solid #e2e8f0',
-          // SE-03/SE-04: the head and the Send footer stay in view; only the body scrolls
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: '90vh',
-          overflow: 'hidden',
-          background: '#ffffff',
-        }}
+        className="modal x-maxw-620px x-w-100pct x-r-16px x-box-shadow-0-20px-45px-rgba-15-23-42-0_22 x-bd-1px-solid-line x-d-flex x-fd-column x-maxh-90vh x-ov-hidden x-bg-card"
       >
         <div
-          className="modal-head"
-          style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid #e2e8f0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            background: 'linear-gradient(to right, #f8fafc, #f1f5f9)',
-          }}
+          className="modal-head x-p-16px-20px x-bb-1px-solid-line x-d-flex x-jc-space-between x-ai-center x-bg-linear-gradient-to-right-hf8fafc-hf1f5f9"
         >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 18 }}>✉️</span>
-              <b style={{ fontSize: 17, fontWeight: 700, color: '#0f243d' }}>Email Document</b>
+            <div className="x-d-flex x-ai-center x-gap-8px">
+              <span className="x-fs-18px">✉️</span>
+              <b className="x-fs-17px x-fw-700 x-c-h0f243d">Email Document</b>
             </div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>
+            <div className="x-fs-12px x-c-muted x-mt-3px">
               Send document notification and PDF attachments to counterparties
             </div>
           </div>
           <button
             type="button"
-            className="btn"
-            style={{
-              borderRadius: 8,
-              padding: '4px 10px',
-              fontSize: 12,
-              background: '#fff',
-              border: '1px solid #cbd5e1',
-            }}
+            className="btn x-r-8px x-p-4px-10px x-fs-12px x-bg-card x-bd-1px-solid-line-strong"
             onClick={onClose}
           >
             Close
@@ -257,47 +229,24 @@ export function EmailDocDialog({
         </div>
 
         <div
-          className="modal-body"
-          style={{ padding: '20px 24px', flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}
+          className="modal-body x-p-20px-24px x-flex-1-1-auto x-minh-0 x-ovy-auto"
         >
           {/* Document Reference Pill Card */}
           <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: 10,
-              padding: '10px 14px',
-              marginBottom: 16,
-            }}
+            className="x-d-flex x-ai-center x-jc-space-between x-bg-card2 x-bd-1px-solid-line x-r-10px x-p-10px-14px x-mb-16px"
           >
             <div>
               <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#64748b',
-                  textTransform: 'uppercase',
-                }}
+                className="x-fs-11px x-fw-700 x-c-muted x-text-transform-uppercase"
               >
                 Document
               </span>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#0f243d', marginTop: 2 }}>
+              <div className="x-fs-13px x-fw-700 x-c-h0f243d x-mt-2px">
                 {kindOf(docType)} • {docNo || (/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(docId) ? (loading ? '…' : 'record not found') : docId)}
               </div>
             </div>
             <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: '#eff6ff',
-                color: '#1d4ed8',
-                border: '1px solid #bfdbfe',
-              }}
+              className="x-fs-11px x-fw-600 x-p-4px-10px x-r-999px x-bg-heff6ff x-c-primary x-bd-1px-solid-hbfdbfe"
             >
               📎{' '}
               {format === 'pdf'
@@ -307,22 +256,14 @@ export function EmailDocDialog({
           </div>
 
           {loading ? (
-            <div style={{ padding: '28px 0', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+            <div className="x-p-28px-0 x-ta-center x-c-muted x-fs-13px">
               Preparing document preview…
             </div>
           ) : null}
 
           {error ? (
             <div
-              style={{
-                background: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#b91c1c',
-                padding: '9px 12px',
-                borderRadius: 8,
-                fontSize: 12,
-                marginBottom: 16,
-              }}
+              className="x-bg-hfef2f2 x-bd-1px-solid-hfecaca x-c-danger-hover x-p-9px-12px x-r-8px x-fs-12px x-mb-16px"
               role="alert"
             >
               {error}
@@ -330,17 +271,11 @@ export function EmailDocDialog({
           ) : null}
 
           {!loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <div style={{ gridColumn: '1 / -1' }}>
+            <div className="x-d-grid x-cols-1fr-1fr x-gap-14px">
+              <div className="x-grid-column-1-n1">
                 <label
                   htmlFor="email-subject"
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#334155',
-                    marginBottom: 5,
-                  }}
+                  className="x-d-block x-fs-12px x-fw-600 x-c-textn2 x-mb-5px"
                 >
                   Subject *
                 </label>
@@ -351,28 +286,13 @@ export function EmailDocDialog({
                   data-field="subject"
                   aria-invalid={bad === 'subject' ? true : undefined}
                   onChange={(e) => setSubject(e.target.value)}
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '8px 12px',
-                    fontSize: 13,
-                    borderRadius: 8,
-                    border: '1px solid #cbd5e1',
-                    background: '#ffffff',
-                    outline: 'none',
-                  }}
+                  className="x-w-100pct x-box-sizing-border-box x-p-8px-12px x-fs-13px x-r-8px x-bd-1px-solid-line-strong x-bg-card x-outline-none"
                 />
               </div>
 
-              <div style={{ gridColumn: '1 / -1' }}>
+              <div className="x-grid-column-1-n1">
                 <label
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#334155',
-                    marginBottom: 5,
-                  }}
+                  className="x-d-block x-fs-12px x-fw-600 x-c-textn2 x-mb-5px"
                 >
                   To (comma-separated) *
                 </label>
@@ -383,28 +303,13 @@ export function EmailDocDialog({
                   aria-invalid={bad === 'to' ? true : undefined}
                   onChange={(e) => setToStr(e.target.value)}
                   placeholder="name@company.com"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '8px 12px',
-                    fontSize: 13,
-                    borderRadius: 8,
-                    border: '1px solid #cbd5e1',
-                    background: '#ffffff',
-                    outline: 'none',
-                  }}
+                  className="x-w-100pct x-box-sizing-border-box x-p-8px-12px x-fs-13px x-r-8px x-bd-1px-solid-line-strong x-bg-card x-outline-none"
                 />
               </div>
 
               <div>
                 <label
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#334155',
-                    marginBottom: 5,
-                  }}
+                  className="x-d-block x-fs-12px x-fw-600 x-c-textn2 x-mb-5px"
                 >
                   CC
                 </label>
@@ -415,29 +320,14 @@ export function EmailDocDialog({
                   aria-invalid={bad === 'cc' ? true : undefined}
                   onChange={(e) => setCcStr(e.target.value)}
                   placeholder="Optional copy to"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '8px 12px',
-                    fontSize: 13,
-                    borderRadius: 8,
-                    border: '1px solid #cbd5e1',
-                    background: '#ffffff',
-                    outline: 'none',
-                  }}
+                  className="x-w-100pct x-box-sizing-border-box x-p-8px-12px x-fs-13px x-r-8px x-bd-1px-solid-line-strong x-bg-card x-outline-none"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="email-bcc"
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#334155',
-                    marginBottom: 5,
-                  }}
+                  className="x-d-block x-fs-12px x-fw-600 x-c-textn2 x-mb-5px"
                 >
                   BCC
                 </label>
@@ -449,29 +339,14 @@ export function EmailDocDialog({
                   aria-invalid={bad === 'bcc' ? true : undefined}
                   onChange={(e) => setBccStr(e.target.value)}
                   placeholder="audit@company.example"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '8px 12px',
-                    fontSize: 13,
-                    borderRadius: 8,
-                    border: '1px solid #cbd5e1',
-                    background: '#ffffff',
-                    outline: 'none',
-                  }}
+                  className="x-w-100pct x-box-sizing-border-box x-p-8px-12px x-fs-13px x-r-8px x-bd-1px-solid-line-strong x-bg-card x-outline-none"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="email-format"
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#334155',
-                    marginBottom: 5,
-                  }}
+                  className="x-d-block x-fs-12px x-fw-600 x-c-textn2 x-mb-5px"
                 >
                   Prepare Attachment Format
                 </label>
@@ -479,16 +354,7 @@ export function EmailDocDialog({
                   id="email-format"
                   value={format}
                   onChange={(e) => setFormat(e.target.value as AttachFormat)}
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '8px 12px',
-                    fontSize: 13,
-                    borderRadius: 8,
-                    border: '1px solid #cbd5e1',
-                    background: '#ffffff',
-                    outline: 'none',
-                  }}
+                  className="x-w-100pct x-box-sizing-border-box x-p-8px-12px x-fs-13px x-r-8px x-bd-1px-solid-line-strong x-bg-card x-outline-none"
                 >
                   {FORMATS.map((f) => (
                     <option key={f.value} value={f.value}>
@@ -500,29 +366,14 @@ export function EmailDocDialog({
 
               <div>
                 <label
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#334155',
-                    marginBottom: 5,
-                  }}
+                  className="x-d-block x-fs-12px x-fw-600 x-c-textn2 x-mb-5px"
                 >
                   Attachment Mode
                 </label>
                 <select
                   value={attachMode}
                   onChange={(e) => setAttachMode(e.target.value as 'AUTO' | 'ATTACH' | 'LINK')}
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '8px 12px',
-                    fontSize: 13,
-                    borderRadius: 8,
-                    border: '1px solid #cbd5e1',
-                    background: '#ffffff',
-                    outline: 'none',
-                  }}
+                  className="x-w-100pct x-box-sizing-border-box x-p-8px-12px x-fs-13px x-r-8px x-bd-1px-solid-line-strong x-bg-card x-outline-none"
                 >
                   <option value="AUTO">Auto (&le; 7 MB attach, else 30-day link)</option>
                   <option value="ATTACH">Force PDF Attachment ({attachmentFilename})</option>
@@ -530,16 +381,10 @@ export function EmailDocDialog({
                 </select>
               </div>
 
-              <div style={{ gridColumn: '1 / -1' }}>
+              <div className="x-grid-column-1-n1">
                 <label
                   htmlFor="email-message"
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#334155',
-                    marginBottom: 5,
-                  }}
+                  className="x-d-block x-fs-12px x-fw-600 x-c-textn2 x-mb-5px"
                 >
                   Message (ERP record summary)
                 </label>
@@ -548,30 +393,14 @@ export function EmailDocDialog({
                   rows={8}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: 8,
-                    padding: '9px 12px',
-                    fontSize: 13,
-                    fontFamily: 'inherit',
-                    outline: 'none',
-                    resize: 'vertical',
-                  }}
+                  className="x-w-100pct x-box-sizing-border-box x-bd-1px-solid-line-strong x-r-8px x-p-9px-12px x-fs-13px x-font-family-inherit x-outline-none x-resize-vertical"
                 />
               </div>
 
-              <div style={{ gridColumn: '1 / -1' }}>
+              <div className="x-grid-column-1-n1">
                 <label
                   htmlFor="email-note"
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#334155',
-                    marginBottom: 5,
-                  }}
+                  className="x-d-block x-fs-12px x-fw-600 x-c-textn2 x-mb-5px"
                 >
                   Custom Note
                 </label>
@@ -581,17 +410,7 @@ export function EmailDocDialog({
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Optional note to include in email body"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: 8,
-                    padding: '9px 12px',
-                    fontSize: 13,
-                    fontFamily: 'inherit',
-                    outline: 'none',
-                    resize: 'vertical',
-                  }}
+                  className="x-w-100pct x-box-sizing-border-box x-bd-1px-solid-line-strong x-r-8px x-p-9px-12px x-fs-13px x-font-family-inherit x-outline-none x-resize-vertical"
                 />
               </div>
 
@@ -606,29 +425,19 @@ export function EmailDocDialog({
         </div>
 
         <div
-          className="modal-foot"
-          style={{
-            padding: '14px 24px',
-            borderTop: '1px solid #e2e8f0',
-            background: '#f8fafc',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: 10,
-          }}
+          className="modal-foot x-p-14px-24px x-bt-1px-solid-line x-bg-card2 x-d-flex x-jc-flex-end x-gap-10px"
         >
           <button
             type="button"
-            className="btn"
-            style={{ borderRadius: 8, padding: '7px 16px', fontSize: 13 }}
+            className="btn x-r-8px x-p-7px-16px x-fs-13px"
             onClick={onClose}
           >
             Cancel
           </button>
           <button
             type="button"
-            className="btn primary"
+            className="btn primary x-r-8px x-p-7px-20px x-fs-13px x-fw-600"
             disabled={sending || loading}
-            style={{ borderRadius: 8, padding: '7px 20px', fontSize: 13, fontWeight: 600 }}
             onClick={() => void send()}
           >
             {sending ? 'Sending…' : 'Send Email'}

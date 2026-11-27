@@ -48,35 +48,35 @@ export function ImportExportPage() {
       </div>
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Active Workspaces</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>12 Data Entities</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Items, Customers, Vendors, GL...</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Active Workspaces</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">12 Data Entities</b>
+          <span className="x-fs-11px x-c-success">Items, Customers, Vendors, GL...</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Batch Processing Limit</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>10,000 Rows</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Transactional Atomicity</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Batch Processing Limit</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">10,000 Rows</b>
+          <span className="x-fs-11px x-c-primary">Transactional Atomicity</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Validation Guardrails</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>Schema &amp; Tax Checked</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Pre-Flight Simulation</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Validation Guardrails</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">Schema &amp; Tax Checked</b>
+          <span className="x-fs-11px x-c-success">Pre-Flight Simulation</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>99.9%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Zero Corrupt Imports</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">99.9%</b>
+          <span className="x-fs-11px x-c-success">Zero Corrupt Imports</span>
         </div>
       </div>
 
       {/* Split View: Import/Export Workspace + Data Operation Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Import / Export Workspace</h3>
-            <div style={{ display: 'flex', gap: 6 }}>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Import / Export Workspace</h3>
+            <div className="x-d-flex x-gap-6px">
               <button
                 type="button"
                 className="btn sm primary"
@@ -117,18 +117,18 @@ export function ImportExportPage() {
           </table>
         </div>
 
-        <div className="card" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Data Operation Summary</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+        <div className="card x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Data Operation Summary</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             Template downloads and batch migration controls.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div className="x-d-flex x-fd-column x-gap-8px x-fs-12px">
+            <label className="x-d-flex x-fd-column x-gap-4px">
               <span>Target Entity:</span>
               <select
                 value={selectedEntity}
                 onChange={(e) => setSelectedEntity(e.target.value)}
-                style={{ padding: '6px 8px', fontSize: 12, border: '1px solid #cbd5e1', borderRadius: 6 }}
+                className="x-p-6px-8px x-fs-12px x-bd-1px-solid-line-strong x-r-6px"
               >
                 <option value="Items">Item Master (Products &amp; Spares)</option>
                 <option value="Vendors">Vendor Directory</option>
@@ -139,8 +139,7 @@ export function ImportExportPage() {
             </label>
             <button
               type="button"
-              className="btn sm"
-              style={{ marginTop: 4 }}
+              className="btn sm x-mt-4px"
               onClick={() => toast(`Downloaded blank CSV template for ${selectedEntity} with column headers and sample data.`)}
             >
               Download Sample Template
@@ -158,9 +157,9 @@ export function ImportExportPage() {
 
       {/* Detailed Table */}
       <div className="card table-wrap">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 6px 14px' }}>
-          <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Batch Import &amp; Export Detailed Log</h3>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Audit log of all bulk data transfer jobs</span>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-p-12px-14px-6px-14px">
+          <h3 className="x-m-0 x-fs-14px x-c-text">Batch Import &amp; Export Detailed Log</h3>
+          <span className="x-fs-12px x-c-muted">Audit log of all bulk data transfer jobs</span>
         </div>
         <table>
           <thead>

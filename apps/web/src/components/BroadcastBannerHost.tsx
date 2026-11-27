@@ -94,15 +94,8 @@ export function BroadcastBannerHost() {
     <>
       {swWaiting ? (
         <div
-          className="notice"
+          className="notice x-m-8px-16px-0 x-d-flex x-jc-space-between x-ai-center x-gap-12px"
           role="status"
-          style={{
-            margin: '8px 16px 0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 12,
-          }}
         >
           <span>New version available — reload when ready.</span>
           <button
@@ -139,7 +132,7 @@ export function BroadcastBannerHost() {
         >
           <div>
             <strong>[{b.severity}] {b.title}</strong>
-            <div style={{ fontSize: 13 }}>{b.body_md}</div>
+            <div className="x-fs-13px">{b.body_md}</div>
           </div>
           {!b.acked_at ? (
             <button
@@ -161,21 +154,13 @@ export function BroadcastBannerHost() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="brc-ack-title"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.65)',
-            display: 'grid',
-            placeItems: 'center',
-            zIndex: 9999,
-            padding: 16,
-          }}
+          className="x-pos-fixed x-inset-0 x-bg-rgba-15-23-42-0_65 x-d-grid x-place-items-center x-z-index-9999 x-p-16px"
         >
-          <div className="card" style={{ maxWidth: 520, width: '100%', padding: 24 }}>
+          <div className="card x-maxw-520px x-w-100pct x-p-24px">
             <span className="tag">{blockingAck.severity}</span>
-            <h2 id="brc-ack-title" style={{ marginTop: 8 }}>{blockingAck.title}</h2>
-            <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{blockingAck.body_md}</p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
+            <h2 id="brc-ack-title" className="x-mt-8px">{blockingAck.title}</h2>
+            <p className="x-ws-pre-wrap x-lh-1_5">{blockingAck.body_md}</p>
+            <div className="x-d-flex x-jc-flex-end x-mt-18px">
               <button
                 type="button"
                 className="btn primary"

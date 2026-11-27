@@ -245,26 +245,26 @@ export function EntityForm({
   const project = values['Project Number'] ?? '';
 
   return (
-    <div style={{ padding: '16px 20px', maxHeight: '72vh', overflowY: 'auto' }} data-testid="entity-form">
-      <p style={{ margin: '0 0 14px', color: '#64748b', fontSize: 13 }}>
+    <div className="x-p-16px-20px x-maxh-72vh x-ovy-auto" data-testid="entity-form">
+      <p className="x-m-0-0-14px x-c-muted x-fs-13px">
         {hint ?? (initialValues ? `Change the details of this ${title.toLowerCase()} record.` : `Fill in the details of the new ${title.toLowerCase()} record.`)}
       </p>
       {banner ? (
-        <div role="alert" style={{ margin: '0 0 12px', padding: '8px 12px', borderRadius: 6, background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', fontSize: 12.5, fontWeight: 600 }}>
+        <div role="alert" className="x-m-0-0-12px x-p-8px-12px x-r-6px x-bg-hfef2f2 x-c-danger-hover x-bd-1px-solid-hfecaca x-fs-13px x-fw-600">
           {banner}
         </div>
       ) : null}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px 18px' }}>
+      <div className="x-d-grid x-cols-repeat-auto-fit-minmax-260px-1fr x-gap-14px-18px">
         {allFields.map((f) => {
           const val = values[f.key] ?? '';
           const err = errors[f.key];
           const id = `fk-${pageId}-${f.key}`.replace(/[^a-zA-Z0-9_-]/g, '_');
           const style = err ? { ...BASE_STYLE, ...ERR_STYLE } : BASE_STYLE;
           return (
-            <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }} className={err ? 'fk-field fk-bad' : 'fk-field'}>
+            <div key={f.key} className={[err ? 'fk-field fk-bad' : 'fk-field', 'x-d-flex x-fd-column x-gap-4px'].filter(Boolean).join(' ')}>
               <label htmlFor={id} style={{ fontSize: 12, fontWeight: 600, color: err ? '#b91c1c' : '#334155' }}>
                 {f.label}
-                {f.required ? <span style={{ color: '#dc2626' }}> *</span> : null}
+                {f.required ? <span className="x-c-danger-hover"> *</span> : null}
               </label>
               {f.kind === 'select' ? (
                 <select id={id} value={val} aria-invalid={!!err} style={style} onChange={(e) => set(f.key, e.target.value)}>
@@ -296,7 +296,7 @@ export function EntityForm({
                 />
               )}
               {err ? (
-                <span role="alert" style={{ color: '#dc2626', fontSize: 11 }}>
+                <span role="alert" className="x-c-danger-hover x-fs-11px">
                   {err}
                 </span>
               ) : null}
@@ -305,11 +305,11 @@ export function EntityForm({
         })}
 
         {showProject ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }} className="fk-project">
-            <label htmlFor={`fk-${pageId}-project`} style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>
+          <div className="fk-project x-d-flex x-fd-column x-gap-4px">
+            <label htmlFor={`fk-${pageId}-project`} className="x-fs-12px x-fw-600 x-c-textn2">
               Project Number
             </label>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div className="x-d-flex x-gap-6px">
               <input
                 id={`fk-${pageId}-project`}
                 type="text"
@@ -326,16 +326,16 @@ export function EntityForm({
                 Load Project History
               </button>
             </div>
-            <span style={{ fontSize: 11, color: '#64748b' }}>Same number in every department: the project links this record across Sales, Purchase, Production, Finance and the rest.</span>
+            <span className="x-fs-11px x-c-muted">Same number in every department: the project links this record across Sales, Purchase, Production, Finance and the rest.</span>
           </div>
         ) : null}
       </div>
 
-      <div style={{ marginTop: 16, padding: 12, border: '1px dashed #94a3b8', borderRadius: 8, background: '#f8fafc' }} className="fk-attach">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+      <div className="fk-attach x-mt-16px x-p-12px x-bd-1px-dashed-h94a3b8 x-r-8px x-bg-card2">
+        <div className="x-d-flex x-ai-center x-jc-space-between x-gap-8px x-wrap-wrap">
           <div>
-            <strong style={{ fontSize: 12.5 }}>Attach Documents</strong>
-            <div style={{ fontSize: 11, color: '#64748b' }}>Excel (.xlsx, .xls, .csv), Word (.docx, .doc), PDF (.pdf) or Text (.txt), up to 10 MB each.</div>
+            <strong className="x-fs-13px">Attach Documents</strong>
+            <div className="x-fs-11px x-c-muted">Excel (.xlsx, .xls, .csv), Word (.docx, .doc), PDF (.pdf) or Text (.txt), up to 10 MB each.</div>
           </div>
           <button type="button" className="btn sm" onClick={() => fileInput.current?.click()}>
             ＋ Upload File
@@ -343,16 +343,16 @@ export function EntityForm({
           <input ref={fileInput} type="file" multiple accept={ATTACH_ACCEPT} aria-label="Attach documents" style={{ display: 'none' }} onChange={(e) => addFiles(e.target.files)} />
         </div>
         {fileError ? (
-          <div role="alert" style={{ color: '#dc2626', fontSize: 11, marginTop: 6 }}>
+          <div role="alert" className="x-c-danger-hover x-fs-11px x-mt-6px">
             {fileError}
           </div>
         ) : null}
         {files.length > 0 ? (
-          <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, display: 'grid', gap: 4 }}>
+          <ul className="x-list-style-none x-m-8px-0-0 x-p-0 x-d-grid x-gap-4px">
             {files.map((f, i) => (
-              <li key={`${f.name}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '4px 8px' }}>
+              <li key={`${f.name}-${i}`} className="x-d-flex x-jc-space-between x-fs-12px x-bg-card x-bd-1px-solid-line x-r-6px x-p-4px-8px">
                 <span>
-                  📎 {f.name} <span style={{ color: '#64748b' }}>({Math.max(1, Math.round(f.size / 1024))} KB)</span>
+                  📎 {f.name} <span className="x-c-muted">({Math.max(1, Math.round(f.size / 1024))} KB)</span>
                 </span>
                 <button type="button" className="btn sm" onClick={() => setFiles((p) => p.filter((_, j) => j !== i))}>
                   Remove
@@ -363,7 +363,7 @@ export function EntityForm({
         ) : null}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20, paddingTop: 14, borderTop: '1px solid #e2e8f0' }}>
+      <div className="x-d-flex x-jc-flex-end x-gap-10px x-mt-20px x-pt-14px x-bt-1px-solid-line">
         <button type="button" className="btn sm" onClick={onCancel}>
           Cancel
         </button>

@@ -150,7 +150,7 @@ export function BoardSection({
                 <span>{lane.label}</span>
                 <span className="count">{lane.cards.length}</span>
               </div>
-              <div className="lane-cards" style={{ marginTop: '8px' }}>
+              <div className="lane-cards x-mt-8px">
                 {lane.cards.map((card) => {
                   const isPicked = pickedCard?.cardId === card.id;
                   return (
@@ -172,22 +172,17 @@ export function BoardSection({
                       <b>{card.title}</b>
                       {card.subtitle ? <small>{card.subtitle}</small> : null}
                       <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginTop: '6px',
-                        }}
+                        className="x-d-flex x-jc-space-between x-ai-center x-mt-6px"
                       >
                         {card.badge ? (
-                          <span className="status" style={{ fontSize: '8px', padding: '1px 4px' }}>
+                          <span className="status x-fs-8px x-p-1px-4px">
                             {card.badge}
                           </span>
                         ) : (
                           <span />
                         )}
                         {card.amount !== undefined ? (
-                          <b style={{ fontSize: '10px' }}>{formatMoney(card.amount)}</b>
+                          <b className="x-fs-11px">{formatMoney(card.amount)}</b>
                         ) : null}
                       </div>
                     </div>

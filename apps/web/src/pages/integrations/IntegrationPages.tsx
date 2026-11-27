@@ -57,26 +57,26 @@ export function IntegrationsPage() {
       </div>
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Connected Gateways</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>5 Integrations</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>GST, E-Way, Bank, WhatsApp</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Connected Gateways</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">5 Integrations</b>
+          <span className="x-fs-11px x-c-success">GST, E-Way, Bank, WhatsApp</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Operational Mode</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>Sandbox / Live</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Govt sandbox verified</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Operational Mode</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">Sandbox / Live</b>
+          <span className="x-fs-11px x-c-primary">Govt sandbox verified</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Vault Encryption</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>AES-256</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Secrets masked (last 4 only)</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Vault Encryption</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">AES-256</b>
+          <span className="x-fs-11px x-c-success">Secrets masked (last 4 only)</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Zero auth failures</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">Zero auth failures</span>
         </div>
       </div>
 

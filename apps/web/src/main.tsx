@@ -13,6 +13,11 @@ import './styles/login.css';
 import './styles/app.css';
 import './styles/panels.css';
 import './styles/ui.css';
+import './styles/design-system.css';
+import './styles/pages-batch1.css';
+import './styles/pages-batch2.css';
+import './styles/pages-batch3.css';
+import './styles/sweep.css';
 import './styles/utilities.css';
 import './pages/generic/kit/modules';
 

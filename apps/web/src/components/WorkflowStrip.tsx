@@ -47,10 +47,9 @@ export function WorkflowStrip({ docType: given, docId }: { docType?: string | un
 
   return (
     <div
-      className="workflow-strip"
+      className="workflow-strip x-bg-soft x-r-8px x-p-8px-12px x-m-8px-0 x-fs-13px"
       role="note"
       aria-label="Workflow status"
-      style={{ background: '#f1f5f9', borderRadius: 8, padding: '8px 12px', margin: '8px 0', fontSize: 13 }}
     >
       {pending ? (
         <div>

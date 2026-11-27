@@ -38,42 +38,42 @@ export function LogisticsWorkspace({ title, rows }: { title: string; rows: V40Ro
   };
 
   return (
-    <div className="v9-grid" style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
-      <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>{title} Directory</h3>
-        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10 }}>Records by dispatch stage and this week's movement.</div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+    <div className="v9-grid x-mt-12px x-d-grid x-cols-repeat-auto-fit-minmax-320px-1fr x-gap-14px">
+      <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+        <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">{title} Directory</h3>
+        <div className="x-fs-11px x-c-muted x-mb-10px">Records by dispatch stage and this week's movement.</div>
+        <div className="x-d-flex x-gap-8px x-wrap-wrap x-mb-14px">
           {STAGES.map((s, i) => (
-            <span key={s} className="chip" style={{ fontWeight: 700 }}>
+            <span key={s} className="chip x-fw-700">
               {s}: {counts[i]}
             </span>
           ))}
         </div>
-        <div role="img" aria-label="Weekly movement, Monday to Sunday" style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 120, padding: '0 4px', borderBottom: '1px solid #e2e8f0' }}>
+        <div role="img" aria-label="Weekly movement, Monday to Sunday" className="x-d-flex x-ai-flex-end x-gap-10px x-h-120px x-p-0-4px x-bb-1px-solid-line">
           {week.map((v, i) => (
-            <div key={WEEK[i]} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
-              <span style={{ fontSize: 10, color: '#475569' }}>{v}</span>
+            <div key={WEEK[i]} className="x-flex-1 x-d-flex x-fd-column x-ai-center x-jc-flex-end x-h-100pct">
+              <span className="x-fs-11px x-c-textn2">{v}</span>
               <div style={{ width: '100%', maxWidth: 34, height: `${(v / max) * 90}px`, background: '#2563eb', borderRadius: '4px 4px 0 0' }} />
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 10, padding: '4px 4px 0' }}>
+        <div className="x-d-flex x-gap-10px x-p-4px-4px-0">
           {WEEK.map((d) => (
-            <span key={d} style={{ flex: 1, textAlign: 'center', fontSize: 11, color: '#64748b' }}>
+            <span key={d} className="x-flex-1 x-ta-center x-fs-11px x-c-muted">
               {d}
             </span>
           ))}
         </div>
       </div>
-      <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Dispatch / Delivery Queue</h3>
-        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10 }}>Open items waiting for the next step.</div>
-        <div style={{ display: 'grid', gap: 8 }}>
+      <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+        <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Dispatch / Delivery Queue</h3>
+        <div className="x-fs-11px x-c-muted x-mb-10px">Open items waiting for the next step.</div>
+        <div className="x-d-grid x-gap-8px">
           {queue.map((q) => (
-            <div key={q.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 10px', background: '#f8fafc' }}>
+            <div key={q.id} className="x-d-flex x-ai-center x-jc-space-between x-gap-8px x-bd-1px-solid-line x-r-8px x-p-8px-10px x-bg-card2">
               <div>
-                <b style={{ fontSize: 13 }}>{q.no}</b>
-                <div style={{ fontSize: 11, color: '#64748b' }}>Stage: {q.stage}</div>
+                <b className="x-fs-13px">{q.no}</b>
+                <div className="x-fs-11px x-c-muted">Stage: {q.stage}</div>
               </div>
               <button type="button" className="btn sm primary" onClick={() => update(q.id, q.no, q.stage)}>
                 Update

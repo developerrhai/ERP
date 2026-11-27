@@ -263,7 +263,7 @@ export function ClassicViewSwitch({
   return (
     <Ctx.Provider value={api}>
       {host ? null : (
-      <div className="classic-switch" style={{ display: 'flex', justifyContent: 'flex-end', margin: '0 0 8px' }}>
+      <div className="classic-switch x-d-flex x-jc-flex-end x-m-0-0-8px">
         <button
           type="button"
           className="btn sm"

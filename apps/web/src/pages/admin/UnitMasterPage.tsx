@@ -72,34 +72,34 @@ export function UnitMasterPage({ actions }: { actions: ActionSet }) {
         </div>
       ) : null}
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Operating Units</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{(data ?? []).length} Plants</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Talwade, Sawardari, Varale</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Operating Units</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{(data ?? []).length} Plants</b>
+          <span className="x-fs-11px x-c-success">Talwade, Sawardari, Varale</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Headquarters</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>Pune HQ</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Talwade 0 (Central)</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Headquarters</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">Pune HQ</b>
+          <span className="x-fs-11px x-c-primary">Talwade 0 (Central)</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>GSTIN Registrations</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100% Validated</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>State Code 27 (MH)</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">GSTIN Registrations</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100% Validated</b>
+          <span className="x-fs-11px x-c-success">State Code 27 (MH)</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Full unit profiles</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">Full unit profiles</span>
         </div>
       </div>
 
       {/* Split view: Branch Master Register + Validation Controls panel */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Branch Master Register</h3>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Branch Master Register</h3>
             {canChange ? (
               <button
                 type="button"
@@ -153,27 +153,27 @@ export function UnitMasterPage({ actions }: { actions: ActionSet }) {
           </table>
         </div>
 
-        <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Multi-plant governance, dispatch routing and warehouse stock controls.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+        <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Validation Controls</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px">Multi-plant governance, dispatch routing and warehouse stock controls.</p>
+          <div className="x-d-flex x-fd-column x-gap-8px x-fs-12px">
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>Unique Unit Code:</span>
-              <b style={{ color: '#15803d' }}>Enabled</b>
+              <b className="x-c-success">Enabled</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>GSTIN State Verification:</span>
-              <b style={{ color: '#15803d' }}>Validated (27)</b>
+              <b className="x-c-success">Validated (27)</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>Inventory Isolation:</span>
-              <b style={{ color: '#15803d' }}>Enforced</b>
+              <b className="x-c-success">Enforced</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>Cross-Plant Transfer Note:</span>
-              <b style={{ color: '#15803d' }}>Active</b>
+              <b className="x-c-success">Active</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0">
               <span>Biometric Device Feed:</span>
               <b>IClock Active</b>
             </div>
@@ -181,8 +181,8 @@ export function UnitMasterPage({ actions }: { actions: ActionSet }) {
         </div>
       </div>
 
-      <div className="card table-wrap" style={{ marginTop: 16 }}>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="card table-wrap x-mt-16px">
+        <div className="x-p-10px-14px x-bb-1px-solid-line x-d-flex x-jc-space-between x-ai-center">
           <b>Unit / Branch Master • Detailed Table</b>
           <button type="button" className="btn sm" onClick={() => window.print()}>Print Register</button>
         </div>

@@ -87,7 +87,7 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
       <ErrorBox message={msg || board.error} />
 
       {/* Module Navigation Tabs */}
-      <div className="tabs" style={{ marginBottom: 12 }}>
+      <div className="tabs pipeline-tabs">
         <button type="button" className="tab active">
           Pipeline / Kanban
         </button>
@@ -115,14 +115,13 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
       </div>
 
       {/* Search & Salesperson Filter */}
-      <div className="toolbar" style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div className="toolbar pipeline-toolbar">
         <input
           type="search"
           aria-label="Search opportunity/customer"
           placeholder="Search opportunity or customer..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          style={{ minWidth: 260 }}
         />
         <select
           aria-label="Salesperson filter"
@@ -138,14 +137,7 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
         </select>
       </div>
 
-      <div
-        className="kanban"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-          gap: 12,
-        }}
-      >
+      <div className="kanban pipeline-board">
         {(board.data?.stages ?? []).map((col) => {
           const rawItems = rowsOf(col.items);
           const filteredItems = rawItems.filter((o) => {
@@ -157,19 +149,19 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
             return matchQ && matchOwner;
           });
           return (
-            <section key={s(col.stage)} className="card" aria-label={s(col.stage)}>
+            <section key={s(col.stage)} className="card pipeline-column" aria-label={s(col.stage)}>
               <h3>
                 {s(col.stage)} <small>({filteredItems.length})</small>
               </h3>
-              <p>
+              <p className="pipeline-total">
                 {inr(s(col.amount))} · weighted {inr(s(col.weighted))}
               </p>
               {filteredItems.map((o) => (
-                <div key={s(o.id)} className="card">
+                <div key={s(o.id)} className="card pipeline-card">
                   <b>{s(o.title)}</b>
-                  <div>{s(o.customerName) || '—'}</div>
-                  <div>{inr(s(o.amount))}</div>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center' }}>
+                  <div className="pipeline-customer">{s(o.customerName) || '—'}</div>
+                  <div className="pipeline-amount">{inr(s(o.amount))}</div>
+                  <div className="pipeline-card-actions">
                     <button
                       type="button"
                       className="btn sm"
@@ -181,7 +173,7 @@ export function PipelinePage({ actions }: { actions: ActionSet }) {
                       <select
                         aria-label={`Move ${s(o.title)}`}
                         value=""
-                        style={{ fontSize: 12, padding: '2px 6px' }}
+                        className="pipeline-move"
                         onChange={(e) => {
                           const to = e.target.value;
                           if (!to) return;

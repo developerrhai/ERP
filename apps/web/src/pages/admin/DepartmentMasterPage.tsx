@@ -68,7 +68,7 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
           <h1>Department Master</h1>
           <p>Departments, heads, workflow integration and mailbox routing.</p>
         </div>
-        <div className="actions" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div className="actions x-d-flex x-gap-10px x-ai-center">
           <Link to="/m/admin-workflow" className="btn" style={{ background: '#0f172a', color: '#fff', borderColor: '#0f172a' }}>
             Enable Workflow &amp; Access Matrix
           </Link>
@@ -89,21 +89,21 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
         </div>
       ) : null}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 12px 0', gap: 12 }}>
+      <div className="x-d-flex x-jc-space-between x-ai-center x-m-0-0-12px-0 x-gap-12px">
         <input
           type="search"
           placeholder="Search departments by code or name..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: '6px 12px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6, flex: 1, maxWidth: 360 }}
+          className="x-p-6px-12px x-fs-13px x-bd-1px-solid-line-strong x-r-6px x-flex-1 x-maxw-360px"
           aria-label="Search departments"
         />
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <label style={{ fontSize: 12, color: '#64748b' }}>Department Filter:</label>
+        <div className="x-d-flex x-gap-8px x-ai-center">
+          <label className="x-fs-12px x-c-muted">Department Filter:</label>
           <select
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
-            style={{ padding: '6px 10px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6 }}
+            className="x-p-6px-10px x-fs-13px x-bd-1px-solid-line-strong x-r-6px"
           >
             <option value="ALL">All Departments</option>
             <option value="Administration">Administration</option>
@@ -148,7 +148,7 @@ export function DepartmentMasterPage({ actions }: { actions: ActionSet }) {
                   </td>
                   <td>{d.userCount}</td>
                   <td>
-                    <span className="chip" style={{ background: '#f1f5f9', color: '#1e293b', fontSize: 11 }}>
+                    <span className="chip" style={{ background: '#f1f5f9', color: '#172033', fontSize: 11 }}>
                       {d.userCount * 3 + 2} Active
                     </span>
                   </td>

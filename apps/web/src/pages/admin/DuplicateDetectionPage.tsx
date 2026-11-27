@@ -68,35 +68,35 @@ export function DuplicateDetectionPage() {
       </div>
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Active Rules</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{rules.filter(r => r.status === 'ACTIVE').length} Active Rules</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Enforced on Save</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Active Rules</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{rules.filter(r => r.status === 'ACTIVE').length} Active Rules</b>
+          <span className="x-fs-11px x-c-success">Enforced on Save</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Flagged Clusters</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>7 Suspects</b>
-          <span style={{ fontSize: 11, color: '#b91c1c' }}>Awaiting merge decision</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Flagged Clusters</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">7 Suspects</b>
+          <span className="x-fs-11px x-c-danger-hover">Awaiting merge decision</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Matching Engines</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>Soundex &amp; Exact</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>GSTIN &amp; PAN primary</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Matching Engines</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">Soundex &amp; Exact</b>
+          <span className="x-fs-11px x-c-primary">GSTIN &amp; PAN primary</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>99.8%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Clean Directory</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">99.8%</b>
+          <span className="x-fs-11px x-c-success">Clean Directory</span>
         </div>
       </div>
 
       {/* Split View: Duplicate Rules Checklist + Add Rule Form */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Duplicate Rules Checklist</h3>
-            <span className="chip" style={{ background: '#dcfce7', color: '#15803d' }}>Active Guardrails</span>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Duplicate Rules Checklist</h3>
+            <span className="chip x-bg-hdcfce7 x-c-success">Active Guardrails</span>
           </div>
           <table className="register-table">
             <thead>
@@ -132,27 +132,27 @@ export function DuplicateDetectionPage() {
           </table>
         </div>
 
-        <div className="card" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Add Duplicate Rule</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+        <div className="card x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Add Duplicate Rule</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             Define custom field combinations for duplicate prevention.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div className="x-d-flex x-fd-column x-gap-8px x-fs-12px">
+            <label className="x-d-flex x-fd-column x-gap-2px">
               <span>Rule Name:</span>
               <input
                 value={fName}
                 onChange={(e) => setFName(e.target.value)}
                 placeholder="e.g. Customer GSTIN Uniqueness"
-                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6 }}
+                className="x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px"
               />
             </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <label className="x-d-flex x-fd-column x-gap-2px">
               <span>Entity:</span>
               <select
                 value={fEntity}
                 onChange={(e) => setFEntity(e.target.value)}
-                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6 }}
+                className="x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px"
               >
                 <option value="Customers">Customers</option>
                 <option value="Vendors">Vendors</option>
@@ -161,21 +161,21 @@ export function DuplicateDetectionPage() {
                 <option value="Leads">Leads &amp; CRM</option>
               </select>
             </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <label className="x-d-flex x-fd-column x-gap-2px">
               <span>Fields (comma separated):</span>
               <input
                 value={fFields}
                 onChange={(e) => setFFields(e.target.value)}
                 placeholder="e.g. gstin, pan"
-                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6 }}
+                className="x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px"
               />
             </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <label className="x-d-flex x-fd-column x-gap-2px">
               <span>Algorithm:</span>
               <select
                 value={fAlgo}
                 onChange={(e) => setFAlgo(e.target.value as 'EXACT' | 'FUZZY_SOUNDEX' | 'TAX_IDENTIFIER')}
-                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6 }}
+                className="x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px"
               >
                 <option value="EXACT">Exact Normalized Match</option>
                 <option value="FUZZY_SOUNDEX">Fuzzy Soundex &amp; Levenshtein</option>
@@ -184,8 +184,7 @@ export function DuplicateDetectionPage() {
             </label>
             <button
               type="button"
-              className="btn sm primary"
-              style={{ marginTop: 6 }}
+              className="btn sm primary x-mt-6px"
               onClick={addRule}
             >
               ＋ Save Rule
@@ -196,9 +195,9 @@ export function DuplicateDetectionPage() {
 
       {/* Detailed Table */}
       <div className="card table-wrap">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 6px 14px' }}>
-          <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Duplicate Rules Detailed Register</h3>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Configure deduplication thresholds and automated merge triggers</span>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-p-12px-14px-6px-14px">
+          <h3 className="x-m-0 x-fs-14px x-c-text">Duplicate Rules Detailed Register</h3>
+          <span className="x-fs-12px x-c-muted">Configure deduplication thresholds and automated merge triggers</span>
         </div>
         <table>
           <thead>

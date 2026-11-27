@@ -711,11 +711,11 @@ function V40AnalyticsView({
   }, [rows]);
 
   return (
-    <div style={{ marginTop: 12 }}>
+    <div className="x-mt-12px">
       <div className="v8-table-summary" role="group" aria-label="Analytics KPIs">
         <div className="v8-mini">
           <small>Operational Performance</small>
-          <b style={{ color: '#16a34a' }}>87.4% <span style={{ fontSize: 11, fontWeight: 500 }}>(+3.2%)</span></b>
+          <b className="x-c-success">87.4% <span className="x-fs-11px x-fw-500">(+3.2%)</span></b>
         </div>
         <div className="v8-mini">
           <small>AI Forecast Confidence</small>
@@ -723,7 +723,7 @@ function V40AnalyticsView({
         </div>
         <div className="v8-mini">
           <small>Exceptions & Risk</small>
-          <b style={{ color: '#d97706' }}>7 <span style={{ fontSize: 11, fontWeight: 500 }}>(3 high priority)</span></b>
+          <b className="x-c-warn">7 <span className="x-fs-11px x-fw-500">(3 high priority)</span></b>
         </div>
         <div className="v8-mini">
           <small>Automation Savings</small>
@@ -731,52 +731,52 @@ function V40AnalyticsView({
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 14, marginTop: 14 }}>
-        <div className="card panel" style={{ padding: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+      <div className="x-d-grid x-cols-repeat-auto-fit-minmax-420px-1fr x-gap-14px x-mt-14px">
+        <div className="card panel x-p-16px">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-10px">
             <div>
-              <h3 style={{ margin: 0, fontSize: 14 }}>{tabName} — 20-Point Operational Trend</h3>
+              <h3 className="x-m-0 x-fs-14px">{tabName} — 20-Point Operational Trend</h3>
               <small className="muted">Rolling 20-period performance telemetry vs operating baseline</small>
             </div>
-            <div style={{ display: 'flex', gap: 12, fontSize: 11 }}>
-              <span style={{ color: '#2563eb', fontWeight: 600 }}>● Actual</span>
-              <span style={{ color: '#16a34a', fontWeight: 600 }}>-- Target</span>
+            <div className="x-d-flex x-gap-12px x-fs-11px">
+              <span className="x-c-primary x-fw-600">● Actual</span>
+              <span className="x-c-success x-fw-600">-- Target</span>
             </div>
           </div>
-          <div style={{ width: '100%', height: 230, position: 'relative' }}>
-            <canvas ref={lineCanvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+          <div className="x-w-100pct x-h-230px x-pos-relative">
+            <canvas ref={lineCanvasRef} className="x-w-100pct x-h-100pct x-d-block" />
           </div>
         </div>
 
-        <div className="card panel" style={{ padding: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div className="card panel x-p-16px">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-10px">
             <div>
-              <h3 style={{ margin: 0, fontSize: 14 }}>Distribution & Status Breakdown</h3>
+              <h3 className="x-m-0 x-fs-14px">Distribution & Status Breakdown</h3>
               <small className="muted">Active record counts by operational state and category</small>
             </div>
-            <span style={{ fontSize: 11, color: '#64748b' }}>Live Data</span>
+            <span className="x-fs-11px x-c-muted">Live Data</span>
           </div>
-          <div style={{ width: '100%', height: 230, position: 'relative' }}>
-            <canvas ref={barCanvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+          <div className="x-w-100pct x-h-230px x-pos-relative">
+            <canvas ref={barCanvasRef} className="x-w-100pct x-h-100pct x-d-block" />
           </div>
         </div>
       </div>
 
-      <div className="card panel" style={{ marginTop: 14, padding: 14, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <span style={{ fontSize: 18, color: '#16a34a' }}>💡</span>
+      <div className="card panel x-mt-14px x-p-14px x-bg-hf0fdf4 x-bd-1px-solid-hbbf7d0">
+        <div className="x-d-flex x-gap-10px x-ai-flex-start">
+          <span className="x-fs-18px x-c-success">💡</span>
           <div>
-            <b style={{ color: '#166534', fontSize: 13 }}>Executive Analysis & Recommended Actions</b>
-            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#15803d', lineHeight: 1.5 }}>
+            <b className="x-c-h166534 x-fs-13px">Executive Analysis & Recommended Actions</b>
+            <p className="x-m-4px-0-0 x-fs-12px x-c-success x-lh-1_5">
               Operational health across {title} is performing 3.2% above baseline. AI telemetry indicates a 92.1% confidence score. Recommended priority: automate routine 2nd-tier approval authorizations, address the 3 high-priority exceptions flagged in the audit register, and ensure preventive maintenance schedules remain on track to sustain high availability.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="card table-wrap" style={{ marginTop: 14 }}>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0' }}>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Telemetry Breakdown by Record</h3>
+      <div className="card table-wrap x-mt-14px">
+        <div className="x-p-10px-14px x-bb-1px-solid-line">
+          <h3 className="x-m-0 x-fs-13px x-fw-700">Telemetry Breakdown by Record</h3>
         </div>
         <table className="register-table">
           <thead>
@@ -832,7 +832,7 @@ function V40ReportsView({
   const [reportType, setReportType] = useState('Valuation & Summary');
 
   return (
-    <div style={{ marginTop: 12 }}>
+    <div className="x-mt-12px">
       <div className="v8-table-summary" role="group" aria-label="Reports KPIs">
         <div className="v8-mini">
           <small>Total Records in Scope</small>
@@ -840,11 +840,11 @@ function V40ReportsView({
         </div>
         <div className="v8-mini">
           <small>Excel Export</small>
-          <b style={{ color: '#15803d' }}>Ready (.xlsx)</b>
+          <b className="x-c-success">Ready (.xlsx)</b>
         </div>
         <div className="v8-mini">
           <small>Industry PDF</small>
-          <b style={{ color: '#b91c1c' }}>Ready (A4 Letterhead)</b>
+          <b className="x-c-danger-hover">Ready (A4 Letterhead)</b>
         </div>
         <div className="v8-mini">
           <small>Direct Print</small>
@@ -852,19 +852,19 @@ function V40ReportsView({
         </div>
       </div>
 
-      <div className="card panel" style={{ marginTop: 14, padding: 16 }}>
-        <h3 style={{ margin: '0 0 6px', fontSize: 14 }}>Reports & Document Exports — {title}</h3>
-        <p style={{ margin: '0 0 14px', fontSize: 12, color: '#64748b' }}>
+      <div className="card panel x-mt-14px x-p-16px">
+        <h3 className="x-m-0-0-6px x-fs-14px">Reports & Document Exports — {title}</h3>
+        <p className="x-m-0-0-14px x-fs-12px x-c-muted">
           All exported PDF reports include official Sawant Group letterhead, legal registration, company/branch/FY metadata, prepared-by signature block, and page numbering.
         </p>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="x-d-flex x-gap-12px x-ai-center x-wrap-wrap x-mb-16px">
+          <label className="x-fs-12px x-fw-600 x-c-textn2 x-d-flex x-ai-center x-gap-6px">
             Report Template:
             <select
               value={reportType}
               onChange={(e) => setReportType(e.target.value)}
-              style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12 }}
+              className="x-p-6px-10px x-r-6px x-bd-1px-solid-line-strong x-fs-12px"
             >
               <option value="Valuation & Summary">Valuation & Asset Master Register</option>
               <option value="Depreciation Schedule">Depreciation Schedule FY 26-27 (SLM / WDV)</option>
@@ -876,7 +876,7 @@ function V40ReportsView({
             </select>
           </label>
 
-          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+          <div className="x-d-flex x-gap-8px x-ml-auto">
             <button type="button" className="btn btn-excel" onClick={onExportCsv}>
               Download Excel
             </button>
@@ -889,12 +889,12 @@ function V40ReportsView({
           </div>
         </div>
 
-        <div style={{ border: '1px solid #e2e8f0', borderRadius: 6, overflow: 'hidden' }}>
-          <div style={{ padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <strong style={{ fontSize: 12, color: '#1e293b' }}>Report Preview: {reportType}</strong>
-            <span style={{ fontSize: 11, color: '#64748b' }}>{rows.length} records ready for print</span>
+        <div className="x-bd-1px-solid-line x-r-6px x-ov-hidden">
+          <div className="x-p-8px-12px x-bg-card2 x-bb-1px-solid-line x-d-flex x-jc-space-between x-ai-center">
+            <strong className="x-fs-12px x-c-text">Report Preview: {reportType}</strong>
+            <span className="x-fs-11px x-c-muted">{rows.length} records ready for print</span>
           </div>
-          <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+          <div className="x-maxh-340px x-ovy-auto">
             <table className="register-table">
               <thead>
                 <tr>
@@ -940,7 +940,7 @@ function V40AuditView({
   }, [rows, pageId]);
 
   return (
-    <div style={{ marginTop: 12 }}>
+    <div className="x-mt-12px">
       <div className="v8-table-summary" role="group" aria-label="Audit KPIs">
         <div className="v8-mini">
           <small>Audit Log Entries</small>
@@ -948,7 +948,7 @@ function V40AuditView({
         </div>
         <div className="v8-mini">
           <small>Audit Integrity</small>
-          <b style={{ color: '#16a34a' }}>100% Verified</b>
+          <b className="x-c-success">100% Verified</b>
         </div>
         <div className="v8-mini">
           <small>Authorized Actors</small>
@@ -956,14 +956,14 @@ function V40AuditView({
         </div>
         <div className="v8-mini">
           <small>Tamper Protection</small>
-          <b style={{ color: '#2563eb' }}>SHA-256 Valid</b>
+          <b className="x-c-primary">SHA-256 Valid</b>
         </div>
       </div>
 
-      <div className="card table-wrap" style={{ marginTop: 14 }}>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Real-Time Audit Trail Explorer</h3>
-          <span style={{ fontSize: 11, color: '#64748b' }}>Showing latest change history for {pageId}</span>
+      <div className="card table-wrap x-mt-14px">
+        <div className="x-p-10px-14px x-bb-1px-solid-line x-d-flex x-jc-space-between x-ai-center">
+          <h3 className="x-m-0 x-fs-13px x-fw-700">Real-Time Audit Trail Explorer</h3>
+          <span className="x-fs-11px x-c-muted">Showing latest change history for {pageId}</span>
         </div>
         <table className="register-table">
           <thead>
@@ -980,17 +980,17 @@ function V40AuditView({
           <tbody>
             {auditEntries.map((a) => (
               <tr key={a.id}>
-                <td style={{ whiteSpace: 'nowrap', fontSize: 11, color: '#64748b' }}>{a.time}</td>
+                <td style={{ whiteSpace: 'nowrap', fontSize: 11, color: '#5b6980' }}>{a.time}</td>
                 <td><strong>{a.actor}</strong></td>
                 <td>
-                  <span className="badge" style={{ background: '#f1f5f9', color: '#0f172a', padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>
+                  <span className="badge" style={{ background: '#f1f5f9', color: '#172033', padding: '2px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>
                     {a.action}
                   </span>
                 </td>
                 <td><code>{a.record}</code></td>
                 <td>{a.detail}</td>
-                <td style={{ fontSize: 11, color: '#64748b' }}>{a.ip}</td>
-                <td style={{ color: '#16a34a', fontWeight: 600, fontSize: 11 }}>✓ Valid</td>
+                <td style={{ fontSize: 11, color: '#5b6980' }}>{a.ip}</td>
+                <td style={{ color: '#15803d', fontWeight: 600, fontSize: 11 }}>✓ Valid</td>
               </tr>
             ))}
           </tbody>
@@ -1011,15 +1011,15 @@ function V40ApprovalsView({
 }) {
   const toast = useToast();
   return (
-    <div style={{ marginTop: 12 }}>
+    <div className="x-mt-12px">
       <div className="v8-table-summary" role="group" aria-label="Approvals KPIs">
         <div className="v8-mini">
           <small>Pending Approval</small>
-          <b style={{ color: '#d97706' }}>3 Requests</b>
+          <b className="x-c-warn">3 Requests</b>
         </div>
         <div className="v8-mini">
           <small>Approved (30 Days)</small>
-          <b style={{ color: '#16a34a' }}>48 Approved</b>
+          <b className="x-c-success">48 Approved</b>
         </div>
         <div className="v8-mini">
           <small>Escalations</small>
@@ -1031,10 +1031,10 @@ function V40ApprovalsView({
         </div>
       </div>
 
-      <div className="card table-wrap" style={{ marginTop: 14 }}>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Module Approval Queue — {pageId}</h3>
-          <span style={{ fontSize: 11, color: '#64748b' }}>Multi-level role authorization</span>
+      <div className="card table-wrap x-mt-14px">
+        <div className="x-p-10px-14px x-bb-1px-solid-line x-d-flex x-jc-space-between x-ai-center">
+          <h3 className="x-m-0 x-fs-13px x-fw-700">Module Approval Queue — {pageId}</h3>
+          <span className="x-fs-11px x-c-muted">Multi-level role authorization</span>
         </div>
         <table className="register-table">
           <thead>
@@ -1111,23 +1111,23 @@ function V40CalendarView({
   };
 
   return (
-    <div style={{ marginTop: 12 }}>
-      <div className="card panel" style={{ padding: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+    <div className="x-mt-12px">
+      <div className="card panel x-p-16px">
+        <div className="x-d-flex x-jc-space-between x-ai-center x-mb-14px">
           <div>
-            <h3 style={{ margin: 0, fontSize: 14 }}>{tabName} — November 2026</h3>
+            <h3 className="x-m-0 x-fs-14px">{tabName} — November 2026</h3>
             <small className="muted">Operational maintenance, inspection schedules and calibration deadlines</small>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="x-d-flex x-gap-8px">
             <button type="button" className="btn sm">← Prev Month</button>
             <button type="button" className="btn sm">Today</button>
             <button type="button" className="btn sm">Next Month →</button>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+        <div className="x-d-grid x-cols-repeat-7-1fr x-gap-6px">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-            <div key={day} style={{ textAlign: 'center', fontWeight: 700, fontSize: 11, color: '#475569', padding: '6px 0', background: '#f1f5f9', borderRadius: 4 }}>
+            <div key={day} className="x-ta-center x-fw-700 x-fs-11px x-c-textn2 x-p-6px-0 x-bg-soft x-r-6px">
               {day}
             </div>
           ))}
@@ -1151,7 +1151,7 @@ function V40CalendarView({
               >
                 <div style={{ fontSize: 11, fontWeight: 700, color: d ? '#1e293b' : '#cbd5e1' }}>{d}</div>
                 {task ? (
-                  <div style={{ background: '#dbeafe', color: '#1e40af', fontSize: 10, padding: '3px 5px', borderRadius: 4, fontWeight: 600, marginTop: 4, lineHeight: 1.2 }}>
+                  <div className="x-bg-hdbeafe x-c-h1e40af x-fs-11px x-p-3px-5px x-r-6px x-fw-600 x-mt-4px x-lh-1_2">
                     {task}
                   </div>
                 ) : null}
@@ -1172,11 +1172,11 @@ function V40HealthView({
   rows: V40Row[];
 }) {
   return (
-    <div style={{ marginTop: 12 }}>
+    <div className="x-mt-12px">
       <div className="v8-table-summary" role="group" aria-label="Health KPIs">
         <div className="v8-mini">
           <small>Fleet / Plant Health</small>
-          <b style={{ color: '#16a34a' }}>94.6% Optimal</b>
+          <b className="x-c-success">94.6% Optimal</b>
         </div>
         <div className="v8-mini">
           <small>MTBF (Mean Time To Fail)</small>
@@ -1188,14 +1188,14 @@ function V40HealthView({
         </div>
         <div className="v8-mini">
           <small>Operating Availability</small>
-          <b style={{ color: '#2563eb' }}>98.2%</b>
+          <b className="x-c-primary">98.2%</b>
         </div>
       </div>
 
-      <div className="card table-wrap" style={{ marginTop: 14 }}>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Asset Health & Reliability Scorecards</h3>
-          <span style={{ fontSize: 11, color: '#64748b' }}>Condition-based monitoring for {title}</span>
+      <div className="card table-wrap x-mt-14px">
+        <div className="x-p-10px-14px x-bb-1px-solid-line x-d-flex x-jc-space-between x-ai-center">
+          <h3 className="x-m-0 x-fs-13px x-fw-700">Asset Health & Reliability Scorecards</h3>
+          <span className="x-fs-11px x-c-muted">Condition-based monitoring for {title}</span>
         </div>
         <table className="register-table">
           <thead>
@@ -1231,7 +1231,7 @@ function V40HealthView({
                       <span style={{ fontSize: 11, fontWeight: 700, color }}>{score}%</span>
                     </div>
                   </td>
-                  <td style={{ fontSize: 11, color: '#64748b' }}>{100 - score}% Low</td>
+                  <td style={{ fontSize: 11, color: '#5b6980' }}>{100 - score}% Low</td>
                   <td style={{ fontSize: 11 }}>2026-11-{20 + (idx % 10)}</td>
                   <td>
                     <button type="button" className="btn sm" style={{ fontSize: 11, padding: '2px 8px' }}>
@@ -1254,7 +1254,7 @@ function V40FinanceView({
   rows: V40Row[];
 }) {
   return (
-    <div style={{ marginTop: 12 }}>
+    <div className="x-mt-12px">
       <div className="v8-table-summary" role="group" aria-label="Finance KPIs">
         <div className="v8-mini">
           <small>Gross Acquisition Cost</small>
@@ -1262,11 +1262,11 @@ function V40FinanceView({
         </div>
         <div className="v8-mini">
           <small>Accumulated Depreciation</small>
-          <b style={{ color: '#b91c1c' }}>₹ 1,18,20,000</b>
+          <b className="x-c-danger-hover">₹ 1,18,20,000</b>
         </div>
         <div className="v8-mini">
           <small>Net Book Value (NBV)</small>
-          <b style={{ color: '#16a34a' }}>₹ 2,24,30,000</b>
+          <b className="x-c-success">₹ 2,24,30,000</b>
         </div>
         <div className="v8-mini">
           <small>Monthly Depreciation Charge</small>
@@ -1274,10 +1274,10 @@ function V40FinanceView({
         </div>
       </div>
 
-      <div className="card table-wrap" style={{ marginTop: 14 }}>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Financial Cost & Depreciation Ledger</h3>
-          <span style={{ fontSize: 11, color: '#64748b' }}>Fixed Asset Schedule Under Companies Act (SLM / WDV)</span>
+      <div className="card table-wrap x-mt-14px">
+        <div className="x-p-10px-14px x-bb-1px-solid-line x-d-flex x-jc-space-between x-ai-center">
+          <h3 className="x-m-0 x-fs-13px x-fw-700">Financial Cost & Depreciation Ledger</h3>
+          <span className="x-fs-11px x-c-muted">Fixed Asset Schedule Under Companies Act (SLM / WDV)</span>
         </div>
         <table className="register-table">
           <thead>
@@ -1295,7 +1295,7 @@ function V40FinanceView({
           <tbody>
             {rows.slice(0, 10).map((r, idx) => (
               <tr key={r.id}>
-                <td style={{ fontSize: 11, color: '#64748b' }}>2026-11-0{idx + 1}</td>
+                <td style={{ fontSize: 11, color: '#5b6980' }}>2026-11-0{idx + 1}</td>
                 <td><code>DEP-26-00{idx + 1}</code></td>
                 <td><strong>{r.number || r.id}</strong></td>
                 <td>Monthly SLM Depreciation Depreciation Reserve</td>
@@ -1799,10 +1799,10 @@ export function FamV40Body({
   return (
     <div className="fam-v40">
       {/* ERP-HDR-01: Upper-Left Module Title, Subtitle & 4 Blue Context Pills */}
-      <div className="page-head" style={{ marginBottom: 6 }}>
+      <div className="page-head x-mb-6px">
         <div>
-          <h1 style={{ fontSize: 20, margin: '0 0 2px', fontWeight: 700 }}>{pageTitle}</h1>
-          <p style={{ margin: 0, color: '#64748b', fontSize: 13 }}>{pagePurpose}</p>
+          <h1 className="x-fs-20px x-m-0-0-2px x-fw-700">{pageTitle}</h1>
+          <p className="x-m-0 x-c-muted x-fs-13px">{pagePurpose}</p>
         </div>
       </div>
       <ContextChips user={effectiveUser} owner={ownerDept} approval={undefined} />
@@ -1846,7 +1846,7 @@ export function FamV40Body({
         </div>
         <div className="v8-mini">
           <small>{pageId === 'auto-jobs' ? 'AI Risk Score' : 'At Risk'}</small>
-          <b style={{ color: '#16a34a' }}>{pageId.startsWith('fin-') ? '14/100 Controlled' : pageId === 'pay-register' ? '21/100 Controlled' : pageId.startsWith('pay-') ? '14/100 Controlled' : pageId.startsWith('asset-') ? '21/100 Controlled' : '0 Low'}</b>
+          <b className="x-c-success">{pageId.startsWith('fin-') ? '14/100 Controlled' : pageId === 'pay-register' ? '21/100 Controlled' : pageId.startsWith('pay-') ? '14/100 Controlled' : pageId.startsWith('asset-') ? '21/100 Controlled' : '0 Low'}</b>
         </div>
         {!pageId.startsWith('service-') && !pageId.startsWith('srv-') && (
           <div className="v8-mini">
@@ -1866,7 +1866,7 @@ export function FamV40Body({
       ) : isApprovals ? (
         <V40ApprovalsView pageId={pageId} rows={filteredRows} onApprove={(doc) => toast(`Approved ${doc}`)} />
       ) : isDocuments ? (
-        <div style={{ marginTop: 12 }}>
+        <div className="x-mt-12px">
           <DocumentsPanel schema={{ pageId } as PageSchema} row={{ id: activeRecord?.id ?? pageId, code: activeRecord?.number ?? '', status: activeRecord?.status ?? '' }} canEdit={actions.edit} />
         </div>
       ) : isCalendar ? (
@@ -1881,15 +1881,15 @@ export function FamV40Body({
         <>
       {/* 3.1 Workflow Automation Workspace Kanban (When viewing auto-workflows) */}
       {pageId === 'auto-workflows' ? (
-        <div className="card panel" style={{ marginTop: 12, padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div className="card panel x-mt-12px x-p-14px x-bg-card x-bd-1px-solid-line x-r-8px">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
             <div>
-              <h3 style={{ margin: 0 }}>Workflow Automation Workspace</h3>
-              <div style={{ fontSize: 11, color: '#64748b' }}>Kanban stages for intelligent workflow progression and AI rule exception handling</div>
+              <h3 className="x-m-0">Workflow Automation Workspace</h3>
+              <div className="x-fs-11px x-c-muted">Kanban stages for intelligent workflow progression and AI rule exception handling</div>
             </div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#2563eb' }}>5 Stages Active</span>
+            <span className="x-fs-12px x-fw-700 x-c-primary">5 Stages Active</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+          <div className="x-d-grid x-cols-repeat-5-1fr x-gap-12px">
             {[
               { stage: 'Created', count: 4, tag: 'Incoming Triggers' },
               { stage: 'Validation', count: 3, tag: 'AST Rule Checks' },
@@ -1897,23 +1897,22 @@ export function FamV40Body({
               { stage: 'Execution', count: 8, tag: 'Action Dispatch' },
               { stage: 'Closed', count: 5, tag: 'Audit Completed' },
             ].map((st) => (
-              <div key={st.stage} style={{ background: '#f8fafc', padding: 10, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <b style={{ fontSize: 13, color: '#1e293b' }}>{st.stage}</b>
-                  <span style={{ fontSize: 11, background: '#e0e7ff', color: '#3730a3', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>
+              <div key={st.stage} className="x-bg-card2 x-p-10px x-r-6px x-bd-1px-solid-line">
+                <div className="x-d-flex x-jc-space-between x-ai-center x-mb-8px">
+                  <b className="x-fs-13px x-c-text">{st.stage}</b>
+                  <span className="x-fs-11px x-bg-he0e7ff x-c-h3730a3 x-p-1px-6px x-r-10px x-fw-700">
                     {st.count}
                   </span>
                 </div>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>{st.tag}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div className="x-fs-11px x-c-muted x-mb-8px">{st.tag}</div>
+                <div className="x-d-flex x-fd-column x-gap-6px">
                   {[1, 2].map((k) => (
-                    <div key={k} style={{ background: '#fff', padding: 8, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 11 }}>
+                    <div key={k} className="x-bg-card x-p-8px x-r-6px x-bd-1px-solid-line-strong x-fs-11px">
                       <b>WF-{st.stage.slice(0, 2).toUpperCase()}-0{k}</b>
-                      <div style={{ color: '#64748b', margin: '2px 0 4px 0' }}>Score: {80 + k * 5}% • ERP Auto</div>
+                      <div className="x-c-muted x-m-2px-0-4px-0">Score: {80 + k * 5}% • ERP Auto</div>
                       <button
                         type="button"
-                        className="btn sm"
-                        style={{ fontSize: 10, padding: '2px 6px', width: '100%' }}
+                        className="btn sm x-fs-11px x-p-2px-6px x-w-100pct"
                         onClick={() => toast(`Moved forward WF-${st.stage.slice(0, 2).toUpperCase()}-0${k}`)}
                       >
                         Move Forward
@@ -1929,14 +1928,14 @@ export function FamV40Body({
 
       {/* 3.2 Automation Rules Document Register & Actions (When viewing auto-rules) */}
       {pageId === 'auto-rules' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginTop: 12 }}>
-          <div className="card panel" style={{ padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div className="x-d-grid x-cols-2fr-1fr x-gap-12px x-mt-12px">
+          <div className="card panel x-p-14px x-bg-card x-bd-1px-solid-line x-r-8px">
+            <div className="x-d-flex x-jc-space-between x-ai-center x-mb-8px">
               <div>
-                <h3 style={{ margin: 0 }}>Rule Library Document Register</h3>
-                <div style={{ fontSize: 11, color: '#64748b' }}>Controlled regulatory SOPs, matrix specifications and compliance rules</div>
+                <h3 className="x-m-0">Rule Library Document Register</h3>
+                <div className="x-fs-11px x-c-muted">Controlled regulatory SOPs, matrix specifications and compliance rules</div>
               </div>
-              <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>● Audited</span>
+              <span className="x-fs-11px x-c-success x-fw-700">● Audited</span>
             </div>
             <div className="table-wrap">
               <table className="register-table" style={{ fontSize: 11 }}>
@@ -1969,10 +1968,10 @@ export function FamV40Body({
               </table>
             </div>
           </div>
-          <div className="card panel" style={{ padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
-            <h3 style={{ margin: '0 0 4px 0' }}>Document Actions</h3>
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Upload compliance documentation and create revisions</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="card panel x-p-14px x-bg-card x-bd-1px-solid-line x-r-8px">
+            <h3 className="x-m-0-0-4px-0">Document Actions</h3>
+            <div className="x-fs-11px x-c-muted x-mb-12px">Upload compliance documentation and create revisions</div>
+            <div className="x-d-flex x-fd-column x-gap-8px">
               <button type="button" className="btn" onClick={() => toast('Opening Upload Vault...')}>
                 Open Upload Vault
               </button>
@@ -1986,12 +1985,12 @@ export function FamV40Body({
 
       {/* 3.3 Webhooks Registry Health & Recent API Activity (When viewing auto-webhooks) */}
       {pageId === 'auto-webhooks' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginTop: 12 }}>
-          <div className="card panel" style={{ padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div className="x-d-grid x-cols-2fr-1fr x-gap-12px x-mt-12px">
+          <div className="card panel x-p-14px x-bg-card x-bd-1px-solid-line x-r-8px">
+            <div className="x-d-flex x-jc-space-between x-ai-center x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>Webhook Registry</h3>
-                <div style={{ fontSize: 11, color: '#64748b' }}>Outbound integration security, standard HMAC signatures and delivery health</div>
+                <h3 className="x-m-0">Webhook Registry</h3>
+                <div className="x-fs-11px x-c-muted">Outbound integration security, standard HMAC signatures and delivery health</div>
               </div>
               <button
                 type="button"
@@ -2001,48 +2000,48 @@ export function FamV40Body({
                 Run Connection Test
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', fontSize: 10 }}>Authentication</small>
-                <div style={{ fontWeight: 700, fontSize: 12, color: '#16a34a' }}>OK (HMAC-SHA256)</div>
+            <div className="x-d-grid x-cols-repeat-3-1fr x-gap-8px">
+              <div className="x-bg-card2 x-p-8px x-r-6px x-bd-1px-solid-line">
+                <small className="x-c-muted x-fs-11px">Authentication</small>
+                <div className="x-fw-700 x-fs-12px x-c-success">OK (HMAC-SHA256)</div>
               </div>
-              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', fontSize: 10 }}>Connection</small>
-                <div style={{ fontWeight: 700, fontSize: 12, color: '#16a34a' }}>100% Reached</div>
+              <div className="x-bg-card2 x-p-8px x-r-6px x-bd-1px-solid-line">
+                <small className="x-c-muted x-fs-11px">Connection</small>
+                <div className="x-fw-700 x-fs-12px x-c-success">100% Reached</div>
               </div>
-              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', fontSize: 10 }}>Field Mapping</small>
-                <div style={{ fontWeight: 700, fontSize: 12, color: '#16a34a' }}>Verified</div>
+              <div className="x-bg-card2 x-p-8px x-r-6px x-bd-1px-solid-line">
+                <small className="x-c-muted x-fs-11px">Field Mapping</small>
+                <div className="x-fw-700 x-fs-12px x-c-success">Verified</div>
               </div>
-              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', fontSize: 10 }}>Sync</small>
-                <div style={{ fontWeight: 700, fontSize: 12, color: '#16a34a' }}>99.8% Delivered</div>
+              <div className="x-bg-card2 x-p-8px x-r-6px x-bd-1px-solid-line">
+                <small className="x-c-muted x-fs-11px">Sync</small>
+                <div className="x-fw-700 x-fs-12px x-c-success">99.8% Delivered</div>
               </div>
-              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', fontSize: 10 }}>Webhook</small>
-                <div style={{ fontWeight: 700, fontSize: 12, color: '#16a34a' }}>Configured</div>
+              <div className="x-bg-card2 x-p-8px x-r-6px x-bd-1px-solid-line">
+                <small className="x-c-muted x-fs-11px">Webhook</small>
+                <div className="x-fw-700 x-fs-12px x-c-success">Configured</div>
               </div>
-              <div style={{ background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', fontSize: 10 }}>Error Handling</small>
-                <div style={{ fontWeight: 700, fontSize: 12, color: '#2563eb' }}>Exponential Backoff Active</div>
+              <div className="x-bg-card2 x-p-8px x-r-6px x-bd-1px-solid-line">
+                <small className="x-c-muted x-fs-11px">Error Handling</small>
+                <div className="x-fw-700 x-fs-12px x-c-primary">Exponential Backoff Active</div>
               </div>
             </div>
           </div>
-          <div className="card panel" style={{ padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
-            <h3 style={{ margin: '0 0 4px 0' }}>Recent API / Sync Activity</h3>
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>Live telemetry stream of outbound event payloads</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
-              <div style={{ padding: 6, background: '#f8fafc', borderRadius: 4, border: '1px solid #e2e8f0' }}>
-                <b>invoice.generated</b> → <span style={{ color: '#16a34a' }}>200 OK</span>
-                <div style={{ color: '#64748b', fontSize: 10 }}>23:12:04 • 48ms • Payload: INV-2026-081</div>
+          <div className="card panel x-p-14px x-bg-card x-bd-1px-solid-line x-r-8px">
+            <h3 className="x-m-0-0-4px-0">Recent API / Sync Activity</h3>
+            <div className="x-fs-11px x-c-muted x-mb-8px">Live telemetry stream of outbound event payloads</div>
+            <div className="x-d-flex x-fd-column x-gap-6px x-fs-11px">
+              <div className="x-p-6px x-bg-card2 x-r-6px x-bd-1px-solid-line">
+                <b>invoice.generated</b> → <span className="x-c-success">200 OK</span>
+                <div className="x-c-muted x-fs-11px">23:12:04 • 48ms • Payload: INV-2026-081</div>
               </div>
-              <div style={{ padding: 6, background: '#f8fafc', borderRadius: 4, border: '1px solid #e2e8f0' }}>
-                <b>payment.received</b> → <span style={{ color: '#16a34a' }}>200 OK</span>
-                <div style={{ color: '#64748b', fontSize: 10 }}>22:50:18 • 62ms • Payload: PAY-99120</div>
+              <div className="x-p-6px x-bg-card2 x-r-6px x-bd-1px-solid-line">
+                <b>payment.received</b> → <span className="x-c-success">200 OK</span>
+                <div className="x-c-muted x-fs-11px">22:50:18 • 62ms • Payload: PAY-99120</div>
               </div>
-              <div style={{ padding: 6, background: '#f8fafc', borderRadius: 4, border: '1px solid #e2e8f0' }}>
-                <b>order.dispatched</b> → <span style={{ color: '#16a34a' }}>200 OK</span>
-                <div style={{ color: '#64748b', fontSize: 10 }}>21:30:45 • 54ms • Payload: DSP-4402</div>
+              <div className="x-p-6px x-bg-card2 x-r-6px x-bd-1px-solid-line">
+                <b>order.dispatched</b> → <span className="x-c-success">200 OK</span>
+                <div className="x-c-muted x-fs-11px">21:30:45 • 54ms • Payload: DSP-4402</div>
               </div>
             </div>
           </div>
@@ -2051,16 +2050,16 @@ export function FamV40Body({
 
       {/* 3.5 Quality / Inspection Workspace Panel (When viewing QMS modules) */}
       {pageId.startsWith('qms-') ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>{`${title} Workspace`}</h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <h3 className="x-m-0">{`${title} Workspace`}</h3>
+                <div className="x-fs-11px x-c-muted">
                   Inspection, acceptance criteria, NCR/CAPA and root-cause decision workspace.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● Working
               </span>
             </div>
@@ -2108,21 +2107,20 @@ export function FamV40Body({
             </div>
             <button
               type="button"
-              className="btn primary"
-              style={{ marginTop: 10 }}
+              className="btn primary x-mt-10px"
               onClick={() => toast('Inspection parameters and measurements saved.')}
             >
               Save Inspection
             </button>
           </div>
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 8px 0' }}>Quality Action</h3>
-            <div className="notice" style={{ marginBottom: 12 }}>
+            <h3 className="x-m-0-0-8px-0">Quality Action</h3>
+            <div className="notice x-mb-12px">
               <b>1 parameter requires review.</b>
               <br />
               Create NCR, assign root cause and CAPA owner before closure.
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="x-d-flex x-gap-8px x-wrap-wrap">
               <button
                 type="button"
                 className="btn danger"
@@ -2144,31 +2142,31 @@ export function FamV40Body({
 
       {/* 3.6 Asset Maintenance Workspace Panel */}
       {pageId === 'asset-maintenance' ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>Asset Maintenance</h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <h3 className="x-m-0">Asset Maintenance</h3>
+                <div className="x-fs-11px x-c-muted">
                   Preventive/breakdown maintenance planning with downtime, spare and MTBF/MTTR visibility.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● Working
               </span>
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+            <div className="x-d-flex x-gap-8px x-ai-center x-mb-10px">
               <select
                 value={dept}
                 onChange={(e) => setDept(e.target.value)}
                 aria-label="Department Filter"
-                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--line, #cbd5e1)', fontSize: 12 }}
+                className="x-p-4px-8px x-r-6px x-bd-1px-solid-line x-fs-12px"
               >
                 {DEPARTMENTS.map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
-              <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Quick filter for department wise records on this page</small>
+              <small className="x-c-muted x-fs-11px">Quick filter for department wise records on this page</small>
             </div>
             <div className="table-wrap">
               <table className="register-table">
@@ -2210,17 +2208,16 @@ export function FamV40Body({
             </div>
           </div>
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 10px 0' }}>Reliability Indicators</h3>
+            <h3 className="x-m-0-0-10px-0">Reliability Indicators</h3>
             <div className="v9-metric-row"><span>MTBF</span><b>180 hr</b></div>
             <div className="v9-metric-row"><span>MTTR</span><b>2.4 hr</b></div>
             <div className="v9-metric-row"><span>PM compliance</span><b>96%</b></div>
             <div className="v9-metric-row"><span>Breakdown frequency</span><b>1%</b></div>
             <div className="v9-metric-row"><span>Spare readiness</span><b>94%</b></div>
-            <div style={{ marginTop: 14 }}>
+            <div className="x-mt-14px">
               <button
                 type="button"
-                className="btn primary"
-                style={{ width: '100%' }}
+                className="btn primary x-w-100pct"
                 onClick={() => setShowAddModal(true)}
               >
                 ＋ Create Maintenance Order
@@ -2232,21 +2229,21 @@ export function FamV40Body({
 
       {/* 3.7 Asset Lifecycle Workspace Panel (All other Asset submodules) */}
       {pageId.startsWith('asset-') && pageId !== 'asset-maintenance' ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>{`${title} Register`}</h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <h3 className="x-m-0">{`${title} Register`}</h3>
+                <div className="x-fs-11px x-c-muted">
                   Asset lifecycle, allocation, book value, depreciation, maintenance and disposal controls.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● Working
               </span>
             </div>
             {/* 5-Column Asset Summary Table (AST-FU-01) */}
-            <div style={{ marginTop: 10, marginBottom: 12, overflowX: 'auto' }}>
+            <div className="x-mt-10px x-mb-12px x-ovx-auto">
               <table className="table" style={{ width: '100%', fontSize: 12 }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
@@ -2274,7 +2271,7 @@ export function FamV40Body({
             </div>
 
             {/* 5-Stage Asset Lifecycle Stepper */}
-            <div className="v9-stepper" style={{ marginBottom: 12 }}>
+            <div className="v9-stepper x-mb-12px">
               {[
                 { name: 'Capitalized', status: 'Active' },
                 { name: 'Allocated', status: 'Active' },
@@ -2289,23 +2286,23 @@ export function FamV40Body({
               ))}
             </div>
             {/* Department Filter */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div className="x-d-flex x-gap-8px x-ai-center">
               <select
                 value={dept}
                 onChange={(e) => setDept(e.target.value)}
                 aria-label="Department Filter"
-                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--line, #cbd5e1)', fontSize: 12 }}
+                className="x-p-4px-8px x-r-6px x-bd-1px-solid-line x-fs-12px"
               >
                 {DEPARTMENTS.map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
-              <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Quick filter for department wise records on this page</small>
+              <small className="x-c-muted x-fs-11px">Quick filter for department wise records on this page</small>
             </div>
           </div>
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 10px 0' }}>Lifecycle Actions</h3>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <h3 className="x-m-0-0-10px-0">Lifecycle Actions</h3>
+            <div className="x-d-flex x-gap-8px x-wrap-wrap">
               <button
                 type="button"
                 className="btn"
@@ -2337,7 +2334,7 @@ export function FamV40Body({
                 Dispose
               </button>
             </div>
-            <div className="notice" style={{ marginTop: 12 }}>
+            <div className="notice x-mt-12px">
               Select an asset from the register or record dropdown above to run targeted lifecycle actions.
             </div>
           </div>
@@ -2346,11 +2343,11 @@ export function FamV40Body({
 
       {/* 3.8 Warehouse / WMS Allocation & Queue Workspace Panel */}
       {pageId.startsWith('wms-') ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>
+                <h3 className="x-m-0">
                   {pageId === 'wms-barcode'
                     ? 'Barcode Scanner & Registry Queue'
                     : pageId === 'wms-rfid'
@@ -2359,11 +2356,11 @@ export function FamV40Body({
                         ? 'Rack Directory Allocation Queue'
                         : `${title} Allocation Queue`}
                 </h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <div className="x-fs-11px x-c-muted">
                   Warehouse execution queue: stock availability, replenishment demand and slotting priority.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● Working
               </span>
             </div>
@@ -2371,23 +2368,13 @@ export function FamV40Body({
             {/* Special Scanner Form for Barcode / QR */}
             {pageId === 'wms-barcode' ? (
               <div
-                style={{
-                  display: 'flex',
-                  gap: 8,
-                  alignItems: 'center',
-                  marginBottom: 12,
-                  padding: 8,
-                  background: 'var(--subtle, #f8fafc)',
-                  borderRadius: 6,
-                  border: '1px solid var(--line, #e2e8f0)',
-                  flexWrap: 'wrap',
-                }}
+                className="x-d-flex x-gap-8px x-ai-center x-mb-12px x-p-8px x-bg-var-subtle-hf8fafc x-r-6px x-bd-1px-solid-line x-wrap-wrap"
               >
                 <input
                   type="text"
                   placeholder="Scan here... (barcode, GS1, batch, serial, bin)"
                   aria-label="Scan here"
-                  style={{ flex: 1, minWidth: 220, padding: '6px 10px', fontSize: 12 }}
+                  className="x-flex-1 x-minw-220px x-p-6px-10px x-fs-12px"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       toast(`Scanned barcode: ${(e.target as HTMLInputElement).value}. Valid SKU found.`);
@@ -2397,7 +2384,7 @@ export function FamV40Body({
                 <select
                   aria-label="Purpose selector"
                   defaultValue="LOOKUP"
-                  style={{ padding: '6px 10px', fontSize: 12 }}
+                  className="x-p-6px-10px x-fs-12px"
                 >
                   <option value="LOOKUP">LOOKUP</option>
                   <option value="RECEIVING">RECEIVING</option>
@@ -2408,7 +2395,7 @@ export function FamV40Body({
                 <select
                   aria-label="Warehouse selector"
                   defaultValue="WH-MAIN"
-                  style={{ padding: '6px 10px', fontSize: 12 }}
+                  className="x-p-6px-10px x-fs-12px"
                 >
                   <option value="WH-MAIN">Central Warehouse - Talwade</option>
                   <option value="WH-RAW">Raw Material Depot</option>
@@ -2425,12 +2412,12 @@ export function FamV40Body({
             ) : null}
 
             {/* Department Filter for Queue */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+            <div className="x-d-flex x-gap-8px x-ai-center x-mb-10px">
               <select
                 value={dept}
                 onChange={(e) => setDept(e.target.value)}
                 aria-label="Department Filter"
-                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--line, #cbd5e1)', fontSize: 12 }}
+                className="x-p-4px-8px x-r-6px x-bd-1px-solid-line x-fs-12px"
               >
                 {DEPARTMENTS.map((d) => (
                   <option key={d} value={d}>
@@ -2438,7 +2425,7 @@ export function FamV40Body({
                   </option>
                 ))}
               </select>
-              <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>
+              <small className="x-c-muted x-fs-11px">
                 Quick filter for department wise records on this page
               </small>
             </div>
@@ -2523,7 +2510,7 @@ export function FamV40Body({
           </div>
 
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 10px 0' }}>WMS Execution Status</h3>
+            <h3 className="x-m-0-0-10px-0">WMS Execution Status</h3>
             <div className="v9-metric-row">
               <span>Slotting compliance</span>
               <b>98.5%</b>
@@ -2544,11 +2531,10 @@ export function FamV40Body({
               <span>Scan verification</span>
               <b>100%</b>
             </div>
-            <div style={{ marginTop: 14 }}>
+            <div className="x-mt-14px">
               <button
                 type="button"
-                className="btn primary"
-                style={{ width: '100%' }}
+                className="btn primary x-w-100pct"
                 onClick={() => setShowAddModal(true)}
               >
                 {`＋ Add ${title}`}
@@ -2560,32 +2546,21 @@ export function FamV40Body({
 
       {/* 3.9 CRM Workspace Panel: Funnel & Stage Action Queue (Leads & Opportunities) */}
       {pageId === 'crm-leads' || pageId === 'crm-opportunities' ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>Pipeline & Conversion Funnel</h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <h3 className="x-m-0">Pipeline & Conversion Funnel</h3>
+                <div className="x-fs-11px x-c-muted">
                   Stage movement, probability, funnel leakage and conversion actions.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● Active
               </span>
             </div>
             <div
-              className="v9-funnel"
-              style={{
-                display: 'flex',
-                gap: 12,
-                alignItems: 'flex-end',
-                justifyContent: 'space-around',
-                padding: '16px 8px',
-                background: 'var(--muted-bg, #f8fafc)',
-                borderRadius: 8,
-                border: '1px solid var(--line, #cbd5e1)',
-                minHeight: 140,
-              }}
+              className="v9-funnel x-d-flex x-gap-12px x-ai-flex-end x-jc-space-around x-p-16px-8px x-bg-var-muted-bg-hf8fafc x-r-8px x-bd-1px-solid-line x-minh-140px"
             >
               {[
                 { stage: 'New', count: 12, color: '#3b82f6', height: 80 },
@@ -2594,7 +2569,7 @@ export function FamV40Body({
                 { stage: 'Negotiation', count: 4, color: '#f59e0b', height: 35 },
                 { stage: 'Won', count: 3, color: '#10b981', height: 25 },
               ].map((s) => (
-                <div key={s.stage} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                <div key={s.stage} className="x-d-flex x-ai-center x-flex-1">
                   <div
                     style={{
                       width: '100%',
@@ -2605,16 +2580,16 @@ export function FamV40Body({
                       transition: 'all 0.3s ease',
                     }}
                   />
-                  <b style={{ marginTop: 8, fontSize: 13 }}>{s.stage}</b>
-                  <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>{s.count} records</small>
+                  <b className="x-mt-8px x-fs-13px">{s.stage}</b>
+                  <small className="x-c-muted x-fs-11px">{s.count} records</small>
                 </div>
               ))}
             </div>
 
             {/* Stage Action Queue */}
-            <div style={{ marginTop: 14 }}>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: 13 }}>Stage Action Queue</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+            <div className="x-mt-14px">
+              <h4 className="x-m-0-0-8px-0 x-fs-13px">Stage Action Queue</h4>
+              <div className="x-d-grid x-cols-repeat-auto-fill-minmax-200px-1fr x-gap-8px">
                 {filteredRows.slice(0, 6).map((r, i) => {
                   const leadName = r['Lead Name'] ?? r['Opportunity Name'] ?? r['Company'] ?? r['Customer'] ?? `Lead-${i + 1}`;
                   const stages = ['New', 'Qualified', 'Proposal', 'Negotiation', 'Won'];
@@ -2623,26 +2598,17 @@ export function FamV40Body({
                   return (
                     <div
                       key={`stage-q-${r.id || i}`}
-                      style={{
-                        padding: '10px 12px',
-                        border: '1px solid var(--line, #cbd5e1)',
-                        borderRadius: 6,
-                        background: '#fff',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                      }}
+                      className="x-p-10px-12px x-bd-1px-solid-line x-r-6px x-bg-card x-d-flex x-fd-column x-jc-space-between"
                     >
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: 12 }}>{leadName}</div>
-                        <div style={{ fontSize: 11, color: 'var(--muted, #64748b)', marginTop: 2 }}>
+                        <div className="x-fw-600 x-fs-12px">{leadName}</div>
+                        <div className="x-fs-11px x-c-muted x-mt-2px">
                           {curStage} • Probability {prob}%
                         </div>
                       </div>
                       <button
                         type="button"
-                        className="btn sm primary"
-                        style={{ marginTop: 8 }}
+                        className="btn sm primary x-mt-8px"
                         onClick={() => toast(`Moved ${leadName} to next stage.`)}
                       >
                         Move Next
@@ -2655,7 +2621,7 @@ export function FamV40Body({
           </div>
 
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 10px 0' }}>Conversion Drivers</h3>
+            <h3 className="x-m-0-0-10px-0">Conversion Drivers</h3>
             <div className="v9-metric-row">
               <span>Follow-up discipline</span>
               <b>92%</b>
@@ -2676,11 +2642,10 @@ export function FamV40Body({
               <span>Closure probability</span>
               <b>74%</b>
             </div>
-            <div style={{ marginTop: 14 }}>
+            <div className="x-mt-14px">
               <button
                 type="button"
-                className="btn primary"
-                style={{ width: '100%' }}
+                className="btn primary x-w-100pct"
                 onClick={() => setShowAddModal(true)}
               >
                 {pageId === 'crm-leads' ? '＋ Create Lead' : '＋ Create Opportunity'}
@@ -2692,66 +2657,54 @@ export function FamV40Body({
 
       {/* 3.10 CRM Workspace Panel: Activity Timeline & Interaction Center (Follow-ups, Meetings, Feedback) */}
       {pageId === 'crm-followups' || pageId === 'crm-meetings' || pageId === 'crm-feedback' ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>Activity & Interaction Timeline</h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <h3 className="x-m-0">Activity & Interaction Timeline</h3>
+                <div className="x-fs-11px x-c-muted">
                   Customer, lead and account interaction history with actionable follow-ups and outcome tracking.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● Logged
               </span>
             </div>
 
             <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                maxHeight: 280,
-                overflowY: 'auto',
-                paddingRight: 4,
-              }}
+              className="x-d-flex x-fd-column x-gap-8px x-maxh-280px x-ovy-auto x-pr-4px"
             >
               {commTimeline.map((item, idx) => (
                 <div
                   key={`timeline-${idx}`}
-                  style={{
-                    padding: '8px 12px',
-                    borderLeft: '3px solid #3b82f6',
-                    background: 'var(--muted-bg, #f8fafc)',
-                    borderRadius: '0 6px 6px 0',
-                  }}
+                  className="x-p-8px-12px x-bl-3px-solid-h3b82f6 x-bg-var-muted-bg-hf8fafc x-r-0-6px-6px-0"
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <b style={{ fontSize: 12 }}>
+                  <div className="x-d-flex x-jc-space-between x-ai-center">
+                    <b className="x-fs-12px">
                       {item.channel} • {item.target}
                     </b>
-                    <span className="chip" style={{ fontSize: 10 }}>
+                    <span className="chip x-fs-11px">
                       {item.status}
                     </span>
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--muted, #64748b)', marginTop: 2 }}>
+                  <div className="x-fs-11px x-c-muted x-mt-2px">
                     Date: {item.date}
                   </div>
-                  <div style={{ fontSize: 12, marginTop: 4 }}>{item.note}</div>
+                  <div className="x-fs-12px x-mt-4px">{item.note}</div>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 10px 0' }}>Add Activity</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <h3 className="x-m-0-0-10px-0">Add Activity</h3>
+            <div className="x-d-flex x-fd-column x-gap-10px">
               <div className="field">
-                <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4 }}>Channel</label>
+                <label className="x-fs-11px x-fw-600 x-d-block x-mb-4px">Channel</label>
                 <select
                   value={commChannel}
                   onChange={(e) => setCommChannel(e.target.value)}
-                  style={{ width: '100%', padding: '6px 8px', borderRadius: 4, border: '1px solid var(--line, #cbd5e1)' }}
+                  className="x-w-100pct x-p-6px-8px x-r-6px x-bd-1px-solid-line"
                 >
                   <option value="Call">Call</option>
                   <option value="Email">Email</option>
@@ -2760,22 +2713,22 @@ export function FamV40Body({
                 </select>
               </div>
               <div className="field">
-                <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4 }}>Notes / Discussion</label>
+                <label className="x-fs-11px x-fw-600 x-d-block x-mb-4px">Notes / Discussion</label>
                 <textarea
                   value={commNote}
                   onChange={(e) => setCommNote(e.target.value)}
                   placeholder="Discussion outcome or action item..."
                   rows={2}
-                  style={{ width: '100%', padding: '6px 8px', borderRadius: 4, border: '1px solid var(--line, #cbd5e1)' }}
+                  className="x-w-100pct x-p-6px-8px x-r-6px x-bd-1px-solid-line"
                 />
               </div>
               <div className="field">
-                <label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4 }}>Next Follow-up Date</label>
+                <label className="x-fs-11px x-fw-600 x-d-block x-mb-4px">Next Follow-up Date</label>
                 <input
                   type="date"
                   value={commDate}
                   onChange={(e) => setCommDate(e.target.value)}
-                  style={{ width: '100%', padding: '6px 8px', borderRadius: 4, border: '1px solid var(--line, #cbd5e1)' }}
+                  className="x-w-100pct x-p-6px-8px x-r-6px x-bd-1px-solid-line"
                 />
               </div>
               <button
@@ -2809,76 +2762,62 @@ export function FamV40Body({
 
       {/* 3.11 CRM Customer 360 Workspace Panel */}
       {pageId === 'crm-customer360' ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>Customer 360° Account Desk</h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <h3 className="x-m-0">Customer 360° Account Desk</h3>
+                <div className="x-fs-11px x-c-muted">
                   Comprehensive profile, order history, credit exposure, active tickets and relationship health.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● 360 View
               </span>
             </div>
 
             {/* Customer Details Grid */}
             <div
-              className="detail-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                gap: 8,
-                padding: '10px 12px',
-                background: 'var(--muted-bg, #f8fafc)',
-                borderRadius: 6,
-                marginBottom: 12,
-              }}
+              className="detail-grid x-d-grid x-cols-repeat-auto-fill-minmax-140px-1fr x-gap-8px x-p-10px-12px x-bg-var-muted-bg-hf8fafc x-r-6px x-mb-12px"
             >
               <div className="detail">
-                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Account Name</small>
-                <div style={{ fontWeight: 600 }}>{activeRecord ? (activeRecord['Customer'] ?? activeRecord['Name'] ?? 'Tata Motors Ltd') : 'Tata Motors Ltd'}</div>
+                <small className="x-c-muted x-fs-11px">Account Name</small>
+                <div className="x-fw-600">{activeRecord ? (activeRecord['Customer'] ?? activeRecord['Name'] ?? 'Tata Motors Ltd') : 'Tata Motors Ltd'}</div>
               </div>
               <div className="detail">
-                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Industry</small>
-                <div style={{ fontWeight: 600 }}>Automotive OEM</div>
+                <small className="x-c-muted x-fs-11px">Industry</small>
+                <div className="x-fw-600">Automotive OEM</div>
               </div>
               <div className="detail">
-                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Credit Limit</small>
-                <div style={{ fontWeight: 600 }}>₹ 50,00,000</div>
+                <small className="x-c-muted x-fs-11px">Credit Limit</small>
+                <div className="x-fw-600">₹ 50,00,000</div>
               </div>
               <div className="detail">
-                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Outstanding</small>
-                <div style={{ fontWeight: 600, color: '#ea580c' }}>₹ 14,20,000</div>
+                <small className="x-c-muted x-fs-11px">Outstanding</small>
+                <div className="x-fw-600 x-c-hea580c">₹ 14,20,000</div>
               </div>
               <div className="detail">
-                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>Lifetime Orders</small>
-                <div style={{ fontWeight: 600 }}>38 Orders</div>
+                <small className="x-c-muted x-fs-11px">Lifetime Orders</small>
+                <div className="x-fw-600">38 Orders</div>
               </div>
               <div className="detail">
-                <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>CSAT Rating</small>
-                <div style={{ fontWeight: 600, color: '#16a34a' }}>4.9 / 5.0</div>
+                <small className="x-c-muted x-fs-11px">CSAT Rating</small>
+                <div className="x-fw-600 x-c-success">4.9 / 5.0</div>
               </div>
             </div>
 
             {/* Customer mini cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
+            <div className="x-d-grid x-cols-repeat-auto-fill-minmax-180px-1fr x-gap-8px">
               {filteredRows.slice(0, 6).map((r, i) => {
                 const cName = r['Customer'] ?? r['Customer Name'] ?? r['Name'] ?? `Customer-${i + 1}`;
                 const cTier = i % 3 === 0 ? 'Tier 1 Enterprise' : 'Strategic Account';
                 return (
                   <div
                     key={`c360-card-${r.id || i}`}
-                    style={{
-                      padding: '8px 10px',
-                      border: '1px solid var(--line, #cbd5e1)',
-                      borderRadius: 6,
-                      background: '#fff',
-                    }}
+                    className="x-p-8px-10px x-bd-1px-solid-line x-r-6px x-bg-card"
                   >
-                    <b style={{ fontSize: 12 }}>{cName}</b>
-                    <div style={{ fontSize: 11, color: 'var(--muted, #64748b)', margin: '2px 0 6px 0' }}>{cTier}</div>
+                    <b className="x-fs-12px">{cName}</b>
+                    <div className="x-fs-11px x-c-muted x-m-2px-0-6px-0">{cTier}</div>
                     <button
                       type="button"
                       className="btn sm"
@@ -2896,36 +2835,35 @@ export function FamV40Body({
           </div>
 
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 10px 0' }}>Operational Readiness</h3>
+            <h3 className="x-m-0-0-10px-0">Operational Readiness</h3>
             <div className="v9-metric-row">
               <span>Information complete</span>
-              <b style={{ color: '#16a34a' }}>Ready</b>
+              <b className="x-c-success">Ready</b>
             </div>
             <div className="v9-metric-row">
               <span>Owner assigned</span>
-              <b style={{ color: '#16a34a' }}>Ready</b>
+              <b className="x-c-success">Ready</b>
             </div>
             <div className="v9-metric-row">
               <span>Dependency clear</span>
-              <b style={{ color: '#16a34a' }}>Ready</b>
+              <b className="x-c-success">Ready</b>
             </div>
             <div className="v9-metric-row">
               <span>Date commitment</span>
-              <b style={{ color: '#16a34a' }}>Ready</b>
+              <b className="x-c-success">Ready</b>
             </div>
             <div className="v9-metric-row">
               <span>Approval state</span>
-              <b style={{ color: '#f59e0b' }}>Review</b>
+              <b className="x-c-hf59e0b">Review</b>
             </div>
             <div className="v9-metric-row">
               <span>Next action</span>
-              <b style={{ color: '#16a34a' }}>Ready</b>
+              <b className="x-c-success">Ready</b>
             </div>
-            <div style={{ marginTop: 14 }}>
+            <div className="x-mt-14px">
               <button
                 type="button"
-                className="btn primary"
-                style={{ width: '100%' }}
+                className="btn primary x-w-100pct"
                 onClick={() => toast('Customer 360° operational review completed.')}
               >
                 Complete Review
@@ -2937,16 +2875,16 @@ export function FamV40Body({
 
       {/* 3.12 CRM Lead Sources Workspace Panel */}
       {pageId === 'crm-sources' ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>Lead Sources & Channel Master</h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <h3 className="x-m-0">Lead Sources & Channel Master</h3>
+                <div className="x-fs-11px x-c-muted">
                   Source configuration, attribution tracking, conversion rates and validation rules.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● Configured
               </span>
             </div>
@@ -3005,7 +2943,7 @@ export function FamV40Body({
               </table>
             </div>
 
-            <div style={{ marginTop: 10 }}>
+            <div className="x-mt-10px">
               <button
                 type="button"
                 className="btn primary"
@@ -3017,30 +2955,30 @@ export function FamV40Body({
           </div>
 
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 10px 0' }}>Validation Controls</h3>
+            <h3 className="x-m-0-0-10px-0">Validation Controls</h3>
             <div className="v9-metric-row">
               <span>Unique code</span>
-              <b style={{ color: '#16a34a' }}>Enabled</b>
+              <b className="x-c-success">Enabled</b>
             </div>
             <div className="v9-metric-row">
               <span>Mandatory name</span>
-              <b style={{ color: '#16a34a' }}>Enabled</b>
+              <b className="x-c-success">Enabled</b>
             </div>
             <div className="v9-metric-row">
               <span>Effective date</span>
-              <b style={{ color: '#16a34a' }}>Enabled</b>
+              <b className="x-c-success">Enabled</b>
             </div>
             <div className="v9-metric-row">
               <span>Duplicate check</span>
-              <b style={{ color: '#16a34a' }}>Enabled</b>
+              <b className="x-c-success">Enabled</b>
             </div>
             <div className="v9-metric-row">
               <span>Approval on change</span>
-              <b style={{ color: '#64748b' }}>Optional</b>
+              <b className="x-c-muted">Optional</b>
             </div>
             <div className="v9-metric-row">
               <span>Audit history</span>
-              <b style={{ color: '#16a34a' }}>Enabled</b>
+              <b className="x-c-success">Enabled</b>
             </div>
           </div>
         </div>
@@ -3048,29 +2986,23 @@ export function FamV40Body({
 
       {/* 3.13 Tax Statutory Workspace Panel (v9TaxWorkspace parity for GST Setup to Purchase Register) */}
       {pageId.startsWith('tax-') ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>{`${title} Workspace`}</h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <h3 className="x-m-0">{`${title} Workspace`}</h3>
+                <div className="x-fs-11px x-c-muted">
                   Indian statutory validation, document status, tax compliance rules and filing readiness.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● Statutory Active
               </span>
             </div>
 
             {/* Statutory Stepper Tiles */}
             <div
-              className="v9-stepper"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-                gap: 8,
-                marginBottom: 12,
-              }}
+              className="v9-stepper x-d-grid x-cols-repeat-auto-fit-minmax-110px-1fr x-gap-8px x-mb-12px"
             >
               {[
                 { label: 'Source Data', status: 'Passed', active: true },
@@ -3089,10 +3021,10 @@ export function FamV40Body({
                     textAlign: 'center',
                   }}
                 >
-                  <b style={{ fontSize: 11, display: 'block' }}>{st.label}</b>
+                  <b className="x-fs-11px x-d-block">{st.label}</b>
                   <span
                     style={{
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: 700,
                       color: st.status === 'Passed' ? '#16a34a' : st.status === 'Ready' ? '#2563eb' : '#64748b',
                     }}
@@ -3105,15 +3037,7 @@ export function FamV40Body({
 
             {/* Validation Detail Grid */}
             <div
-              className="detail-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                gap: 8,
-                padding: '10px 12px',
-                background: 'var(--muted-bg, #f8fafc)',
-                borderRadius: 6,
-              }}
+              className="detail-grid x-d-grid x-cols-repeat-auto-fill-minmax-130px-1fr x-gap-8px x-p-10px-12px x-bg-var-muted-bg-hf8fafc x-r-6px"
             >
               {[
                 { key: 'GSTIN Validity', val: 'Validated', ok: true },
@@ -3124,7 +3048,7 @@ export function FamV40Body({
                 { key: 'Return Mapping', val: 'Review', ok: false },
               ].map((v) => (
                 <div key={v.key} className="detail">
-                  <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>{v.key}</small>
+                  <small className="x-c-muted x-fs-11px">{v.key}</small>
                   <div style={{ fontWeight: 600, color: v.ok ? '#16a34a' : '#ea580c' }}>{v.val}</div>
                 </div>
               ))}
@@ -3132,8 +3056,8 @@ export function FamV40Body({
           </div>
 
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 10px 0' }}>Compliance Actions</h3>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <h3 className="x-m-0-0-10px-0">Compliance Actions</h3>
+            <div className="x-d-flex x-gap-8px x-wrap-wrap">
               <button
                 type="button"
                 className="btn primary"
@@ -3167,7 +3091,7 @@ export function FamV40Body({
                 </button>
               ) : null}
             </div>
-            <div className="notice" style={{ marginTop: 12 }}>
+            <div className="notice x-mt-12px">
               {totalCount || filteredRows.length} statutory records checked. {Math.max(0, (totalCount || filteredRows.length) - 3)} are filing-ready; 3 contain review flags for verification.
             </div>
           </div>
@@ -3176,29 +3100,23 @@ export function FamV40Body({
 
       {/* 3.14 Payroll Workspace Panel (v9PayrollWorkspace for all 12 Payroll submodules) */}
       {pageId.startsWith('pay-') ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>{`${title} Workspace`}</h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <h3 className="x-m-0">{`${title} Workspace`}</h3>
+                <div className="x-fs-11px x-c-muted">
                   Statutory compliance, attendance integration, tax deductions, and automated payroll disbursement.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● Active Run
               </span>
             </div>
 
             {/* Stepper Tiles */}
             <div
-              className="v9-stepper"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-                gap: 8,
-                marginBottom: 12,
-              }}
+              className="v9-stepper x-d-grid x-cols-repeat-auto-fit-minmax-110px-1fr x-gap-8px x-mb-12px"
             >
               {[
                 { label: 'Attendance Sync', status: 'Passed', active: true },
@@ -3217,10 +3135,10 @@ export function FamV40Body({
                     textAlign: 'center',
                   }}
                 >
-                  <b style={{ fontSize: 11, display: 'block' }}>{st.label}</b>
+                  <b className="x-fs-11px x-d-block">{st.label}</b>
                   <span
                     style={{
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: 700,
                       color: st.status === 'Passed' || st.status === 'Verified' || st.status === 'Compliant' ? '#16a34a' : st.status === 'Ready' || st.status === 'Calculated' ? '#2563eb' : '#64748b',
                     }}
@@ -3233,15 +3151,7 @@ export function FamV40Body({
 
             {/* Parameter & Compliance Matrix */}
             <div
-              className="detail-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                gap: 8,
-                padding: '10px 12px',
-                background: 'var(--muted-bg, #f8fafc)',
-                borderRadius: 6,
-              }}
+              className="detail-grid x-d-grid x-cols-repeat-auto-fill-minmax-130px-1fr x-gap-8px x-p-10px-12px x-bg-var-muted-bg-hf8fafc x-r-6px"
             >
               {[
                 { key: 'PF Compliance', val: '12.0% Verified', ok: true },
@@ -3252,7 +3162,7 @@ export function FamV40Body({
                 { key: 'Payslip Status', val: 'Generated (100%)', ok: true },
               ].map((v) => (
                 <div key={v.key} className="detail">
-                  <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>{v.key}</small>
+                  <small className="x-c-muted x-fs-11px">{v.key}</small>
                   <div style={{ fontWeight: 600, color: v.ok ? '#16a34a' : '#ea580c' }}>{v.val}</div>
                 </div>
               ))}
@@ -3260,7 +3170,7 @@ export function FamV40Body({
 
             {/* PAY-RUN-01: Live Employee Calculation Table */}
             {pageId === 'pay-processing' && (
-              <div style={{ marginTop: 12, overflowX: 'auto' }}>
+              <div className="x-mt-12px x-ovx-auto">
                 <table className="table" style={{ width: '100%', fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
@@ -3284,10 +3194,10 @@ export function FamV40Body({
                       <tr key={row.emp} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={{ padding: '6px 8px', fontWeight: 600 }}>{row.emp}</td>
                         <td style={{ padding: '6px 8px', textAlign: 'right' }}>{row.gross}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#dc2626' }}>{row.pf}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#dc2626' }}>{row.statutory}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#16a34a' }}>{row.ot}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#2563eb' }}>{row.net}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#b91c1c' }}>{row.pf}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#b91c1c' }}>{row.statutory}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#15803d' }}>{row.ot}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#1d4ed8' }}>{row.net}</td>
                         <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                           <span className="badge badge-success" style={{ background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{row.status}</span>
                         </td>
@@ -3300,8 +3210,8 @@ export function FamV40Body({
           </div>
 
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 10px 0' }}>Payroll Operations</h3>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <h3 className="x-m-0-0-10px-0">Payroll Operations</h3>
+            <div className="x-d-flex x-gap-8px x-wrap-wrap">
               {pageId === 'pay-structure' || pageId === 'pay-processing' || pageId === 'pay-register' ? (
                 <button
                   type="button"
@@ -3353,7 +3263,7 @@ export function FamV40Body({
                 Recalculate Metrics
               </button>
             </div>
-            <div className="notice" style={{ marginTop: 12 }}>
+            <div className="notice x-mt-12px">
               {totalCount || filteredRows.length} payroll records in scope. 0 compliance deviations detected. All statutory wage caps and minimum wage thresholds conform to 2026 regulations.
             </div>
           </div>
@@ -3362,29 +3272,23 @@ export function FamV40Body({
 
       {/* 3.15 Finance & Accounts Workspace Panel (Interactive Simulator, Ageing & Reconcile Panels) */}
       {pageId.startsWith('fin-') ? (
-        <div className="v9-grid" style={{ marginTop: 12 }}>
+        <div className="v9-grid x-mt-12px">
           <div className="v9-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="x-d-flex x-jc-space-between x-ai-flex-start x-mb-10px">
               <div>
-                <h3 style={{ margin: 0 }}>{`${title} Workspace`}</h3>
-                <div style={{ fontSize: 11, color: 'var(--muted, #64748b)' }}>
+                <h3 className="x-m-0">{`${title} Workspace`}</h3>
+                <div className="x-fs-11px x-c-muted">
                   General ledger compliance, fiscal periods, double-entry audit trail, and automated financial statements.
                 </div>
               </div>
-              <span className="v9-pulse" style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+              <span className="v9-pulse x-fs-11px x-fw-700 x-c-success">
                 ● Working
               </span>
             </div>
 
             {/* Stepper Tiles */}
             <div
-              className="v9-stepper"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-                gap: 8,
-                marginBottom: 12,
-              }}
+              className="v9-stepper x-d-grid x-cols-repeat-auto-fit-minmax-110px-1fr x-gap-8px x-mb-12px"
             >
               {[
                 { label: 'Document Entry', status: 'Passed', active: true },
@@ -3403,10 +3307,10 @@ export function FamV40Body({
                     textAlign: 'center',
                   }}
                 >
-                  <b style={{ fontSize: 11, display: 'block' }}>{st.label}</b>
+                  <b className="x-fs-11px x-d-block">{st.label}</b>
                   <span
                     style={{
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: 700,
                       color: st.status === 'Passed' || st.status === 'Verified' ? '#16a34a' : st.status === 'Posted' ? '#2563eb' : '#64748b',
                     }}
@@ -3419,26 +3323,26 @@ export function FamV40Body({
 
             {/* Financial Parameters or Margin Simulator (for fin-budget) or Ageing Bar Chart (for fin-ageing) */}
             {pageId === 'fin-budget' ? (
-              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1px solid #e2e8f0', marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8, color: '#1e293b' }}>
+              <div className="x-bg-card2 x-p-12px x-r-6px x-bd-1px-solid-line x-mb-12px">
+                <div className="x-fw-600 x-fs-12px x-mb-8px x-c-text">
                   Interactive Margin Simulator & Commercial Guardrails
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 10 }}>
+                <div className="x-d-grid x-cols-repeat-4-1fr x-gap-8px x-mb-10px">
                   <div>
-                    <label style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Base Amount</label>
-                    <input type="text" readOnly value="₹ 50,00,000" style={{ width: '100%', padding: '4px 6px', fontSize: 12, borderRadius: 4, border: '1px solid #cbd5e1' }} />
+                    <label className="x-fs-11px x-c-muted x-d-block">Base Amount</label>
+                    <input type="text" readOnly value="₹ 50,00,000" className="x-w-100pct x-p-4px-6px x-fs-12px x-r-6px x-bd-1px-solid-line-strong" />
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Discount %</label>
-                    <input type="text" readOnly value="5.0%" style={{ width: '100%', padding: '4px 6px', fontSize: 12, borderRadius: 4, border: '1px solid #cbd5e1' }} />
+                    <label className="x-fs-11px x-c-muted x-d-block">Discount %</label>
+                    <input type="text" readOnly value="5.0%" className="x-w-100pct x-p-4px-6px x-fs-12px x-r-6px x-bd-1px-solid-line-strong" />
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Tax Rate</label>
-                    <input type="text" readOnly value="18.0% GST" style={{ width: '100%', padding: '4px 6px', fontSize: 12, borderRadius: 4, border: '1px solid #cbd5e1' }} />
+                    <label className="x-fs-11px x-c-muted x-d-block">Tax Rate</label>
+                    <input type="text" readOnly value="18.0% GST" className="x-w-100pct x-p-4px-6px x-fs-12px x-r-6px x-bd-1px-solid-line-strong" />
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Target Margin %</label>
-                    <input type="text" readOnly value="24.5%" style={{ width: '100%', padding: '4px 6px', fontSize: 12, borderRadius: 4, border: '1px solid #cbd5e1' }} />
+                    <label className="x-fs-11px x-c-muted x-d-block">Target Margin %</label>
+                    <input type="text" readOnly value="24.5%" className="x-w-100pct x-p-4px-6px x-fs-12px x-r-6px x-bd-1px-solid-line-strong" />
                   </div>
                 </div>
                 <button
@@ -3450,44 +3354,36 @@ export function FamV40Body({
                 </button>
               </div>
             ) : pageId === 'fin-ageing' ? (
-              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1px solid #e2e8f0', marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8, color: '#1e293b' }}>
+              <div className="x-bg-card2 x-p-12px x-r-6px x-bd-1px-solid-line x-mb-12px">
+                <div className="x-fw-600 x-fs-12px x-mb-8px x-c-text">
                   Visual Ageing Buckets Distribution
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, textAlign: 'center' }}>
-                  <div style={{ background: '#ecfdf5', padding: 6, borderRadius: 4, border: '1px solid #10b981' }}>
-                    <small style={{ fontSize: 10, color: '#047857' }}>Current</small>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: '#065f46' }}>₹ 42,50,000</div>
+                <div className="x-d-grid x-cols-repeat-5-1fr x-gap-8px x-ta-center">
+                  <div className="x-bg-hecfdf5 x-p-6px x-r-6px x-bd-1px-solid-h10b981">
+                    <small className="x-fs-11px x-c-h047857">Current</small>
+                    <div className="x-fw-700 x-fs-12px x-c-h065f46">₹ 42,50,000</div>
                   </div>
-                  <div style={{ background: '#f0fdf4', padding: 6, borderRadius: 4, border: '1px solid #22c55e' }}>
-                    <small style={{ fontSize: 10, color: '#15803d' }}>1-30 Days</small>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: '#166534' }}>₹ 24,10,000</div>
+                  <div className="x-bg-hf0fdf4 x-p-6px x-r-6px x-bd-1px-solid-h22c55e">
+                    <small className="x-fs-11px x-c-success">1-30 Days</small>
+                    <div className="x-fw-700 x-fs-12px x-c-h166534">₹ 24,10,000</div>
                   </div>
-                  <div style={{ background: '#fefce8', padding: 6, borderRadius: 4, border: '1px solid #eab308' }}>
-                    <small style={{ fontSize: 10, color: '#a16207' }}>31-60 Days</small>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: '#854d0e' }}>₹ 12,40,000</div>
+                  <div className="x-bg-hfefce8 x-p-6px x-r-6px x-bd-1px-solid-heab308">
+                    <small className="x-fs-11px x-c-ha16207">31-60 Days</small>
+                    <div className="x-fw-700 x-fs-12px x-c-h854d0e">₹ 12,40,000</div>
                   </div>
-                  <div style={{ background: '#fff7ed', padding: 6, borderRadius: 4, border: '1px solid #f97316' }}>
-                    <small style={{ fontSize: 10, color: '#c2410c' }}>61-90 Days</small>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: '#9a3412' }}>₹ 6,80,000</div>
+                  <div className="x-bg-hfff7ed x-p-6px x-r-6px x-bd-1px-solid-hf97316">
+                    <small className="x-fs-11px x-c-hc2410c">61-90 Days</small>
+                    <div className="x-fw-700 x-fs-12px x-c-h9a3412">₹ 6,80,000</div>
                   </div>
-                  <div style={{ background: '#fef2f2', padding: 6, borderRadius: 4, border: '1px solid #ef4444' }}>
-                    <small style={{ fontSize: 10, color: '#b91c1c' }}>&gt; 90 Days</small>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: '#991b1b' }}>₹ 2,40,000</div>
+                  <div className="x-bg-hfef2f2 x-p-6px x-r-6px x-bd-1px-solid-hef4444">
+                    <small className="x-fs-11px x-c-danger-hover">&gt; 90 Days</small>
+                    <div className="x-fw-700 x-fs-12px x-c-h991b1b">₹ 2,40,000</div>
                   </div>
                 </div>
               </div>
             ) : (
               <div
-                className="detail-grid"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                  gap: 8,
-                  padding: '10px 12px',
-                  background: 'var(--muted-bg, #f8fafc)',
-                  borderRadius: 6,
-                }}
+                className="detail-grid x-d-grid x-cols-repeat-auto-fill-minmax-130px-1fr x-gap-8px x-p-10px-12px x-bg-var-muted-bg-hf8fafc x-r-6px"
               >
                 {[
                   { key: 'Debit/Credit Check', val: 'Balanced', ok: true },
@@ -3498,7 +3394,7 @@ export function FamV40Body({
                   { key: 'Audit Hash', val: 'SHA-256 Valid', ok: true },
                 ].map((v) => (
                   <div key={v.key} className="detail">
-                    <small style={{ color: 'var(--muted, #64748b)', fontSize: 11 }}>{v.key}</small>
+                    <small className="x-c-muted x-fs-11px">{v.key}</small>
                     <div style={{ fontWeight: 600, color: v.ok ? '#16a34a' : '#ea580c' }}>{v.val}</div>
                   </div>
                 ))}
@@ -3507,8 +3403,8 @@ export function FamV40Body({
           </div>
 
           <div className="v9-section">
-            <h3 style={{ margin: '0 0 10px 0' }}>Finance Actions</h3>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <h3 className="x-m-0-0-10px-0">Finance Actions</h3>
+            <div className="x-d-flex x-gap-8px x-wrap-wrap">
               {pageId === 'fin-coa' || pageId === 'fin-gl' || pageId === 'fin-journal' ? (
                 <button
                   type="button"
@@ -3551,7 +3447,7 @@ export function FamV40Body({
                 Recalculate Totals
               </button>
             </div>
-            <div className="notice" style={{ marginTop: 12 }}>
+            <div className="notice x-mt-12px">
               {totalCount || filteredRows.length} finance ledger records verified. Double-entry validation passed. No out-of-balance vouchers or unposted journal exceptions found.
             </div>
           </div>
@@ -3560,13 +3456,13 @@ export function FamV40Body({
 
       {/* 3.16 Service Technician Board & Service Health Workspace (SRV-01) */}
       {(pageId.startsWith('service-') || pageId.startsWith('srv-')) ? (
-        <div className="v9-grid" style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+        <div className="v9-grid x-mt-12px x-d-grid x-cols-2fr-1fr x-gap-14px">
           {/* Left Column: Technician Board 5-Stage Kanban */}
-          <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+            <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
               <div>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Technician Allocation Board</h3>
-                <div style={{ fontSize: 11, color: '#64748b' }}>Live dispatch, site execution status and technician workflow queue</div>
+                <h3 className="x-m-0 x-fs-14px x-fw-700">Technician Allocation Board</h3>
+                <div className="x-fs-11px x-c-muted">Live dispatch, site execution status and technician workflow queue</div>
               </div>
               <button
                 type="button"
@@ -3576,7 +3472,7 @@ export function FamV40Body({
                 Update Actions
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+            <div className="x-d-grid x-cols-repeat-5-1fr x-gap-8px">
               {[
                 { stage: 'New', count: 4, color: '#3b82f6', items: [{ id: 'SRV-2026-0041', tech: 'Unassigned', priority: 'High', client: 'Tata Motors' }, { id: 'SRV-2026-0042', tech: 'Unassigned', priority: 'Normal', client: 'Mahindra' }] },
                 { stage: 'Assigned', count: 6, color: '#8b5cf6', items: [{ id: 'SRV-2026-0038', tech: 'Rohan Patil', priority: 'High', client: 'Bharat Forge' }, { id: 'SRV-2026-0039', tech: 'Vikas Kadam', priority: 'Normal', client: 'Thermax' }] },
@@ -3584,18 +3480,18 @@ export function FamV40Body({
                 { stage: 'Waiting Parts', count: 3, color: '#ef4444', items: [{ id: 'SRV-2026-0031', tech: 'Pravin Shinde', priority: 'Normal', client: 'Godrej Ind' }] },
                 { stage: 'Closed', count: 18, color: '#10b981', items: [{ id: 'SRV-2026-0027', tech: 'Deepak Rao', priority: 'Resolved', client: 'Bosch Chassis' }] },
               ].map((col) => (
-                <div key={col.stage} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: 8 }}>
+                <div key={col.stage} className="x-bg-card2 x-bd-1px-solid-line x-r-6px x-p-8px">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid ${col.color}`, paddingBottom: 4, marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>{col.stage}</span>
-                    <span style={{ background: col.color, color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 10 }}>{col.count}</span>
+                    <span className="x-fs-12px x-fw-700 x-c-textn2">{col.stage}</span>
+                    <span style={{ background: col.color, color: '#fff', fontSize: 11, fontWeight: 700, padding: '1px 6px', borderRadius: 10 }}>{col.count}</span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div className="x-d-flex x-fd-column x-gap-6px">
                     {col.items.map((item) => (
-                      <div key={item.id} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 4, padding: '6px 8px', fontSize: 11 }}>
-                        <div style={{ fontWeight: 700, color: '#1e293b' }}>{item.id}</div>
-                        <div style={{ color: '#64748b', fontSize: 10 }}>{item.client}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10 }}>
-                          <span style={{ color: '#2563eb' }}>{item.tech}</span>
+                      <div key={item.id} className="x-bg-card x-bd-1px-solid-line-strong x-r-6px x-p-6px-8px x-fs-11px">
+                        <div className="x-fw-700 x-c-text">{item.id}</div>
+                        <div className="x-c-muted x-fs-11px">{item.client}</div>
+                        <div className="x-d-flex x-jc-space-between x-mt-4px x-fs-11px">
+                          <span className="x-c-primary">{item.tech}</span>
                           <span style={{ fontWeight: 600, color: item.priority === 'Critical' ? '#dc2626' : item.priority === 'High' ? '#ea580c' : '#16a34a' }}>{item.priority}</span>
                         </div>
                       </div>
@@ -3607,10 +3503,10 @@ export function FamV40Body({
           </div>
 
           {/* Right Column: Service Health Metrics Panel */}
-          <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-            <h3 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700 }}>Service Health</h3>
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>SLA compliance, warranty and engineering health</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+            <h3 className="x-m-0-0-4px x-fs-14px x-fw-700">Service Health</h3>
+            <div className="x-fs-11px x-c-muted x-mb-12px">SLA compliance, warranty and engineering health</div>
+            <div className="x-d-flex x-fd-column x-gap-10px">
               {[
                 { label: 'SLA Compliance Rate', val: '97.4%', sub: 'Target: >95.0%', color: '#16a34a' },
                 { label: 'First-Time Fix Rate (FTFR)', val: '89.2%', sub: 'Target: >85.0%', color: '#16a34a' },
@@ -3618,28 +3514,26 @@ export function FamV40Body({
                 { label: 'Warranty Exposure', val: '₹ 1.25 L', sub: 'Under reserved allowance', color: '#d97706' },
                 { label: 'Technician Utilization', val: '91.8%', sub: '18 active field engineers', color: '#2563eb' },
               ].map((m) => (
-                <div key={m.label} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>{m.label}</span>
+                <div key={m.label} className="x-bg-card2 x-bd-1px-solid-line x-r-6px x-p-8px-10px">
+                  <div className="x-d-flex x-jc-space-between x-ai-center">
+                    <span className="x-fs-12px x-fw-600 x-c-textn2">{m.label}</span>
                     <span style={{ fontSize: 14, fontWeight: 700, color: m.color }}>{m.val}</span>
                   </div>
-                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>{m.sub}</div>
+                  <div className="x-fs-11px x-c-muted x-mt-2px">{m.sub}</div>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 12, display: 'flex', gap: 6 }}>
+            <div className="x-mt-12px x-d-flex x-gap-6px">
               <button
                 type="button"
-                className="btn sm"
-                style={{ flex: 1, fontSize: 11 }}
+                className="btn sm x-flex-1 x-fs-11px"
                 onClick={() => toast('Service Health report generated.')}
               >
                 Health Audit
               </button>
               <button
                 type="button"
-                className="btn sm primary"
-                style={{ flex: 1, fontSize: 11 }}
+                className="btn sm primary x-flex-1 x-fs-11px"
                 onClick={() => toast('Field dispatch optimization completed.')}
               >
                 Optimize Dispatch
@@ -3651,13 +3545,13 @@ export function FamV40Body({
 
       {/* 3.17 Document Management 2-Column Operational Workspace (DOC-02) */}
       {pageId.startsWith('doc-') ? (
-        <div className="v9-grid" style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="v9-grid x-mt-12px x-d-grid x-cols-1fr-1fr x-gap-14px">
           {pageId === 'doc-folders' && (
             <>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Folder Tree Hierarchy</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Corporate document repository folder taxonomy</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Folder Tree Hierarchy</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Corporate document repository folder taxonomy</div>
+                <div className="x-d-flex x-fd-column x-gap-6px">
                   {[
                     { name: '📁 Root / Enterprise Repository', count: '1,420 docs', active: false },
                     { name: '  📂 Engineering & Drawings (CAD/Spec)', count: '482 docs', active: true },
@@ -3668,30 +3562,30 @@ export function FamV40Body({
                   ].map((f) => (
                     <div key={f.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: f.active ? '#eff6ff' : '#f8fafc', border: f.active ? '1px solid #3b82f6' : '1px solid #e2e8f0', borderRadius: 6, fontSize: 12 }}>
                       <span style={{ fontWeight: f.active ? 700 : 500, color: f.active ? '#1e40af' : '#334155' }}>{f.name}</span>
-                      <span style={{ color: '#64748b', fontSize: 11 }}>{f.count}</span>
+                      <span className="x-c-muted x-fs-11px">{f.count}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Selected Node Editor</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Folder permissions, retention policy and metadata controls</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Selected Node Editor</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Folder permissions, retention policy and metadata controls</div>
+                <div className="x-d-flex x-fd-column x-gap-10px">
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Folder Name</label>
-                    <input type="text" readOnly value="Engineering & Drawings (CAD/Spec)" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #cbd5e1', marginTop: 4, fontSize: 12, background: '#f8fafc' }} />
+                    <label className="x-fs-12px x-fw-600 x-c-textn2">Folder Name</label>
+                    <input type="text" readOnly value="Engineering & Drawings (CAD/Spec)" className="x-w-100pct x-p-6px-10px x-r-6px x-bd-1px-solid-line-strong x-mt-4px x-fs-12px x-bg-card2" />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div className="x-d-grid x-cols-1fr-1fr x-gap-8px">
                     <div>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Retention Rule</label>
-                      <input type="text" readOnly value="10 Years (Statutory)" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #cbd5e1', marginTop: 4, fontSize: 12, background: '#f8fafc' }} />
+                      <label className="x-fs-12px x-fw-600 x-c-textn2">Retention Rule</label>
+                      <input type="text" readOnly value="10 Years (Statutory)" className="x-w-100pct x-p-6px-10px x-r-6px x-bd-1px-solid-line-strong x-mt-4px x-fs-12px x-bg-card2" />
                     </div>
                     <div>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Access Classification</label>
-                      <input type="text" readOnly value="Confidential (Internal)" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #cbd5e1', marginTop: 4, fontSize: 12, background: '#f8fafc' }} />
+                      <label className="x-fs-12px x-fw-600 x-c-textn2">Access Classification</label>
+                      <input type="text" readOnly value="Confidential (Internal)" className="x-w-100pct x-p-6px-10px x-r-6px x-bd-1px-solid-line-strong x-mt-4px x-fs-12px x-bg-card2" />
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <div className="x-d-flex x-gap-8px x-mt-10px">
                     <button type="button" className="btn sm primary" onClick={() => toast('Folder properties updated successfully.')}>Save Node Settings</button>
                     <button type="button" className="btn sm" onClick={() => toast('Subfolder created.')}>+ Subfolder</button>
                   </div>
@@ -3702,37 +3596,37 @@ export function FamV40Body({
 
           {pageId === 'doc-documents' && (
             <>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Document Library Repository</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Active repository files, encryption status and physical vault references</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Document Library Repository</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Active repository files, encryption status and physical vault references</div>
+                <div className="x-d-flex x-fd-column x-gap-6px">
                   {[
                     { code: 'DOC-2026-0001', name: 'Standard Operating Procedure - Machining V4.pdf', size: '2.4 MB', status: 'Approved' },
                     { code: 'DOC-2026-0002', name: 'PPAP Level 3 Quality Approval - Gear Assembly.pdf', size: '8.1 MB', status: 'Approved' },
                     { code: 'DOC-2026-0003', name: 'Master Plant Layout & Electrical Schematics.dwg', size: '14.5 MB', status: 'Draft' },
                     { code: 'DOC-2026-0004', name: 'GSTR-3B Statutory Monthly Filing Oct-2026.pdf', size: '1.2 MB', status: 'Approved' },
                   ].map((d) => (
-                    <div key={d.code} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12 }}>
+                    <div key={d.code} className="x-d-flex x-jc-space-between x-ai-center x-p-8px-10px x-bg-card2 x-bd-1px-solid-line x-r-6px x-fs-12px">
                       <div>
-                        <div style={{ fontWeight: 600, color: '#1e293b' }}>{d.name}</div>
-                        <span style={{ fontSize: 10, color: '#64748b' }}>{d.code} · {d.size}</span>
+                        <div className="x-fw-600 x-c-text">{d.name}</div>
+                        <span className="x-fs-11px x-c-muted">{d.code} · {d.size}</span>
                       </div>
-                      <span className="badge badge-success" style={{ background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600 }}>{d.status}</span>
+                      <span className="badge badge-success x-bg-hdcfce7 x-c-h166534 x-p-2px-8px x-r-6px x-fs-11px x-fw-600">{d.status}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Document Actions & Security</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Digital signature sign-off, watermark stamping, and encryption checksums</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ padding: '8px 10px', background: '#f1f5f9', borderRadius: 6, fontSize: 12 }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Document Actions & Security</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Digital signature sign-off, watermark stamping, and encryption checksums</div>
+                <div className="x-d-flex x-fd-column x-gap-8px">
+                  <div className="x-p-8px-10px x-bg-soft x-r-6px x-fs-12px">
                     <b>Security Protocol:</b> AES-256 GCM at rest · TLS 1.3 in transit
                   </div>
-                  <div style={{ padding: '8px 10px', background: '#f1f5f9', borderRadius: 6, fontSize: 12 }}>
-                    <b>SHA-256 Checksum:</b> <span style={{ fontFamily: 'monospace', fontSize: 10 }}>e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</span>
+                  <div className="x-p-8px-10px x-bg-soft x-r-6px x-fs-12px">
+                    <b>SHA-256 Checksum:</b> <span className="x-font-family-monospace x-fs-11px">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</span>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                  <div className="x-d-flex x-gap-8px x-mt-6px">
                     <button type="button" className="btn sm primary" onClick={() => toast('Digital signature verification completed.')}>Verify Signature</button>
                     <button type="button" className="btn sm" onClick={() => toast('Confidential watermark applied.')}>Stamp Watermark</button>
                   </div>
@@ -3743,29 +3637,29 @@ export function FamV40Body({
 
           {pageId === 'doc-versions' && (
             <>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Version History Timeline</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Audit changes, differential diffs and author commits</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Version History Timeline</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Audit changes, differential diffs and author commits</div>
+                <div className="x-d-flex x-fd-column x-gap-8px">
                   {[
                     { ver: 'v3.2 (Current)', date: '2026-11-15', author: 'Rajesh K. (Quality Lead)', change: 'Updated tolerance limits in Section 4.2' },
                     { ver: 'v3.1', date: '2026-10-02', author: 'Sunita P. (QA Inspector)', change: 'Added CMM measurement frequency requirements' },
                     { ver: 'v3.0', date: '2026-08-14', author: 'Amit D. (Plant Engineer)', change: 'Major revision for BS-VI Phase 2 compliance' },
                   ].map((v) => (
-                    <div key={v.ver} style={{ padding: '8px 10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <b style={{ color: '#2563eb' }}>{v.ver}</b>
-                        <span style={{ fontSize: 11, color: '#64748b' }}>{v.date} · {v.author}</span>
+                    <div key={v.ver} className="x-p-8px-10px x-bg-card2 x-bd-1px-solid-line x-r-6px x-fs-12px">
+                      <div className="x-d-flex x-jc-space-between">
+                        <b className="x-c-primary">{v.ver}</b>
+                        <span className="x-fs-11px x-c-muted">{v.date} · {v.author}</span>
                       </div>
-                      <div style={{ fontSize: 11, color: '#334155', marginTop: 4 }}>{v.change}</div>
+                      <div className="x-fs-11px x-c-textn2 x-mt-4px">{v.change}</div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>History Controls & Rollback</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Revert to previous revision or lock baseline for external audit</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">History Controls & Rollback</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Revert to previous revision or lock baseline for external audit</div>
+                <div className="x-d-flex x-fd-column x-gap-8px">
                   <button type="button" className="btn sm primary" onClick={() => toast('Diff viewer opened between v3.2 and v3.1.')}>Compare Revisions (Diff)</button>
                   <button type="button" className="btn sm" onClick={() => toast('Baseline snapshot created and tagged.')}>Tag Audit Baseline</button>
                   <button type="button" className="btn sm danger" onClick={() => toast('Rollback preview initiated.')}>Rollback to Selected</button>
@@ -3776,27 +3670,27 @@ export function FamV40Body({
 
           {pageId === 'doc-permissions' && (
             <>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Permission Matrix</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Role-based read, write, download and approval privileges</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Permission Matrix</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Role-based read, write, download and approval privileges</div>
+                <div className="x-d-flex x-fd-column x-gap-6px x-fs-12px">
                   {[
                     { role: 'Super Admin / CXO', read: '✓', write: '✓', download: '✓', approve: '✓' },
                     { role: 'Department Head', read: '✓', write: '✓', download: '✓', approve: '✓' },
                     { role: 'Quality Engineer', read: '✓', write: '✓', download: '✓', approve: '—' },
                     { role: 'Operator / Viewer', read: '✓', write: '—', download: '—', approve: '—' },
                   ].map((p) => (
-                    <div key={p.role} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4 }}>
-                      <span style={{ fontWeight: 600 }}>{p.role}</span>
-                      <span style={{ color: '#2563eb' }}>R:{p.read} W:{p.write} DL:{p.download} APP:{p.approve}</span>
+                    <div key={p.role} className="x-d-flex x-jc-space-between x-p-6px-8px x-bg-card2 x-bd-1px-solid-line x-r-6px">
+                      <span className="x-fw-600">{p.role}</span>
+                      <span className="x-c-primary">R:{p.read} W:{p.write} DL:{p.download} APP:{p.approve}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Validation Controls</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Audit permission compliance and revoke unverified access tokens</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Validation Controls</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Audit permission compliance and revoke unverified access tokens</div>
+                <div className="x-d-flex x-fd-column x-gap-8px">
                   <button type="button" className="btn sm primary" onClick={() => toast('Permission matrix validated against corporate RBAC policies.')}>Validate Permissions</button>
                   <button type="button" className="btn sm" onClick={() => toast('Access log export initiated.')}>Export Access Audit Log</button>
                 </div>
@@ -3806,19 +3700,19 @@ export function FamV40Body({
 
           {pageId === 'doc-tags' && (
             <>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Tag Master Registry</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Controlled corporate taxonomy and classification tags</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Tag Master Registry</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Controlled corporate taxonomy and classification tags</div>
+                <div className="x-d-flex x-wrap-wrap x-gap-8px">
                   {['#IATF-16949', '#ISO-9001', '#PPAP-Level3', '#CriticalToQuality', '#Confidential-IP', '#Financial-Audit', '#Drawings-CAD', '#SOP-Standard'].map((t) => (
-                    <span key={t} style={{ padding: '4px 10px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 12, fontSize: 12, fontWeight: 600 }}>{t}</span>
+                    <span key={t} className="x-p-4px-10px x-bg-heff6ff x-c-primary x-bd-1px-solid-hbfdbfe x-r-12px x-fs-12px x-fw-600">{t}</span>
                   ))}
                 </div>
               </div>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Validation Controls</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Manage tag lifecycle and index cross-departmental keywords</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Validation Controls</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Manage tag lifecycle and index cross-departmental keywords</div>
+                <div className="x-d-flex x-fd-column x-gap-8px">
                   <button type="button" className="btn sm primary" onClick={() => toast('Document index rebuilt for all active tags.')}>Rebuild Tag Index</button>
                   <button type="button" className="btn sm" onClick={() => toast('Tag merge utility opened.')}>Merge Duplicate Tags</button>
                 </div>
@@ -3828,23 +3722,23 @@ export function FamV40Body({
 
           {pageId === 'doc-search' && (
             <>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Search Workspace</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Full-text OCR indexing, metadata filters and boolean search</div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input type="text" placeholder="Search document OCR text, drawings, metadata..." style={{ flex: 1, padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13 }} />
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Search Workspace</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Full-text OCR indexing, metadata filters and boolean search</div>
+                <div className="x-d-flex x-gap-8px">
+                  <input type="text" placeholder="Search document OCR text, drawings, metadata..." className="x-flex-1 x-p-7px-10px x-r-6px x-bd-1px-solid-line-strong x-fs-13px" />
                   <button type="button" className="btn sm primary" onClick={() => toast('Full-text OCR scan executed.')}>Search</button>
                 </div>
               </div>
-              <div className="v9-section" style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: 14 }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700 }}>Operational Readiness</h3>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Index health, OCR processing queue and elastic search telemetry</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div className="v9-section x-bg-card x-bd-1px-solid-line-strong x-r-8px x-p-14px">
+                <h3 className="x-m-0-0-6px x-fs-14px x-fw-700">Operational Readiness</h3>
+                <div className="x-fs-11px x-c-muted x-mb-12px">Index health, OCR processing queue and elastic search telemetry</div>
+                <div className="x-d-flex x-fd-column x-gap-6px x-fs-12px">
+                  <div className="x-d-flex x-jc-space-between">
                     <span>Index Status:</span>
-                    <b style={{ color: '#16a34a' }}>Healthy (100% In Sync)</b>
+                    <b className="x-c-success">Healthy (100% In Sync)</b>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div className="x-d-flex x-jc-space-between">
                     <span>Indexed Documents:</span>
                     <b>2,842 files</b>
                   </div>
@@ -3856,7 +3750,7 @@ export function FamV40Body({
       ) : null}
 
       {/* 4. Toolbar: Search, Status, Department Filter */}
-      <div className="toolbar proc-toolbar" style={{ marginTop: 12 }}>
+      <div className="toolbar proc-toolbar x-mt-12px">
         <input
           type="search"
           placeholder={`Search ${title}...`}
@@ -3865,7 +3759,7 @@ export function FamV40Body({
             setQ(e.target.value);
             setPage(1);
           }}
-          style={{ minWidth: 200 }}
+          className="x-minw-200px"
           aria-label={`Search ${title}`}
         />
         <select
@@ -3885,7 +3779,7 @@ export function FamV40Body({
           <option value="CLOSED">Closed</option>
         </select>
         {pageId === 'qms-calibration' ? (
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
+          <label className="x-d-inline-flex x-ai-center x-gap-6px x-fs-12px x-cur-pointer">
             <input
               type="checkbox"
               checked={onlyDueOrExpired}
@@ -3923,20 +3817,19 @@ export function FamV40Body({
         </select>
         <button
           type="button"
-          className="btn sm"
-          style={{ background: '#fef3c7', borderColor: '#f59e0b', color: '#92400e' }}
+          className="btn sm x-bg-hfef3c7 x-border-color-hf59e0b x-c-h92400e"
           onClick={handleReset25Demo}
         >
           Reset 25 Demo
         </button>
-        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--muted, #64748b)' }}>
+        <span className="x-ml-auto x-fs-12px x-c-muted">
           {`${filteredRows.length} of ${totalCount || filteredRows.length} records`}
         </span>
       </div>
 
       {/* 4.5 Bulk Actions Bar */}
-      <div className="sv40-bulk" role="group" aria-label="Selected records" style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <span className="v8-badge" style={{ padding: '4px 8px', borderRadius: 4, background: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: 12 }}>
+      <div className="sv40-bulk x-mt-8px x-d-flex x-gap-8px x-ai-center" role="group" aria-label="Selected records">
+        <span className="v8-badge x-p-4px-8px x-r-6px x-bg-he0f2fe x-c-h0369a1 x-fw-600 x-fs-12px">
           {`${picked.size} selected`}
         </span>
         <button
@@ -4001,22 +3894,14 @@ export function FamV40Body({
       </div>
 
       {/* 5. Primary Horizontal Register Table */}
-      <div className="card table-wrap" style={{ marginTop: 8 }}>
+      <div className="card table-wrap x-mt-8px">
         <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '10px 14px',
-            borderBottom: '1px solid var(--line, #e2e8f0)',
-            flexWrap: 'wrap',
-            gap: 8,
-          }}
+          className="x-d-flex x-jc-space-between x-ai-center x-p-10px-14px x-bb-1px-solid-line x-wrap-wrap x-gap-8px"
         >
-          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
+          <h3 className="x-m-0 x-fs-14px x-fw-700">
             {WMS_TITLES[pageId] ?? `${title} Register • Detailed Table`}
           </h3>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div className="x-d-flex x-gap-6px">
             <button
               type="button"
               className="btn sm"
@@ -4216,7 +4101,7 @@ export function FamV40Body({
       </div>
 
       {/* Pagination Controls */}
-      <div className="actions pv40-pager" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--card2, #f8fafc)', border: '1px solid var(--line, #e2e8f0)', borderRadius: 8, marginTop: 8 }}>
+      <div className="actions pv40-pager x-d-flex x-ai-center x-jc-space-between x-p-8px-12px x-bg-card2 x-bd-1px-solid-line x-r-8px x-mt-8px">
         <button
           type="button"
           className="btn sm"
@@ -4225,7 +4110,7 @@ export function FamV40Body({
         >
           Previous
         </button>
-        <span style={{ fontSize: 12, color: 'var(--muted, #64748b)' }}>
+        <span className="x-fs-12px x-c-muted">
           Page {page} of {Math.max(1, Math.ceil((totalCount || filteredRows.length) / 50))}
         </span>
         <button
@@ -4345,7 +4230,7 @@ export function FamV40Body({
           title={`Confirm Deletion`}
           onClose={() => setAskDelete(null)}
           footer={
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, width: '100%' }}>
+            <div className="x-d-flex x-jc-flex-end x-gap-8px x-w-100pct">
               <button type="button" className="btn sm" onClick={() => setAskDelete(null)}>Cancel</button>
               <button
                 type="button"
@@ -4367,9 +4252,9 @@ export function FamV40Body({
             </div>
           }
         >
-          <div style={{ padding: 14 }}>
+          <div className="x-p-14px">
             <p>Are you sure you want to delete <strong>{askDelete.number || askDelete.id}</strong>?</p>
-            <p style={{ color: 'var(--muted, #64748b)', fontSize: 12 }}>This action will remove the record from the active register.</p>
+            <p className="x-c-muted x-fs-12px">This action will remove the record from the active register.</p>
           </div>
         </Modal>
       ) : null}
@@ -4380,38 +4265,38 @@ export function FamV40Body({
           title={`360° Tracking — ${trackRecord.number || trackRecord.id}`}
           onClose={() => setTrackRecord(null)}
           footer={
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, width: '100%' }}>
+            <div className="x-d-flex x-jc-flex-end x-gap-8px x-w-100pct">
               <button type="button" className="btn sm" onClick={() => exportWordClient(title, trackRecord, uniqueColumns)}>Export Word</button>
               <button type="button" className="btn sm" onClick={() => exportPdfClient(title, trackRecord, uniqueColumns)}>Print / PDF</button>
               <button type="button" className="btn sm primary" onClick={() => setTrackRecord(null)}>Close</button>
             </div>
           }
         >
-          <div style={{ padding: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
-              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', fontSize: 11, display: 'block' }}>RECORD REFERENCE</small>
-                <strong style={{ fontSize: 14, color: '#0f172a' }}>{trackRecord.number || trackRecord.id}</strong>
+          <div className="x-p-16px">
+            <div className="x-d-grid x-cols-repeat-auto-fit-minmax-140px-1fr x-gap-10px x-mb-16px">
+              <div className="x-bg-card2 x-p-10px-12px x-r-8px x-bd-1px-solid-line">
+                <small className="x-c-muted x-fs-11px x-d-block">RECORD REFERENCE</small>
+                <strong className="x-fs-14px x-c-text">{trackRecord.number || trackRecord.id}</strong>
               </div>
-              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', fontSize: 11, display: 'block' }}>LIFECYCLE STATUS</small>
-                <span className="badge" style={{ marginTop: 2, display: 'inline-block', background: '#dbeafe', color: '#1e40af', fontWeight: 600, padding: '2px 8px', borderRadius: 4, fontSize: 12 }}>
+              <div className="x-bg-card2 x-p-10px-12px x-r-8px x-bd-1px-solid-line">
+                <small className="x-c-muted x-fs-11px x-d-block">LIFECYCLE STATUS</small>
+                <span className="badge x-mt-2px x-d-inline-block x-bg-hdbeafe x-c-h1e40af x-fw-600 x-p-2px-8px x-r-6px x-fs-12px">
                   {trackRecord.status || 'Active'}
                 </span>
               </div>
-              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', fontSize: 11, display: 'block' }}>DEPARTMENT</small>
-                <strong style={{ fontSize: 13, color: '#0f172a' }}>{String(trackRecord['Department'] || 'Logistics & Fleet')}</strong>
+              <div className="x-bg-card2 x-p-10px-12px x-r-8px x-bd-1px-solid-line">
+                <small className="x-c-muted x-fs-11px x-d-block">DEPARTMENT</small>
+                <strong className="x-fs-13px x-c-text">{String(trackRecord['Department'] || 'Logistics & Fleet')}</strong>
               </div>
-              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <small style={{ color: '#64748b', fontSize: 11, display: 'block' }}>INTEGRITY & AUDIT</small>
-                <strong style={{ fontSize: 13, color: '#16a34a' }}>✓ Verified (V40)</strong>
+              <div className="x-bg-card2 x-p-10px-12px x-r-8px x-bd-1px-solid-line">
+                <small className="x-c-muted x-fs-11px x-d-block">INTEGRITY & AUDIT</small>
+                <strong className="x-fs-13px x-c-success">✓ Verified (V40)</strong>
               </div>
             </div>
 
-            <div style={{ background: '#f0f9ff', padding: '14px 16px', borderRadius: 8, border: '1px solid #bae6fd', marginBottom: 16 }}>
-              <div style={{ fontWeight: 600, fontSize: 12, color: '#0369a1', marginBottom: 10 }}>LOGISTICS & FLEET MILESTONES PROGRESSION</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8, textAlign: 'center' }}>
+            <div className="x-bg-hf0f9ff x-p-14px-16px x-r-8px x-bd-1px-solid-hbae6fd x-mb-16px">
+              <div className="x-fw-600 x-fs-12px x-c-h0369a1 x-mb-10px">LOGISTICS & FLEET MILESTONES PROGRESSION</div>
+              <div className="x-d-grid x-cols-repeat-auto-fit-minmax-110px-1fr x-gap-8px x-ta-center">
                 {[
                   { step: '1. Registered', done: true, time: 'Day 0' },
                   { step: '2. Validated', done: true, time: 'Day 1' },
@@ -4421,20 +4306,20 @@ export function FamV40Body({
                 ].map((m, idx) => (
                   <div key={idx} style={{ background: m.done ? '#ffffff' : '#f8fafc', padding: 8, borderRadius: 6, border: `1px solid ${m.done ? '#38bdf8' : '#e2e8f0'}` }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: m.done ? '#0284c7' : '#94a3b8' }}>{m.step}</div>
-                    <small style={{ color: '#64748b', fontSize: 10 }}>{m.time}</small>
+                    <small className="x-c-muted x-fs-11px">{m.time}</small>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div style={{ fontWeight: 600, fontSize: 12, color: '#334155', marginBottom: 6 }}>SPECIFICATIONS & RECORD ATTRIBUTES</div>
-            <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 6 }}>
+            <div className="x-fw-600 x-fs-12px x-c-textn2 x-mb-6px">SPECIFICATIONS & RECORD ATTRIBUTES</div>
+            <div className="x-maxh-260px x-ovy-auto x-bd-1px-solid-line x-r-6px">
               <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
                 <tbody>
                   {uniqueColumns.filter((c) => c.type !== 'actions' && c.type !== 'docs').map((c) => (
                     <tr key={c.key} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '7px 10px', background: '#f8fafc', fontWeight: 600, width: '40%', color: '#475569' }}>{c.label}</td>
-                      <td style={{ padding: '7px 10px', color: '#0f172a' }}>{String(trackRecord[c.key] ?? trackRecord[c.label] ?? '—')}</td>
+                      <td style={{ padding: '7px 10px', color: '#172033' }}>{String(trackRecord[c.key] ?? trackRecord[c.label] ?? '—')}</td>
                     </tr>
                   ))}
                 </tbody>

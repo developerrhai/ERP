@@ -62,13 +62,12 @@ export function ProjectKanbanPage() {
 
       {error && <div className="notice error">{error}</div>}
 
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div className="x-d-flex x-gap-1rem x-ai-center x-mb-1_5rem">
         <label>Select Project:</label>
         <select
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="input"
-          style={{ width: '320px' }}
+          className="input x-w-320px"
         >
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
@@ -81,7 +80,7 @@ export function ProjectKanbanPage() {
       {loading ? (
         <p>Loading board...</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+        <div className="x-d-grid x-cols-repeat-3-1fr x-gap-1_5rem">
           {COLUMNS.map((col) => {
             const colTasks = tasks.filter((t) => t.status === col.key);
             const isOverWip = colTasks.length > col.limit;
@@ -113,7 +112,7 @@ export function ProjectKanbanPage() {
                       fontWeight: 600,
                       padding: '2px 6px',
                       borderRadius: '10px',
-                      background: isOverWip ? '#f9ab00' : '#bdc1c6',
+                      background: isOverWip ? '#b45309' : '#5b6980',
                       color: isOverWip ? '#202124' : '#fff',
                     }}
                   >
@@ -121,29 +120,22 @@ export function ProjectKanbanPage() {
                   </span>
                 </div>
 
-                <div style={{ padding: '0.75rem', minHeight: '350px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="x-p-0_75rem x-minh-350px x-d-flex x-fd-column x-gap-0_75rem">
                   {colTasks.map((t) => (
                     <div
                       key={t.id}
-                      style={{
-                        background: '#ffffff',
-                        border: '1px solid #dadce0',
-                        borderRadius: '4px',
-                        padding: '0.75rem',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                      }}
+                      className="x-bg-card x-bd-1px-solid-line-strong x-r-6px x-p-0_75rem x-box-shadow-0-1px-2px-rgba-0-0-0-0_05"
                     >
-                      <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{t.name}</div>
-                      <div style={{ fontSize: '12px', color: '#5f6368', marginBottom: '0.5rem' }}>
+                      <div className="x-fw-600 x-mb-0_25rem">{t.name}</div>
+                      <div className="x-fs-12px x-c-muted x-mb-0_5rem">
                         WBS: {t.wbs_code} • {t.duration_days} days
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                      <div className="x-d-flex x-jc-space-between x-ai-center x-fs-11px">
                         <span>Progress: {t.progress_pct}%</span>
-                        <div style={{ display: 'flex', gap: '4px' }}>
+                        <div className="x-d-flex x-gap-4px">
                           {col.key !== 'NOT_STARTED' && (
                             <button
-                              className="btn small"
-                              style={{ padding: '1px 6px', fontSize: '10px' }}
+                              className="btn small x-p-1px-6px x-fs-11px"
                               onClick={() => handleProgressChange(t.id, 0)}
                             >
                               ← To Do
@@ -151,8 +143,7 @@ export function ProjectKanbanPage() {
                           )}
                           {col.key !== 'IN_PROGRESS' && (
                             <button
-                              className="btn small"
-                              style={{ padding: '1px 6px', fontSize: '10px' }}
+                              className="btn small x-p-1px-6px x-fs-11px"
                               onClick={() => handleProgressChange(t.id, 50)}
                             >
                               In Progress
@@ -160,8 +151,7 @@ export function ProjectKanbanPage() {
                           )}
                           {col.key !== 'COMPLETED' && (
                             <button
-                              className="btn small primary"
-                              style={{ padding: '1px 6px', fontSize: '10px' }}
+                              className="btn small primary x-p-1px-6px x-fs-11px"
                               onClick={() => handleProgressChange(t.id, 100)}
                             >
                               Done ✓
@@ -172,7 +162,7 @@ export function ProjectKanbanPage() {
                     </div>
                   ))}
                   {colTasks.length === 0 && (
-                    <p style={{ textAlign: 'center', color: '#70757a', fontSize: '12px', marginTop: '2rem' }}>
+                    <p className="x-ta-center x-c-h70757a x-fs-12px x-mt-2rem">
                       No tasks in this lane
                     </p>
                   )}

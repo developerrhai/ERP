@@ -46,10 +46,10 @@ export function SalesAnalyticsView({ pageId, noun }: { pageId: string; noun: str
           <div
             role="listitem"
             key={s.status}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0' }}
+            className="x-d-flex x-ai-center x-gap-8px x-m-4px-0"
           >
-            <span style={{ width: 130, fontSize: 12 }}>{s.status}</span>
-            <span style={{ flex: 1, background: '#e2e8f0', borderRadius: 4, height: 14 }}>
+            <span className="x-w-130px x-fs-12px">{s.status}</span>
+            <span className="x-flex-1 x-bg-he2e8f0 x-r-6px x-h-14px">
               <span
                 style={{
                   display: 'block',
@@ -60,7 +60,7 @@ export function SalesAnalyticsView({ pageId, noun }: { pageId: string; noun: str
                 }}
               />
             </span>
-            <b style={{ width: 36, textAlign: 'right', fontSize: 12 }}>{s.count}</b>
+            <b className="x-w-36px x-ta-right x-fs-12px">{s.count}</b>
           </div>
         ))}
       </div>
@@ -68,7 +68,7 @@ export function SalesAnalyticsView({ pageId, noun }: { pageId: string; noun: str
         <>
           <h3>Created per month</h3>
           <div
-            style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 120 }}
+            className="x-d-flex x-ai-flex-end x-gap-10px x-h-120px"
             role="list"
             aria-label="Records per month"
           >
@@ -76,7 +76,7 @@ export function SalesAnalyticsView({ pageId, noun }: { pageId: string; noun: str
               <div
                 role="listitem"
                 key={m.month}
-                style={{ flex: '1 1 0', maxWidth: 90, textAlign: 'center', fontSize: 11 }}
+                className="x-flex-1-1-0 x-maxw-90px x-ta-center x-fs-11px"
               >
                 <b>{m.count}</b>
                 <div
@@ -140,8 +140,8 @@ export function SalesCalendarView({ pageId, tabName }: { pageId: string; tabName
   const total = cells.reduce<number>((n, d) => n + (d ? (events.get(key(d))?.length ?? 0) : 0), 0);
   return (
     <section className="sv40-panel" aria-label={tabName}>
-      <div className="actions" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0 }}>
+      <div className="actions x-jc-space-between x-ai-center">
+        <h3 className="x-m-0">
           {cursor.toLocaleString('en-IN', { month: 'long', year: 'numeric' })} · {total} dated{' '}
           {total === 1 ? 'item' : 'items'}
         </h3>
@@ -173,18 +173,11 @@ export function SalesCalendarView({ pageId, tabName }: { pageId: string; tabName
         </span>
       </div>
       {loading && !data ? <p className="muted">Loading…</p> : null}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginTop: 8 }}>
+      <div className="x-d-grid x-cols-repeat-7-1fr x-gap-4px x-mt-8px">
         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
           <div
             key={d}
-            style={{
-              textAlign: 'center',
-              fontWeight: 700,
-              fontSize: 11,
-              padding: '4px 0',
-              background: '#f1f5f9',
-              borderRadius: 4,
-            }}
+            className="x-ta-center x-fw-700 x-fs-11px x-p-4px-0 x-bg-soft x-r-6px"
           >
             {d}
           </div>
@@ -200,23 +193,13 @@ export function SalesCalendarView({ pageId, tabName }: { pageId: string; tabName
               background: d ? '#fff' : '#f8fafc',
             }}
           >
-            {d ? <div style={{ fontSize: 11, fontWeight: 700 }}>{d}</div> : null}
+            {d ? <div className="x-fs-11px x-fw-700">{d}</div> : null}
             {d
               ? (events.get(key(d)) ?? []).slice(0, 3).map((e) => (
                   <div
                     key={e.id}
                     title={`${e.label} · ${e.what}`}
-                    style={{
-                      background: '#dbeafe',
-                      color: '#1e40af',
-                      fontSize: 10,
-                      padding: '2px 4px',
-                      borderRadius: 3,
-                      marginTop: 2,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
+                    className="x-bg-hdbeafe x-c-h1e40af x-fs-11px x-p-2px-4px x-r-3px x-mt-2px x-ov-hidden x-text-overflow-ellipsis x-ws-nowrap"
                   >
                     {e.label} · {e.what}
                   </div>
@@ -259,8 +242,8 @@ export function SalesReportsView({ pageId, noun }: { pageId: string; noun: strin
   return (
     <section className="sv40-panel" aria-label="Reports">
       {err ? <p role="alert">{err}</p> : null}
-      <div className="actions" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0 }}>{noun} report</h3>
+      <div className="actions x-jc-space-between x-ai-center">
+        <h3 className="x-m-0">{noun} report</h3>
         <span>
           <button type="button" className="btn sm" disabled={rows.length === 0} onClick={exportCsv}>
             Export CSV

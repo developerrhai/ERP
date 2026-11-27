@@ -178,7 +178,7 @@ export function LoginPage() {
       ) : null}
 
       {message ? (
-        <div className="msg error show" role="alert" style={{ marginBottom: '1rem' }}>
+        <div className="msg error show login-msg" role="alert">
           {message}
         </div>
       ) : null}
@@ -208,11 +208,7 @@ export function LoginPage() {
               maxLength={useRecovery ? 12 : 6}
               value={mfaCode}
               onChange={(e) => onMfaCodeChange(e.target.value)}
-              style={{
-                fontSize: useRecovery ? '1rem' : '1.25rem',
-                letterSpacing: useRecovery ? '0.1em' : '0.25em',
-                textAlign: 'center',
-              }}
+              className={useRecovery ? 'mfa-input mfa-input-recovery' : 'mfa-input'}
             />
           </div>
 
@@ -220,16 +216,7 @@ export function LoginPage() {
             {pending ? 'Verifying…' : 'Verify and Sign In'}
           </button>
 
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-              alignItems: 'center',
-              marginTop: '1rem',
-              fontSize: '0.875rem',
-            }}
-          >
+          <div className="mfa-links">
             <button
               type="button"
               className="auth-link"
@@ -243,8 +230,7 @@ export function LoginPage() {
             </button>
             <button
               type="button"
-              className="auth-link"
-              style={{ color: 'var(--color-muted, #64748b)' }}
+              className="auth-link auth-link-muted"
               onClick={() => {
                 setMfaChallenge(null);
                 setMfaCode('');

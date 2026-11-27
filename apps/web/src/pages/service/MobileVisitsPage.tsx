@@ -120,7 +120,7 @@ export function MobileVisitsPage() {
           {loading ? (
             <p>Loading visits...</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="x-d-flex x-fd-column x-gap-1rem">
               {visits.map((v) => (
                 <div
                   key={v.id}
@@ -133,15 +133,15 @@ export function MobileVisitsPage() {
                     cursor: 'pointer',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                  <div className="x-d-flex x-jc-space-between x-mb-0_25rem">
                     <strong>{v.visit_no}</strong>
                     <Pill tone={v.status === 'COMPLETED' ? 'success' : v.status === 'IN_PROGRESS' ? 'info' : 'warning'}>
                       {v.status}
                     </Pill>
                   </div>
-                  <div style={{ fontSize: '13px', fontWeight: 600 }}>{v.customer_name}</div>
-                  <div style={{ fontSize: '12px', color: '#5f6368', marginBottom: '0.5rem' }}>{v.site_address}</div>
-                  <div style={{ fontSize: '11px', color: '#70757a' }}>
+                  <div className="x-fs-13px x-fw-600">{v.customer_name}</div>
+                  <div className="x-fs-12px x-c-muted x-mb-0_5rem">{v.site_address}</div>
+                  <div className="x-fs-11px x-c-h70757a">
                     Scheduled: {new Date(v.scheduled_start).toLocaleDateString()} {new Date(v.scheduled_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Tech: {v.technician_name}
                   </div>
                 </div>
@@ -153,57 +153,56 @@ export function MobileVisitsPage() {
 
         {/* Mobile Execution Stepper */}
         {activeVisit && (
-          <div style={{ background: '#ffffff', border: '1px solid #dadce0', borderRadius: '6px', padding: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0 }}>Visit {activeVisit.visit_no}</h3>
+          <div className="x-bg-card x-bd-1px-solid-line-strong x-r-6px x-p-1_25rem">
+            <div className="x-d-flex x-jc-space-between x-mb-1rem">
+              <h3 className="x-m-0">Visit {activeVisit.visit_no}</h3>
               <button className="btn small" onClick={() => setActiveVisit(null)}>
                 ✕
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="x-d-flex x-fd-column x-gap-1rem">
               {/* Step 1: Travel */}
-              <div style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: '4px' }}>
-                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Step 1: Travel & Navigation</div>
+              <div className="x-p-0_75rem x-bg-card2 x-r-6px">
+                <div className="x-fw-600 x-mb-0_25rem">Step 1: Travel & Navigation</div>
                 {activeVisit.status === 'SCHEDULED' ? (
                   <button className="btn primary" onClick={() => handleStartTravel(activeVisit.id)}>
                     🚗 Start Travel
                   </button>
                 ) : (
-                  <span style={{ fontSize: '12px', color: '#137333' }}>✓ Travel started</span>
+                  <span className="x-fs-12px x-c-success">✓ Travel started</span>
                 )}
               </div>
 
               {/* Step 2: Check-in */}
-              <div style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: '4px' }}>
-                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Step 2: Site Check-in (GPS)</div>
+              <div className="x-p-0_75rem x-bg-card2 x-r-6px">
+                <div className="x-fw-600 x-mb-0_25rem">Step 2: Site Check-in (GPS)</div>
                 {activeVisit.status === 'EN_ROUTE' ? (
                   <button className="btn primary" onClick={() => handleCheckIn(activeVisit.id)}>
                     📍 GPS Check-In at Site
                   </button>
                 ) : activeVisit.check_in_at ? (
-                  <span style={{ fontSize: '12px', color: '#137333' }}>
+                  <span className="x-fs-12px x-c-success">
                     ✓ Checked in at {new Date(activeVisit.check_in_at).toLocaleTimeString()} ({activeVisit.travel_km} km)
                   </span>
                 ) : (
-                  <span style={{ fontSize: '12px', color: '#70757a' }}>Pending travel completion</span>
+                  <span className="x-fs-12px x-c-h70757a">Pending travel completion</span>
                 )}
               </div>
 
               {/* Step 3: Sign Off on Canvas */}
-              <div style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: '4px' }}>
-                <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Step 3: Customer Canvas Signature</div>
+              <div className="x-p-0_75rem x-bg-card2 x-r-6px">
+                <div className="x-fw-600 x-mb-0_5rem">Step 3: Customer Canvas Signature</div>
                 {activeVisit.status === 'IN_PROGRESS' ? (
                   <div>
                     <input
                       type="text"
-                      className="input"
+                      className="input x-w-100pct x-mb-0_5rem"
                       placeholder="Signatory Name (e.g. Rajesh Patil)"
                       value={signatory}
                       onChange={(e) => setSignatory(e.target.value)}
-                      style={{ width: '100%', marginBottom: '0.5rem' }}
                     />
-                    <div style={{ border: '1px solid #ccc', borderRadius: '4px', background: '#fff', marginBottom: '0.5rem' }}>
+                    <div className="x-bd-1px-solid-hccc x-r-6px x-bg-card x-mb-0_5rem">
                       <canvas
                         ref={canvasRef}
                         width={380}
@@ -215,7 +214,7 @@ export function MobileVisitsPage() {
                         style={{ display: 'block', cursor: 'crosshair' }}
                       />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div className="x-d-flex x-jc-space-between">
                       <button className="btn small" onClick={clearCanvas}>
                         Clear Signature
                       </button>
@@ -226,10 +225,10 @@ export function MobileVisitsPage() {
                   </div>
                 ) : activeVisit.status === 'COMPLETED' ? (
                   <div>
-                    <span style={{ fontSize: '12px', color: '#137333' }}>
+                    <span className="x-fs-12px x-c-success">
                       ✓ Signed by {activeVisit.signatory_name}
                     </span>
-                    <div style={{ marginTop: '0.5rem' }}>
+                    <div className="x-mt-0_5rem">
                       <button
                         className="btn small"
                         onClick={() => alert(`Report PDF generated for ${activeVisit.visit_no}`)}
@@ -239,7 +238,7 @@ export function MobileVisitsPage() {
                     </div>
                   </div>
                 ) : (
-                  <span style={{ fontSize: '12px', color: '#70757a' }}>Check-in required first</span>
+                  <span className="x-fs-12px x-c-h70757a">Check-in required first</span>
                 )}
               </div>
             </div>

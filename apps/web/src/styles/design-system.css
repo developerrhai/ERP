@@ -1,0 +1,561 @@
+/* Global design system: one source for colour, type, buttons, tables, forms, cards and status pills.
+   Load order (main.tsx): after ui.css so these win over the older layers, before utilities.css so a utility class on a
+   single element can still override. Visual properties only: no rule here moves or re-orders anything.
+   Zero- or low-specificity selectors (:where) are deliberate, so row highlights and page-specific states still win. */
+
+/* ================================================================ 1. Tokens */
+:root {
+  /* brand */
+  --primary: #1d4ed8; /* 6.7:1 on white */
+  --primary-hover: #1e40af;
+  --primary-subtle: #eef4ff;
+  --primary-border: #bfdbfe;
+  /* secondary = neutral slate */
+  --secondary: #334155;
+  /* meaning colours: dark enough for white text and for small text on white (4.5:1 or better) */
+  --success: #15803d;
+  --success-hover: #166534;
+  --success-bg: #dcfce7;
+  --success-fg: #166534;
+  --warn: #b45309;
+  --warn-hover: #92400e;
+  --warn-bg: #fef3c7;
+  --warn-fg: #92400e;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --danger-bg: #fee2e2;
+  --danger-fg: #991b1b;
+  --info-bg: #dbeafe;
+  --info-fg: #1e40af;
+  /* surfaces and text */
+  --bg: #f4f7fb;
+  --card: #ffffff;
+  --card2: #f8fafc;
+  --text: #172033;
+  --text-2: #475569;
+  --muted: #5b6980; /* old #64748b was 4.4:1 on the page background */
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1; /* control borders: a box you can type in must be visible */
+  --row-alt: #f9fbfd;
+  --row-hover: #eef4ff;
+  /* type scale */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 14px;
+  --fs-xl: 16px;
+  --fs-2xl: 22px;
+  --lh-tight: 1.25;
+  --lh-body: 1.45;
+  /* shape */
+  --radius-sm: 6px;
+  --radius-btn: 8px;
+  --radius-card: 12px;
+  --ctl-h: 34px;
+  --ctl-h-sm: 28px;
+  --input-h: 36px;
+  --ring: 0 0 0 3px rgba(29, 78, 216, 0.28);
+  --ring-danger: 0 0 0 3px rgba(220, 38, 38, 0.25);
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 16px -8px rgba(15, 23, 42, 0.12);
+  --shadow-hover: 0 2px 4px rgba(15, 23, 42, 0.06), 0 12px 24px -10px rgba(15, 23, 42, 0.18);
+  --ease: 150ms ease;
+
+  /* names that pages already used but nobody had defined (they fell back to different greys and blues) */
+  --soft: #f1f5f9;
+  --subtle: var(--card2);
+  --subtle-bg: var(--card2);
+  --muted-bg: var(--card2);
+  --surface: var(--card);
+  --surface-2: #f1f5f9;
+  --surface-sunken: var(--card2);
+  --panel-bg: var(--card);
+  --border: var(--line);
+  --border-color: var(--line);
+  --hover: #f1f5f9;
+  --hover-bg: #f1f5f9;
+  --selection-bg: var(--primary-subtle);
+  --row-selected: var(--primary-subtle);
+  --primary-dark: var(--primary-hover);
+  --text-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-muted: var(--muted);
+}
+
+/* ================================================================ 2. Typography */
+body {
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3 {
+  line-height: var(--lh-tight);
+}
+h1 {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+}
+h2 {
+  font-size: var(--fs-xl);
+  font-weight: 800;
+}
+h3 {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+.page-head h1,
+.ui-pagehead h1 {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: var(--lh-tight);
+}
+.page-head p,
+.ui-pagehead p,
+.v8-sub {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.muted {
+  color: var(--muted);
+}
+
+/* ================================================================ 3. Buttons */
+/* .btn.card is a tile that happens to be clickable, so it is left alone */
+.btn:where(:not(.card)),
+.ui-btn {
+  min-height: var(--ctl-h);
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-btn);
+  background: var(--card);
+  color: var(--secondary);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  transition:
+    background-color var(--ease),
+    border-color var(--ease),
+    color var(--ease),
+    box-shadow var(--ease),
+    transform var(--ease);
+}
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn.sm,
+.btn.small {
+  min-height: var(--ctl-h-sm);
+  padding: 4px 9px;
+}
+.btn.primary,
+.btn.btn-primary,
+.ui-btn.ui-btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.btn.success,
+.ui-btn.ui-btn-success {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.btn.danger,
+.ui-btn.ui-btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+.btn.warning {
+  background: var(--warn);
+  border-color: var(--warn);
+  color: #fff;
+}
+.btn.secondary,
+.btn.btn-secondary {
+  background: var(--card);
+  border-color: var(--line-strong);
+  color: var(--secondary);
+}
+.ui-btn.ui-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--primary);
+}
+.btn.warning:disabled,
+.btn.btn-primary:disabled {
+  background: var(--line);
+  border-color: var(--line-strong);
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* the toolbar above every page: same shape and weight as every other button (its export colours stay) */
+.main .actionbar .btn {
+  min-height: var(--ctl-h);
+  padding: 6px 11px;
+  border-radius: var(--radius-btn);
+  font-weight: 700;
+}
+.main .actionbar .btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+@media (hover: hover) {
+  .btn:hover:where(:not(:disabled, .card)),
+  .ui-btn:hover:where(:not(:disabled)) {
+    background-color: var(--card2);
+    border-color: #94a3b8;
+    box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.18);
+  }
+  .btn.primary:hover:where(:not(:disabled)),
+  .btn.btn-primary:hover:where(:not(:disabled)),
+  .ui-btn.ui-btn-primary:hover:where(:not(:disabled)),
+  .main .actionbar .btn.primary:hover:where(:not(:disabled)) {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: #fff;
+  }
+  .btn.success:hover:where(:not(:disabled)),
+  .ui-btn.ui-btn-success:hover:where(:not(:disabled)) {
+    background: var(--success-hover);
+    border-color: var(--success-hover);
+    color: #fff;
+  }
+  .btn.danger:hover:where(:not(:disabled)),
+  .ui-btn.ui-btn-danger:hover:where(:not(:disabled)) {
+    background: var(--danger-hover);
+    border-color: var(--danger-hover);
+    color: #fff;
+  }
+  .btn.warning:hover:where(:not(:disabled)) {
+    background: var(--warn-hover);
+    border-color: var(--warn-hover);
+    color: #fff;
+  }
+}
+.btn:disabled:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+/* ================================================================ 4. Tables */
+@media screen {
+  th {
+    padding: 10px;
+    background: var(--card2);
+    border-bottom: 1px solid var(--line-strong);
+    color: var(--text-2);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  td {
+    padding: 10px;
+    border-bottom: 1px solid var(--line);
+    font-size: var(--fs-sm);
+  }
+  /* striping and hover sit on the row with zero weight: a selected / low-stock / dirty row always shows through */
+  :where(tbody tr:nth-child(even)) {
+    background-color: var(--row-alt);
+  }
+  :where(tbody tr:hover) {
+    background-color: var(--row-hover);
+  }
+  :where(tbody tr.empty-row) {
+    background-color: transparent;
+  }
+  /* printed-document previews are paper, not data grids */
+  :where(.v92-payslip-preview, .letterhead-preview) :where(tr) {
+    background-color: transparent;
+  }
+  .empty-row td {
+    padding: 28px 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+}
+
+/* pinned columns must be solid (rows scroll underneath) and still follow the stripe and hover colour */
+@media screen and (min-width: 1001px) {
+  .register-table:not(.plain) tbody tr {
+    background-color: var(--card);
+  }
+  .register-table:not(.plain) tbody tr:nth-child(even) {
+    background-color: var(--row-alt);
+  }
+  .register-table:not(.plain) tbody tr:hover {
+    background-color: var(--row-hover);
+  }
+  .register-table tbody td:first-child,
+  .register-table tbody td:nth-child(2),
+  .register-table tbody td.sticky-actions {
+    background-color: inherit;
+  }
+}
+@media screen {
+  .ui-table tbody tr {
+    background-color: var(--card);
+  }
+  .ui-table tbody tr:nth-child(even) {
+    background-color: var(--row-alt);
+  }
+  .ui-table tbody tr:hover {
+    background-color: var(--row-hover);
+  }
+  .ui-table tbody td:first-child {
+    background-color: inherit;
+  }
+  .ui-table thead th:first-child {
+    background-color: var(--card2);
+  }
+  :is(.fv40-table, .pv40-table, .sv40-table) tbody tr {
+    background-color: var(--card);
+  }
+  :is(.fv40-table, .pv40-table, .sv40-table) tbody tr:nth-child(even) {
+    background-color: var(--row-alt);
+  }
+  :is(.fv40-table, .pv40-table, .sv40-table) tbody tr:hover {
+    background-color: var(--row-hover);
+  }
+  :is(.fv40-table, .pv40-table, .sv40-table) tbody tr:not(.selected) > td.row-actions {
+    background: inherit;
+  }
+  :is(.fv40-table, .pv40-table, .sv40-table) thead th.row-actions-head {
+    background: var(--card2);
+  }
+}
+
+.table-wrap {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ================================================================ 5. Forms */
+/* baseline for any box that no stylesheet had dressed (these showed the raw browser border) */
+:where(
+  input:not(
+      [type='checkbox'],
+      [type='radio'],
+      [type='range'],
+      [type='file'],
+      [type='color'],
+      [type='submit'],
+      [type='button'],
+      [type='image']
+    ),
+  select,
+  textarea
+) {
+  padding: 7px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-btn);
+  background-color: var(--card);
+  color: var(--text);
+}
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--primary);
+}
+::placeholder {
+  color: #7b879c;
+}
+
+.field label,
+.ui-field label,
+.modal-backdrop > .modal .field > label {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.field :is(input, select, textarea):where(:not([type='checkbox'], [type='radio'], [type='file'])) {
+  min-height: var(--input-h);
+  padding: 7px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-btn);
+  font-size: var(--fs-md);
+}
+.field textarea {
+  min-height: 78px;
+}
+.field .pass input {
+  padding-right: 72px;
+}
+.ui-field :is(input, select, textarea):where(:not([type='checkbox'], [type='radio'])),
+.ui-combo input,
+.ui-money input {
+  border-color: var(--line-strong);
+}
+:is(.toolbar, .recordbar, form.filters)
+  :is(input, select):where(:not([type='checkbox'], [type='radio'], [type='file'])) {
+  min-height: var(--ctl-h);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-btn);
+}
+.top select,
+.global input {
+  border-color: var(--line-strong);
+  border-radius: var(--radius-btn);
+}
+.field-error {
+  color: var(--danger-fg);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+:is(input, select, textarea):disabled {
+  background-color: var(--soft);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+/* one focus look everywhere; the transparent outline still shows in Windows high-contrast mode */
+:is(input, select, textarea):where(:not([type='checkbox'], [type='radio'])):focus {
+  border-color: var(--primary);
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+  box-shadow: var(--ring);
+}
+:is(input, select, textarea)[aria-invalid='true']:focus {
+  box-shadow: var(--ring-danger);
+}
+:is(input, select, textarea):where(:not([type='checkbox'], [type='radio'])) {
+  transition:
+    border-color var(--ease),
+    box-shadow var(--ease);
+}
+
+/* ================================================================ 6. Cards, tabs, status pills, notices */
+.card,
+.ui-table-card,
+.ui-kpi,
+.v9-section {
+  border-radius: var(--radius-card);
+}
+.tab {
+  transition:
+    background-color var(--ease),
+    border-color var(--ease),
+    color var(--ease);
+}
+@media (hover: hover) {
+  .tab:hover:where(:not(.active)) {
+    background: var(--primary-subtle);
+    border-color: var(--primary-border);
+  }
+}
+
+.status,
+.ui-badge {
+  margin: 0;
+  padding: 3px 9px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: var(--lh-body);
+}
+/* tones the screens already pass to <Pill> that had no colour (they drew grey, or picked up the KPI .good rule) */
+.status.good,
+.status.success {
+  background: var(--success-bg);
+  color: var(--success-fg);
+}
+.status.warn,
+.status.warning {
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+}
+.status.bad {
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+}
+.status.info,
+.status.accent {
+  background: var(--info-bg);
+  color: var(--info-fg);
+}
+.status.neutral {
+  background: var(--soft);
+  color: var(--text-2);
+}
+
+/* header buttons that wrap onto a second line stay on the right-hand side */
+.page-head > .actions {
+  justify-content: flex-end;
+}
+
+/* ================================================================ 7. Shell */
+/* laptop widths: slightly tighter gaps keep the user menu on screen without cutting off any picker's text */
+@media (min-width: 821px) and (max-width: 1440px) {
+  .top {
+    gap: 5px;
+    padding-inline: 10px;
+  }
+  .top select {
+    padding-inline: 3px 0;
+  }
+  .top > .global {
+    min-width: 100px;
+  }
+  .top > button {
+    padding-inline: 8px;
+  }
+  .top .user {
+    padding-inline: 5px 7px;
+  }
+}
+
+/* ================================================================ 8. Small screens */
+@media (max-width: 600px) {
+  /* finger-sized targets; 16px text stops iPhones zooming into a focused box */
+  .btn:where(:not(.card)),
+  .btn.sm,
+  .btn.small,
+  .ui-btn,
+  .main .actionbar .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .field :is(input, select, textarea):where(:not([type='checkbox'], [type='radio'], [type='file'])),
+  :is(.toolbar, .recordbar, form.filters)
+    :is(input, select):where(:not([type='checkbox'], [type='radio'], [type='file'])) {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .page-head .actions {
+    align-self: stretch;
+  }
+  .page-head .actions > .btn,
+  .modal-foot > .btn,
+  .modal-actions > .btn {
+    flex: 1 1 auto;
+  }
+  .recordbar > input[type='search'] {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .recordbar > .btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .ui-btn,
+  .tab,
+  input,
+  select,
+  textarea {
+    transition: none;
+  }
+  .btn:hover {
+    transform: none;
+  }
+}

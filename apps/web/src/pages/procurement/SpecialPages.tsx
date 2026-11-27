@@ -29,6 +29,7 @@ import { V40Body } from './V40Body';
 import { NettingButton } from '../finance/Netting';
 import '../finance/finance-v40.css';
 import { SettleBillsModal } from '../finance/SettleBills';
+import { ReasonBox, UndoAllocationsButton } from '../finance/UndoWindows';
 
 const s = (v: unknown): string =>
   v === null || v === undefined
@@ -1215,6 +1216,13 @@ export function ApPage({ actions }: { actions: ActionSet }) {
         sub="What we owe suppliers: payables, ageing, due calendar and payment proposals."
       >
         <NettingButton />
+        <UndoAllocationsButton
+          side="PAYABLE"
+          onChanged={() => {
+            props.reload();
+            pay.reload();
+          }}
+        />
         {actions.add ? (
           <button type="button" className="btn" onClick={() => setPaying(true)}>
             Pay chosen bills
@@ -1462,6 +1470,8 @@ function ProposalsModal({ actions, onClose, onChanged }: { actions: ActionSet; o
   const toast = useToast();
   const list = useLoad(() => getJson<Row[]>('/fin/ap/proposals'), []);
   const payments = useLoad(() => listDocs('/fin/ap/payments', { status: 'Approved', size: 50 }), []);
+  const made = useLoad(() => listDocs('/fin/ap/payments', { status: 'Posted', size: 50 }), []);
+  const [cancelling, setCancelling] = useState<Doc | null>(null);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const rows = Array.isArray(list.data) ? list.data : [];
@@ -1469,6 +1479,7 @@ function ProposalsModal({ actions, onClose, onChanged }: { actions: ActionSet; o
   const reload = (): void => {
     list.reload();
     payments.reload();
+    made.reload();
     onChanged();
   };
   const run = (work: Promise<unknown>, done: string): void => {
@@ -1485,7 +1496,7 @@ function ProposalsModal({ actions, onClose, onChanged }: { actions: ActionSet; o
   return (
     <Modal
       title="Payment proposals"
-      sub="1. Submit for approval. 2. After approval, make the payment. 3. Record it with the bank account used."
+      sub="1. Submit for approval. 2. After approval, make the payment. 3. Record it with the bank account used. A recorded payment can be cancelled below."
       onClose={onClose}
       footer={
         <button type="button" className="btn" onClick={onClose}>
@@ -1493,7 +1504,7 @@ function ProposalsModal({ actions, onClose, onChanged }: { actions: ActionSet; o
         </button>
       }
     >
-      <ErrorBox message={msg || list.error || payments.error} />
+      <ErrorBox message={msg || list.error || payments.error || made.error} />
       <div className="table-wrap proposal-list">
         <table aria-label="Payment proposals">
           <thead>
@@ -1594,6 +1605,59 @@ function ProposalsModal({ actions, onClose, onChanged }: { actions: ActionSet; o
           </tbody>
         </table>
       </div>
+      <h3>Payments recorded</h3>
+      <div className="table-wrap">
+        <table aria-label="Payments recorded">
+          <thead>
+            <tr>
+              <th>Payment</th>
+              <th>Supplier</th>
+              <th>Amount</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {(made.data?.rows ?? []).length === 0 && !made.loading ? <Empty cols={4}>No payment recorded yet.</Empty> : null}
+            {(made.data?.rows ?? []).map((p) => (
+              <tr key={p.id}>
+                <td>{s(p.number)}</td>
+                <td>{s(p.supplierName)}</td>
+                <td>{inrExact(s(p.amount))}</td>
+                <td>
+                  {actions.cancel ? (
+                    <button
+                      type="button"
+                      className="btn sm danger"
+                      disabled={busy}
+                      aria-label={`Cancel ${s(p.number)}`}
+                      onClick={() => {
+                        setMsg('');
+                        setCancelling(p);
+                      }}
+                    >
+                      Cancel payment
+                    </button>
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {cancelling ? (
+        <ReasonBox
+          key={cancelling.id}
+          question={`Why cancel ${s(cancelling.number)}?`}
+          confirm="Confirm cancel"
+          busy={busy}
+          onClose={() => setCancelling(null)}
+          onConfirm={(reason) => {
+            const p = cancelling;
+            setCancelling(null);
+            run(verb('/fin/ap/payments', p.id, 'cancel', { reason }, Number(p.version)), `${s(p.number)} cancelled: its bills are open again.`);
+          }}
+        />
+      ) : null}
     </Modal>
   );
 }

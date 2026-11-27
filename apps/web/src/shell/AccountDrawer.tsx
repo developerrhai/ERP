@@ -79,9 +79,8 @@ export function AccountDrawer({ user, onClose }: { user: User; onClose: () => vo
       <div className="drawer-actions">
         <a
           href="/account/security"
-          className="btn"
+          className="btn x-ta-center x-text-decoration-none"
           onClick={onClose}
-          style={{ textAlign: 'center', textDecoration: 'none' }}
         >
           Security & Devices
         </a>

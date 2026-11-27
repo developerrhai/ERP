@@ -109,7 +109,7 @@ export function RecordStrip(p: StripProps) {
   };
   return (
     <div className="recordbar" role="group" aria-label="Record actions">
-      <b style={{ fontSize: 11 }}>Record:</b>
+      <b className="recordbar-label">Record:</b>
       <select
         aria-label="Select Record"
         value={row?.id ?? ''}

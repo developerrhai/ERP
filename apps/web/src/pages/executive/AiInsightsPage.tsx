@@ -113,7 +113,7 @@ export function AiInsightsPage() {
 
       <div className="ex-two-even">
         <div className="ex-card ex-card-pad">
-          <h3 style={{ margin: 0, fontSize: 13, marginBottom: 8 }}>20-Point Business Trend + Forecast</h3>
+          <h3 className="x-m-0 x-fs-13px x-mb-8px">20-Point Business Trend + Forecast</h3>
           <LineChart
             label={trendLabel}
             labels={trendItems.map((t) => t.label)}
@@ -121,7 +121,7 @@ export function AiInsightsPage() {
           />
         </div>
         <div className="ex-card ex-card-pad">
-          <h3 style={{ margin: 0, fontSize: 13 }}>Cross-Module Risk</h3>
+          <h3 className="x-m-0 x-fs-13px">Cross-Module Risk</h3>
           <BarChart bars={bars} empty={loaded ? 'No risk findings.' : 'Loading…'} />
         </div>
       </div>
@@ -158,14 +158,14 @@ export function AiInsightsPage() {
 
       <div className="ex-two-even">
         <div className="ex-card ex-card-pad">
-          <h3 style={{ margin: '0 0 10px', fontSize: 13 }}>Enterprise AI Copilot</h3>
-          <p style={{ fontSize: 11, color: 'var(--muted)', margin: '0 0 8px', lineHeight: 1.5 }}>
+          <h3 className="x-m-0-0-10px x-fs-13px">Enterprise AI Copilot</h3>
+          <p className="x-fs-11px x-c-muted x-m-0-0-8px x-lh-1_5">
             Ask cross-functional questions about sales, purchase, inventory, production, finance and compliance.
           </p>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          <div className="x-d-flex x-gap-6px x-mb-8px">
             <input
               type="text"
-              style={{ flex: 1, minWidth: 0, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--line)', fontSize: 12 }}
+              className="x-flex-1 x-minw-0 x-p-7px-10px x-r-8px x-bd-1px-solid-line x-fs-12px"
               placeholder="Ask anything about sales, purchase, inventory, finance, production, HR, risk or automation…"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
@@ -189,13 +189,13 @@ export function AiInsightsPage() {
               Ask AI
             </button>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6, fontSize: 10, color: 'var(--muted)' }}>
+          <div className="x-d-flex x-jc-space-between x-ai-center x-wrap-wrap x-gap-6px x-fs-11px x-c-muted">
             <span>🟢 Ready • Ask a cross-functional question across all ERP data</span>
             <Link className="btn sm" to="/m/project-global-history">Project History</Link>
           </div>
         </div>
         <div className="ex-card ex-card-pad">
-          <h3 style={{ margin: '0 0 10px', fontSize: 13 }}>AI Governance Controls</h3>
+          <h3 className="x-m-0-0-10px x-fs-13px">AI Governance Controls</h3>
           <div className="detail-grid">
             <div className="detail"><small>Role Permission</small><b>Enforced</b></div>
             <div className="detail"><small>Human Approval</small><b>Required for write actions</b></div>

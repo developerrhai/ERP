@@ -486,11 +486,10 @@ function Input({
     );
   else if (f.type === 'project')
     control = (
-      <div style={{ display: 'flex', gap: 6 }}>
+      <div className="doc-project-row">
         <input
           {...common}
           type="text"
-          style={{ flex: 1 }}
           placeholder="e.g. PRJ-2026-001"
           value={value}
           onChange={(e) => onChange(e.target.value.toUpperCase())}

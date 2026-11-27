@@ -95,7 +95,7 @@ export function JournalsPage({ actions }: { actions: ActionSet }) {
         detailExtra={(r) => <JournalLines id={r.id} />}
         fallback={
           <>
-            <div className="recordbar" style={{ marginBottom: 16 }}>
+            <div className="recordbar journal-toolbar">
               <input
                 type="search"
                 placeholder="Search number, narration, reference…"
@@ -128,7 +128,7 @@ export function JournalsPage({ actions }: { actions: ActionSet }) {
                     <th scope="col">Date</th>
                     <th scope="col">Type</th>
                     <th scope="col">Narration</th>
-                    <th scope="col" style={{ textAlign: 'right' }}>
+                    <th scope="col" className="text-right">
                       Amount
                     </th>
                     <th scope="col">Status</th>
@@ -144,7 +144,7 @@ export function JournalsPage({ actions }: { actions: ActionSet }) {
                       <td>{dmy(j.docDate)}</td>
                       <td>{j.voucherType}</td>
                       <td>{j.narration ?? '—'}</td>
-                      <td style={{ textAlign: 'right' }}>{inr(j.totalDebit)}</td>
+                      <td className="text-right">{inr(j.totalDebit)}</td>
                       <td>
                         <Pill tone={j.status === 'Draft' ? j.postingStatus : j.status}>
                           {j.status === 'Draft'
@@ -476,14 +476,14 @@ function JournalForm({
                       ))}
                     </select>
                     {l.cur !== 'INR' ? (
-                      <div>
+                      <div className="journal-fx">
                         <input
                           aria-label={`Line ${i + 1} foreign amount`}
                           inputMode="decimal"
                           placeholder={`${l.cur} amount`}
                           value={l.fc}
                           onChange={(e) => setLine(i, { fc: e.target.value })}
-                          style={{ width: 110 }}
+                          className="journal-fx-amount"
                         />
                         <input
                           aria-label={`Line ${i + 1} rate`}
@@ -491,7 +491,7 @@ function JournalForm({
                           placeholder="Rate"
                           value={l.rate}
                           onChange={(e) => setLine(i, { rate: e.target.value })}
-                          style={{ width: 80 }}
+                          className="journal-fx-rate"
                         />
                         <select
                           aria-label={`Line ${i + 1} side`}
@@ -516,7 +516,7 @@ function JournalForm({
                           credit: e.target.value ? '' : l.credit,
                         })
                       }
-                      style={{ textAlign: 'right' }}
+                      className="text-right"
                     />
                     {err?.fields[`lines.${i}.debit`] ? (
                       <span className="field-error">{err.fields[`lines.${i}.debit`]}</span>
@@ -533,7 +533,7 @@ function JournalForm({
                       onChange={(e) =>
                         setLine(i, { credit: e.target.value, debit: e.target.value ? '' : l.debit })
                       }
-                      style={{ textAlign: 'right' }}
+                      className="text-right"
                     />
                   </td>
                   <td>
@@ -687,10 +687,10 @@ function JournalView({
               <thead>
                 <tr>
                   <th scope="col">Account</th>
-                  <th scope="col" style={{ textAlign: 'right' }}>
+                  <th scope="col" className="text-right">
                     Debit
                   </th>
-                  <th scope="col" style={{ textAlign: 'right' }}>
+                  <th scope="col" className="text-right">
                     Credit
                   </th>
                 </tr>
@@ -701,18 +701,18 @@ function JournalView({
                     <td>
                       {l.accountCode} · {l.accountName}
                     </td>
-                    <td style={{ textAlign: 'right' }}>{amt(l.debit)}</td>
-                    <td style={{ textAlign: 'right' }}>{amt(l.credit)}</td>
+                    <td className="text-right">{amt(l.debit)}</td>
+                    <td className="text-right">{amt(l.credit)}</td>
                   </tr>
                 ))}
                 <tr>
                   <td>
                     <strong>Total</strong>
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <strong>{inr(j.lines.reduce((s, l) => s + Number(l.debit), 0))}</strong>
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="text-right">
                     <strong>{inr(j.lines.reduce((s, l) => s + Number(l.credit), 0))}</strong>
                   </td>
                 </tr>
@@ -739,10 +739,10 @@ function JournalLines({ id }: { id: string }) {
           <thead>
             <tr>
               <th scope="col">Account</th>
-              <th scope="col" style={{ textAlign: 'right' }}>
+              <th scope="col" className="text-right">
                 Debit
               </th>
-              <th scope="col" style={{ textAlign: 'right' }}>
+              <th scope="col" className="text-right">
                 Credit
               </th>
             </tr>
@@ -753,18 +753,18 @@ function JournalLines({ id }: { id: string }) {
                 <td>
                   {l.accountCode} · {l.accountName}
                 </td>
-                <td style={{ textAlign: 'right' }}>{amt(l.debit)}</td>
-                <td style={{ textAlign: 'right' }}>{amt(l.credit)}</td>
+                <td className="text-right">{amt(l.debit)}</td>
+                <td className="text-right">{amt(l.credit)}</td>
               </tr>
             ))}
             <tr>
               <td>
                 <strong>Total</strong>
               </td>
-              <td style={{ textAlign: 'right' }}>
+              <td className="text-right">
                 <strong>{inr(sum('debit'))}</strong>
               </td>
-              <td style={{ textAlign: 'right' }}>
+              <td className="text-right">
                 <strong>{inr(sum('credit'))}</strong>
               </td>
             </tr>

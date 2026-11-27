@@ -168,7 +168,7 @@ export function ClCommandPage() {
       <section className="ops-card" aria-label="Blockers">
         <h3>Blockers</h3>
         {(data?.blockers ?? []).map((b) => (
-          <p key={b.invoice_no} className="ops-rag red" style={{ display: 'block' }}>
+          <p key={b.invoice_no} className="ops-rag red x-d-block">
             {b.invoice_no} · {b.contractor}: {b.block_reason}
           </p>
         ))}

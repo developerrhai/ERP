@@ -86,8 +86,8 @@ export function DataTable({
 
   return (
     <div className="card table-wrap bi-table-card">
-      <div className="toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid #e2e8f0' }}>
-        <b style={{ fontSize: 14, color: '#1e293b' }}>{title}</b>
+      <div className="toolbar x-d-flex x-jc-space-between x-ai-center x-p-10px-14px x-bb-1px-solid-line">
+        <b className="x-fs-14px x-c-text">{title}</b>
         {aside}
       </div>
       <div className="table-wrap">

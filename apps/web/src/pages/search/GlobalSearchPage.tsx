@@ -52,9 +52,9 @@ export function GlobalSearchPage() {
           <p className="muted">Search across every permitted ERP record with direct record navigation.</p>
         </div>
       </div>
-      <div className="search-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 320px) 1fr', gap: 14 }}>
+      <div className="search-layout x-d-grid x-cols-minmax-240px-320px-1fr x-gap-14px">
         <form className="card" onSubmit={(e) => void run(e)}>
-          <h3 style={{ marginTop: 0 }}>Search Filters</h3>
+          <h3 className="x-mt-0">Search Filters</h3>
           <div className="field">
             <label htmlFor="gs-q">Search text</label>
             <input id="gs-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Invoice, customer, PO, employee, item..." />
@@ -77,10 +77,10 @@ export function GlobalSearchPage() {
               ))}
             </select>
           </div>
-          <button type="submit" className="btn primary" style={{ width: '100%' }} disabled={busy}>
+          <button type="submit" className="btn primary x-w-100pct" disabled={busy}>
             Search ERP
           </button>
-          <div className="notice" style={{ marginTop: 10 }}>
+          <div className="notice x-mt-10px">
             <b>{hits ? `${hits.length} result(s)` : '0 result(s)'}</b>
             <br />
             Results respect department and role access.
@@ -91,13 +91,13 @@ export function GlobalSearchPage() {
           {hits === null && !error ? <div className="notice">Enter at least 2 characters to search all permitted ERP data.</div> : null}
           {hits && hits.length === 0 ? <div className="notice">No matching ERP records. Try record number, customer, supplier, employee, item, invoice, order, mobile or status.</div> : null}
           {(hits ?? []).map((h) => (
-            <div className="card" key={`${h.pageId}-${h.id}`} style={{ marginBottom: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+            <div className="card x-mb-10px" key={`${h.pageId}-${h.id}`}>
+              <div className="x-d-flex x-jc-space-between x-gap-8px x-wrap-wrap">
                 <div>
-                  <h4 style={{ margin: 0 }}>
+                  <h4 className="x-m-0">
                     {h.label} • {h.number}
                   </h4>
-                  <p className="muted" style={{ margin: '4px 0' }}>
+                  <p className="muted x-m-4px-0">
                     {h.family}
                     {h.status ? ` • ${h.status}` : ''}
                   </p>
@@ -111,7 +111,7 @@ export function GlobalSearchPage() {
                   </button>
                 </div>
               </div>
-              <div className="muted" style={{ fontSize: 12 }}>{h.matched}</div>
+              <div className="muted x-fs-12px">{h.matched}</div>
             </div>
           ))}
         </div>

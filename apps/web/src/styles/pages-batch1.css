@@ -1,0 +1,358 @@
+/* UI polish, batch 1: Sign In, the admin home dashboard and the HR Employee Directory.
+   Built on the tokens in design-system.css; loaded right after it. */
+
+/* ================================================================ Sign In (also dresses Change Password) */
+.login-card {
+  border-radius: 16px;
+}
+.login-head h2 {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.login-head p,
+.auth-row,
+.forgot-text {
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+.auth-tabs {
+  border-radius: var(--radius-card);
+}
+.auth-tab {
+  border-radius: var(--radius-btn);
+  color: var(--muted);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  transition:
+    background-color var(--ease),
+    color var(--ease),
+    box-shadow var(--ease);
+}
+.auth-tab.active {
+  color: var(--primary);
+}
+.login .field {
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.login .field input {
+  min-height: 42px;
+  font-size: var(--fs-lg);
+}
+.login .field .pass input {
+  padding-right: 72px;
+}
+/* centred on the box, whatever its height */
+.showpass {
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: var(--radius-sm);
+  color: var(--secondary);
+  font-weight: 700;
+  transition: background-color var(--ease);
+}
+.auth-link {
+  color: var(--primary);
+  font-weight: 700;
+}
+.auth-submit {
+  min-height: 44px;
+  border-radius: var(--radius-btn);
+  background: var(--primary);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  transition:
+    background-color var(--ease),
+    box-shadow var(--ease),
+    transform var(--ease);
+}
+.auth-alt {
+  min-height: 44px;
+  border-color: var(--line-strong);
+  border-radius: var(--radius-btn);
+  color: var(--secondary);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  transition:
+    background-color var(--ease),
+    border-color var(--ease);
+}
+@media (hover: hover) {
+  .auth-tab:hover:where(:not(.active)) {
+    color: var(--text);
+  }
+  .showpass:hover {
+    background: var(--line);
+  }
+  .auth-link:hover {
+    text-decoration: underline;
+  }
+  .auth-submit:hover:where(:not(:disabled)) {
+    background: var(--primary-hover);
+    box-shadow: 0 10px 20px -8px rgba(29, 78, 216, 0.55);
+    transform: translateY(-1px);
+  }
+  .auth-alt:hover {
+    background: var(--card2);
+    border-color: #94a3b8;
+  }
+}
+.auth-submit:active:where(:not(:disabled)) {
+  transform: translateY(0);
+}
+.msg {
+  border-radius: var(--radius-btn);
+  line-height: 1.5;
+}
+.msg.login-msg {
+  margin-bottom: 1rem;
+}
+/* two-step code box: wide spacing so six digits can be checked at a glance */
+.login .field input.mfa-input {
+  font-size: 1.25rem;
+  letter-spacing: 0.25em;
+  text-align: center;
+}
+.login .field input.mfa-input.mfa-input-recovery {
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+}
+.mfa-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}
+.auth-link.auth-link-muted {
+  color: var(--muted);
+}
+
+/* ================================================================ Admin dashboard */
+/* hero chips were dark blue text on dark blue: unreadable */
+.rd-chips .chip {
+  border-color: rgba(255, 255, 255, 0.32);
+  color: #fff;
+  font-weight: 700;
+}
+.home-page h2 {
+  font-size: var(--fs-xl);
+  font-weight: 800;
+}
+.home-page .rd-card h2 {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+.home-page .rd-chart h2 {
+  margin: 0;
+}
+.rd-card,
+.rd-kpi,
+.work-tile,
+.tile {
+  border-radius: var(--radius-card);
+}
+.work-strip + .work-strip {
+  margin-top: 10px;
+}
+.work-tile {
+  align-content: start;
+}
+.rd-kpi-num,
+.work-num {
+  font-variant-numeric: tabular-nums;
+  line-height: var(--lh-tight);
+}
+.rd-kpi-label,
+.work-label {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+/* keep each count next to its name instead of a screen-width away */
+.rd-legend {
+  max-width: 340px;
+}
+.rd-legend li b {
+  font-variant-numeric: tabular-nums;
+}
+.rd-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ctl-h);
+  border-color: var(--line-strong);
+  border-radius: var(--radius-btn);
+  background: var(--card);
+  color: var(--secondary);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.rd-kpi,
+.work-tile,
+.tile,
+.rd-link {
+  transition:
+    background-color var(--ease),
+    border-color var(--ease),
+    color var(--ease),
+    box-shadow var(--ease),
+    transform var(--ease);
+}
+@media (hover: hover) {
+  .work-tile:hover,
+  .tile:hover,
+  .rd-kpi:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+  }
+  .work-tile:hover:where(:not(.red)),
+  .tile:hover {
+    border-color: var(--primary);
+  }
+  .rd-link:hover {
+    background: var(--primary-subtle);
+  }
+}
+
+/* ================================================================ HR Employee Directory */
+.recordbar.hr-toolbar {
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+}
+.grid2.hr-layout {
+  align-items: start;
+  gap: 16px;
+}
+/* six short columns fit the card, so Mobile and Status are no longer hidden off to the right */
+table.hr-table {
+  min-width: 0;
+}
+.hr-table th,
+.hr-table td {
+  padding: 11px 8px;
+}
+.hr-table th:first-child,
+.hr-table td:first-child {
+  padding-left: 14px;
+}
+.hr-table tbody tr.hr-row {
+  cursor: pointer;
+  transition: background-color var(--ease);
+}
+.hr-table tbody tr.hr-row.is-selected {
+  background-color: var(--info-bg);
+}
+.hr-row.is-selected > td:first-child {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+.card.hr-detail {
+  padding: 16px;
+}
+.hr-detail > h3 {
+  margin-top: 0;
+}
+.hr-detail-body {
+  display: grid;
+  gap: 12px;
+}
+.hr-name {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+.grid2.hr-facts {
+  gap: 8px 16px;
+  font-size: var(--fs-md);
+}
+.hr-vault {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-btn);
+  background: var(--card2);
+  font-size: var(--fs-md);
+  line-height: 1.7;
+}
+.hr-vault-title {
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.hr-reveal {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.hr-reveal-title {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.hr-reveal input {
+  min-height: var(--input-h);
+}
+.hr-revealed {
+  padding: 10px 12px;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-btn);
+  background: #fffbeb;
+  color: var(--warn-fg);
+  font-size: var(--fs-md);
+}
+
+/* ================================================================ Batch 1 on small screens */
+@media (max-width: 1000px) {
+  /* a grid column may shrink below the table's width, so the table scrolls inside its card */
+  .hr-layout > * {
+    min-width: 0;
+  }
+}
+@media (max-width: 600px) {
+  .login .field input,
+  .hr-reveal input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .showpass {
+    min-height: 34px;
+  }
+  /* tighter brand panel so the sign-in card starts higher up */
+  .login .login-left {
+    gap: 12px;
+    padding: 20px 18px;
+  }
+  .login-copy h1 {
+    margin: 8px 0;
+    font-size: 28px;
+  }
+  .login-copy .features {
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .login-copy .feature {
+    padding: 9px 12px;
+  }
+  .rd-legend {
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-tab,
+  .auth-submit,
+  .auth-alt,
+  .showpass,
+  .rd-kpi,
+  .work-tile,
+  .tile,
+  .rd-link,
+  .hr-table tbody tr.hr-row {
+    transition: none;
+  }
+  .auth-submit:hover,
+  .rd-kpi:hover,
+  .work-tile:hover,
+  .tile:hover {
+    transform: none;
+  }
+}

@@ -239,7 +239,7 @@ export function TdsPage({ kind, actions }: { kind: 'tds' | 'tcs'; actions: Actio
             </div>
             {(challans.data ?? []).length > 0 ? (
               <>
-                <h2 style={{ marginTop: 24 }}>Challans</h2>
+                <h2 className="x-mt-24px">Challans</h2>
                 <div className="card table-wrap">
                   <table>
                     <thead>

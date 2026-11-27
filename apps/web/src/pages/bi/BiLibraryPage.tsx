@@ -163,17 +163,17 @@ function Dashboards({ lib, tab }: { lib: Library; tab: string }) {
           ['Widgets', String(rows.reduce((s, r) => s + Number(r.widgets), 0)), 'Across all dashboards'],
         ]}
       />
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '12px 0' }}>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-12px-0">
         <DataTable
           title="Dashboard Library"
           columns={[...base, T('owner', 'Owner'), I('widgets', 'Widgets'), T('shared', 'Shared With'), D('created', 'Created')]}
           rows={rows}
           empty="No dashboards have been created yet."
         />
-        <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Document Actions</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Workspace operations, uploads, and revision controls for dashboards.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Document Actions</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px">Workspace operations, uploads, and revision controls for dashboards.</p>
+          <div className="x-d-flex x-fd-column x-gap-8px">
             <button type="button" className="btn primary" onClick={() => alert('Open Upload Modal: Select dashboard configuration file (.json or .xml)')}>
               Open Upload Modal
             </button>
@@ -184,9 +184,9 @@ function Dashboards({ lib, tab }: { lib: Library; tab: string }) {
               Export Dossier PDF
             </button>
           </div>
-          <div style={{ marginTop: 14, borderTop: '1px solid #e2e8f0', paddingTop: 10 }}>
-            <small style={{ color: '#64748b' }}>Governance Status</small>
-            <div style={{ marginTop: 4, display: 'flex', gap: 6 }}>
+          <div className="x-mt-14px x-bt-1px-solid-line x-pt-10px">
+            <small className="x-c-muted">Governance Status</small>
+            <div className="x-mt-4px x-d-flex x-gap-6px">
               <span className="bi-badge ok">Role-Locked</span>
               <span className="bi-badge ok">Audited</span>
             </div>
@@ -262,7 +262,7 @@ function Reports({ lib, tab }: { lib: Library; tab: string }) {
           ['Schedules', String(lib.schedules.length), 'Scheduled deliveries'],
         ]}
       />
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '12px 0' }}>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-12px-0">
         <DataTable
           title="Report Library"
           columns={[T('code', 'Report ID'), T('name', 'Report Name'), T('category', 'Category'), T('owner', 'Owner'), I('runs', 'Runs')]}
@@ -270,10 +270,10 @@ function Reports({ lib, tab }: { lib: Library; tab: string }) {
           empty="No saved reports yet. Build one in Report Builder."
           aside={<Link to="/m/bi-builder" className="btn sm primary">＋ New Report</Link>}
         />
-        <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Document Actions</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Operational controls, uploads, and revision management for saved reports.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Document Actions</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px">Operational controls, uploads, and revision management for saved reports.</p>
+          <div className="x-d-flex x-fd-column x-gap-8px">
             <button type="button" className="btn primary" onClick={() => alert('Open Upload Modal: Select report template (.rep / .sql)')}>
               Open Upload Modal
             </button>
@@ -287,9 +287,9 @@ function Reports({ lib, tab }: { lib: Library; tab: string }) {
               Download Catalog PDF
             </button>
           </div>
-          <div style={{ marginTop: 14, borderTop: '1px solid #e2e8f0', paddingTop: 10 }}>
-            <small style={{ color: '#64748b' }}>Security Classification</small>
-            <div style={{ marginTop: 4, display: 'flex', gap: 6 }}>
+          <div className="x-mt-14px x-bt-1px-solid-line x-pt-10px">
+            <small className="x-c-muted">Security Classification</small>
+            <div className="x-mt-4px x-d-flex x-gap-6px">
               <span className="bi-badge ok">Controlled</span>
               <span className="bi-badge ok">Encrypted</span>
             </div>
@@ -493,7 +493,7 @@ function Builder({ lib, tab, reload }: { lib: Library; tab: string; reload: () =
         </div>
         <div className="bi-form">
           {cols.map((c) => (
-            <label key={c.key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 400 }}>
+            <label key={c.key} className="x-d-flex x-ai-center x-gap-6px x-fw-400">
               <input
                 type="checkbox"
                 checked={chosen.includes(c.key)}
@@ -520,14 +520,14 @@ function Builder({ lib, tab, reload }: { lib: Library; tab: string; reload: () =
           ['Data Quality', '99.4%', 'Completeness'],
         ]}
       />
-      <div className="bi-two" style={{ margin: '14px 0' }}>
+      <div className="bi-two x-m-14px-0">
         <ChartCard title="Report Query Duration • 20-Point Trend & Forecast" sub="Query latency & cluster execution profile (ms)">
-          <div style={{ height: 200, display: 'flex', alignItems: 'flex-end', gap: 6, padding: '10px 0' }}>
+          <div className="x-h-200px x-d-flex x-ai-flex-end x-gap-6px x-p-10px-0">
             {Array.from({ length: 20 }, (_, i) => {
               const val = 280 + ((i * 37) % 240);
               const isForecast = i >= 15;
               return (
-                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                <div key={i} className="x-flex-1 x-d-flex x-fd-column x-ai-center x-h-100pct x-jc-flex-end">
                   <div
                     style={{
                       width: '100%',
@@ -538,29 +538,29 @@ function Builder({ lib, tab, reload }: { lib: Library; tab: string; reload: () =
                     }}
                     title={`T-${20 - i}: ${val} ms ${isForecast ? '(Forecast)' : ''}`}
                   />
-                  <small style={{ fontSize: 9, color: '#64748b', marginTop: 4 }}>{20 - i}</small>
+                  <small className="x-fs-10px x-c-muted x-mt-4px">{20 - i}</small>
                 </div>
               );
             })}
           </div>
-          <div style={{ display: 'flex', gap: 14, fontSize: 11, color: '#64748b', marginTop: 6, justifyContent: 'center' }}>
-            <span><strong style={{ color: '#2563eb' }}>■</strong> Historical Execution (ms)</span>
-            <span><strong style={{ color: '#10b981' }}>■</strong> Forecast Trend</span>
+          <div className="x-d-flex x-gap-14px x-fs-11px x-c-muted x-mt-6px x-jc-center">
+            <span><strong className="x-c-primary">■</strong> Historical Execution (ms)</span>
+            <span><strong className="x-c-h10b981">■</strong> Forecast Trend</span>
           </div>
         </ChartCard>
         <ChartCard title="Status / Business Distribution">
           <BarChart label="Reports by data source" items={distribution({ columns: [], rows: reports }, 'source')} />
         </ChartCard>
       </div>
-      <div className="card panel" style={{ margin: '14px 0', padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-        <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Analysis Summary</h3>
-        <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
-          <div className="detail"><small style={{ color: '#64748b' }}>Average Runtime</small><b style={{ fontSize: 14 }}>428 ms</b></div>
-          <div className="detail"><small style={{ color: '#64748b' }}>Fastest Query</small><b style={{ fontSize: 14 }}>112 ms</b></div>
-          <div className="detail"><small style={{ color: '#64748b' }}>Slowest Query</small><b style={{ fontSize: 14 }}>690 ms</b></div>
-          <div className="detail"><small style={{ color: '#64748b' }}>Detected Outliers</small><b style={{ fontSize: 14 }}>0</b></div>
-          <div className="detail"><small style={{ color: '#64748b' }}>Trend Direction</small><b style={{ fontSize: 14, color: '#10b981' }}>Optimal</b></div>
-          <div className="detail"><small style={{ color: '#64748b' }}>Data Governance</small><b style={{ fontSize: 14 }}>Compliant</b></div>
+      <div className="card panel x-m-14px-0 x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+        <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Analysis Summary</h3>
+        <div className="detail-grid x-d-grid x-cols-repeat-auto-fit-minmax-130px-1fr x-gap-10px">
+          <div className="detail"><small className="x-c-muted">Average Runtime</small><b className="x-fs-14px">428 ms</b></div>
+          <div className="detail"><small className="x-c-muted">Fastest Query</small><b className="x-fs-14px">112 ms</b></div>
+          <div className="detail"><small className="x-c-muted">Slowest Query</small><b className="x-fs-14px">690 ms</b></div>
+          <div className="detail"><small className="x-c-muted">Detected Outliers</small><b className="x-fs-14px">0</b></div>
+          <div className="detail"><small className="x-c-muted">Trend Direction</small><b className="x-fs-14px x-c-h10b981">Optimal</b></div>
+          <div className="detail"><small className="x-c-muted">Data Governance</small><b className="x-fs-14px">Compliant</b></div>
         </div>
       </div>
       <DataTable
@@ -654,16 +654,16 @@ function Scheduler({ lib, tab, reload }: { lib: Library; tab: string; reload: ()
           ['Data Quality', '100%', 'Verified'],
         ]}
       />
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Monthly Schedule Register Calendar</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Automated scheduled report runs, batch distribution, and stakeholder notifications.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, textAlign: 'center', fontWeight: 600, fontSize: 11, color: '#64748b', marginBottom: 6 }}>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Monthly Schedule Register Calendar</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px">Automated scheduled report runs, batch distribution, and stakeholder notifications.</p>
+          <div className="x-d-grid x-cols-repeat-7-1fr x-gap-4px x-ta-center x-fw-600 x-fs-11px x-c-muted x-mb-6px">
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
               <div key={d}>{d}</div>
             ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+          <div className="x-d-grid x-cols-repeat-7-1fr x-gap-4px">
             {days.map((d, i) => {
               const evt = d ? calItems.find((ci) => ci.day === Number(d)) : null;
               return (
@@ -681,7 +681,7 @@ function Scheduler({ lib, tab, reload }: { lib: Library; tab: string; reload: ()
                 >
                   <b style={{ color: d ? '#1e293b' : '#cbd5e1' }}>{d}</b>
                   {evt ? (
-                    <div style={{ marginTop: 2, background: '#dbeafe', color: '#1e40af', padding: '2px 4px', borderRadius: 4, fontSize: 9, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div className="x-mt-2px x-bg-hdbeafe x-c-h1e40af x-p-2px-4px x-r-6px x-fs-10px x-ov-hidden x-text-overflow-ellipsis x-ws-nowrap">
                       {evt.label}
                     </div>
                   ) : null}
@@ -691,20 +691,20 @@ function Scheduler({ lib, tab, reload }: { lib: Library; tab: string; reload: ()
           </div>
         </div>
 
-        <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Add Schedule Item</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Add Schedule Item</h3>
+          <div className="x-d-flex x-fd-column x-gap-10px">
             <div>
-              <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Date</label>
-              <input type="date" value={calDate} onChange={(e) => setCalDate(e.target.value)} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+              <label className="x-d-block x-fs-11px x-c-muted x-mb-4px">Date</label>
+              <input type="date" value={calDate} onChange={(e) => setCalDate(e.target.value)} className="x-w-100pct x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px x-fs-12px" />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Subject</label>
-              <input value={calSubject} onChange={(e) => setCalSubject(e.target.value)} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+              <label className="x-d-block x-fs-11px x-c-muted x-mb-4px">Subject</label>
+              <input value={calSubject} onChange={(e) => setCalSubject(e.target.value)} className="x-w-100pct x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px x-fs-12px" />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 }}>Owner</label>
-              <input value={calOwner} onChange={(e) => setCalOwner(e.target.value)} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 12 }} />
+              <label className="x-d-block x-fs-11px x-c-muted x-mb-4px">Owner</label>
+              <input value={calOwner} onChange={(e) => setCalOwner(e.target.value)} className="x-w-100pct x-p-6px-8px x-bd-1px-solid-line-strong x-r-6px x-fs-12px" />
             </div>
             <button
               type="button"
@@ -722,7 +722,7 @@ function Scheduler({ lib, tab, reload }: { lib: Library; tab: string; reload: ()
       </div>
       <SchedulesTable lib={lib} title="Schedule Register • Detailed Table" columns={keep ? all.filter((c) => keep.includes(c.key)) : all} />
       {!keep || tab === 'Report Selection' ? (
-        <div className="card bi-table-card" style={{ marginTop: 14 }}>
+        <div className="card bi-table-card x-mt-14px">
           <div className="bi-form">
             <label>
               Report
@@ -750,7 +750,7 @@ function Scheduler({ lib, tab, reload }: { lib: Library; tab: string; reload: ()
               Add schedule
             </button>
           </div>
-          {err ? <p className="bi-err" role="alert" style={{ padding: '0 14px' }}>{err}</p> : null}
+          {err ? <p className="bi-err x-p-0-14px" role="alert">{err}</p> : null}
         </div>
       ) : null}
     </>

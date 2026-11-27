@@ -218,7 +218,7 @@ export function LiveBoardPage() {
           <article key={`${r.unit_id}-${r.department}`} className="panel gate-card" aria-label={`${r.unit_code} ${r.department}`}>
             <h3>{r.department}</h3>
             <p className="muted">{r.unit_code}</p>
-            <p style={{ fontSize: '1.6rem' }}><strong>{r.inside}</strong> / {r.expected}</p>
+            <p className="x-fs-25_6px"><strong>{r.inside}</strong> / {r.expected}</p>
             <div className="progress"><div className="progress-bar" style={{ width: `${Math.min(100, Number(r.pct ?? 0))}%` }} /></div>
             <p className="muted">{r.pct === null ? '—' : `${r.pct} %`} present now</p>
           </article>

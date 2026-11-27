@@ -55,7 +55,7 @@ export function PanelView({
   // If record-scoped panel but no record selected in the register
   if (tab.scope === 'record' && !recId) {
     return (
-      <div className="v9-section" style={{ padding: '32px', textAlign: 'center' }}>
+      <div className="v9-section x-p-32px x-ta-center">
         <p className="muted">Select a record in the register to see its {tab.tab}.</p>
       </div>
     );
@@ -156,7 +156,7 @@ export function PanelView({
 
   if (loading && !panel) {
     return (
-      <p className="muted" role="status" style={{ padding: '24px', textAlign: 'center' }}>
+      <p className="muted x-p-24px x-ta-center" role="status">
         Loading panel…
       </p>
     );
@@ -173,24 +173,18 @@ export function PanelView({
       {panel.notice ? <NoticeSection tone="info" text={panel.notice} /> : null}
 
       <div
-        className="panel-header"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '12px',
-        }}
+        className="panel-header x-d-flex x-jc-space-between x-ai-center x-mb-12px"
       >
         <div>
-          <h2 style={{ fontSize: '16px', margin: 0 }}>{panel.title}</h2>
+          <h2 className="x-fs-16px x-m-0">{panel.title}</h2>
           {panel.subtitle ? (
-            <p className="v9-muted" style={{ margin: '4px 0 0' }}>
+            <p className="v9-muted x-m-4px-0-0">
               {panel.subtitle}
             </p>
           ) : null}
         </div>
         {panel.actions && panel.actions.length > 0 ? (
-          <div className="actions" style={{ display: 'flex', gap: '8px' }}>
+          <div className="actions x-d-flex x-gap-8px">
             {panel.actions.map((a) => (
               <button
                 key={a.key}
@@ -208,8 +202,7 @@ export function PanelView({
       {panel.kpis && panel.kpis.length > 0 ? <KpiRow kpis={panel.kpis} /> : null}
 
       <div
-        className="panel-sections"
-        style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
+        className="panel-sections x-d-flex x-fd-column x-gap-14px"
       >
         {panel.sections.map((section, sIdx) => {
           switch (section.type) {
@@ -293,12 +286,11 @@ export function PanelView({
           aria-modal="true"
           aria-labelledby="confirm-dlg-title"
         >
-          <div className="modal" style={{ maxWidth: '420px', padding: '20px' }}>
+          <div className="modal x-maxw-420px x-p-20px">
             <h3 id="confirm-dlg-title">{confirmDlg.action.label}</h3>
-            <p style={{ margin: '12px 0 20px', fontSize: '13px' }}>{confirmDlg.action.confirm}</p>
+            <p className="x-m-12px-0-20px x-fs-13px">{confirmDlg.action.confirm}</p>
             <div
-              className="actions"
-              style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}
+              className="actions x-d-flex x-jc-flex-end x-gap-8px"
             >
               <button
                 type="button"

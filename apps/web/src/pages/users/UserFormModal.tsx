@@ -340,7 +340,7 @@ export function UserFormModal({
 
           <div className="field">
             <label>Also Works In (Extra Departments)</label>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+            <div className="x-d-flex x-gap-6px x-wrap-wrap x-mt-4px">
               {departments
                 .filter((d) => d !== department)
                 .map((d) => {

@@ -1,0 +1,290 @@
+/* Batch 2: CRM and Finance (Lead register, Sales Pipeline, Journal Entries).
+   The .sv40-* rules are shared by the CRM / Sales registers and the .fv40-* rules by the Finance / Tax registers.
+   Visual properties only. Loaded after design-system.css (see main.tsx). */
+
+/* ================================================================ Filter bar: the same white card as the record bar */
+.toolbar:is(.sv40-toolbar, .fv40-toolbar, .pipeline-toolbar) {
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+.sv40-count,
+.fv40-count {
+  padding-right: 4px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================================================================ Selection bar */
+.sv40-bulk,
+.fv40-bulk {
+  padding: 8px 12px;
+  border-color: var(--line);
+  border-radius: var(--radius-card);
+  background: var(--soft);
+}
+.sv40-bulk span,
+.fv40-bulk span {
+  margin-right: 6px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+/* ================================================================ Figures: CRM tiles and Finance tiles look alike */
+.sv40-kpi,
+.fv40-card {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+.sv40-kpi b,
+.fv40-card b {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  line-height: var(--lh-tight);
+  font-variant-numeric: tabular-nums;
+}
+.sv40-kpi small,
+.fv40-card span {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* ================================================================ Register tables */
+/* wide registers: slimmer side padding, and the button column is only as wide as its buttons need */
+.register-table:is(.sv40-table, .fv40-table) :is(th, td) {
+  padding-inline: 8px;
+}
+.register-table.fv40-table td.row-actions .fv40-wrap {
+  width: max-content;
+  max-width: 252px;
+}
+.register-table.sv40-table td.row-actions .sv40-wrap {
+  width: max-content;
+  max-width: 260px;
+}
+/* numbers, dates and record numbers are read as one piece, so they never break over lines */
+.register-table:is(.sv40-table, .fv40-table) :is(td.num, td.cell-date, td:nth-child(2)),
+.sv40-panel .register-table :is(td.num, td.cell-date, td:first-child),
+.fv40-panel .register-table :is(td.num, td.cell-date, td:first-child) {
+  white-space: nowrap;
+}
+.register-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* the CRM "Detailed Table" and the report panels have no tick-box column, so only their first column may stay pinned */
+.sv40-panel .register-table :is(th, td):nth-child(2),
+.fv40-panel .register-table :is(th, td):nth-child(2) {
+  position: static;
+  box-shadow: none;
+}
+/* room for three or four row buttons on one line instead of a tall stack */
+.sv40-panel .register-table td.row-actions {
+  min-width: 300px;
+}
+.register-table input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.sv40-panel h3,
+.fv40-panel h3 {
+  margin: 16px 0 8px;
+  font-size: var(--fs-lg);
+}
+
+/* ================================================================ CRM lead and opportunity status colours (were all grey) */
+.status.new,
+.status.prospecting,
+.status.qualification,
+.status.proposal {
+  background: var(--info-bg);
+  color: var(--info-fg);
+}
+.status.contacted,
+.status.negotiation {
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+}
+.status.qualified,
+.status.converted,
+.status.won {
+  background: var(--success-bg);
+  color: var(--success-fg);
+}
+.status.lost {
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+}
+.status.unqualified {
+  background: var(--soft);
+  color: var(--text-2);
+}
+
+/* ================================================================ Record bar label and small form rows */
+.recordbar-label {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sv40-doc-pick {
+  display: block;
+  margin: 8px 0;
+}
+.doc-project-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.doc-project-row > input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ================================================================ Sales Pipeline board */
+.tabs.pipeline-tabs {
+  margin-bottom: 12px;
+}
+.toolbar.pipeline-toolbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.pipeline-toolbar input[type='search'] {
+  min-width: 260px;
+}
+.pipeline-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+/* a stage is a tinted lane; its opportunities are white cards lying on it */
+.card.pipeline-column {
+  min-width: 0;
+  padding: 12px;
+  background: var(--soft);
+  box-shadow: none;
+}
+.pipeline-column > h3 {
+  margin: 0;
+  font-size: var(--fs-lg);
+}
+.pipeline-column > h3 small {
+  color: var(--muted);
+  font-weight: 600;
+}
+.pipeline-total {
+  margin: 4px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+.card.pipeline-card {
+  padding: 10px 12px;
+  border-radius: var(--radius-btn);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+  transition:
+    border-color var(--ease),
+    box-shadow var(--ease);
+}
+.card.pipeline-card + .card.pipeline-card {
+  margin-top: 8px;
+}
+.pipeline-card > b {
+  display: block;
+  margin-bottom: 2px;
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+}
+.pipeline-customer {
+  color: var(--muted);
+}
+.pipeline-amount {
+  margin-top: 4px;
+  font-size: var(--fs-md);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.pipeline-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+.pipeline-card-actions select.pipeline-move {
+  min-height: var(--ctl-h-sm);
+  padding: 3px 8px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .card.pipeline-card:hover {
+    border-color: var(--primary-border);
+    box-shadow: var(--shadow-hover);
+  }
+}
+
+/* ================================================================ Journal windows */
+.recordbar.journal-toolbar {
+  margin-bottom: 16px;
+}
+.journal-fx input.journal-fx-amount {
+  width: 110px;
+}
+.journal-fx input.journal-fx-rate {
+  width: 80px;
+}
+
+/* ================================================================ Small screens */
+@media (max-width: 600px) {
+  .pipeline-toolbar input[type='search'],
+  .pipeline-toolbar select {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .pipeline-card-actions > .btn,
+  .pipeline-card-actions > select.pipeline-move {
+    flex: 1 1 0;
+  }
+  .pipeline-card-actions select.pipeline-move {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  /* selection-bar buttons share the width evenly */
+  .sv40-bulk > span,
+  .fv40-bulk > span {
+    flex: 1 1 100%;
+  }
+  .sv40-bulk > .btn,
+  .fv40-bulk > .btn {
+    flex: 1 1 auto;
+  }
+  .sv40-panel .register-table td.row-actions {
+    min-width: 230px;
+  }
+  .register-table.fv40-table td.row-actions .fv40-wrap,
+  .register-table.sv40-table td.row-actions .sv40-wrap {
+    max-width: 230px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.pipeline-card {
+    transition: none;
+  }
+}

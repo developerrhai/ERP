@@ -17,6 +17,7 @@ import { useLoad } from '../../lib/useLoad';
 import { amt, dmy, Empty, ErrorBox, inr, PageHead, todayIso } from './shared';
 import { DateField } from '../../ui/components';
 import { NettingButton } from './Netting';
+import { UndoAllocationsButton } from './UndoWindows';
 
 const fyStart = (): string => {
   const d = new Date();
@@ -96,7 +97,7 @@ export function TrialBalancePage() {
 
 function Groups({ title, groups }: { title: string; groups: Group[] }) {
   return (
-    <div className="card table-wrap" style={{ marginBottom: 16 }}>
+    <div className="card table-wrap x-mb-16px">
       <table>
         <caption style={{ textAlign: 'left', padding: 8, fontWeight: 600 }}>{title}</caption>
         <tbody>
@@ -326,6 +327,7 @@ export function AgeingPage({ side }: { side: 'RECEIVABLE' | 'PAYABLE' }) {
         sub={`What each ${who.toLowerCase()} ${side === 'RECEIVABLE' ? 'owes you' : 'is owed'}, by how late it is.`}
       >
         {fid === 'fin-ar' ? <NettingButton /> : null}
+        {fid === 'fin-ar' ? <UndoAllocationsButton side="RECEIVABLE" /> : null}
         <DateField aria-label="As on" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
       </PageHead>
       <ErrorBox message={error} />

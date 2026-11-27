@@ -118,7 +118,7 @@ function NotificationList() {
 
   return (
     <>
-      <div className="actions" style={{ marginBottom: 10 }}>
+      <div className="actions x-mb-10px">
         <button type="button" className="btn" disabled={!load.data || unread === 0} onClick={() => void markAll()}>
           Mark All Read
         </button>
@@ -131,7 +131,7 @@ function NotificationList() {
       </div>
       {load.error ? <ErrorMessage onReload={load.reload}>{load.error}</ErrorMessage> : null}
       <div className="card panel">
-        <div className="toolbar" style={{ padding: 0, border: 0, marginBottom: 10 }}>
+        <div className="toolbar x-p-0 x-bd-0 x-mb-10px">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search notifications..." aria-label="Search notifications" />
           <select value={sev} onChange={(e) => setSev(e.target.value)} aria-label="Severity">
             <option value="">All Severity</option>
@@ -148,8 +148,8 @@ function NotificationList() {
         <ul className="notif-list page">
           {rows.map((n) => (
             <li key={n.id} className={n.readAt ? 'notif read' : 'notif unread'}>
-              <span aria-hidden="true" style={{ fontSize: 20 }}>{SEV_ICON[n.severity]}</span>
-              <div className="notif-item" style={{ flex: 1 }}>
+              <span aria-hidden="true" className="x-fs-20px">{SEV_ICON[n.severity]}</span>
+              <div className="notif-item x-flex-1">
                 <b>{n.title}</b>
                 {n.body ? <span className="v8-sub">{n.body}</span> : null}
                 <span className="v8-sub">{formatDateTime(n.createdAt)}</span>
@@ -255,7 +255,7 @@ function Preferences() {
           </tbody>
         </table>
       </div>
-      <div className="actions" style={{ marginTop: 12 }}>
+      <div className="actions x-mt-12px">
         <button
           type="button"
           className="btn primary"

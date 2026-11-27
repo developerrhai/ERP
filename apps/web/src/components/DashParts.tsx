@@ -150,7 +150,7 @@ export function BarChart({ data, ariaLabel }: { data: { label: string; count: nu
       role="img"
       aria-label={ariaLabel}
       viewBox={`0 0 420 ${data.length * rowH + 8}`}
-      style={{ width: '100%', maxWidth: 480, height: 'auto', display: 'block' }}
+      className="x-w-100pct x-maxw-480px x-h-auto x-d-block"
     >
       {data.map((d, i) => (
         <g key={d.label} transform={`translate(0 ${i * rowH + 4})`}>

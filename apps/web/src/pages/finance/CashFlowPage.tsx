@@ -25,7 +25,7 @@ function Section({
   first?: { label: string; amount: string };
 }) {
   return (
-    <div className="card table-wrap" style={{ marginBottom: 16 }}>
+    <div className="card table-wrap x-mb-16px">
       <table>
         <caption style={{ textAlign: 'left', padding: 8, fontWeight: 600 }}>{title}</caption>
         <tbody>

@@ -222,34 +222,34 @@ export function CompanyMasterPage({ actions }: { actions: ActionSet }) {
         </p>
       ) : null}
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Company Entity</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>1 Registered</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Sawant Group / RHAI</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Company Entity</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">1 Registered</b>
+          <span className="x-fs-11px x-c-success">Sawant Group / RHAI</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Operating Units</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>3 Plants</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Talwade, Sawardari, Varale</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Operating Units</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">3 Plants</b>
+          <span className="x-fs-11px x-c-primary">Talwade, Sawardari, Varale</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Compliance Score</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>GSTIN &amp; PAN verified</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Compliance Score</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">GSTIN &amp; PAN verified</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>99.8%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Complete profile</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">99.8%</b>
+          <span className="x-fs-11px x-c-success">Complete profile</span>
         </div>
       </div>
 
       {/* Split View: Company Master Register + Validation Controls */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Company Master Register</h3>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Company Master Register</h3>
             <button
               type="button"
               className="btn sm primary"
@@ -280,27 +280,27 @@ export function CompanyMasterPage({ actions }: { actions: ActionSet }) {
           </table>
         </div>
 
-        <div className="card panel" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>Legal compliance, statutory verifications and company entity locks.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+        <div className="card panel x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px x-fs-14px x-c-text">Validation Controls</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px">Legal compliance, statutory verifications and company entity locks.</p>
+          <div className="x-d-flex x-fd-column x-gap-8px x-fs-12px">
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>Unique Company Code:</span>
-              <b style={{ color: '#15803d' }}>Enabled</b>
+              <b className="x-c-success">Enabled</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>GSTIN Format Check:</span>
-              <b style={{ color: '#15803d' }}>Active (15 chars)</b>
+              <b className="x-c-success">Active (15 chars)</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>PAN Linkage:</span>
-              <b style={{ color: '#15803d' }}>Validated</b>
+              <b className="x-c-success">Validated</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0 x-bb-1px-solid-line">
               <span>ROC Filing Status:</span>
-              <b style={{ color: '#15803d' }}>Active Compliant</b>
+              <b className="x-c-success">Active Compliant</b>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+            <div className="x-d-flex x-jc-space-between x-p-4px-0">
               <span>Statutory Currency:</span>
               <b>INR (Default)</b>
             </div>
@@ -355,8 +355,8 @@ export function CompanyMasterPage({ actions }: { actions: ActionSet }) {
       ) : null}
 
       {/* Detailed Table at Bottom with Full Row Actions */}
-      <div className="card table-wrap" style={{ marginTop: 16 }}>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="card table-wrap x-mt-16px">
+        <div className="x-p-10px-14px x-bb-1px-solid-line x-d-flex x-jc-space-between x-ai-center">
           <b>Company Legal Entities • Detailed Table</b>
           <button type="button" className="btn sm" onClick={() => window.print()}>Print Register</button>
         </div>

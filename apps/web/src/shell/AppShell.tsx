@@ -88,20 +88,12 @@ export function AppShell({ user }: { user: User }) {
         <BroadcastBannerHost />
         <Outlet key={epoch} />
         <footer
-          style={{
-            padding: '10px 16px',
-            borderTop: '1px solid var(--line)',
-            fontSize: 12,
-            color: 'var(--muted)',
-            display: 'flex',
-            justifyContent: 'space-between',
-          }}
+          className="x-p-10px-16px x-bt-1px-solid-line x-fs-12px x-c-muted x-d-flex x-jc-space-between"
         >
           <span>{t('app.brandName')}</span>
           <button
             type="button"
-            className="btn"
-            style={{ padding: '2px 8px', fontSize: 12 }}
+            className="btn x-p-2px-8px x-fs-12px"
             onClick={() => setPrivacyOpen(true)}
           >
             {t('dpdp.privacyLink')}

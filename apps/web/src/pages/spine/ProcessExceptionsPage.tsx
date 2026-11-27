@@ -132,11 +132,11 @@ export function ProcessExceptionsPage() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '4px 0 12px' }}>
-        <span className="chip" style={{ background: 'var(--card2, #f1f5f9)', fontWeight: 600 }}>Department: Administration</span>
-        <span className="chip" style={{ background: 'var(--card2, #f1f5f9)', fontWeight: 600 }}>Role: Super User</span>
-        <span className="chip" style={{ background: 'var(--card2, #f1f5f9)', fontWeight: 600 }}>Owner: System Admin</span>
-        <span className="chip rag rag-green" style={{ fontWeight: 700 }}>Approval: Active</span>
+      <div className="x-d-flex x-gap-8px x-wrap-wrap x-m-4px-0-12px">
+        <span className="chip x-bg-card2 x-fw-600">Department: Administration</span>
+        <span className="chip x-bg-card2 x-fw-600">Role: Super User</span>
+        <span className="chip x-bg-card2 x-fw-600">Owner: System Admin</span>
+        <span className="chip rag rag-green x-fw-700">Approval: Active</span>
       </div>
 
       <div className="kpis">
@@ -146,10 +146,10 @@ export function ProcessExceptionsPage() {
         <div className="card kpi"><small>Oldest Open (days)</small><b>{Math.max(0, ...rows.filter((r) => !r.resolved_at).map((r) => r.age_days ?? 0))}</b><small>Since raised</small></div>
       </div>
 
-      <section className="card" aria-label="Exception Register Summary" style={{ marginBottom: 14 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Exception Register</h3>
-          <span className="muted" style={{ fontSize: 11 }}>Active exceptions requiring department action or resolution</span>
+      <section className="card x-mb-14px" aria-label="Exception Register Summary">
+        <div className="x-d-flex x-jc-space-between x-ai-center x-mb-8px x-wrap-wrap x-gap-6px">
+          <h3 className="x-m-0 x-fs-13px x-fw-700">Exception Register</h3>
+          <span className="muted x-fs-11px">Active exceptions requiring department action or resolution</span>
         </div>
         <div className="table-wrap">
           <table className="register-table">
@@ -217,9 +217,9 @@ export function ProcessExceptionsPage() {
       {list.error ? <p role="alert">{list.error}</p> : null}
 
       <section className="card" aria-label="Exception Register Detailed Table">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Exception Register · Detailed Table</h3>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-mb-10px x-wrap-wrap x-gap-6px">
+          <h3 className="x-m-0 x-fs-13px x-fw-700">Exception Register · Detailed Table</h3>
+          <div className="x-d-flex x-gap-6px x-wrap-wrap">
             <button type="button" className="btn sm" onClick={() => toast('Email sent')}>Send Email</button>
             <button type="button" className="btn sm" onClick={() => toast('Exported Word')}>Word</button>
             <button type="button" className="btn sm" onClick={() => toast('Exported Excel')}>Excel</button>

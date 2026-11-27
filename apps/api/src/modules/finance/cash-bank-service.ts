@@ -7,6 +7,7 @@ import type { Db } from '../../core/db/prisma';
 import { prisma } from '../../core/db/prisma';
 import { Errors } from '../../core/http/errors';
 import type { Actor } from './accounts-service';
+import { billSync } from './bill-sync';
 import { FinErrors } from './errors';
 import { D, ZERO, isoDate, money, parseMoney } from './money';
 import type { Dec } from './money';
@@ -169,8 +170,9 @@ export const cashBankService = {
     });
   },
 
-  /** Same as createPayment, inside the caller's transaction (tax challans, expense payments). */
-  async createPaymentIn(tx: Db, input: PaymentInput, actor: Actor) {
+  /** Same as createPayment, inside the caller's transaction (tax challans, expense payments).
+   *  `invoicesByCaller`: the caller marks its invoices paid itself (Accounts Payable). */
+  async createPaymentIn(tx: Db, input: PaymentInput, actor: Actor, opts: { invoicesByCaller?: boolean } = {}) {
     const amount = parseMoney(input.amount, 'amount');
     if (!amount.greaterThan(0))
       throw Errors.validation({ amount: 'Enter an amount greater than 0.' });
@@ -462,7 +464,7 @@ export const cashBankService = {
             }
           }
           for (const p of parts) {
-            await openItemService.allocate(
+            const made = await openItemService.allocate(
               tx,
               {
                 sourceItemId,
@@ -475,6 +477,8 @@ export const cashBankService = {
               },
               actor,
             );
+            if (!opts.invoicesByCaller)
+              await billSync.apply(tx, { allocationId: made.id, sourceItemId, targetItemId: p.itemId, amount: p.amount, date: input.docDate }, actor);
           }
         }
         await recordAudit(
@@ -499,51 +503,62 @@ export const cashBankService = {
   },
 
   async cancelPayment(id: string, version: number, reason: string, actor: Actor) {
-    return prisma.$transaction(
-      async (tx) => {
-        const locked = await tx.$queryRaw<
-          { id: string }[]
-        >`SELECT id FROM payments WHERE id = ${id}::uuid FOR UPDATE`;
-        if (!locked[0]) throw Errors.notFound('Payment not found.');
-        const p = await tx.payment.findUniqueOrThrow({ where: { id } });
-        if (p.version !== version) throw Errors.versionConflict();
-        if (p.status !== 'Posted')
-          throw FinErrors.invalidTransition('This payment is already cancelled.');
-        // undo its allocations first (append-only negative rows), then post the mirror journal
-        // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
-        const allocs = await tx.allocation.findMany({ where: { paymentId: id, reversesId: null } });
-        for (const a of allocs) {
-          if (await tx.allocation.count({ where: { reversesId: a.id } })) continue;
-          await openItemService.reverseAllocation(tx, a.id, actor, isoDate(p.docDate));
-        }
-        const rev = await PostingService.reverse(tx, p.journalId, reason, actor, {
-          reversalDate: isoDate(p.docDate),
-        });
-        await tx.payment.update({
-          where: { id },
-          data: {
-            status: 'Cancelled',
-            reversalJournalId: rev.id,
-            cancelReason: reason,
-            version: { increment: 1 },
-            updatedById: actor.userId,
-          },
-        });
-        await recordAudit(
-          {
-            action: 'PAYMENT_CANCELLED',
-            actorId: actor.userId,
-            targetType: 'Payment',
-            targetId: id,
-            ...(actor.meta ? { meta: actor.meta } : {}),
-            detail: { code: p.code, reason },
-          },
-          tx,
-        );
-        return tx.payment.findUniqueOrThrow({ where: { id } });
+    return prisma.$transaction((tx) => cashBankService.cancelPaymentIn(tx, id, version, reason, actor), {
+      maxWait: 15_000,
+      timeout: 30_000,
+    });
+  },
+
+  /** Same, inside the caller's transaction (Accounts Payable cancelling its own payment). */
+  async cancelPaymentIn(tx: Db, id: string, version: number, reason: string, actor: Actor) {
+    const locked = await tx.$queryRaw<
+      { id: string }[]
+    >`SELECT id FROM payments WHERE id = ${id}::uuid FOR UPDATE`;
+    if (!locked[0]) throw Errors.notFound('Payment not found.');
+    const p = await tx.payment.findUniqueOrThrow({ where: { id } });
+    if (p.version !== version) throw Errors.versionConflict();
+    if (p.status !== 'Posted')
+      throw FinErrors.invalidTransition('This payment is already cancelled.');
+    // a tax challan keeps its deposited TDS / TCS lines, so its payment cannot simply be taken back
+    // unpaginated: at most one challan per payment
+    const challan = await tx.$queryRaw<{ challan_no: string }[]>`SELECT challan_no FROM tax_challans WHERE payment_id = ${id}::uuid LIMIT 1`;
+    if (challan[0]) throw FinErrors.invalidTransition(`This payment records tax challan ${challan[0].challan_no}. It cannot be cancelled.`);
+    // undo its allocations first (append-only negative rows), then post the mirror journal
+    // unpaginated: internal policy/config lookup inside a transaction, small admin-defined table
+    const allocs = await tx.allocation.findMany({ where: { paymentId: id, reversesId: null } });
+    for (const a of allocs) {
+      if (await tx.allocation.count({ where: { reversesId: a.id } })) continue;
+      await openItemService.reverseAllocation(tx, a.id, actor, isoDate(p.docDate));
+      await billSync.release(tx, a.id, reason, actor, isoDate(p.docDate));
+    }
+    const rev = await PostingService.reverse(tx, p.journalId, reason, actor, {
+      reversalDate: isoDate(p.docDate),
+    });
+    // an expense claim paid by this entry is waiting to be paid again
+    await tx.$executeRaw`UPDATE expense_claims SET status = 'Approved', payment_id = NULL, version = version + 1, updated_at = now(), updated_by_id = ${actor.userId}::uuid
+      WHERE payment_id = ${id}::uuid AND status = 'Paid'`;
+    await tx.payment.update({
+      where: { id },
+      data: {
+        status: 'Cancelled',
+        reversalJournalId: rev.id,
+        cancelReason: reason,
+        version: { increment: 1 },
+        updatedById: actor.userId,
       },
-      { maxWait: 15_000, timeout: 30_000 },
+    });
+    await recordAudit(
+      {
+        action: 'PAYMENT_CANCELLED',
+        actorId: actor.userId,
+        targetType: 'Payment',
+        targetId: id,
+        ...(actor.meta ? { meta: actor.meta } : {}),
+        detail: { code: p.code, reason },
+      },
+      tx,
     );
+    return tx.payment.findUniqueOrThrow({ where: { id } });
   },
 
   async listPayments(q: {

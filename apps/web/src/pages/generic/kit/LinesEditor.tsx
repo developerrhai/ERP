@@ -199,34 +199,21 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
   return (
     <div className="v9-section lines-editor">
       <div
-        className="lines-header"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '10px',
-        }}
+        className="lines-header x-d-flex x-jc-space-between x-ai-center x-mb-10px"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <h3 style={{ margin: 0 }}>Document Lines</h3>
+        <div className="x-d-flex x-ai-center x-gap-10px">
+          <h3 className="x-m-0">Document Lines</h3>
           {!isEditable ? (
             <span
-              className="badge"
+              className="badge x-fs-11px x-bg-card2 x-c-muted x-p-2px-8px x-r-6px"
               title="Only a Draft can be edited"
-              style={{
-                fontSize: '10px',
-                background: 'var(--card2)',
-                color: 'var(--muted)',
-                padding: '2px 8px',
-                borderRadius: '6px',
-              }}
             >
               Only a Draft can be edited
             </span>
           ) : null}
         </div>
         {isEditable ? (
-          <div className="actions" style={{ display: 'flex', gap: '8px' }}>
+          <div className="actions x-d-flex x-gap-8px">
             <button type="button" className="btn small" onClick={addRow} disabled={saving}>
               ＋ Add row
             </button>
@@ -245,16 +232,8 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
       {previewError ? <ErrorMessage>{previewError}</ErrorMessage> : null}
       {staleVersion ? (
         <div
-          className="notice bad"
+          className="notice bad x-mb-10px x-p-8px-12px x-r-8px x-bg-hfee2e2 x-c-h991b1b x-fs-11px"
           role="alert"
-          style={{
-            marginBottom: '10px',
-            padding: '8px 12px',
-            borderRadius: '8px',
-            background: '#fee2e2',
-            color: '#991b1b',
-            fontSize: '11px',
-          }}
         >
           Version conflict: This record has been updated elsewhere. Your changes are preserved in
           the grid. Reload to refresh.
@@ -328,7 +307,7 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
                                 <small
                                   className="field-error"
                                   role="alert"
-                                  style={{ color: '#dc2626', fontSize: '9px', display: 'block' }}
+                                  style={{ color: '#b91c1c', fontSize: '9px', display: 'block' }}
                                 >
                                   {cellErr}
                                 </small>
@@ -351,7 +330,7 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
                                 <small
                                   className="field-error"
                                   role="alert"
-                                  style={{ color: '#dc2626', fontSize: '9px', display: 'block' }}
+                                  style={{ color: '#b91c1c', fontSize: '9px', display: 'block' }}
                                 >
                                   {cellErr}
                                 </small>
@@ -383,7 +362,7 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
                                 <small
                                   className="field-error"
                                   role="alert"
-                                  style={{ color: '#dc2626', fontSize: '9px', display: 'block' }}
+                                  style={{ color: '#b91c1c', fontSize: '9px', display: 'block' }}
                                 >
                                   {cellErr}
                                 </small>
@@ -416,8 +395,8 @@ export function LinesEditor({ kind, record, schema, onSaved }: LinesEditorProps)
       {spec.totalsLabels && spec.totalsLabels.length > 0 ? (
         <div className="v9-total" role="region" aria-label="Line totals">
           {spec.totalsLabels.map((tl) => (
-            <div key={tl.key} style={{ textAlign: 'right' }}>
-              <span className="muted" style={{ display: 'block', fontSize: '10px' }}>
+            <div key={tl.key} className="x-ta-right">
+              <span className="muted x-d-block x-fs-11px">
                 {tl.label}
               </span>
               <b>{formatValue(totals[tl.key] ?? 0, tl.format)}</b>

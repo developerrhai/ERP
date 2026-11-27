@@ -26,13 +26,12 @@ export function ChartSection({
         <div>
           {series.length > 1 ? (
             <div
-              className="chart-legend"
-              style={{ display: 'flex', gap: '14px', marginBottom: '10px', fontSize: '10px' }}
+              className="chart-legend x-d-flex x-gap-14px x-mb-10px x-fs-11px"
             >
               {series.map((s, sIdx) => (
                 <span
                   key={s.name}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                  className="x-d-inline-flex x-ai-center x-gap-5px"
                 >
                   <span
                     style={{
@@ -50,21 +49,14 @@ export function ChartSection({
           ) : null}
 
           <div
-            className="v9-funnel"
+            className="v9-funnel x-h-180px x-ai-flex-end x-p-8px-0"
             role="region"
             aria-label={title ?? `${chartType} chart`}
-            style={{ height: '180px', alignItems: 'flex-end', padding: '8px 0' }}
           >
             {labels.map((label, lIdx) => (
               <div key={`${label}-${lIdx}`} className="v9-funnel-col">
                 <div
-                  style={{
-                    display: 'flex',
-                    gap: '3px',
-                    alignItems: 'flex-end',
-                    height: '100%',
-                    justifyContent: 'center',
-                  }}
+                  className="x-d-flex x-gap-3px x-ai-flex-end x-h-100pct x-jc-center"
                 >
                   {series.map((s, sIdx) => {
                     const val = s.data[lIdx] ?? 0;
@@ -86,7 +78,7 @@ export function ChartSection({
                     );
                   })}
                 </div>
-                <small style={{ marginTop: '6px', fontSize: '9px' }}>{label}</small>
+                <small className="x-mt-6px x-fs-10px">{label}</small>
               </div>
             ))}
           </div>

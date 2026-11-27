@@ -8,6 +8,7 @@ import type { Db } from '../../core/db/prisma';
 import { Errors } from '../../core/http/errors';
 import { apService } from '../procurement/ap-service';
 import type { Actor } from './accounts-service';
+import { undoReclaim } from './bill-sync';
 import { D, ZERO, money, parseMoney } from './money';
 import type { Dec } from './money';
 import { openItemService } from './open-items-service';
@@ -212,12 +213,7 @@ export const nettingService = {
               SELECT id::text FROM purchase_invoices WHERE journal_id = ${bill.journal_id}::uuid AND supplier_id = ${supplier.id}::uuid AND status = 'Posted'`;
             if (inv[0]) {
               purchaseInvoice = inv[0].id;
-              await apService.applyPayment(tx, purchaseInvoice, value, { date: input.date, actor });
-              // input tax credit taken back for late payment is claimed again by this settlement: remember it for a cancel
-              const made = await tx.$queryRaw<{ id: string }[]>`
-                SELECT r.id::text FROM itc_reversals r WHERE r.invoice_id = ${purchaseInvoice}::uuid AND r.kind = 'R37_RECLAIM' AND r.created_at = now()
-                   AND NOT EXISTS (SELECT 1 FROM party_adjustment_lines l WHERE l.itc_reclaim_id = r.id) LIMIT 1`;
-              reclaim = made[0]?.id ?? null;
+              reclaim = await apService.applyPayment(tx, purchaseInvoice, value, { date: input.date, actor, reference: allocation.id });
             }
           }
           await tx.$executeRaw`INSERT INTO party_adjustment_lines (adjustment_id, side, open_item_id, allocation_id, sales_invoice_id, purchase_invoice_id, itc_reclaim_id, amount)
@@ -278,18 +274,3 @@ export const nettingService = {
     }, TX);
   },
 };
-
-/** Reverses the credit claimed again by a settlement that is now cancelled (the same steps as cancelling a payment). */
-async function undoReclaim(tx: Db, reclaimId: string, reason: string, actor: Actor, date: string): Promise<void> {
-  const r = (
-    // unpaginated: one row by its id
-    await tx.$queryRaw<{ unit_id: string; invoice_id: string; journal_id: string; cgst: string; sgst: string; igst: string }[]>`
-      SELECT unit_id::text, invoice_id::text, journal_id::text, cgst::text, sgst::text, igst::text FROM itc_reversals WHERE id = ${reclaimId}::uuid`
-  )[0];
-  if (!r) return;
-  const mirror = await PostingService.reverse(tx, r.journal_id, reason, actor, { reversalDate: date });
-  await tx.$executeRaw`INSERT INTO itc_reversals (unit_id, invoice_id, kind, cgst, sgst, igst, event_date, journal_id, created_by_id)
-    VALUES (${r.unit_id}::uuid, ${r.invoice_id}::uuid, 'R37_REVERSE', ${r.cgst}::numeric, ${r.sgst}::numeric, ${r.igst}::numeric, ${date}::date, ${mirror.id}::uuid, ${actor.userId}::uuid)`;
-  const total = money(D(r.cgst).plus(D(r.sgst)).plus(D(r.igst)));
-  await tx.$executeRaw`UPDATE purchase_invoices SET itc_reversed_amount = itc_reversed_amount + ${total}::numeric WHERE id = ${r.invoice_id}::uuid`;
-}

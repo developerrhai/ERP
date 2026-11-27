@@ -65,35 +65,35 @@ export function TaxMasterPage({ actions: _actions }: { actions?: ActionSet }) {
       </div>
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Active Tax Slabs</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{taxes.filter(t => t.status === 'ACTIVE').length} Active Slabs</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>GST, TDS &amp; TCS Ready</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Active Tax Slabs</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{taxes.filter(t => t.status === 'ACTIVE').length} Active Slabs</b>
+          <span className="x-fs-11px x-c-success">GST, TDS &amp; TCS Ready</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>HSN Mappings</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>383 Mapped Items</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>E-Invoice Compliant</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">HSN Mappings</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">383 Mapped Items</b>
+          <span className="x-fs-11px x-c-primary">E-Invoice Compliant</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Statutory Compliance</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>CGST + SGST = IGST Rule</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Statutory Compliance</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">CGST + SGST = IGST Rule</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>99.9%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>No Orphan Tax Codes</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">99.9%</b>
+          <span className="x-fs-11px x-c-success">No Orphan Tax Codes</span>
         </div>
       </div>
 
       {/* Split View: Tax Master Checklist + Compliance Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Tax Master Compliance Checklist</h3>
-            <span className="chip" style={{ background: '#dcfce7', color: '#15803d' }}>Verified Valid</span>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Tax Master Compliance Checklist</h3>
+            <span className="chip x-bg-hdcfce7 x-c-success">Verified Valid</span>
           </div>
           <table className="register-table">
             <thead>
@@ -128,12 +128,12 @@ export function TaxMasterPage({ actions: _actions }: { actions?: ActionSet }) {
           </table>
         </div>
 
-        <div className="card" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Compliance Actions</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+        <div className="card x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Compliance Actions</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             Statutory tax validation tools and official audit documents.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
+          <div className="x-d-flex x-fd-column x-gap-10px x-fs-12px">
             <button
               type="button"
               className="btn sm primary"
@@ -161,19 +161,19 @@ export function TaxMasterPage({ actions: _actions }: { actions?: ActionSet }) {
 
       {/* Detailed Table */}
       <div className="card table-wrap">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 8px 14px' }}>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-p-12px-14px-8px-14px">
+          <div className="x-d-flex x-gap-10px x-ai-center">
             <input
               type="search"
               placeholder="Search tax rate or description…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ width: 240, padding: '6px 10px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6 }}
+              className="x-w-240px x-p-6px-10px x-fs-13px x-bd-1px-solid-line-strong x-r-6px"
             />
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              style={{ padding: '6px 10px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6 }}
+              className="x-p-6px-10px x-fs-13px x-bd-1px-solid-line-strong x-r-6px"
             >
               <option value="">All Types</option>
               <option value="GST">GST</option>
@@ -181,7 +181,7 @@ export function TaxMasterPage({ actions: _actions }: { actions?: ActionSet }) {
               <option value="TCS">TCS</option>
             </select>
           </div>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Showing {filtered.length} tax records</span>
+          <span className="x-fs-12px x-c-muted">Showing {filtered.length} tax records</span>
         </div>
         <table>
           <thead>

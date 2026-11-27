@@ -41,7 +41,7 @@ export function BarsSection({
 
             return (
               <div key={`${r.label}-${idx}`} className="v9-metric-row">
-                <div style={{ flex: 1, paddingRight: '12px' }}>
+                <div className="x-flex-1 x-pr-12px">
                   <span>{r.label}</span>
                   <div className="v9-progress">
                     <span style={{ width: `${pct}%`, background: barBg }} />

@@ -58,7 +58,7 @@ export function AdminRegistryPage() {
           {reg.pages.filter((p) => p.status === 'planned').length} planned
         </p>
       ) : null}
-      <div className="registry-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) 2fr', gap: 16 }}>
+      <div className="registry-grid x-d-grid x-cols-minmax-260px-1fr-2fr x-gap-16px">
         <div className="card" aria-label="Families">
           {[...byFamily.entries()].map(([family, pages]) => (
             <details key={family} open={needle !== ''}>

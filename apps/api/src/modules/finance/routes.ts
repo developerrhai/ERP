@@ -31,7 +31,9 @@ import { notesApproval, notesService } from './notes-service';
 import { nettingService } from './netting-service';
 import { recurringService } from './recurring-service';
 import { taxService } from './tax-service';
+import { undoService } from './undo-service';
 import { isoDate, money } from './money';
+import { billSync } from './bill-sync';
 import { openItemService } from './open-items-service';
 import { PostingService } from './posting-service';
 import { recoService } from './reco-service';
@@ -874,7 +876,8 @@ export function createFinanceRouter(): Router {
       sourceItemId: uuid,
       targetItemId: uuid,
       amount: moneyStr,
-      date: date.default(() => isoDate(new Date())),
+      // today in India: before 05:30 the UTC date is still yesterday
+      date: date.default(() => isoDate(new Date(Date.now() + 330 * 60_000))),
     })
     .strict();
   r.post(
@@ -890,9 +893,12 @@ export function createFinanceRouter(): Router {
       });
       const mine = req.ctx?.unitIds ?? [];
       if (items.length !== 2 || items.some((i) => !mine.includes(i.unitId))) throw Errors.notFound('Bill not found.');
-      const out = await prisma.$transaction((tx) =>
-        openItemService.allocate(tx, { ...b, forPayment: false }, actorOf(req)),
-      );
+      const out = await prisma.$transaction(async (tx) => {
+        const made = await openItemService.allocate(tx, { ...b, forPayment: false }, actorOf(req));
+        // the invoice behind the bill shows what was settled on it
+        await billSync.apply(tx, { ...b, allocationId: made.id }, actorOf(req));
+        return made;
+      });
       res.status(201).json({ data: out });
     }),
   );
@@ -1055,6 +1061,45 @@ export function createFinanceRouter(): Router {
       res.json({ data: rows, meta: meta(total, q.page, q.size) });
     }),
   );
+  // ----- cancelling a Cash / Bank Book entry and undoing an "Allocate" from the screen ------------------------------
+  const entriesQ = z.object({ bankAccountId: uuid }).strict();
+  r.get(
+    '/payments/entries',
+    asyncHandler(async (req, _res, next) => {
+      const u = accessUserOf(requireAuth(req));
+      if ((await can(u, 'fin-bankbook', 'view')) || (await can(u, 'fin-cashbook', 'view'))) return next();
+      throw Errors.forbidden();
+    }),
+    validate({ query: entriesQ }),
+    asyncHandler(async (req, res) => {
+      const q = validated(res, 'query', entriesQ);
+      res.json({ data: await undoService.entries(q.bankAccountId, req.ctx?.unitIds ?? []) });
+    }),
+  );
+  const sideQ = z.object({ side: z.enum(['RECEIVABLE', 'PAYABLE']) }).strict();
+  const ledgerPage = (side: 'RECEIVABLE' | 'PAYABLE'): string => (side === 'RECEIVABLE' ? 'fin-ar' : 'fin-ap');
+  r.get(
+    '/allocations',
+    validate({ query: sideQ }),
+    asyncHandler(async (req, res) => {
+      const q = validated(res, 'query', sideQ);
+      if (!(await can(accessUserOf(requireAuth(req)), ledgerPage(q.side), 'view'))) throw Errors.forbidden();
+      res.json({ data: await undoService.allocations(q.side, req.ctx?.unitIds ?? []) });
+    }),
+  );
+  const undoBody = z.object({ reason: z.string().trim().min(5, 'Enter 5 to 300 characters.').max(300) }).strict();
+  r.post(
+    '/allocations/:id/undo',
+    validate({ params: idParams, body: undoBody }),
+    asyncHandler(async (req, res) => {
+      const b = validated(res, 'body', undoBody);
+      const id = String(req.params.id);
+      // undoing is taking money matching back: it needs the cancel right of the ledger it is in
+      const side = await undoService.sideOf(id, req.ctx?.unitIds ?? []);
+      if (!(await can(accessUserOf(requireAuth(req)), ledgerPage(side), 'cancel'))) throw Errors.forbidden();
+      res.json({ data: await undoService.undo(id, b.reason, actorOf(req)) });
+    }),
+  );
   r.get(
     '/payments/:id',
     requirePageAction('fin-bankbook', 'view'),
@@ -1101,6 +1146,11 @@ export function createFinanceRouter(): Router {
       const id = String(req.params.id);
       const version = parseIfMatch(req.get('if-match'));
       const b = validated(res, 'body', cancelBody);
+      // only an entry of a plant the caller may work in, and a cash entry also needs the Cash Book right
+      const entry = await prisma.payment.findUnique({ where: { id }, select: { unitId: true, mode: true } });
+      if (!entry) throw Errors.notFound('Payment not found.');
+      await unitFromBody(req, entry.unitId);
+      if (entry.mode === 'Cash' && !(await can(accessUserOf(requireAuth(req)), 'fin-cashbook', 'cancel'))) throw Errors.forbidden();
       await runIdempotent(
         req,
         res,
@@ -1108,6 +1158,12 @@ export function createFinanceRouter(): Router {
         `finance:payment-cancel:${id}`,
         [id, version, b.reason],
         async () => {
+          // a payment made from Accounts Payable is cancelled there, so its proposal and invoices change with it
+          // unpaginated: at most one supplier payment per bank payment
+          const own = await prisma.$queryRaw<{ number: string }[]>`
+            SELECT s.number FROM payments p JOIN supplier_payments s ON s.journal_id = p.journal_id
+             WHERE p.id = ${id}::uuid AND s.status = 'Posted' LIMIT 1`;
+          if (own[0]) throw Errors.conflict(`This payment was made from Accounts Payable (${own[0].number}). Cancel it there, so its bills open again.`);
           const p = await cashBankService.cancelPayment(id, version, b.reason, actorOf(req));
           return { ...p, amount: money(p.amount), docDate: isoDate(p.docDate) };
         },

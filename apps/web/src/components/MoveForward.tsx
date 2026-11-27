@@ -239,24 +239,13 @@ export function MoveForwardDialog({
       {submitted && Object.keys(problems).length > 0 && Object.keys(serverFields).length === 0 ? (
         <p
           role="alert"
-          className="error-text"
-          style={{
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: 8,
-            padding: '8px 12px',
-          }}
+          className="error-text x-bg-hfef2f2 x-bd-1px-solid-hfecaca x-r-8px x-p-8px-12px"
         >
           Please fix the highlighted fields
         </p>
       ) : null}
       <div
-        className="mf-grid"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: '12px 18px',
-        }}
+        className="mf-grid x-d-grid x-cols-repeat-auto-fit-minmax-260px-1fr x-gap-12px-18px"
       >
         <div className="field">
           <label htmlFor="mf-from">From Department *</label>

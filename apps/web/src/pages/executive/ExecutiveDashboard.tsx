@@ -93,7 +93,7 @@ export function ExecutiveDashboard({ user }: { user: User }) {
 
   return (
     <div className="ex-page" data-testid="exec-dashboard">
-      <div className="ex-top-toolbar" style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginBottom: '2px' }}>
+      <div className="ex-top-toolbar x-d-flex x-jc-flex-end x-gap-6px x-mb-2px">
         <button className="btn" type="button" onClick={() => window.history.back()} title="Return">← Return</button>
         <button className="btn" type="button" onClick={() => alert('Import records')} title="Import">⇧ Import</button>
         <button className="btn" type="button" onClick={() => alert('Export records')} title="Export">⇩ Export</button>

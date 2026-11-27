@@ -54,36 +54,19 @@ export function PrivacyNoticeModal({ open, onClose, forceOnUnaccepted }: Privacy
 
   return (
     <div
-      className="modal-backdrop"
+      className="modal-backdrop x-pos-fixed x-inset-0 x-bg-rgba-15-23-42-0_6 x-d-grid x-place-items-center x-z-index-1000 x-p-16px"
       role="dialog"
       aria-modal="true"
       aria-labelledby="dpdp-notice-title"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(15, 23, 42, 0.6)',
-        display: 'grid',
-        placeItems: 'center',
-        zIndex: 1000,
-        padding: 16,
-      }}
     >
       <div
-        className="card"
-        style={{
-          background: '#fff',
-          borderRadius: 14,
-          maxWidth: 640,
-          width: '100%',
-          padding: 20,
-          boxShadow: 'var(--shadow)',
-        }}
+        className="card x-bg-card x-r-14px x-maxw-640px x-w-100pct x-p-20px x-box-shadow-shadow"
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-          <h2 id="dpdp-notice-title" style={{ margin: 0, fontSize: 18 }}>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-gap-8px">
+          <h2 id="dpdp-notice-title" className="x-m-0 x-fs-18px">
             {notice.localizedTitle}
           </h2>
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div className="x-d-flex x-gap-4px">
             {(['en', 'hi', 'mr'] as const).map((loc) => (
               <button
                 key={loc}
@@ -96,23 +79,16 @@ export function PrivacyNoticeModal({ open, onClose, forceOnUnaccepted }: Privacy
             ))}
           </div>
         </div>
-        <div style={{ whiteSpace: 'pre-line', marginTop: 12, fontSize: 14, lineHeight: 1.5 }}>
+        <div className="x-ws-pre-line x-mt-12px x-fs-14px x-lh-1_5">
           {notice.localizedTextMd}
         </div>
         <div
-          style={{
-            marginTop: 14,
-            padding: 10,
-            borderRadius: 8,
-            background: 'var(--card2)',
-            border: '1px solid var(--line)',
-            fontSize: 13,
-          }}
+          className="x-mt-14px x-p-10px x-r-8px x-bg-card2 x-bd-1px-solid-line x-fs-13px"
         >
           <strong>{t('dpdp.grievanceOfficer')}:</strong> {notice.grievanceOfficerName} ·{' '}
           {notice.grievanceOfficerEmail} · {notice.grievanceOfficerPhone}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+        <div className="x-d-flex x-jc-flex-end x-gap-8px x-mt-16px">
           {notice.accepted || !forceOnUnaccepted ? (
             <button type="button" className="btn" onClick={onClose}>
               {t('common.close')}

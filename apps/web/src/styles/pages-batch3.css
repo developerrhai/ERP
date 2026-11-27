@@ -1,0 +1,265 @@
+/* Batch 3 onwards: every remaining module (procurement, inventory, plant, quality, maintenance, HR, projects, service,
+   executive, BI, settings). Visual properties only. Loaded after pages-batch2.css (see main.tsx). */
+
+/* ================================================================ Plant / Quality / Maintenance registers
+   (.pv40-*): the same filter bar, selection bar and table rules as CRM (.sv40-*) and Finance (.fv40-*) */
+.toolbar.pv40-toolbar,
+.toolbar:is(.proc-toolbar, .rt-toolbar) {
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+.pv40-count {
+  padding-right: 4px;
+  color: var(--muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.pv40-bulk {
+  gap: 8px;
+  padding: 8px 12px;
+  border-color: var(--line);
+  border-radius: var(--radius-card);
+  background: var(--soft);
+}
+.pv40-bulk > span {
+  margin-right: 6px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.register-table.pv40-table :is(th, td) {
+  padding-inline: 8px;
+}
+.register-table.pv40-table :is(td.num, td.cell-date, td:nth-child(2)),
+.pv40-panel .register-table :is(td.num, td.cell-date, td:first-child) {
+  white-space: nowrap;
+}
+.register-table.pv40-table td.row-actions .pv40-wrap {
+  width: max-content;
+  max-width: 252px;
+}
+.pv40-panel .register-table :is(th, td):nth-child(2) {
+  position: static;
+  box-shadow: none;
+}
+.pv40-panel h3 {
+  margin: 16px 0 8px;
+  font-size: var(--fs-lg);
+}
+
+/* ================================================================ Filter bars that sit on the page, not in a card */
+.main > .toolbar,
+.main > section > .toolbar {
+  padding: 9px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+
+/* ================================================================ Figure tiles: one border, radius and number style */
+.fam-card,
+.pf-card,
+.ops-stat,
+.rt-card,
+.ex-metric {
+  border-radius: var(--radius-card);
+}
+.fam-card {
+  padding: 10px 14px;
+  border-color: var(--line);
+  background: var(--card);
+}
+.fam-card span,
+.ex-metric small,
+.pf-card small {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.fam-card strong,
+.ops-stat b,
+.rt-card .rt-num {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  line-height: var(--lh-tight);
+  font-variant-numeric: tabular-nums;
+}
+.ex-metric b,
+.pf-stat b,
+.rd-kpi-num {
+  font-variant-numeric: tabular-nums;
+}
+.sv40-card,
+.ps-card,
+.ops-card,
+.ex-card {
+  border-radius: var(--radius-card);
+}
+.sv40-card.on {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+/* ================================================================ Plain buttons that no stylesheet had dressed */
+:where(.main, .modal) :where(button:not([class])) {
+  min-height: var(--ctl-h-sm);
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-btn);
+  background: var(--card);
+  color: var(--secondary);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+:where(.main, .modal) :where(button:not([class]):disabled) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ================================================================ Cells and links */
+/* a table cell stays a table cell, otherwise its row lines break */
+td:is(.actions, .row-actions, .sticky-actions) {
+  display: table-cell;
+}
+td.actions > .btn {
+  margin: 2px 4px 2px 0;
+}
+
+/* ================================================================ Small screens */
+@media (max-width: 600px) {
+  .register-table.pv40-table td.row-actions .pv40-wrap {
+    max-width: 230px;
+  }
+  .pv40-bulk > span {
+    flex: 1 1 100%;
+  }
+  .pv40-bulk > .btn {
+    flex: 1 1 auto;
+  }
+  :where(.main, .modal) :where(button:not([class])) {
+    min-height: 44px;
+  }
+}
+
+/* ================================================================ Cards that lost their own colours
+   (page stylesheets load before app.css, so the plain .card rule painted these white: white text on white) */
+.card.pf-hero {
+  padding: 16px;
+  border: 0;
+  background: linear-gradient(135deg, #0f3d5e, #0f766e);
+  color: #fff;
+}
+.card.pf-hero h1 {
+  color: #fff;
+}
+.card.pf-cycle {
+  padding: 10px 14px;
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+.card.rt-note {
+  background: var(--info-bg);
+}
+/* text never touches the edge of a card; zero specificity, so any card that sets its own padding keeps it */
+:where(
+  .card:not(.table-wrap):has(> h2, > h3, > h4, > p, > strong),
+  .card.work-note,
+  p.card,
+  form.card
+) {
+  padding: 12px 14px;
+}
+
+/* ================================================================ Pages written with utility classes
+   Their buttons had no reset, so they showed the browser's grey bevel. Zero specificity: utility classes still win. */
+:where(.main, .modal)
+  :where(
+    button[class*='px-'],
+    button[class*='py-'],
+    button[class*='w-full'],
+    button[class*='text-']
+  ):where(:not(.btn, .tab)) {
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+:where(.main, .modal)
+  :where(button[class*='px-']):where(
+    :not(.btn, .tab, [class*='bg-'], [class*='border-b'], [class*='w-full'])
+  ) {
+  border-color: var(--line-strong);
+  background: var(--card);
+}
+/* their filled buttons take the same corner and weight as every other button */
+.main button[class*='bg-'][class*='px-']:not(.btn, [class*='min-h-']) {
+  border-radius: var(--radius-btn);
+  font-weight: 700;
+  transition:
+    background-color var(--ease),
+    filter var(--ease);
+}
+@media (hover: hover) {
+  .main button[class*='bg-'][class*='px-']:not(.btn):hover:not(:disabled) {
+    filter: brightness(0.95);
+  }
+}
+/* light grey text was too faint to read on white */
+.main .text-slate-400 {
+  color: #64748b;
+}
+.main :is(.bg-slate-800, .bg-slate-900) .text-slate-400 {
+  color: #94a3b8;
+}
+
+/* ================================================================ Phones: nothing pushes the page sideways */
+@media (max-width: 600px) {
+  .main .flex.gap-2,
+  .main .flex.gap-3 {
+    flex-wrap: wrap;
+  }
+  .main .btn {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
+/* white boxes inside the dark order banner keep dark text */
+.order-identity .card {
+  color: var(--text);
+}
+.order-identity .card .muted {
+  color: var(--muted);
+}
+.main .text-gray-400 {
+  color: #64748b;
+}
+
+/* ================================================================ Phones: tab rows and tables scroll inside their box */
+@media (max-width: 600px) {
+  .main .tabs-row > .btn,
+  .main .tabs > .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .main .tabs,
+  .main .tabs-row {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .main :where(div, section):has(> table) {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .main .x-d-flex.x-ai-center:has(> select) {
+    flex-wrap: wrap;
+  }
+}

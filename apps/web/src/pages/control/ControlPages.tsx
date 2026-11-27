@@ -52,35 +52,35 @@ export function CustomFieldsPage() {
       </div>
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Custom Attributes</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{(list.data ?? []).length || 8} Active Fields</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Page: {pageId}</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Custom Attributes</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{(list.data ?? []).length || 8} Active Fields</b>
+          <span className="x-fs-11px x-c-success">Page: {pageId}</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Field Types</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>7 Supported Types</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Text, Number, Date, Select...</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Field Types</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">7 Supported Types</b>
+          <span className="x-fs-11px x-c-primary">Text, Number, Date, Select...</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>System Ceiling</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>50 Max per Screen</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Safe JSONB Isolation</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">System Ceiling</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">50 Max per Screen</b>
+          <span className="x-fs-11px x-c-success">Safe JSONB Isolation</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Never Alters Accounting Core</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">Never Alters Accounting Core</span>
         </div>
       </div>
 
       {/* Split View: Custom Field Library & Document Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Custom Field Library</h3>
-            <div className="inline-form" style={{ margin: 0 }}>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Custom Field Library</h3>
+            <div className="inline-form x-m-0">
               <PageBox value={pageId} onChange={setPageId} />
             </div>
           </div>
@@ -108,12 +108,12 @@ export function CustomFieldsPage() {
           </table>
         </div>
 
-        <div className="card" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Document Actions</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+        <div className="card x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Document Actions</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             Bulk schema synchronization, upload models and revisions.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
+          <div className="x-d-flex x-fd-column x-gap-10px x-fs-12px">
             <button
               type="button"
               className="btn sm primary"
@@ -139,8 +139,8 @@ export function CustomFieldsPage() {
         </div>
       </div>
 
-      <section className="panel" style={{ margin: '14px 0' }}>
-        <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Add Field to {pageId}</h3>
+      <section className="panel x-m-14px-0">
+        <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Add Field to {pageId}</h3>
         <div className="inline-form">
           <label>Key (e.g. drawing_no)<input value={f.key} onChange={(e) => setF({ ...f, key: e.target.value })} /></label>
           <label>Label<input value={f.label} onChange={(e) => setF({ ...f, label: e.target.value })} /></label>
@@ -153,9 +153,9 @@ export function CustomFieldsPage() {
 
       {list.error ? <p role="alert">{list.error}</p> : null}
       <div className="card table-wrap">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 6px 14px' }}>
-          <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Custom Fields Detailed Table</h3>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Configure visibility across table, search filter, PDF &amp; Excel</span>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-p-12px-14px-6px-14px">
+          <h3 className="x-m-0 x-fs-14px x-c-text">Custom Fields Detailed Table</h3>
+          <span className="x-fs-12px x-c-muted">Configure visibility across table, search filter, PDF &amp; Excel</span>
         </div>
         <table className="register-table"><thead><tr><th>Key</th><th>Label</th><th>Type</th><th>Required</th><th>List</th><th>Filter</th><th>PDF</th><th>Excel</th><th>Active</th></tr></thead><tbody>
           {(list.data ?? []).map((d) => (
@@ -193,35 +193,35 @@ export function FormRulesPage() {
       </div>
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Active Form Rules</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{(list.data ?? []).length || 14} Dynamic Rules</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Enforced on Server &amp; Client</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Active Form Rules</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{(list.data ?? []).length || 14} Dynamic Rules</b>
+          <span className="x-fs-11px x-c-success">Enforced on Server &amp; Client</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Enforcement Effects</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>3 Modes</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>REQUIRED, READONLY, HIDDEN</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Enforcement Effects</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">3 Modes</b>
+          <span className="x-fs-11px x-c-primary">REQUIRED, READONLY, HIDDEN</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Role Scope</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{(roles.data ?? []).length || 10} User Roles</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Granular per-role rules</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Role Scope</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{(roles.data ?? []).length || 10} User Roles</b>
+          <span className="x-fs-11px x-c-success">Granular per-role rules</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Zero Form Rule Conflicts</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">Zero Form Rule Conflicts</span>
         </div>
       </div>
 
       {/* Split View: Form Designer Table & Validation Controls */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Form Designer Register</h3>
-            <div className="inline-form" style={{ margin: 0 }}>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Form Designer Register</h3>
+            <div className="inline-form x-m-0">
               <PageBox value={pageId} onChange={setPageId} />
             </div>
           </div>
@@ -249,24 +249,23 @@ export function FormRulesPage() {
           </table>
         </div>
 
-        <div className="card" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+        <div className="card x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Validation Controls</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             Form rule safety checks and execution guardrails.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <div className="x-d-flex x-fd-column x-gap-10px x-fs-12px">
+            <label className="x-d-flex x-ai-center x-gap-8px x-cur-pointer">
               <input type="checkbox" defaultChecked />
               <span>Block hiding core statutory and accounting fields</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <label className="x-d-flex x-ai-center x-gap-8px x-cur-pointer">
               <input type="checkbox" defaultChecked />
               <span>Enforce server-side schema verification</span>
             </label>
             <button
               type="button"
-              className="btn sm primary"
-              style={{ marginTop: 8 }}
+              className="btn sm primary x-mt-8px"
               onClick={() => toast('Form Rule Validation passed: All rules valid.')}
             >
               Run Rule Validation
@@ -275,8 +274,8 @@ export function FormRulesPage() {
         </div>
       </div>
 
-      <section className="panel" style={{ margin: '14px 0' }}>
-        <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Add Form Rule</h3>
+      <section className="panel x-m-14px-0">
+        <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Add Form Rule</h3>
         <div className="inline-form">
           <PageBox value={f.pageId} onChange={(v) => setF({ ...f, pageId: v })} />
           <label>Field key<input value={f.fieldKey} onChange={(e) => setF({ ...f, fieldKey: e.target.value })} /></label>
@@ -288,9 +287,9 @@ export function FormRulesPage() {
       </section>
 
       <div className="card table-wrap">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 6px 14px' }}>
-          <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Form Designer Detailed Table</h3>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Manage and remove active conditional formatting rules</span>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-p-12px-14px-6px-14px">
+          <h3 className="x-m-0 x-fs-14px x-c-text">Form Designer Detailed Table</h3>
+          <span className="x-fs-12px x-c-muted">Manage and remove active conditional formatting rules</span>
         </div>
         <table className="register-table"><thead><tr><th>Page</th><th>Field</th><th>Effect</th><th>Role</th><th>Status</th><th /></tr></thead><tbody>
           {(list.data ?? []).map((r) => <tr key={r.id}><td><strong>{r.page_id}</strong></td><td>{r.field_key}</td><td>{r.effect}</td><td>{r.role ?? 'All'}</td><td>{r.status ?? 'All'}</td><td><button type="button" className="btn sm danger" onClick={() => void run(() => controlApi.deleteRule(r.id), 'Rule removed.')}>Remove</button></td></tr>)}
@@ -343,26 +342,26 @@ export function NumberingPage() {
       </div>
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Active Series</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{(list.data ?? []).length || 28} Series</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>PO, SO, MO, DC, INV...</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Active Series</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{(list.data ?? []).length || 28} Series</b>
+          <span className="x-fs-11px x-c-success">PO, SO, MO, DC, INV...</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Max Length Limit</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>16 Characters</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Section 31 GST Standard</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Max Length Limit</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">16 Characters</b>
+          <span className="x-fs-11px x-c-success">Section 31 GST Standard</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Plant Segregation</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>3 Plants</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Talwade, Sawardari, Varale</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Plant Segregation</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">3 Plants</b>
+          <span className="x-fs-11px x-c-primary">Talwade, Sawardari, Varale</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Sequential &amp; No-Gap</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">Sequential &amp; No-Gap</span>
         </div>
       </div>
 
@@ -372,10 +371,10 @@ export function NumberingPage() {
       </div>
 
       {/* Split View: Number Series Register + Validation Controls */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Number Series Master Register</h3>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Number Series Master Register</h3>
             <button
               type="button"
               className="btn sm primary"
@@ -408,28 +407,27 @@ export function NumberingPage() {
           </table>
         </div>
 
-        <div className="card" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Validation Controls</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+        <div className="card x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Validation Controls</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             GST numbering compliance and chronological sequence controls.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <div className="x-d-flex x-fd-column x-gap-10px x-fs-12px">
+            <label className="x-d-flex x-ai-center x-gap-8px x-cur-pointer">
               <input type="checkbox" defaultChecked />
               <span>Strict 16-character length ceiling (GST Rule 46)</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <label className="x-d-flex x-ai-center x-gap-8px x-cur-pointer">
               <input type="checkbox" defaultChecked />
               <span>Block manual sequence gaps and jumps</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <label className="x-d-flex x-ai-center x-gap-8px x-cur-pointer">
               <input type="checkbox" defaultChecked />
               <span>Auto-reset sequence on Financial Year rollover</span>
             </label>
             <button
               type="button"
-              className="btn sm"
-              style={{ marginTop: 8 }}
+              className="btn sm x-mt-8px"
               onClick={() => toast('Number series validation passed: 0 length violations, 0 sequence gaps.')}
             >
               Run Series Validation
@@ -438,8 +436,8 @@ export function NumberingPage() {
         </div>
       </div>
 
-      <section className="panel" style={{ margin: '14px 0' }}>
-        <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Preview &amp; Test Series</h3>
+      <section className="panel x-m-14px-0">
+        <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Preview &amp; Test Series</h3>
         <div className="inline-form">
           <label>Prefix<input value={f.prefix} onChange={(e) => setF({ ...f, prefix: e.target.value })} /></label>
           <label>Digits<input inputMode="numeric" value={f.padding} onChange={(e) => setF({ ...f, padding: e.target.value })} /></label>
@@ -448,13 +446,13 @@ export function NumberingPage() {
           <label className="plant-remember"><input type="checkbox" checked={f.gst} onChange={(e) => setF({ ...f, gst: e.target.checked })} /> GST document</label>
           <button type="button" className="btn primary" onClick={() => void controlApi.previewSeries({ prefix: f.prefix, padding: Number(f.padding), plant: f.plant, fy: f.fy, gst: f.gst }).then(setPv, (e: unknown) => toast(errText(e)))}>Preview</button>
         </div>
-        {pv ? <p className={`rag ${pv.ok ? 'rag-green' : 'rag-red'}`} style={{ marginTop: 10 }}>{pv.preview} · {pv.length} characters{pv.ok ? ' (Compliant with GST 16-char limit)' : ' — too long for a GST document'}</p> : null}
+        {pv ? <p className={`rag ${pv.ok ? 'rag-green' : 'rag-red'} x-mt-10px`}>{pv.preview} · {pv.length} characters{pv.ok ? ' (Compliant with GST 16-char limit)' : ' — too long for a GST document'}</p> : null}
       </section>
 
       <div className="card table-wrap">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 6px 14px' }}>
-          <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Number Series Detailed Table</h3>
-          <span style={{ fontSize: 12, color: '#64748b' }}>All active numbering schemes with plant and sequence status</span>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-p-12px-14px-6px-14px">
+          <h3 className="x-m-0 x-fs-14px x-c-text">Number Series Detailed Table</h3>
+          <span className="x-fs-12px x-c-muted">All active numbering schemes with plant and sequence status</span>
         </div>
         <table className="register-table">
           <thead>
@@ -580,34 +578,34 @@ export function ApiKeysPage() {
       </div>
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Connected Clients</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>6 Connected</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>ERP, Bank, GST &amp; Logistics</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Connected Clients</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">6 Connected</b>
+          <span className="x-fs-11px x-c-success">ERP, Bank, GST &amp; Logistics</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Request Throughput</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>14,280 Req / hr</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Avg Latency 42ms</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Request Throughput</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">14,280 Req / hr</b>
+          <span className="x-fs-11px x-c-primary">Avg Latency 42ms</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Security Level</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>SHA-256 Hashed</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Token never stored plaintext</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Security Level</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">SHA-256 Hashed</b>
+          <span className="x-fs-11px x-c-success">Token never stored plaintext</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>99.98%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Success SLA</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">99.98%</b>
+          <span className="x-fs-11px x-c-success">Success SLA</span>
         </div>
       </div>
 
       {/* Split View: API Clients Status Grid & Recent Sync Activity */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>API Clients Status Grid</h3>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">API Clients Status Grid</h3>
             <button
               type="button"
               className="btn sm"
@@ -654,35 +652,35 @@ export function ApiKeysPage() {
           </table>
         </div>
 
-        <div className="card" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Recent Sync Activity</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+        <div className="card x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Recent Sync Activity</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             Live execution stream of background webhook dispatches.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, borderBottom: '1px solid #f1f5f9' }}>
+          <div className="x-d-flex x-fd-column x-gap-8px x-fs-12px">
+            <div className="x-d-flex x-jc-space-between x-pb-6px x-bb-1px-solid-line">
               <span>POST /api/v1/tax/einvoice</span>
-              <span style={{ color: '#15803d' }}>200 OK · 2m ago</span>
+              <span className="x-c-success">200 OK · 2m ago</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-pb-6px x-bb-1px-solid-line">
               <span>POST /api/v1/notify/whatsapp</span>
-              <span style={{ color: '#15803d' }}>200 OK · 5m ago</span>
+              <span className="x-c-success">200 OK · 5m ago</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-pb-6px x-bb-1px-solid-line">
               <span>GET /api/v1/bank/statement</span>
-              <span style={{ color: '#15803d' }}>200 OK · 14m ago</span>
+              <span className="x-c-success">200 OK · 14m ago</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="x-d-flex x-jc-space-between">
               <span>POST /api/v1/tax/eway</span>
-              <span style={{ color: '#15803d' }}>200 OK · 22m ago</span>
+              <span className="x-c-success">200 OK · 22m ago</span>
             </div>
           </div>
         </div>
       </div>
 
-      <section className="panel" style={{ margin: '14px 0' }}>
-        <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Generate New API Key</h3>
-        {shown ? <p role="status" style={{ padding: '8px 12px', background: '#fef3c7', borderRadius: 6, margin: '8px 0' }}>Copy this key now (it will not be shown again): <code>{shown}</code></p> : null}
+      <section className="panel x-m-14px-0">
+        <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Generate New API Key</h3>
+        {shown ? <p role="status" className="x-p-8px-12px x-bg-hfef3c7 x-r-6px x-m-8px-0">Copy this key now (it will not be shown again): <code>{shown}</code></p> : null}
         <div className="inline-form">
           <label>Client Name<input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Warehouse Scanner App" /></label>
           <button type="button" className="btn primary" onClick={() => void controlApi.addKey({ name, scopes: ['read'] }).then((r) => { setShown(r.key); list.reload(); toast('API Key generated.'); }, (e: unknown) => toast(errText(e)))}>Create Key</button>
@@ -690,9 +688,9 @@ export function ApiKeysPage() {
       </section>
 
       <div className="card table-wrap">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 6px 14px' }}>
-          <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>API Keys Detailed Table</h3>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Active key prefixes and audit timestamps</span>
+        <div className="x-d-flex x-jc-space-between x-ai-center x-p-12px-14px-6px-14px">
+          <h3 className="x-m-0 x-fs-14px x-c-text">API Keys Detailed Table</h3>
+          <span className="x-fs-12px x-c-muted">Active key prefixes and audit timestamps</span>
         </div>
         <table className="register-table"><thead><tr><th>Name</th><th>Prefix</th><th>Created</th><th>Last Used</th><th>Status</th><th>Action</th></tr></thead><tbody>
           {(list.data ?? []).map((k) => <tr key={k.id}><td><strong>{k.name}</strong></td><td><code>{k.prefix}••••••••</code></td><td>{when(k.created_at)}</td><td>{when(k.last_used_at)}</td><td><span className={`status ${k.revoked_at ? 'inactive' : 'active'}`}>{k.revoked_at ? 'Revoked' : 'Active'}</span></td><td>{!k.revoked_at ? <button type="button" className="btn sm danger" onClick={() => void run(() => controlApi.revokeKey(k.id), 'Revoked.')}>Revoke</button> : <span className="v8-sub">Revoked</span>}</td></tr>)}
@@ -711,7 +709,7 @@ export function HealthPage() {
       <div className="page-head"><div><h1>System Health</h1><p className="muted">Database speed, background job queues and the email queue.</p></div></div>
       {h.data ? <p>Database answered in <strong>{h.data.dbMs} ms</strong> · {h.data.emailPending} email(s) waiting · {when(h.data.time)}</p> : null}
       <div className="gate-rail">
-        {Object.entries(cards.data ?? {}).map(([k, v]) => <article key={k} className="panel gate-card"><p className="muted">{k.replace(/([A-Z])/g, ' $1').toLowerCase()}</p><p style={{ fontSize: '1.6rem' }}><strong>{v}</strong></p></article>)}
+        {Object.entries(cards.data ?? {}).map(([k, v]) => <article key={k} className="panel gate-card"><p className="muted">{k.replace(/([A-Z])/g, ' $1').toLowerCase()}</p><p className="x-fs-25_6px"><strong>{v}</strong></p></article>)}
       </div>
       <table className="register-table"><thead><tr><th>Queue</th><th>Waiting</th><th>Failed</th></tr></thead><tbody>
         {(h.data?.queues ?? []).map((q) => <tr key={q.name}><td>{q.name}</td><td>{q.waiting}</td><td><span className={`rag ${q.failed > 0 ? 'rag-red' : 'rag-green'}`}>{q.failed}</span></td></tr>)}

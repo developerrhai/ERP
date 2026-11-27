@@ -97,7 +97,7 @@ export function CommandCenterPage() {
 
   return (
     <div className="ex-page" data-testid="command-center">
-      <section className="ex-hero" style={{ display: 'block' }}>
+      <section className="ex-hero x-d-block">
         <small>Enterprise Control Tower</small>
         <h2>Command Center</h2>
         <p>Live cross-functional action board built from open department work, approvals and handovers.</p>
@@ -132,11 +132,11 @@ export function CommandCenterPage() {
 
       <div className="ex-two-even">
         <div className="ex-card ex-card-pad">
-          <h3 style={{ margin: 0, fontSize: 13 }}>Risk by Business Area</h3>
+          <h3 className="x-m-0 x-fs-13px">Risk by Business Area</h3>
           <BarChart bars={areas} empty={loaded ? 'No open items.' : 'Loading…'} />
         </div>
         <div className="ex-card ex-card-pad">
-          <h3 style={{ margin: '0 0 10px', fontSize: 13 }}>Add Command Item</h3>
+          <h3 className="x-m-0-0-10px x-fs-13px">Add Command Item</h3>
           <div className="ex-form">
             <label>Action / Issue<input placeholder="Example: Review urgent dispatch" value={form.issue} onChange={(e) => setForm({ ...form, issue: e.target.value })} /></label>
             <label>Owner<input value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} /></label>
@@ -145,7 +145,7 @@ export function CommandCenterPage() {
             </label>
             <label>Due Date<input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} /></label>
           </div>
-          <p style={{ fontSize: 11, color: 'var(--muted)' }}>
+          <p className="x-fs-11px x-c-muted">
             Items you add here are saved for your plant and written to the audit trail. Open department work (Move Forward on any document) also appears below.
           </p>
           <button type="button" className="btn primary" disabled={saving} onClick={() => void addItem()}>

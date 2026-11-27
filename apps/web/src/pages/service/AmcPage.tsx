@@ -70,10 +70,10 @@ export function AmcPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: selectedAmc ? '1fr 500px' : '1fr', gap: '1.5rem' }}>
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="x-d-flex x-jc-space-between x-mb-1rem">
+            <div className="x-d-flex x-gap-0_5rem">
               <span className="badge">Total Contracts: {contracts.length}</span>
-              <span className="badge" style={{ background: '#e6f4ea', color: '#137333' }}>
+              <span className="badge x-bg-he6f4ea x-c-success">
                 Active: {contracts.filter((c) => c.status === 'ACTIVE').length}
               </span>
             </div>
@@ -146,19 +146,19 @@ export function AmcPage() {
 
         {/* Contract Schedule & Revenue Recognition Drawer */}
         {selectedAmc && (
-          <div style={{ background: '#ffffff', border: '1px solid #dadce0', borderRadius: '6px', padding: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <div className="x-bg-card x-bd-1px-solid-line-strong x-r-6px x-p-1_25rem">
+            <div className="x-d-flex x-jc-space-between x-mb-1rem">
               <div>
-                <h3 style={{ margin: 0 }}>{selectedAmc.contract_no}</h3>
-                <div style={{ fontSize: '13px', color: '#5f6368' }}>{selectedAmc.customer_name} • {selectedAmc.coverage}</div>
+                <h3 className="x-m-0">{selectedAmc.contract_no}</h3>
+                <div className="x-fs-13px x-c-muted">{selectedAmc.customer_name} • {selectedAmc.coverage}</div>
               </div>
               <button className="btn small" onClick={() => setSelectedAmc(null)}>✕</button>
             </div>
 
             {/* Visit Schedule */}
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div className="x-mb-1_5rem">
               <h4>Visit Schedule ({selectedAmc.visitSchedule?.length || 0} visits)</h4>
-              <div style={{ maxHeight: '160px', overflowY: 'auto' }}>
+              <div className="x-maxh-160px x-ovy-auto">
                 <table className="table" style={{ fontSize: '12px' }}>
                   <thead>
                     <tr>
@@ -183,7 +183,7 @@ export function AmcPage() {
             {/* Revenue Recognition Schedule */}
             <div>
               <h4>Daily Straight-Line Revenue Recognition</h4>
-              <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+              <div className="x-maxh-220px x-ovy-auto">
                 <table className="table" style={{ fontSize: '12px' }}>
                   <thead>
                     <tr>

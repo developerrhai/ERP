@@ -49,35 +49,35 @@ export function BackupRestorePage() {
       </div>
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Active Snapshots</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>14 Snapshots</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Continuous WAL archiving</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Active Snapshots</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">14 Snapshots</b>
+          <span className="x-fs-11px x-c-success">Continuous WAL archiving</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Backup Schedule</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>Daily 02:00 IST</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Automated Cron + Pre-Deploy</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Backup Schedule</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">Daily 02:00 IST</b>
+          <span className="x-fs-11px x-c-primary">Automated Cron + Pre-Deploy</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Recovery Target</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>RPO 5m / RTO 15m</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>High Availability Cluster</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Recovery Target</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">RPO 5m / RTO 15m</b>
+          <span className="x-fs-11px x-c-success">High Availability Cluster</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Checksum Verified</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">Checksum Verified</span>
         </div>
       </div>
 
       {/* Split View: Backup & Restore Workspace + Data Operation Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Backup &amp; Restore Workspace</h3>
-            <div style={{ display: 'flex', gap: 6 }}>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <div className="x-d-flex x-jc-space-between x-ai-center x-mb-12px">
+            <h3 className="x-m-0 x-fs-14px x-c-text">Backup &amp; Restore Workspace</h3>
+            <div className="x-d-flex x-gap-6px">
               <button
                 type="button"
                 className="btn sm primary"
@@ -118,37 +118,37 @@ export function BackupRestorePage() {
           </table>
         </div>
 
-        <div className="card" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Data Operation Summary</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+        <div className="card x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Data Operation Summary</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             Snapshot verification, retention lifecycle and replication status.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, borderBottom: '1px solid #f1f5f9' }}>
+          <div className="x-d-flex x-fd-column x-gap-8px x-fs-12px">
+            <div className="x-d-flex x-jc-space-between x-pb-6px x-bb-1px-solid-line">
               <span>Primary DB Size:</span>
               <strong>1.28 GB</strong>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-pb-6px x-bb-1px-solid-line">
               <span>WAL Retention:</span>
               <strong>7 Days Continuous</strong>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, borderBottom: '1px solid #f1f5f9' }}>
+            <div className="x-d-flex x-jc-space-between x-pb-6px x-bb-1px-solid-line">
               <span>Off-site S3 Glacier:</span>
-              <strong style={{ color: '#15803d' }}>Synced (ap-south-1)</strong>
+              <strong className="x-c-success">Synced (ap-south-1)</strong>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="x-d-flex x-jc-space-between">
               <span>Last Test Drill:</span>
-              <strong style={{ color: '#15803d' }}>Passed (17 Nov 2026)</strong>
+              <strong className="x-c-success">Passed (17 Nov 2026)</strong>
             </div>
           </div>
         </div>
       </div>
 
       {/* Detailed Table */}
-      <div className="card table-wrap" style={{ marginBottom: 18 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 6px 14px' }}>
-          <h3 style={{ margin: 0, fontSize: 14, color: '#1e293b' }}>Database Snapshots Detailed Register</h3>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Point-in-time recovery archives</span>
+      <div className="card table-wrap x-mb-18px">
+        <div className="x-d-flex x-jc-space-between x-ai-center x-p-12px-14px-6px-14px">
+          <h3 className="x-m-0 x-fs-14px x-c-text">Database Snapshots Detailed Register</h3>
+          <span className="x-fs-12px x-c-muted">Point-in-time recovery archives</span>
         </div>
         <table>
           <thead>
@@ -198,17 +198,16 @@ export function BackupRestorePage() {
       </div>
 
       {/* Tabbed / Integrated DPDP & Partition Tools */}
-      <div style={{ marginTop: 24 }}>
+      <div className="x-mt-24px">
         <button
           type="button"
-          className="btn"
-          style={{ marginBottom: 12 }}
+          className="btn x-mb-12px"
           onClick={() => setShowDpdp(!showDpdp)}
         >
           {showDpdp ? '▲ Hide Go-Live Hardening & DPDP Console' : '▼ Show Go-Live Hardening, Cut-Over & DPDP Compliance Tools'}
         </button>
         {showDpdp && (
-          <div style={{ border: '1px solid #cbd5e1', borderRadius: 8, padding: 12, background: '#f8fafc' }}>
+          <div className="x-bd-1px-solid-line-strong x-r-8px x-p-12px x-bg-card2">
             <HardeningPage />
           </div>
         )}

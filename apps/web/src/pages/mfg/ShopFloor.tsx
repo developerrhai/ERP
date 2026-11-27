@@ -54,7 +54,7 @@ function Tablet({ actions }: { actions: ActionSet }) {
   const cards = (list.data?.rows ?? []).filter((r) => s(r.status) !== 'Done');
   return (
     <>
-      <div className="toolbar" style={{ fontSize: 18 }}>
+      <div className="toolbar x-fs-18px">
         <label htmlFor="sf-wc">Work center</label>
         <OptionSelect id="sf-wc" value={wc} options={wcs.data ?? []} onChange={setWc} />
       </div>
@@ -68,7 +68,7 @@ function Tablet({ actions }: { actions: ActionSet }) {
             onChange={setReason}
             blank="Machine stopped: why?"
           />
-          <span style={{ fontSize: 20 }}>
+          <span className="x-fs-20px">
             <Act
               label="Machine stopped"
               primary
@@ -79,7 +79,7 @@ function Tablet({ actions }: { actions: ActionSet }) {
             />
           </span>
           {dt ? (
-            <span style={{ fontSize: 20 }}>
+            <span className="x-fs-20px">
               <Act
                 label="Machine running again"
                 run={() => mpost(`/downtime/${s(dt.id)}/end`)}
@@ -93,11 +93,7 @@ function Tablet({ actions }: { actions: ActionSet }) {
       )}
       {wc ? (
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: 12,
-          }}
+          className="x-d-grid x-cols-repeat-auto-fill-minmax-260px-1fr x-gap-12px"
         >
           {cards.length === 0 && !list.loading ? (
             <p>No open job cards for this work center.</p>
@@ -106,8 +102,7 @@ function Tablet({ actions }: { actions: ActionSet }) {
             <button
               key={s(c.id)}
               type="button"
-              className="card"
-              style={{ padding: 16, textAlign: 'left', fontSize: 18, cursor: 'pointer' }}
+              className="card x-p-16px x-ta-left x-fs-18px x-cur-pointer"
               onClick={() => setOpen(s(c.id))}
             >
               <b>{s(c.orderNumber)}</b>

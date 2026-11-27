@@ -32,47 +32,31 @@ export function CalendarSection({
   return (
     <div className="v9-section calendar-section">
       <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '10px',
-        }}
+        className="x-d-flex x-jc-space-between x-ai-center x-mb-10px"
       >
         {title ? <h3>{title}</h3> : <span />}
-        <b style={{ fontSize: '12px' }}>{month}</b>
+        <b className="x-fs-12px">{month}</b>
       </div>
 
       {days.length === 0 ? (
         <p className="v9-muted">No calendar events for {month}.</p>
       ) : (
         <div
-          className="calendar"
+          className="calendar x-d-grid x-cols-repeat-7-1fr x-gap-4px x-fs-10px"
           role="grid"
           aria-label={title ?? `Calendar for ${month}`}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(7, 1fr)',
-            gap: '4px',
-            fontSize: '9px',
-          }}
         >
           {WEEKDAYS.map((wd) => (
             <div
               key={wd}
-              style={{
-                textAlign: 'center',
-                fontWeight: 'bold',
-                padding: '4px',
-                color: 'var(--muted)',
-              }}
+              className="x-ta-center x-fw-bold x-p-4px x-c-muted"
             >
               {wd}
             </div>
           ))}
 
           {Array.from({ length: startDay }).map((_, i) => (
-            <div key={`empty-${i}`} style={{ minHeight: '48px', opacity: 0.2 }} />
+            <div key={`empty-${i}`} className="x-minh-48px x-opacity-0_2" />
           ))}
 
           {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -92,7 +76,7 @@ export function CalendarSection({
                   background: items.length > 0 ? 'var(--card2)' : 'var(--card)',
                 }}
               >
-                <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>{dayNum}</div>
+                <div className="x-fw-bold x-mb-2px">{dayNum}</div>
                 {items.map((it, itemIdx) => {
                   const bg =
                     it.tone === 'good'

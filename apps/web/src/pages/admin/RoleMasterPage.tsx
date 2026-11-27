@@ -61,12 +61,11 @@ export function RoleMasterPage({
           <h1>Role Master</h1>
           <p>Roles and the authority hierarchy. System roles have locked codes and levels.</p>
         </div>
-        <div className="actions" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div className="actions x-d-flex x-gap-10px x-ai-center">
           <select
-            className="filter-select"
+            className="filter-select x-p-6px-10px x-fs-13px x-r-6px x-bd-1px-solid-line-strong"
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
-            style={{ padding: '6px 10px', fontSize: 13, borderRadius: 6, border: '1px solid #cbd5e1' }}
             aria-label="Department or Hierarchy Filter"
           >
             <option value="ALL">All Departments & Roles</option>
@@ -343,7 +342,7 @@ function AddRoleModal({
           ))}
         </SelectField>
         <div className="field">
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+          <label className="x-d-flex x-ai-center x-gap-8px x-cur-pointer">
             <input
               type="checkbox"
               checked={allUnits}
@@ -468,7 +467,7 @@ function EditRoleModal({
           ) : null}
         </div>
         <div className="field">
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+          <label className="x-d-flex x-ai-center x-gap-8px x-cur-pointer">
             <input
               type="checkbox"
               checked={allUnits}

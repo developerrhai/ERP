@@ -59,7 +59,7 @@ export function WarrantyClaimsPage() {
         sub="Instant serial warranty check with anniversary end-date rules, failure inspection, and back-to-back supplier settlements."
       />
 
-      <div style={{ marginBottom: '0.75rem' }}>
+      <div className="x-mb-0_75rem">
         <button type="button" className="btn" onClick={() => setAddingTerm(true)}>
           + New warranty term
         </button>
@@ -68,16 +68,15 @@ export function WarrantyClaimsPage() {
       {error && <div className="notice error">{error}</div>}
 
       {/* Serial Lookup Tool */}
-      <div className="card" style={{ padding: '1.25rem', marginBottom: '2rem', background: '#f8f9fa', border: '1px solid #dadce0' }}>
-        <h4 style={{ margin: '0 0 0.75rem 0' }}>Equipment Serial Warranty Lookup</h4>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+      <div className="card x-p-1_25rem x-mb-2rem x-bg-card2 x-bd-1px-solid-line-strong">
+        <h4 className="x-m-0-0-0_75rem-0">Equipment Serial Warranty Lookup</h4>
+        <div className="x-d-flex x-gap-0_75rem x-ai-center">
           <input
             type="text"
-            className="input"
+            className="input x-w-280px"
             value={serialQuery}
             onChange={(e) => setSerialQuery(e.target.value)}
             placeholder="Enter Serial Number (e.g. SN-2026-001)"
-            style={{ width: '280px' }}
           />
           <button className="btn primary" onClick={handleCheck}>
             🔍 Verify Warranty Status
@@ -98,8 +97,8 @@ export function WarrantyClaimsPage() {
                 : '#fce8e6',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <strong style={{ fontSize: '15px' }}>
+            <div className="x-d-flex x-jc-space-between x-ai-center x-mb-0_5rem">
+              <strong className="x-fs-14px">
                 Serial: {checkResult.serial} ({checkResult.itemName || 'Equipment'})
               </strong>
               <span
@@ -117,7 +116,7 @@ export function WarrantyClaimsPage() {
             {checkResult.warrantyEnd && (
               <div>Warranty Valid Until: {dmy(checkResult.warrantyEnd)}</div>
             )}
-            <ul style={{ margin: '0.5rem 0 0 1rem', padding: 0, fontSize: '12px' }}>
+            <ul className="x-m-0_5rem-0-0-1rem x-p-0 x-fs-12px">
               {checkResult.reasons.map((r, i) => (
                 <li key={i}>{r}</li>
               ))}

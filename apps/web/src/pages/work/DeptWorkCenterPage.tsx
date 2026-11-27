@@ -110,7 +110,7 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
         </div>
       </div>
 
-      <div className="v39-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}>
+      <div className="v39-metrics x-d-grid x-cols-repeat-6-1fr x-gap-10px">
         <div className="v39-metric danger">
           <div>
             <small>Pending Receipt</small>
@@ -155,7 +155,7 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
         </div>
       </div>
 
-      <div className="v39-quick" style={{ flexWrap: 'wrap', gap: 8 }}>
+      <div className="v39-quick x-wrap-wrap x-gap-8px">
         <b>Quick Actions</b>
         <Link className="btn primary" to={`/m/dept-inbox-${slug}`}>
           Department Inbox
@@ -208,20 +208,20 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
       {error ? <p role="alert">{error}</p> : null}
 
       {/* Department Filter & Movement Controls */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '12px 0 8px 0' }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div className="x-d-flex x-jc-space-between x-ai-center x-m-12px-0-8px-0">
+        <div className="x-d-flex x-gap-8px x-ai-center">
           <select
             value={fromFilter}
             onChange={(e) => setFromFilter(e.target.value)}
             aria-label="Department Filter"
-            style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, border: '1px solid #cbd5e1' }}
+            className="x-p-6px-10px x-fs-12px x-r-6px x-bd-1px-solid-line-strong"
           >
             <option value="">All Departments</option>
             {depts.map((d) => (
               <option key={d.id} value={d.name}>{d.name}</option>
             ))}
           </select>
-          <small style={{ color: '#64748b', fontSize: 11 }}>Show the work sent by one department</small>
+          <small className="x-c-muted x-fs-11px">Show the work sent by one department</small>
         </div>
       </div>
 

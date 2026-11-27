@@ -88,15 +88,15 @@ export function HardeningPage({ initialTab = 'cutover' }: { initialTab?: 'cutove
   };
 
   return (
-    <div className="page-pad" style={{ padding: 16 }}>
-      <div className="page-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+    <div className="page-pad x-p-16px">
+      <div className="page-head x-d-flex x-jc-space-between x-ai-center x-mb-14px">
         <div>
-          <h1 style={{ margin: 0, fontSize: 20 }}>Go-Live Hardening, Cut-Over & DPDP Compliance</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--muted)' }}>
+          <h1 className="x-m-0 x-fs-20px">Go-Live Hardening, Cut-Over & DPDP Compliance</h1>
+          <p className="x-m-4px-0-0 x-fs-13px x-c-muted">
             Opening-balance reconciliation, DPDP Act request register (30-day SLA), and audit partition status.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="x-d-flex x-gap-6px">
           <button type="button" className={`btn ${tab === 'cutover' ? 'primary' : ''}`} onClick={() => setTab('cutover')}>
             {t('cutover.title')}
           </button>
@@ -110,12 +110,12 @@ export function HardeningPage({ initialTab = 'cutover' }: { initialTab?: 'cutove
       </div>
 
       {tab === 'cutover' ? (
-        <div className="card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: 16 }}>{t('cutover.dryRun')}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-            <label style={{ fontSize: 13 }}>
+        <div className="card x-bg-card x-bd-1px-solid-line x-r-12px x-p-16px">
+          <h2 className="x-mt-0 x-fs-16px">{t('cutover.dryRun')}</h2>
+          <div className="x-d-grid x-cols-1fr-1fr x-gap-12px x-mb-12px">
+            <label className="x-fs-13px">
               Dataset *
-              <select value={dataset} onChange={(e) => setDataset(e.target.value as any)} style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }}>
+              <select value={dataset} onChange={(e) => setDataset(e.target.value as any)} className="x-d-block x-w-100pct x-p-8px x-mt-4px">
                 {DATASETS.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -123,14 +123,14 @@ export function HardeningPage({ initialTab = 'cutover' }: { initialTab?: 'cutove
                 ))}
               </select>
             </label>
-            <label style={{ fontSize: 13 }}>
+            <label className="x-fs-13px">
               Legacy Control Total (INR) *
-              <input value={legacyTotal} onChange={(e) => setLegacyTotal(e.target.value)} style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }} />
+              <input value={legacyTotal} onChange={(e) => setLegacyTotal(e.target.value)} className="x-d-block x-w-100pct x-p-8px x-mt-4px" />
             </label>
           </div>
-          <label style={{ fontSize: 13, display: 'block', marginBottom: 10 }}>
+          <label className="x-fs-13px x-d-block x-mb-10px">
             Rows JSON *
-            <textarea rows={3} value={rowsJson} onChange={(e) => setRowsJson(e.target.value)} style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }} />
+            <textarea rows={3} value={rowsJson} onChange={(e) => setRowsJson(e.target.value)} className="x-d-block x-w-100pct x-p-8px x-mt-4px" />
           </label>
           <button type="button" className="btn primary" onClick={() => void runDryRun()}>
             {t('cutover.dryRun')}
@@ -185,41 +185,41 @@ export function HardeningPage({ initialTab = 'cutover' }: { initialTab?: 'cutove
       ) : null}
 
       {tab === 'dpdp' ? (
-        <div className="card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: 16 }}>{t('dpdp.requestRegister')}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
-            <label style={{ fontSize: 13 }}>
+        <div className="card x-bg-card x-bd-1px-solid-line x-r-12px x-p-16px">
+          <h2 className="x-mt-0 x-fs-16px">{t('dpdp.requestRegister')}</h2>
+          <div className="x-d-grid x-cols-1fr-1fr-1fr x-gap-10px x-mb-10px">
+            <label className="x-fs-13px">
               Type
-              <select value={reqType} onChange={(e) => setReqType(e.target.value as any)} style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }}>
+              <select value={reqType} onChange={(e) => setReqType(e.target.value as any)} className="x-d-block x-w-100pct x-p-8px x-mt-4px">
                 <option value="ACCESS">ACCESS</option>
                 <option value="CORRECTION">CORRECTION</option>
                 <option value="ERASURE">ERASURE</option>
               </select>
             </label>
-            <label style={{ fontSize: 13 }}>
+            <label className="x-fs-13px">
               Principal Type
-              <select value={principalType} onChange={(e) => setPrincipalType(e.target.value as any)} style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }}>
+              <select value={principalType} onChange={(e) => setPrincipalType(e.target.value as any)} className="x-d-block x-w-100pct x-p-8px x-mt-4px">
                 <option value="CUSTOMER">CUSTOMER</option>
                 <option value="EMPLOYEE">EMPLOYEE</option>
                 <option value="SUPPLIER">SUPPLIER</option>
                 <option value="CONTACT">CONTACT</option>
               </select>
             </label>
-            <label style={{ fontSize: 13 }}>
+            <label className="x-fs-13px">
               Data Principal Name *
-              <input value={principalName} onChange={(e) => setPrincipalName(e.target.value)} style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }} />
+              <input value={principalName} onChange={(e) => setPrincipalName(e.target.value)} className="x-d-block x-w-100pct x-p-8px x-mt-4px" />
             </label>
           </div>
-          <label style={{ fontSize: 13, display: 'block', marginBottom: 10 }}>
+          <label className="x-fs-13px x-d-block x-mb-10px">
             Request Description *
-            <input value={reqDesc} onChange={(e) => setReqDesc(e.target.value)} style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }} />
+            <input value={reqDesc} onChange={(e) => setReqDesc(e.target.value)} className="x-d-block x-w-100pct x-p-8px x-mt-4px" />
           </label>
           <button type="button" className="btn primary" onClick={() => void submitDpdp()}>
             Log Request (30-Day SLA)
           </button>
 
-          <h3 style={{ marginTop: 18, fontSize: 15 }}>Active Requests ({requests.length})</h3>
-          <ul style={{ fontSize: 13 }}>
+          <h3 className="x-mt-18px x-fs-14px">Active Requests ({requests.length})</h3>
+          <ul className="x-fs-13px">
             {requests.map((r) => (
               <li key={r.id}>
                 <strong>{r.requestNo}</strong> · {r.requestType} · {r.principalName} · {r.status} ({r.daysRemaining}d remaining)
@@ -227,11 +227,11 @@ export function HardeningPage({ initialTab = 'cutover' }: { initialTab?: 'cutove
             ))}
           </ul>
 
-          <h3 style={{ marginTop: 18, fontSize: 15 }}>{t('dpdp.retentionPolicies')}</h3>
+          <h3 className="x-mt-18px x-fs-14px">{t('dpdp.retentionPolicies')}</h3>
           <button type="button" className="btn" onClick={() => void hardeningApi.runRetentionSweep().then(reloadAll)}>
             Run Retention & Anonymisation Sweep
           </button>
-          <ul style={{ fontSize: 13 }}>
+          <ul className="x-fs-13px">
             {policies.map((p) => (
               <li key={p.id}>
                 <strong>{p.dataCategory}</strong>: {p.retentionDays} days — {p.legalBasis}
@@ -242,9 +242,9 @@ export function HardeningPage({ initialTab = 'cutover' }: { initialTab?: 'cutove
       ) : null}
 
       {tab === 'partitions' ? (
-        <div className="card" style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 12, padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: 16 }}>PostgreSQL Monthly Audit Log Partitions</h2>
-          <p style={{ fontSize: 13 }}>
+        <div className="card x-bg-card x-bd-1px-solid-line x-r-12px x-p-16px">
+          <h2 className="x-mt-0 x-fs-16px">PostgreSQL Monthly Audit Log Partitions</h2>
+          <p className="x-fs-13px">
             DEFAULT Partition Rows: <strong>{partitions.defaultRows}</strong> (must be 0). Total Partitions:{' '}
             <strong>{partitions.partitions.length}</strong>
           </p>
@@ -255,7 +255,7 @@ export function HardeningPage({ initialTab = 'cutover' }: { initialTab?: 'cutove
           >
             Pre-Create Next 3 Months Partitions
           </button>
-          <ul style={{ fontSize: 13, marginTop: 12 }}>
+          <ul className="x-fs-13px x-mt-12px">
             {partitions.partitions.map((p) => (
               <li key={p.partitionName}>
                 <code>{p.partitionName}</code> — {p.rangeBound}

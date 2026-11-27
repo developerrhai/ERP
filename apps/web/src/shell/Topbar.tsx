@@ -61,10 +61,9 @@ export function Topbar({ user, sidebarOpen, onToggleSidebar, onOpenAccount, onOp
         <HealthPill />
         <button
           type="button"
-          className="btn"
+          className="btn x-p-4px-8px"
           aria-label={`${t('app.language')}: ${currentLang === 'en' ? 'English' : 'हिन्दी'}`}
           onClick={() => void switchLang(currentLang === 'en' ? 'hi' : 'en')}
-          style={{ padding: '4px 8px' }}
         >
           {currentLang === 'en' ? 'EN / हिं' : 'हिं / EN'}
         </button>

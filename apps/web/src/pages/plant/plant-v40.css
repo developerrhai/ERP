@@ -6,7 +6,6 @@
 .pv40-bulk { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 10px; border: 1px solid var(--line, #dde); border-radius: 8px; background: var(--soft, #f6f7fb); }
 .pv40-table th, .pv40-table td { white-space: nowrap; }
 .pv40-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.pv40-table .row-actions { display: flex; gap: 4px; flex-wrap: nowrap; }
 .pv40-table tr.selected td { background: var(--row-selected, #eef3ff); }
 .pv40-pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
 .pv40-panel h3 { margin: 12px 0 6px; font-size: 14px; }

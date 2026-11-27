@@ -112,7 +112,7 @@ export function NotificationPrefsPage() {
   if (loading) return <p className="v8-sub">Loading notification preferences…</p>;
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
+    <div className="x-d-grid x-gap-16px">
       <div className="page-head">
         <div>
           <h1>Notification Preferences</h1>
@@ -125,8 +125,8 @@ export function NotificationPrefsPage() {
 
       {/* Soft-ask card (never auto-prompts browser dialog before user click) */}
       {!softAskDismissed && devices.length === 0 ? (
-        <div className="card" style={{ padding: 16, borderLeft: '4px solid #0f766e' }}>
-          <h3 style={{ marginTop: 0 }}>Enable instant approval &amp; breakdown alerts</h3>
+        <div className="card x-p-16px x-bl-4px-solid-h0f766e">
+          <h3 className="x-mt-0">Enable instant approval &amp; breakdown alerts</h3>
           {isIosSafariNotInstalled() ? (
             <p className="v8-sub">
               On iPhone / iPad Safari: tap the <strong>Share</strong> icon in Safari and choose{' '}
@@ -137,7 +137,7 @@ export function NotificationPrefsPage() {
               Get immediate desktop/mobile push notifications when an invoice, PO, or P1 machine breakdown waits on your action.
             </p>
           )}
-          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <div className="x-d-flex x-gap-8px x-mt-10px">
             {!isIosSafariNotInstalled() ? (
               <button
                 type="button"
@@ -163,11 +163,11 @@ export function NotificationPrefsPage() {
       ) : null}
 
       {/* Registered Devices & Quiet Hours */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-        <section className="card" style={{ padding: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0 }}>Registered Devices</h3>
-            <div style={{ display: 'flex', gap: 6 }}>
+      <div className="x-d-grid x-cols-repeat-auto-fit-minmax-300px-1fr x-gap-16px">
+        <section className="card x-p-16px">
+          <div className="x-d-flex x-jc-space-between x-ai-center">
+            <h3 className="x-m-0">Registered Devices</h3>
+            <div className="x-d-flex x-gap-6px">
               <button type="button" className="btn sm" disabled={pushBusy} onClick={() => void handleEnablePush()}>
                 + Add This Device
               </button>
@@ -177,22 +177,15 @@ export function NotificationPrefsPage() {
             </div>
           </div>
           {devices.length === 0 ? (
-            <p className="v8-sub" style={{ marginTop: 10 }}>
+            <p className="v8-sub x-mt-10px">
               No push-enabled browsers/devices registered yet.
             </p>
           ) : (
-            <ul style={{ listStyle: 'none', padding: 0, margin: '10px 0 0', display: 'grid', gap: 8 }}>
+            <ul className="x-list-style-none x-p-0 x-m-10px-0-0 x-d-grid x-gap-8px">
               {devices.map((d) => (
                 <li
                   key={d.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    border: '1px solid var(--line)',
-                    borderRadius: 8,
-                    padding: '8px 10px',
-                  }}
+                  className="x-d-flex x-jc-space-between x-ai-center x-bd-1px-solid-line x-r-8px x-p-8px-10px"
                 >
                   <div>
                     <strong>{d.device_label}</strong>
@@ -200,7 +193,7 @@ export function NotificationPrefsPage() {
                       {d.platform} · {d.browser} {d.standalone ? '· Installed PWA' : ''}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div className="x-d-flex x-gap-6px">
                     <button type="button" className="btn sm" onClick={() => void renameDevice(d.id, d.device_label)}>
                       Rename
                     </button>
@@ -214,9 +207,9 @@ export function NotificationPrefsPage() {
           )}
         </section>
 
-        <section className="card" style={{ padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Quiet Hours &amp; Digest (IST)</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <section className="card x-p-16px">
+          <h3 className="x-mt-0">Quiet Hours &amp; Digest (IST)</h3>
+          <div className="x-d-grid x-cols-1fr-1fr x-gap-10px">
             <label>
               Quiet Start
               <input type="time" value={quietStart} onChange={(e) => setQuietStart(e.target.value)} />
@@ -232,7 +225,7 @@ export function NotificationPrefsPage() {
                 <option value="hi">हिन्दी (Hindi)</option>
               </select>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 20 }}>
+            <label className="x-d-flex x-ai-center x-gap-8px x-pt-20px">
               <input
                 type="checkbox"
                 checked={digestEnabled}
@@ -241,7 +234,7 @@ export function NotificationPrefsPage() {
               Daily Email Digest
             </label>
           </div>
-          <p className="v8-sub" style={{ marginTop: 8 }}>
+          <p className="v8-sub x-mt-8px">
             Non-urgent push/SMS alerts wait until Quiet Hours end. URGENT security and P1 breakdown alerts always deliver immediately.
           </p>
           <button type="button" className="btn primary sm" onClick={() => void saveQuietHours()}>
@@ -251,8 +244,8 @@ export function NotificationPrefsPage() {
       </div>
 
       {/* Per-Type Channel Matrix */}
-      <section className="card" style={{ padding: 16, overflowX: 'auto' }}>
-        <h3 style={{ marginTop: 0 }}>Notification Matrix (38 Event Types)</h3>
+      <section className="card x-p-16px x-ovx-auto">
+        <h3 className="x-mt-0">Notification Matrix (38 Event Types)</h3>
         <table className="table">
           <thead>
             <tr>

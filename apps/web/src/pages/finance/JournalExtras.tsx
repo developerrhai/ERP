@@ -395,7 +395,7 @@ export function FxModal({ canEdit, onClose }: { canEdit: boolean; onClose: () =>
             onChange={(e) => setRate(e.target.value)}
             placeholder="83.2000"
           />
-          <div className="field" style={{ alignSelf: 'end' }}>
+          <div className="field x-align-self-end">
             <button
               id="fx-save"
               type="button"
@@ -444,7 +444,7 @@ export function FxModal({ canEdit, onClose }: { canEdit: boolean; onClose: () =>
           </tbody>
         </table>
       </div>
-      <h3 style={{ marginTop: 16 }}>Month-end revaluation check</h3>
+      <h3 className="x-mt-16px">Month-end revaluation check</h3>
       <div className="recordbar">
         <DateField
           aria-label="Revalue as on"

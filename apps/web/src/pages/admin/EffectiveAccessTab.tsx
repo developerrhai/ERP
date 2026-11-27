@@ -89,9 +89,9 @@ export function EffectiveAccessTab({ initialUserId }: { initialUserId?: string |
 
   return (
     <div className="v8-section">
-      <div className="card" style={{ marginBottom: '16px', padding: '16px' }}>
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div className="field" style={{ margin: 0, minWidth: '240px' }}>
+      <div className="card x-mb-16px x-p-16px">
+        <div className="x-d-flex x-gap-16px x-wrap-wrap x-ai-flex-end">
+          <div className="field x-m-0 x-minw-240px">
             <label htmlFor="eff-tab-user-select">Select User</label>
             <select
               id="eff-tab-user-select"
@@ -107,7 +107,7 @@ export function EffectiveAccessTab({ initialUserId }: { initialUserId?: string |
               ))}
             </select>
           </div>
-          <div className="field" style={{ margin: 0, minWidth: '200px' }}>
+          <div className="field x-m-0 x-minw-200px">
             <label htmlFor="eff-tab-family-select">Filter by Family</label>
             <select
               id="eff-tab-family-select"
@@ -123,7 +123,7 @@ export function EffectiveAccessTab({ initialUserId }: { initialUserId?: string |
             </select>
           </div>
           {selectedUser ? (
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)', paddingBottom: '6px' }}>
+            <div className="x-fs-13px x-c-text-muted x-pb-6px">
               Role: <strong>{selectedUser.roleLabel || selectedUser.role}</strong> (Level{' '}
               {selectedUser.roleLevel ?? 10}) · Dept:{' '}
               <strong>{selectedUser.department ?? '—'}</strong>
@@ -136,25 +136,19 @@ export function EffectiveAccessTab({ initialUserId }: { initialUserId?: string |
       </div>
 
       {error ? (
-        <div className="msg error show static" role="alert" style={{ marginBottom: '16px' }}>
+        <div className="msg error show static x-mb-16px" role="alert">
           {error}
         </div>
       ) : null}
 
       {selectedPage ? (
         <div
-          className="card"
-          style={{ marginBottom: '16px', background: 'var(--surface-sunken)', padding: '14px' }}
+          className="card x-mb-16px x-bg-surface-sunken x-p-14px"
         >
           <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '8px',
-            }}
+            className="x-d-flex x-jc-space-between x-ai-center x-mb-8px"
           >
-            <h4 style={{ margin: 0 }}>
+            <h4 className="x-m-0">
               Decision Reasons: <strong>{selectedPage.title}</strong> ({selectedPage.family})
             </h4>
             <button
@@ -166,10 +160,10 @@ export function EffectiveAccessTab({ initialUserId }: { initialUserId?: string |
               Dismiss
             </button>
           </div>
-          <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+          <p className="x-m-0-0-8px-0 x-fs-12px x-c-text-muted">
             Data Scope: <strong>{selectedPage.scope}</strong>
           </p>
-          <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px' }}>
+          <ul className="x-m-0 x-pl-20px x-fs-13px">
             {selectedPage.reasons && selectedPage.reasons.length > 0 ? (
               selectedPage.reasons.map((r, i) => <li key={i}>{r}</li>)
             ) : (

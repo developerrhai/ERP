@@ -98,37 +98,37 @@ export function AuditTrailPage() {
       ) : null}
 
       {/* 4 Top Summary Cards (Demo ERP Baseline) */}
-      <div className="kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '14px 0' }}>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Total Audit Events</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>{data?.meta.total ?? 18420} Logged</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Continuous Timeline</span>
+      <div className="kpis x-d-grid x-cols-repeat-4-1fr x-gap-12px x-m-14px-0">
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Total Audit Events</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">{data?.meta.total ?? 18420} Logged</b>
+          <span className="x-fs-11px x-c-success">Continuous Timeline</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Admin Changes</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>482 Actions</b>
-          <span style={{ fontSize: 11, color: '#2563eb' }}>Roles, Permissions &amp; Masters</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Admin Changes</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">482 Actions</b>
+          <span className="x-fs-11px x-c-primary">Roles, Permissions &amp; Masters</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Logins &amp; Access</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>1,290 Sessions</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>IP &amp; Device Fingerprinted</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Logins &amp; Access</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">1,290 Sessions</b>
+          <span className="x-fs-11px x-c-success">IP &amp; Device Fingerprinted</span>
         </div>
-        <div className="kpi" style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1' }}>
-          <small style={{ color: '#64748b' }}>Data Quality</small>
-          <b style={{ fontSize: 18, color: '#1e293b', display: 'block', margin: '4px 0' }}>100%</b>
-          <span style={{ fontSize: 11, color: '#15803d' }}>Immutable &amp; Tamper-Proof</span>
+        <div className="kpi x-p-12px x-bg-card x-r-8px x-bd-1px-solid-line-strong">
+          <small className="x-c-muted">Data Quality</small>
+          <b className="x-fs-18px x-c-text x-d-block x-m-4px-0">100%</b>
+          <span className="x-fs-11px x-c-success">Immutable &amp; Tamper-Proof</span>
         </div>
       </div>
 
       {/* Split View: Audit Explorer Filter & History Controls */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(280px, 1fr)', gap: 14, margin: '14px 0' }}>
-        <div className="card table-wrap" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>Audit Explorer Controls</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+      <div className="x-d-grid x-cols-minmax-0-1_8fr-minmax-280px-1fr x-gap-14px x-m-14px-0">
+        <div className="card table-wrap x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">Audit Explorer Controls</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             Filter forensic events across timestamp ranges, system actors, and administrative actions.
           </p>
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: 12 }}>
+          <div className="x-d-flex x-gap-0_5rem x-mb-12px">
             <button
               type="button"
               className={`btn sm ${preset === 'all' ? 'primary' : ''}`}
@@ -150,18 +150,18 @@ export function AuditTrailPage() {
               Sign-Ins Only
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+          <div className="x-d-grid x-cols-repeat-2-1fr x-gap-8px">
             <input
               type="search"
               placeholder="Search actor or target…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ padding: '6px 10px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6 }}
+              className="x-p-6px-10px x-fs-13px x-bd-1px-solid-line-strong x-r-6px"
             />
             <select
               value={action}
               onChange={(e) => { setAction(e.target.value); setPage(1); }}
-              style={{ padding: '6px 10px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6 }}
+              className="x-p-6px-10px x-fs-13px x-bd-1px-solid-line-strong x-r-6px"
             >
               <option value="">All Actions ({actions.length})</option>
               {actions.map(a => <option key={a} value={a}>{humanAction(a)}</option>)}
@@ -169,12 +169,12 @@ export function AuditTrailPage() {
           </div>
         </div>
 
-        <div className="card" style={{ padding: 14, background: '#fff', borderRadius: 10, border: '1px solid #cbd5e1' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: 14, color: '#1e293b' }}>History Controls</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px 0' }}>
+        <div className="card x-p-14px x-bg-card x-r-10px x-bd-1px-solid-line-strong">
+          <h3 className="x-m-0-0-10px-0 x-fs-14px x-c-text">History Controls</h3>
+          <p className="x-fs-12px x-c-muted x-m-0-0-12px-0">
             Forensic operations, compliance notes, and cryptographic hash verification.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
+          <div className="x-d-flex x-fd-column x-gap-10px x-fs-12px">
             <button
               type="button"
               className="btn sm primary"

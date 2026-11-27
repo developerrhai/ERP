@@ -201,47 +201,29 @@ export function DeptMailPage() {
       </div>
 
       <div
-        className="dept-mail-layout"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 2fr) minmax(240px, 1fr)',
-          gap: 14,
-          alignItems: 'start',
-        }}
+        className="dept-mail-layout x-d-grid x-cols-minmax-0-2fr-minmax-240px-1fr x-gap-14px x-ai-start"
       >
-        <div style={{ minWidth: 0 }}>
+        <div className="x-minw-0">
           {tab === 'compose' ? (
             <form
-              className="panel"
+              className="panel x-d-grid x-gap-12px"
               noValidate
               onSubmit={(e) => {
                 e.preventDefault();
                 void submit();
               }}
-              style={{ display: 'grid', gap: 12 }}
             >
-              <h2 style={{ margin: 0, fontSize: 15 }}>New Message / Attach Document</h2>
+              <h2 className="x-m-0 x-fs-14px">New Message / Attach Document</h2>
               {submitted && Object.keys(problems).length > 0 ? (
                 <div
                   role="alert"
-                  style={{
-                    background: '#fef2f2',
-                    border: '1px solid #fecaca',
-                    color: '#b91c1c',
-                    padding: '8px 12px',
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
+                  className="x-bg-hfef2f2 x-bd-1px-solid-hfecaca x-c-danger-hover x-p-8px-12px x-r-8px x-fs-12px"
                 >
                   Please fix the highlighted fields.
                 </div>
               ) : null}
               <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                  gap: 12,
-                }}
+                className="x-d-grid x-cols-repeat-auto-fit-minmax-240px-1fr x-gap-12px"
               >
                 <div className="field">
                   <label htmlFor="dm-to">To department *</label>
@@ -295,25 +277,15 @@ export function DeptMailPage() {
               </div>
 
               <fieldset
-                style={{
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 10,
-                  padding: '10px 12px',
-                  margin: 0,
-                }}
+                className="x-bd-1px-solid-line x-r-10px x-p-10px-12px x-m-0"
               >
                 <legend
-                  style={{ fontSize: 12, fontWeight: 700, color: '#334155', padding: '0 6px' }}
+                  className="x-fs-12px x-fw-700 x-c-textn2 x-p-0-6px"
                 >
                   ERP Document Attachments (+ Add Attachment)
                 </legend>
                 <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                    gap: 10,
-                    alignItems: 'end',
-                  }}
+                  className="x-d-grid x-cols-repeat-auto-fit-minmax-160px-1fr x-gap-10px x-ai-end"
                 >
                   <div className="field">
                     <label htmlFor="dm-doctype">Document type</label>
@@ -373,39 +345,24 @@ export function DeptMailPage() {
                   </button>
                 </div>
                 {pickError ? (
-                  <div role="alert" style={{ color: '#b91c1c', fontSize: 12, marginTop: 6 }}>
+                  <div role="alert" className="x-c-danger-hover x-fs-12px x-mt-6px">
                     {pickError}
                   </div>
                 ) : null}
                 {attached.length > 0 ? (
                   <ul
-                    style={{
-                      listStyle: 'none',
-                      margin: '10px 0 0',
-                      padding: 0,
-                      display: 'grid',
-                      gap: 4,
-                    }}
+                    className="x-list-style-none x-m-10px-0-0 x-p-0 x-d-grid x-gap-4px"
                     aria-label="Attached ERP documents"
                   >
                     {attached.map((a, i) => (
                       <li
                         key={`${a.recordId}-${a.format}`}
-                        style={{
-                          display: 'flex',
-                          gap: 8,
-                          alignItems: 'center',
-                          background: '#f8fafc',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: 6,
-                          padding: '4px 8px',
-                          fontSize: 12,
-                        }}
+                        className="x-d-flex x-gap-8px x-ai-center x-bg-card2 x-bd-1px-solid-line x-r-6px x-p-4px-8px x-fs-12px"
                       >
-                        <span className="chip" style={{ fontSize: 10 }}>
+                        <span className="chip x-fs-11px">
                           {FORMAT_LABEL[a.format]}
                         </span>
-                        <span style={{ flex: 1 }}>{a.label}</span>
+                        <span className="x-flex-1">{a.label}</span>
                         <button
                           type="button"
                           className="btn sm"
@@ -418,12 +375,12 @@ export function DeptMailPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="muted" style={{ margin: '8px 0 0', fontSize: 12 }}>
+                  <p className="muted x-m-8px-0-0 x-fs-12px">
                     No ERP document attached yet.
                   </p>
                 )}
               </fieldset>
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <div className="x-d-flex x-gap-8px x-jc-flex-end">
                 <button type="button" className="btn" onClick={() => setTab('inbox')}>
                   Cancel
                 </button>
@@ -433,7 +390,7 @@ export function DeptMailPage() {
               </div>
             </form>
           ) : (
-            <div className="table-wrap" style={{ overflowX: 'auto', minWidth: 0, maxWidth: '100%' }}>
+            <div className="table-wrap x-ovx-auto x-minw-0 x-maxw-100pct">
             <table className="register-table">
               <thead>
                 <tr>
@@ -487,10 +444,10 @@ export function DeptMailPage() {
           )}
         </div>
 
-        <aside style={{ display: 'grid', gap: 12 }} aria-label="Mail side panels">
+        <aside className="x-d-grid x-gap-12px" aria-label="Mail side panels">
           <section className="panel" aria-label="Department Inboxes">
-            <h3 style={{ margin: '0 0 8px', fontSize: 13 }}>Department Inboxes</h3>
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 4 }}>
+            <h3 className="x-m-0-0-8px x-fs-13px">Department Inboxes</h3>
+            <ul className="x-list-style-none x-m-0 x-p-0 x-d-grid x-gap-4px">
               {(depts.data ?? []).map((d) => (
                 <li key={d.id}>
                   <Link to={`/m/dept-inbox-${slug(d.name)}`} style={{ fontSize: 12 }}>
@@ -499,36 +456,36 @@ export function DeptMailPage() {
                 </li>
               ))}
               {(depts.data ?? []).length === 0 ? (
-                <li className="muted" style={{ fontSize: 12 }}>
+                <li className="muted x-fs-12px">
                   No departments available.
                 </li>
               ) : null}
             </ul>
           </section>
           <section className="panel" aria-label="Recent Messages">
-            <h3 style={{ margin: '0 0 8px', fontSize: 13 }}>Recent Messages</h3>
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 6 }}>
+            <h3 className="x-m-0-0-8px x-fs-13px">Recent Messages</h3>
+            <ul className="x-list-style-none x-m-0 x-p-0 x-d-grid x-gap-6px">
               {recent.map(({ m, dir }) => (
-                <li key={`${dir}-${m.id}`} style={{ fontSize: 12 }}>
-                  <span className="chip" style={{ fontSize: 10 }}>
+                <li key={`${dir}-${m.id}`} className="x-fs-12px">
+                  <span className="chip x-fs-11px">
                     {dir}
                   </span>{' '}
                   <b>{m.subject}</b>
-                  <div className="muted" style={{ fontSize: 11 }}>
+                  <div className="muted x-fs-11px">
                     {when(m.created_at)}
                   </div>
                 </li>
               ))}
               {recent.length === 0 ? (
-                <li className="muted" style={{ fontSize: 12 }}>
+                <li className="muted x-fs-12px">
                   No messages yet.
                 </li>
               ) : null}
             </ul>
           </section>
           <section className="panel" aria-label="Work Center quick actions">
-            <h3 style={{ margin: '0 0 8px', fontSize: 13 }}>Quick Actions</h3>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <h3 className="x-m-0-0-8px x-fs-13px">Quick Actions</h3>
+            <div className="x-d-flex x-gap-6px x-wrap-wrap">
               <button type="button" className="btn sm primary" onClick={() => setTab('compose')}>
                 New Message / Attach Document
               </button>
@@ -550,7 +507,7 @@ export function DeptMailPage() {
             <p className="muted">
               {open.from_name} · {when(open.created_at)}
             </p>
-            <p style={{ whiteSpace: 'pre-wrap' }}>{open.body}</p>
+            <p className="x-ws-pre-wrap">{open.body}</p>
             {Array.isArray(open.attachments) && open.attachments.length > 0 ? (
               <ul>
                 {open.attachments.map((a, i) => (

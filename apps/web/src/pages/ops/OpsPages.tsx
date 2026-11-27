@@ -236,11 +236,11 @@ export function CanteenPage() {
       {tab === 'counter' ? (
         <>
           <div className="inline-form">
-            <label>Employee code<input autoFocus value={code} onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void scan(); }} placeholder="Scan or type" style={{ fontSize: '1.4rem' }} /></label>
+            <label>Employee code<input autoFocus value={code} onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void scan(); }} placeholder="Scan or type" className="x-fs-22_4px" /></label>
             <label>Meal<select value={meal} onChange={(e) => setMeal(e.target.value)}><option value="BREAKFAST">Breakfast</option><option value="LUNCH">Lunch</option><option value="DINNER">Dinner</option><option value="TEA">Tea / Snacks</option></select></label>
             <button type="button" className="btn primary" onClick={() => void scan()}>Serve</button>
           </div>
-          {flash ? <p role={flash.ok ? 'status' : 'alert'} className={`rag ${flash.ok ? 'rag-green' : 'rag-red'}`} style={{ fontSize: '1.2rem', padding: '12px' }}>{flash.text}</p> : null}
+          {flash ? <p role={flash.ok ? 'status' : 'alert'} className={`rag ${flash.ok ? 'rag-green' : 'rag-red'} x-fs-19_2px x-p-12px`}>{flash.text}</p> : null}
           <div className="gate-rail">
             <section className="panel"><h3>Today</h3>{(today.data?.counts ?? []).map((c) => <p key={c.meal_type}>{c.meal_type}: <strong>{c.n}</strong></p>)}{(today.data?.counts ?? []).length === 0 ? <p className="muted">Nothing served yet.</p> : null}</section>
             <section className="panel"><h3>Last 5 served</h3>{(today.data?.last ?? []).map((c) => <p key={c.coupon_no}>{c.person_name} · {c.meal_type} · {when(c.served_at)}</p>)}</section>

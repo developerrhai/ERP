@@ -285,37 +285,25 @@ export function DynamicEntityForm({
         e.preventDefault();
         submit();
       }}
-      style={{ padding: '16px 20px', maxHeight: '70vh', overflowY: 'auto' }}
+      className="x-p-16px-20px x-maxh-70vh x-ovy-auto"
     >
-      <p style={{ margin: '0 0 12px', color: '#64748b', fontSize: 13 }}>
+      <p className="x-m-0-0-12px x-c-muted x-fs-13px">
         {initialValues
           ? 'Modify entity details for this record.'
           : `Enter entity specifications for new ${(!title || title === 'Records') && pageId ? (registry.profiles[pageId]?.title ?? pageId.replace(/^([a-z]+-)/, '').replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())) : title} record.`}{' '}
-        Fields marked <span style={{ color: '#dc2626' }}>*</span> are mandatory.
+        Fields marked <span className="x-c-danger-hover">*</span> are mandatory.
       </p>
       {submitted && errorCount > 0 ? (
         <div
           role="alert"
-          style={{
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
-            color: '#b91c1c',
-            padding: '8px 12px',
-            borderRadius: 8,
-            fontSize: 12,
-            marginBottom: 12,
-          }}
+          className="x-bg-hfef2f2 x-bd-1px-solid-hfecaca x-c-danger-hover x-p-8px-12px x-r-8px x-fs-12px x-mb-12px"
         >
           Cannot save: {errorCount} field{errorCount === 1 ? '' : 's'} need attention. Fill the
           fields highlighted in red.
         </div>
       ) : null}
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '14px 18px',
-        }}
+        className="x-d-grid x-cols-repeat-auto-fit-minmax-280px-1fr x-gap-14px-18px"
       >
         {rules.map((r) => {
           const val = values[r.key] ?? '';
@@ -329,13 +317,13 @@ export function DynamicEntityForm({
             style: { ...base, ...(err ? bad : null) },
           } as const;
           return (
-            <div key={r.key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div key={r.key} className="x-d-flex x-fd-column x-gap-4px">
               <label
                 htmlFor={common.id}
-                style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}
+                className="x-fs-12px x-fw-600 x-c-textn2"
               >
                 {r.label}
-                {r.required ? <span style={{ color: '#dc2626' }}> *</span> : null}
+                {r.required ? <span className="x-c-danger-hover"> *</span> : null}
               </label>
               {r.list ? (
                 <select {...common} value={val} onChange={(e) => set(r.key, e.target.value)}>
@@ -411,7 +399,7 @@ export function DynamicEntityForm({
                 />
               ) : /project\s*(no|number)?/i.test(r.key) || /project\s*(no|number)?/i.test(r.label) ? (
                 <>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <div className="x-d-flex x-gap-6px x-ai-center">
                     <input
                       {...common}
                       type="text"
@@ -421,8 +409,7 @@ export function DynamicEntityForm({
                     />
                     <button
                       type="button"
-                      className="btn sm"
-                      style={{ whiteSpace: 'nowrap', fontSize: 11, padding: '4px 8px' }}
+                      className="btn sm x-ws-nowrap x-fs-11px x-p-4px-8px"
                       onClick={() => {
                         const pno = val || 'PRJ-2026-001';
                         window.open(`/m/project-global-history?project=${encodeURIComponent(pno)}`, '_blank');
@@ -431,7 +418,7 @@ export function DynamicEntityForm({
                       Load Project History
                     </button>
                   </div>
-                  <small style={{ color: '#0284c7', fontSize: 11, display: 'block', marginTop: 2 }}>
+                  <small className="x-c-h0284c7 x-fs-11px x-d-block x-mt-2px">
                     Same number in every department
                   </small>
                 </>
@@ -456,7 +443,7 @@ export function DynamicEntityForm({
                 />
               )}
               {err ? (
-                <span role="alert" style={{ color: '#dc2626', fontSize: 11 }}>
+                <span role="alert" className="x-c-danger-hover x-fs-11px">
                   {err}
                 </span>
               ) : null}
@@ -466,14 +453,7 @@ export function DynamicEntityForm({
         <AttachDocs files={files} onChange={setFiles} />
       </div>
       <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: 10,
-          marginTop: 24,
-          paddingTop: 14,
-          borderTop: '1px solid #e2e8f0',
-        }}
+        className="x-d-flex x-jc-flex-end x-gap-10px x-mt-24px x-pt-14px x-bt-1px-solid-line"
       >
         <button type="button" className="btn sm" onClick={onCancel}>
           Cancel

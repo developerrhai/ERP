@@ -119,6 +119,7 @@ export const openItemService = {
     allocationId: string,
     actor: Actor,
     date: string,
+    reason?: string,
   ): Promise<{ id: string }> {
     const a = await tx.allocation.findUnique({ where: { id: allocationId } });
     if (!a || D(a.amount).lessThanOrEqualTo(0)) throw Errors.notFound('Allocation not found.');
@@ -152,7 +153,7 @@ export const openItemService = {
         targetType: 'OpenItem',
         targetId: a.targetItemId,
         ...(actor.meta ? { meta: actor.meta } : {}),
-        detail: { allocation: a.id },
+        detail: { allocation: a.id, ...(reason ? { reason } : {}) },
       },
       tx,
     );

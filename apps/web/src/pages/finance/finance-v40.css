@@ -56,13 +56,6 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.fv40-table .row-actions {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  min-width: 340px;
-  white-space: normal;
-}
 .fv40-table tr.selected td {
   background: var(--row-selected, #eef3ff);
 }

@@ -477,6 +477,7 @@ export const apService = {
           allocations: parts,
         },
         { userId: caller.auth.userId },
+        { invoicesByCaller: true },
       );
       for (const a of allocs)
         await apService.applyPayment(tx, S(a.invoice_id), S(norm<Row>(a).amount), {
@@ -518,13 +519,15 @@ export const apService = {
     return { ...norm<Row>(h), allocations: lines.map((l) => norm<Row>(l)) };
   },
 
-  /** Contract used by Phase 11+ and the payment screen: settle `amount` of an invoice, reclaim ITC in proportion (Rule 37). */
+  /** Contract used by Phase 11+ and the payment screen: settle `amount` of an invoice, reclaim ITC in proportion (Rule 37).
+   *  Returns the id of the reclaim entry it made, if any. `noReclaim`: the amount is settled by a note, not paid. */
   async applyPayment(
     tx: Db,
     invoiceId: string,
     amount: string,
-    ctx: { paymentId?: string | undefined; date: string; actor: Actor },
-  ): Promise<void> {
+    /** `reference`: what settled it when there is no supplier payment, so each reclaim is its own entry. */
+    ctx: { paymentId?: string | undefined; reference?: string | undefined; date: string; actor: Actor; noReclaim?: boolean | undefined },
+  ): Promise<string | null> {
     const inv = (
       await query(tx, `SELECT * FROM purchase_invoices WHERE id=$1::uuid FOR UPDATE`, invoiceId)
     )[0];
@@ -549,6 +552,7 @@ export const apService = {
       str(paid),
       paid.gte(net) ? 'PAID' : 'PARTIAL',
     );
+    if (ctx.noReclaim) return null;
     // ITC reclaim: share of what is still reversed
     const rev = await query(
       tx,
@@ -561,11 +565,11 @@ export const apService = {
       sgst: sum('R37_REVERSE', 's').minus(sum('R37_RECLAIM', 's')),
       igst: sum('R37_REVERSE', 'i').minus(sum('R37_RECLAIM', 'i')),
     };
-    if (remain.cgst.plus(remain.sgst).plus(remain.igst).lte(0)) return;
+    if (remain.cgst.plus(remain.sgst).plus(remain.igst).lte(0)) return null;
     const share = amt.div(unpaidBefore);
     const part = (r: Dec) => (amt.gte(unpaidBefore) ? r : round2(r.mul(share)));
     const re = { cgst: part(remain.cgst), sgst: part(remain.sgst), igst: part(remain.igst) };
-    if (re.cgst.plus(re.sgst).plus(re.igst).lte(0)) return;
+    if (re.cgst.plus(re.sgst).plus(re.igst).lte(0)) return null;
     const unitId = S(inv.unit_id);
     const legs: EventLine[] = [];
     for (const [h, v] of [
@@ -591,14 +595,14 @@ export const apService = {
         source: 'EVENT',
         narration: `ITC reclaimed on payment, invoice ${S(inv.number)}`,
         sourceDocType: 'itc_reclaim',
-        sourceDocId: ctx.paymentId ?? invoiceId,
+        sourceDocId: ctx.paymentId ?? ctx.reference ?? invoiceId,
         sourceDocNo: S(inv.number),
         event: 'ITC_R37_RECLAIM',
         payload: { docNo: S(inv.number), lines: legs },
       },
       { userId: ctx.actor.userId },
     );
-    await insertRow(tx, 'itc_reversals', {
+    const reclaimId = await insertRow(tx, 'itc_reversals', {
       unitId,
       invoiceId,
       kind: 'R37_RECLAIM',
@@ -616,6 +620,7 @@ export const apService = {
       invoiceId,
       str(total),
     );
+    return reclaimId;
   },
 
   async cancelPayment(caller: Caller, id: string, reason: string) {
@@ -684,8 +689,8 @@ export const apService = {
         `UPDATE supplier_payments SET status='Cancelled', version=version+1, updated_at=now() WHERE id=$1::uuid`,
         id,
       );
-      // last: it commits on its own, so everything above is already done when it runs
-      await cashBankService.cancelPayment(S(pay.id), Number(pay.version), reason, {
+      // in this same transaction: a second one would wait for the voucher numbers this one holds
+      await cashBankService.cancelPaymentIn(tx, S(pay.id), Number(pay.version), reason, {
         userId: caller.auth.userId,
       });
       await audit(
@@ -725,5 +730,5 @@ export const PurchaseInvoiceService = {
     invoiceId: string,
     amount: string,
     ctx: { paymentId?: string | undefined; date: string; actor: Actor },
-  ) => apService.applyPayment(tx, invoiceId, amount, ctx),
+  ): Promise<string | null> => apService.applyPayment(tx, invoiceId, amount, ctx),
 };

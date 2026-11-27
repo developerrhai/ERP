@@ -68,7 +68,7 @@ function Cell({ col, row }: { col: FinColumn; row: Record<string, string | null>
   const v = row[col.key] ?? null;
   if (col.type === 'inr') return <td className="num">{inr(v)}</td>;
   if (col.type === 'num') return <td className="num">{num(v)}</td>;
-  if (col.type === 'date') return <td>{dmy(v)}</td>;
+  if (col.type === 'date') return <td className="cell-date">{dmy(v)}</td>;
   if (col.type === 'pill') return <td>{v ? <Pill>{v}</Pill> : '—'}</td>;
   return <td>{v === null || v === '' ? '—' : v}</td>;
 }

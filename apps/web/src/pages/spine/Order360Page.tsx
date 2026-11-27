@@ -172,14 +172,14 @@ export function Order360Page() {
 
           <div className="order360-grid">
             <section className="card" aria-label="Multi-Product Order Lines">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+              <div className="x-d-flex x-jc-space-between x-ai-flex-start x-wrap-wrap x-gap-12px x-mb-14px">
                 <div>
-                  <h3 style={{ margin: 0 }}>Multi-Product Order Lines</h3>
-                  <small className="muted" style={{ display: 'block', marginTop: 4 }}>Quotation → SO → PO → DC → Invoice</small>
+                  <h3 className="x-m-0">Multi-Product Order Lines</h3>
+                  <small className="muted x-d-block x-mt-4px">Quotation → SO → PO → DC → Invoice</small>
                 </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, margin: 0 }}>
-                  <span style={{ fontWeight: 600, color: '#475569' }}>Department Filter:</span>
-                  <select value={dept} onChange={(e) => setDept(e.target.value)} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
+                <label className="x-d-flex x-ai-center x-gap-8px x-fs-13px x-m-0">
+                  <span className="x-fw-600 x-c-textn2">Department Filter:</span>
+                  <select value={dept} onChange={(e) => setDept(e.target.value)} className="x-p-5px-10px x-r-6px x-bd-1px-solid-line-strong">
                     <option value="">All Departments</option>
                     {depts.map((d) => (
                       <option key={d}>{d}</option>

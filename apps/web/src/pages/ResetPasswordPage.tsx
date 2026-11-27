@@ -68,14 +68,14 @@ export function ResetPasswordPage() {
       </div>
 
       {error ? (
-        <div className="msg error show" role="alert" style={{ marginBottom: '1rem' }}>
+        <div className="msg error show x-mb-1rem" role="alert">
           {error}
         </div>
       ) : null}
 
       {!token ? (
         <div className="auth-body">
-          <p style={{ color: 'var(--color-danger, #dc2626)', marginBottom: '1.25rem' }}>
+          <p className="x-c-var-color-danger-hdc2626 x-mb-1_25rem">
             This reset link has expired or was already used. Ask for a new one.
           </p>
           <Link
@@ -89,11 +89,7 @@ export function ResetPasswordPage() {
       ) : success ? (
         <div className="auth-body">
           <div
-            style={{
-              color: 'var(--color-success, #16a34a)',
-              marginBottom: '1.25rem',
-              fontWeight: 500,
-            }}
+            className="x-c-var-color-success-h16a34a x-mb-1_25rem x-fw-500"
           >
             ✓ Password changed successfully. You can now sign in with your new password.
           </div>
@@ -132,16 +128,15 @@ export function ResetPasswordPage() {
           <PasswordChecklist password={newPassword} confirmPassword={confirmPassword} />
 
           <button
-            className="auth-submit"
+            className="auth-submit x-mt-1_25rem"
             type="submit"
             disabled={pending || newPassword.length < 12 || newPassword !== confirmPassword}
             aria-busy={pending}
-            style={{ marginTop: '1.25rem' }}
           >
             {pending ? 'Saving…' : 'Set New Password'}
           </button>
 
-          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+          <div className="x-ta-center x-mt-1rem">
             <Link to="/login" className="auth-link" style={{ fontSize: '0.875rem' }}>
               Back to Sign In
             </Link>
