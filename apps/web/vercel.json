@@ -29,7 +29,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://institute-api.rhaitech.online/sawant-erp/api/:path*"
+      "destination": "https://dnyansagarclasses.rhaitech.online/sawant-erp/api/:path*"
     },
     {
       "source": "/(.*)",
