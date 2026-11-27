@@ -21,7 +21,6 @@ import {
   type Row,
 } from '../../lib/scmApi';
 import { useLoad } from '../../lib/useLoad';
-import { requestCreditChange } from '../../lib/mastersApi';
 import { lookupItems } from '../../lib/inventoryApi';
 import { lookupCustomers } from '../../lib/scmApi';
 import type { Option } from '../../lib/scmApi';
@@ -31,6 +30,7 @@ import { DocPage, LookupCombo, RecordBar } from './DocPage';
 import { V40Register } from '../sales/V40Register';
 import { CRFQ_CFG, SQ_CFG } from './salesConfigs';
 import { SettleBillsModal } from '../finance/SettleBills';
+import { CreditForm, CreditView, DeliveryEdit, InvoiceEdit, ReceiptEdit } from '../sales/SalesEditDialogs';
 
 const s = (v: unknown): string =>
   v === null || v === undefined
@@ -712,6 +712,7 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
   const [newInvoice, setNewInvoice] = useState(false);
   const [invoiceExtra, setInvoiceExtra] = useState({ invoiceDate: '', freight: '', notes: '' });
   const [open, setOpen] = useState<Doc | null>(null);
+  const [editing, setEditing] = useState('');
   const [msg, setMsg] = useState('');
   const [reason, setReason] = useState('');
   async function run(fn: () => Promise<unknown>, text: string, id: string) {
@@ -813,6 +814,7 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
         host
         actions={actions}
         onOpen={(id) => void getDoc('/sales/invoices', id).then(setOpen)}
+        onEdit={actions.edit ? setEditing : undefined}
         reloadKey={list.data}
         onChanged={list.reload}
         fallback={
@@ -859,6 +861,16 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
           </div>
         }
       />
+      {editing ? (
+        <InvoiceEdit
+          id={editing}
+          onClose={() => setEditing('')}
+          onSaved={() => {
+            setEditing('');
+            list.reload();
+          }}
+        />
+      ) : null}
       {open ? (
         <Modal
           title={`Invoice ${s(open.number)}`}
@@ -867,6 +879,18 @@ export function SalesInvoicesPage({ actions }: { actions: ActionSet }) {
           footer={
             <>
               <RecordBar doc={open} canEdit={actions.edit} pageId="sales-invoices" />
+              {(open.status === 'Draft' || open.status === 'Rejected') && actions.edit ? (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setEditing(open.id);
+                    setOpen(null);
+                  }}
+                >
+                  Edit
+                </button>
+              ) : null}
               {open.status === 'Draft' && actions.submit ? (
                 <button
                   type="button"
@@ -974,7 +998,11 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
   const [reason, setReason] = useState('');
   const [msg, setMsg] = useState('');
   const [creating, setCreating] = useState(false);
-  async function pick(id: string) {
+  const [returnDate, setReturnDate] = useState('');
+  // the return being edited (the same form as a new one, filled in), and the one shown by View
+  const [editing, setEditing] = useState<Doc | null>(null);
+  const [open, setOpen] = useState<Doc | null>(null);
+  async function pick(id: string, saved?: Row[]) {
     setInvoiceId(id);
     setLines([]);
     if (!id) return;
@@ -983,11 +1011,40 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
       rowsOf(inv.lines).map((l) => ({
         invoiceLineId: s(l.id),
         label: `${s(l.itemCode)} (billed ${s(l.qty)})`,
-        qty: '',
+        qty: saved ? s(saved.find((x) => s(x.invoiceLineId) === s(l.id))?.qty ?? '').replace(/\.0+$/, '') : '',
         max: s(l.qty),
       })),
     );
   }
+  const closeForm = (): void => {
+    setCreating(false);
+    setEditing(null);
+    setInvoiceId('');
+    setWh('');
+    setReason('');
+    setReturnDate('');
+    setLines([]);
+    setMsg('');
+  };
+  const view = (id: string): void => {
+    setMsg('');
+    getDoc('/sales/returns', id).then(setOpen, (e: unknown) => setMsg(toUiMessage(e)));
+  };
+  const startEdit = (id: string): void => {
+    setMsg('');
+    getDoc('/sales/returns', id).then(
+      async (d) => {
+        setOpen(null);
+        setEditing(d);
+        setWh(s(d.warehouseId));
+        setReason(s(d.reason));
+        setReturnDate(s(d.returnDate).slice(0, 10));
+        setCreating(true);
+        await pick(s(d.invoiceId), rowsOf(d.lines));
+      },
+      (e: unknown) => setMsg(toUiMessage(e)),
+    );
+  };
   return (
     <>
       <PageHead
@@ -1003,16 +1060,16 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
       <ErrorBox message={msg || list.error} />
       {creating ? (
         <Modal
-          title="New Return"
+          title={editing ? `Edit ${s(editing.number)}` : 'New Return'}
           sub={
             (invs.data?.rows ?? []).length === 0 && !invs.loading
               ? 'A return is raised against a posted invoice: there is none to choose from yet.'
               : 'Choose the posted invoice, the warehouse and the quantity coming back.'
           }
-          onClose={() => setCreating(false)}
+          onClose={closeForm}
           footer={
             <>
-              <button type="button" className="btn" onClick={() => setCreating(false)}>
+              <button type="button" className="btn" onClick={closeForm}>
                 Cancel
               </button>
               <button
@@ -1028,20 +1085,19 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
                 }
                 onClick={() => {
                   setMsg('');
-                  createDoc('/sales/returns', {
+                  const body = {
                     invoiceId,
                     warehouseId: wh,
                     reason: reason || undefined,
+                    ...(returnDate ? { returnDate } : {}),
                     lines: lines
                       .filter((l) => Number(l.qty) > 0)
                       .map((l) => ({ invoiceLineId: l.invoiceLineId, qty: l.qty })),
-                  })
+                  };
+                  (editing ? updateDoc('/sales/returns', editing.id, editing.version, body) : createDoc('/sales/returns', body))
                     .then((d) => {
                       toast(`Return ${s(d.number)} saved as draft`);
-                      void d;
-                      setCreating(false);
-                      setInvoiceId('');
-                      setLines([]);
+                      closeForm();
                       list.reload();
                     })
                     .catch((e: unknown) => setMsg(toUiMessage(e)));
@@ -1052,10 +1108,11 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
             </>
           }
         >
+          <ErrorBox message={msg} />
           <div className="form-grid">
             <div className="field">
               <label htmlFor="ri">Invoice *</label>
-              <select id="ri" value={invoiceId} onChange={(e) => void pick(e.target.value)}>
+              <select id="ri" value={invoiceId} disabled={!!editing} onChange={(e) => void pick(e.target.value)}>
                 <option value="">Choose…</option>
                 {(invs.data?.rows ?? []).map((i) => (
                   <option key={i.id} value={i.id}>
@@ -1079,6 +1136,11 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
               <label htmlFor="rr">Reason</label>
               <input id="rr" value={reason} onChange={(e) => setReason(e.target.value)} />
             </div>
+            <div className="field">
+              <label htmlFor="rd">Return date</label>
+              <input id="rd" type="date" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} />
+              <small className="muted">Left blank, today is used.</small>
+            </div>
           </div>
           {lines.length > 0 && !lines.some((l) => Number(l.qty) > 0) ? <p className="muted">Type the quantity coming back to switch on Save.</p> : null}
           {lines.map((l, i) => (
@@ -1096,10 +1158,112 @@ export function SalesReturnsPage({ actions }: { actions: ActionSet }) {
           ))}
         </Modal>
       ) : null}
+      {open ? (
+        <Modal
+          title={`Return ${s(open.number)}`}
+          sub={s(open.customerName)}
+          onClose={() => setOpen(null)}
+          footer={
+            <>
+              <RecordBar doc={open} canEdit={actions.edit} pageId="sales-returns" />
+              {(open.status === 'Draft' || open.status === 'Rejected') && actions.edit ? (
+                <button type="button" className="btn" onClick={() => startEdit(open.id)}>
+                  Edit
+                </button>
+              ) : null}
+              {open.status === 'Draft' && actions.submit ? (
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => {
+                    setMsg('');
+                    verb('/sales/returns', open.id, 'submit', {}, open.version)
+                      .then(() => {
+                        toast('Return submitted');
+                        view(open.id);
+                        list.reload();
+                      })
+                      .catch((e: unknown) => setMsg(toUiMessage(e)));
+                  }}
+                >
+                  Submit
+                </button>
+              ) : null}
+              {open.status === 'Approved' && actions.post ? (
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => {
+                    setMsg('');
+                    verb('/sales/returns', open.id, 'post')
+                      .then(() => {
+                        toast('Return posted');
+                        view(open.id);
+                        list.reload();
+                      })
+                      .catch((e: unknown) => setMsg(toUiMessage(e)));
+                  }}
+                >
+                  Post
+                </button>
+              ) : null}
+            </>
+          }
+        >
+          <ErrorBox message={msg} />
+          <p>
+            <Pill>{open.status}</Pill>
+          </p>
+          <dl className="kv">
+            {(
+              [
+                ['Return date', dmy(s(open.returnDate))],
+                ['Reason', s(open.reason) || '—'],
+                ['Credit note', s(open.creditNoteNo) || '—'],
+                ['Received into', (whs.data ?? []).find((w) => w.id === s(open.warehouseId))?.name ?? '—'],
+                ['Invoice', s((invs.data?.rows ?? []).find((i) => i.id === s(open.invoiceId))?.number) || '—'],
+                ['Taxable value', inr(s(open.taxable))],
+                ['Total credit', inr(s(open.grandTotal))],
+              ] as [string, string][]
+            ).map(([k, v]) => (
+              <div key={k}>
+                <dt>{k}</dt>
+                <dd>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Rate</th>
+                  <th>Taxable</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rowsOf(open.lines).map((l) => (
+                  <tr key={s(l.id)}>
+                    <td>{s(l.lineNo)}</td>
+                    <td>{[s(l.itemCode), s(l.itemName)].filter(Boolean).join(' · ')}</td>
+                    <td>{Number(l.qty)}</td>
+                    <td>{inr(s(l.rate))}</td>
+                    <td>{inr(s(l.taxable))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Modal>
+      ) : null}
       <V40Register
         pageId="sales-returns"
         host
         actions={actions}
+        onOpen={view}
+        onEdit={actions.edit ? startEdit : undefined}
         reloadKey={list.data}
         onChanged={list.reload}
         fallback={
@@ -1186,6 +1350,7 @@ export function CollectionsPage({ actions }: { actions: ActionSet }) {
   );
   const [paying, setPaying] = useState<Row | null>(null);
   const [choosing, setChoosing] = useState(false);
+  const [editing, setEditing] = useState('');
   return (
     <>
       <PageHead
@@ -1215,6 +1380,8 @@ export function CollectionsPage({ actions }: { actions: ActionSet }) {
         host
         actions={actions}
         onAllocate={(id) => setPaying(out.data?.rows.find((x) => x.id === id) ?? null)}
+        onEdit={actions.post ? setEditing : undefined}
+        canEditRow={(st) => st === 'Posted'}
         reloadKey={out.data}
         onChanged={out.reload}
         fallback={
@@ -1259,6 +1426,16 @@ export function CollectionsPage({ actions }: { actions: ActionSet }) {
           </div>
         }
       />
+      {editing ? (
+        <ReceiptEdit
+          id={editing}
+          onClose={() => setEditing('')}
+          onSaved={() => {
+            setEditing('');
+            out.reload();
+          }}
+        />
+      ) : null}
       {paying ? (
         <SettleBillsModal
           side="CUSTOMER"
@@ -1285,6 +1462,7 @@ export function DeliveryPlanPage({ actions }: { actions: ActionSet }) {
   const [month, setMonth] = useState(todayIso().slice(0, 7));
   const [qty, setQty] = useState('');
   const [msg, setMsg] = useState('');
+  const [editing, setEditing] = useState('');
   return (
     <>
       <PageHead
@@ -1363,9 +1541,22 @@ export function DeliveryPlanPage({ actions }: { actions: ActionSet }) {
         </Modal>
       ) : null}
       <ErrorBox message={plan.error} />
+      {editing ? (
+        <DeliveryEdit
+          id={editing}
+          onClose={() => setEditing('')}
+          onSaved={() => {
+            setEditing('');
+            plan.reload();
+          }}
+        />
+      ) : null}
       <V40Register
         pageId="sales-delivery"
         host
+        actions={actions}
+        onEdit={actions.edit ? setEditing : undefined}
+        canEditRow={(st) => st !== 'Delivered'}
         reloadKey={plan.data}
         onChanged={plan.reload}
         fallback={
@@ -1406,14 +1597,11 @@ export function DeliveryPlanPage({ actions }: { actions: ActionSet }) {
 
 // ------------------------------------------------------------------------------------------------ credit limits
 export function CreditPage({ actions }: { actions: ActionSet }) {
-  const toast = useToast();
   const list = useLoad(() => getJson<Row[]>('/sales/credit/overview'), []);
-  const [adding, setAdding] = useState(false);
-  const [customerId, setCustomerId] = useState('');
-  const [limit, setLimit] = useState('');
-  const [days, setDays] = useState('');
-  const [reason, setReason] = useState('');
-  const [msg, setMsg] = useState('');
+  // '' = a new credit limit, an id = editing that customer's
+  const [form, setForm] = useState<string | null>(null);
+  const [viewing, setViewing] = useState('');
+  const [saved, setSaved] = useState(0);
   return (
     <>
       <PageHead
@@ -1421,90 +1609,42 @@ export function CreditPage({ actions }: { actions: ActionSet }) {
         sub="What each customer owes and has on order against their limit. A new order that goes over the limit needs a manager override."
       >
         {actions.add || actions.edit ? (
-          <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+          <button type="button" className="btn primary" onClick={() => setForm('')}>
             ＋ New Credit Limit
           </button>
         ) : null}
       </PageHead>
-      {adding ? (
-        <Modal
-          title="New Credit Limit"
-          sub="Set the credit limit and days for a customer. A higher limit goes to approval; a lower one applies at once."
-          size="sm"
-          onClose={() => setAdding(false)}
-          footer={
-            <>
-              <button type="button" className="btn" onClick={() => setAdding(false)}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                disabled={!customerId || (limit === '' && days === '') || reason.trim().length < 10}
-                title={
-                  !customerId
-                    ? 'Choose the customer first.'
-                    : limit === '' && days === ''
-                      ? 'Type a credit limit or credit days.'
-                      : reason.trim().length < 10
-                        ? 'Write a reason of at least 10 characters.'
-                        : undefined
-                }
-                onClick={() => {
-                  setMsg('');
-                  requestCreditChange(customerId, {
-                    ...(limit !== '' ? { newLimit: Number(limit) } : {}),
-                    ...(days !== '' ? { newDays: Number(days) } : {}),
-                    reason: reason.trim(),
-                  })
-                    .then((r) => {
-                      toast(r.applied ? 'Credit limit updated.' : 'Sent for approval.');
-                      setAdding(false);
-                      setCustomerId('');
-                      setLimit('');
-                      setDays('');
-                      setReason('');
-                      list.reload();
-                    })
-                    .catch((e: unknown) => setMsg(toUiMessage(e)));
-                }}
-              >
-                Save
-              </button>
-            </>
-          }
-        >
-          <ErrorBox message={msg} />
-          <div className="field">
-            <label htmlFor="cl-cust">Customer *</label>
-            <LookupCombo<Option>
-              id="cl-cust"
-              value={customerId}
-              search={lookupCustomers}
-              label={(o) => o.label}
-              onPick={(o) => setCustomerId(o?.id ?? '')}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="cl-limit">Credit limit (₹)</label>
-            <input id="cl-limit" type="number" min={0} value={limit} onChange={(e) => setLimit(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor="cl-days">Credit days</label>
-            <input id="cl-days" type="number" min={0} max={365} value={days} onChange={(e) => setDays(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor="cl-reason">Reason *</label>
-            <input id="cl-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why is the limit set or changed?" />
-            <small className="muted">At least 10 characters.</small>
-          </div>
-        </Modal>
+      {form !== null ? (
+        <CreditForm
+          id={form || null}
+          onClose={() => setForm(null)}
+          onSaved={() => {
+            setForm(null);
+            setSaved((n) => n + 1);
+            list.reload();
+          }}
+        />
+      ) : null}
+      {viewing ? (
+        <CreditView
+          id={viewing}
+          canEdit={actions.edit}
+          onClose={() => setViewing('')}
+          onEdit={() => {
+            setForm(viewing);
+            setViewing('');
+          }}
+        />
       ) : null}
       <ErrorBox message={list.error} />
       <V40Register
         pageId="sales-credit"
         host
-        reloadKey={list.data}
+        actions={actions}
+        onOpen={setViewing}
+        onEdit={actions.edit ? setForm : undefined}
+        canEditRow={() => true}
+        reloadKey={`${saved}-${list.data?.length ?? 0}`}
         onChanged={list.reload}
         fallback={
           <div className="card table-wrap">

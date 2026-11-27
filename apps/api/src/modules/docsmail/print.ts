@@ -16,6 +16,7 @@ import type { PrintDto } from '../../kit/print';
 import { letterheadFor, recordPdfService } from '../records/pdf';
 import type { Caller } from '../records/service';
 import { stripHtml } from './letters';
+import { salesCopyMark, salesPrint } from './sales-print';
 import { query } from '../procurement/core';
 import type { Row } from '../procurement/core';
 
@@ -34,6 +35,8 @@ export interface CatalogDoc {
   lines?: { table: string; fk: string };
   totalCol?: string;
   partyCol?: string;
+  /** SQL (alias t) of the plant of a row, for a table with no plant column of its own (a zone belongs to its warehouse's) */
+  unitSql?: string;
 }
 
 /** The ~25 business documents of the Document Center. Every one prints in 5 formats. */
@@ -74,6 +77,18 @@ export const TYPED_DOCS: readonly CatalogDoc[] = [
   // one row per item and warehouse (view stock_balance_records)
   { pageId: 'inv-stock', title: 'Stock Balance', group: 'Inventory', table: 'stock_balance_records', numberCol: 'number', dateCol: 'updated_at', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'wms-warehouses', title: 'Warehouse', group: 'Inventory', table: 'warehouses', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'wms-zones', title: 'Warehouse Zone', group: 'Inventory', table: 'wms_zones', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id', unitSql: 'SELECT w.unit_id FROM warehouses w WHERE w.id = t.warehouse_id' },
+  { pageId: 'wms-racks', title: 'Rack', group: 'Inventory', table: 'wms_racks', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id', unitSql: 'SELECT w.unit_id FROM warehouses w WHERE w.id = t.warehouse_id' },
+  { pageId: 'wms-shelves', title: 'Shelf', group: 'Inventory', table: 'wms_shelves', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id', unitSql: 'SELECT w.unit_id FROM wms_racks r JOIN warehouses w ON w.id = r.warehouse_id WHERE r.id = t.rack_id' },
+  { pageId: 'wms-bins', title: 'Bin', group: 'Inventory', table: 'wms_bins', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id', unitSql: 'SELECT w.unit_id FROM warehouses w WHERE w.id = t.warehouse_id' },
+  { pageId: 'wms-putaway', title: 'Put-away Task', group: 'Inventory', table: 'putaway_tasks', numberCol: 'task_no', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'wms-pick', title: 'Pick Wave', group: 'Inventory', table: 'pick_waves', numberCol: 'number', dateCol: 'planned_date', statusCol: 'status', unitCol: 'unit_id', lines: { table: 'pick_tasks', fk: 'wave_id' } },
+  { pageId: 'wms-packing', title: 'Packing Slip', group: 'Inventory', table: 'pack_units', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'wms-cycle', title: 'Cycle Count', group: 'Inventory', table: 'stock_counts', numberCol: 'code', dateCol: 'planned_date', statusCol: 'status', unitCol: 'unit_id', lines: { table: 'stock_count_lines', fk: 'count_id' } },
+  { pageId: 'wms-physical', title: 'Physical Verification', group: 'Inventory', table: 'stock_counts', numberCol: 'code', dateCol: 'planned_date', statusCol: 'status', unitCol: 'unit_id', lines: { table: 'stock_count_lines', fk: 'count_id' } },
+  { pageId: 'wms-transfer', title: 'Warehouse Transfer', group: 'Inventory', table: 'stock_vouchers', numberCol: 'number', dateCol: 'posting_date', statusCol: 'status', unitCol: 'unit_id', lines: { table: 'stock_voucher_lines', fk: 'voucher_id' } },
+  { pageId: 'wms-barcode', title: 'Item Barcode', group: 'Inventory', table: 'items', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'wms-rfid', title: 'RFID / Barcode Tag', group: 'Inventory', table: 'wms_rfid_tags', numberCol: 'tag_code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id', unitSql: 'SELECT w.unit_id FROM warehouses w WHERE w.id = t.warehouse_id' },
   { pageId: 'inv-batch', title: 'Batch', group: 'Inventory', table: 'batches', numberCol: 'batch_no', dateCol: 'created_at', statusCol: 'status', unitCol: null },
   { pageId: 'inv-serial', title: 'Serial Number', group: 'Inventory', table: 'serial_numbers', numberCol: 'serial_no', dateCol: 'created_at', statusCol: 'status', unitCol: null },
   { pageId: 'inv-reservation', title: 'Stock Reservation', group: 'Inventory', table: 'stock_reservations', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
@@ -111,6 +126,10 @@ export const TYPED_DOCS: readonly CatalogDoc[] = [
   { pageId: 'qms-ncr', title: 'Non-Conformance Report', group: 'Quality', table: 'qms_rejections', numberCol: 'number', dateCol: 'reject_date', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'qms-capa', title: 'CAPA Report', group: 'Quality', table: 'qms_forms', numberCol: 'number', dateCol: 'doc_date', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'qms-mom', title: 'Minutes of Meeting', group: 'Quality', table: 'qms_forms', numberCol: 'number', dateCol: 'doc_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'qms-customer-ncr', title: 'Customer NCR', group: 'Quality', table: 'qms_ncrs', numberCol: 'number', dateCol: 'ncr_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'qms-conformance-ncr', title: 'Conformance NCR', group: 'Quality', table: 'qms_ncrs', numberCol: 'number', dateCol: 'ncr_date', statusCol: 'status', unitCol: 'unit_id' },
+  { pageId: 'qms-templates', title: 'Quality Format', group: 'Quality', table: 'qms_formats', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
+  { pageId: 'qms-rejection-revoke', title: 'Rejection & Revoke', group: 'Quality', table: 'qms_rejections', numberCol: 'number', dateCol: 'reject_date', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'qms-5why', title: '5 Why Analysis', group: 'Quality', table: 'five_why_cases', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'qms-calibration', title: 'Calibration Record', group: 'Quality', table: 'qms_instruments', numberCol: 'equipment_no', dateCol: 'valid_until', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'maint-machines', title: 'Machine', group: 'Maintenance', table: 'assets', numberCol: 'asset_no', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
@@ -153,6 +172,9 @@ export const TYPED_DOCS: readonly CatalogDoc[] = [
 export function printSourceOf(pageId: string): CatalogDoc | undefined {
   return CATALOG.find((c) => c.pageId === pageId) ?? TYPED_DOCS.find((c) => c.pageId === pageId);
 }
+
+/** SQL (alias t) giving the plant of a row of the catalog, or null when its records belong to no plant. */
+export const plantSql = (doc: CatalogDoc): string | null => (doc.unitSql ? `(${doc.unitSql})` : doc.unitCol ? `t.${doc.unitCol}` : null);
 
 const HIDE = /(^id$|_id$|^version$|^deleted_at$|^created_at$|^updated_at$|^fy_id$|^password|^json|_json$|^body_html$)/;
 
@@ -206,6 +228,20 @@ async function linkedNames(r: Row): Promise<{ facts: { label: string; value: str
     ['order_id', 'Production order', 'SELECT number AS label FROM mfg_orders WHERE id = $1::uuid'],
     // REQ-03: a purchase printed for a customer's order names the Customer PO
     ['sales_order_id', 'Customer PO', "SELECT COALESCE(NULLIF(customer_po_no, ''), number) AS label FROM sales_orders WHERE id = $1::uuid"],
+    // warehouse records: where they are
+    ['warehouse_id', 'Warehouse', "SELECT code || ' - ' || name AS label FROM warehouses WHERE id = $1::uuid"],
+    ['to_warehouse_id', 'Destination warehouse', "SELECT code || ' - ' || name AS label FROM warehouses WHERE id = $1::uuid"],
+    ['zone_id', 'Zone', "SELECT code || ' - ' || name AS label FROM wms_zones WHERE id = $1::uuid"],
+    ['rack_id', 'Rack', 'SELECT code AS label FROM wms_racks WHERE id = $1::uuid'],
+    ['shelf_id', 'Shelf', 'SELECT code AS label FROM wms_shelves WHERE id = $1::uuid'],
+    ['bin_id', 'Bin', 'SELECT code AS label FROM wms_bins WHERE id = $1::uuid'],
+    ['suggested_bin_id', 'Suggested bin', 'SELECT code AS label FROM wms_bins WHERE id = $1::uuid'],
+    ['actual_bin_id', 'Put into bin', 'SELECT code AS label FROM wms_bins WHERE id = $1::uuid'],
+    ['wave_id', 'Pick wave', 'SELECT number AS label FROM pick_waves WHERE id = $1::uuid'],
+    ['grn_id', 'Goods receipt', 'SELECT number AS label FROM goods_receipts WHERE id = $1::uuid'],
+    ['source_id', 'Lead source', 'SELECT name AS label FROM lead_sources WHERE id = $1::uuid'],
+    ['assigned_to_id', 'Owner', 'SELECT name AS label FROM users WHERE id = $1::uuid'],
+    ['project_id', 'Project Number', 'SELECT code AS label FROM projects WHERE id = $1::uuid'],
   ];
   const facts: { label: string; value: string }[] = [];
   let order = '';
@@ -220,7 +256,8 @@ async function linkedNames(r: Row): Promise<{ facts: { label: string; value: str
 }
 
 async function rowDto(caller: Caller, doc: CatalogDoc, id: string): Promise<PrintDto> {
-  const rows = await query(prisma, `SELECT t.* FROM ${doc.table} t WHERE t.id = $1::uuid`, id);
+  const plant = doc.unitSql ? `, ${plantSql(doc)} AS unit_id` : '';
+  const rows = await query(prisma, `SELECT t.*${plant} FROM ${doc.table} t WHERE t.id = $1::uuid`, id);
   const r = rows[0];
   if (!r) throw Errors.notFound('Record not found.');
   if (doc.unitCol && r[doc.unitCol] && !caller.ctx.unitIds.includes(String(r[doc.unitCol]))) throw Errors.notFound('Record not found.');
@@ -228,12 +265,15 @@ async function rowDto(caller: Caller, doc: CatalogDoc, id: string): Promise<Prin
   const unit = unitId ? await prisma.unit.findUnique({ where: { id: unitId } }) : null;
   const facts = Object.entries(r)
     .filter(([k, v]) => !HIDE.test(k) && k !== doc.numberCol && v !== null && v !== '' && (typeof v !== 'object' || v instanceof Date))
-    .map(([k, v]) => ({ label: pretty(k), value: cell(v) }));
+    // a quality record prints its coded values as words (NON_CONFORMANCE -> Non conformance)
+    .map(([k, v]) => ({ label: pretty(k), value: doc.table.startsWith('qms_') && QUALITY_CODES.has(k) ? pretty(String(v).toLowerCase()) : cell(v) }));
   let lines: PrintDto['lines'] = null;
   if (doc.lines) {
-    const ls = await query(prisma, `SELECT l.*, i.name AS item_name FROM ${doc.lines.table} l LEFT JOIN items i ON i.id = l.item_id WHERE l.${doc.lines.fk} = $1::uuid ORDER BY l.created_at NULLS LAST, l.id`, id).catch(
-      () => query(prisma, `SELECT l.* FROM ${doc.lines!.table} l WHERE l.${doc.lines!.fk} = $1::uuid`, id),
-    );
+    const named = `SELECT l.*, i.name AS item_name FROM ${doc.lines.table} l LEFT JOIN items i ON i.id = l.item_id WHERE l.${doc.lines.fk} = $1::uuid`;
+    const ls = await query(prisma, `${named} ORDER BY l.created_at NULLS LAST, l.id`, id)
+      // a line table with no creation time (pick tasks, count lines) is listed by its line number
+      .catch(() => query(prisma, `${named} ORDER BY l.line_no`, id))
+      .catch(() => query(prisma, `SELECT l.* FROM ${doc.lines!.table} l WHERE l.${doc.lines!.fk} = $1::uuid`, id));
     if (ls.length > 0) {
       const keys = Object.keys(ls[0]!).filter((k) => !HIDE.test(k) || k === 'item_name');
       lines = {
@@ -257,7 +297,10 @@ async function rowDto(caller: Caller, doc: CatalogDoc, id: string): Promise<Prin
   const docNo = LINE_TABLES.has(doc.table) && linked.order ? `${linked.order} / ${rawNo}` : await readableNo(doc.table, id, rawNo);
   const total = doc.totalCol && r[doc.totalCol] !== null && r[doc.totalCol] !== undefined ? Number(r[doc.totalCol]) : null;
   const created = r.created_by_id ? (await query(prisma, `SELECT name FROM users WHERE id = $1::uuid`, r.created_by_id))[0] : null;
-  return {
+  // a Sales record names its own facts, lines and totals (sales-print.ts)
+  const statusText = doc.statusCol ? String((r[doc.statusCol] ?? '') as string) : '';
+  const sales = await salesPrint(doc.pageId, r, id, statusText);
+  const dto: PrintDto = {
     templateKey: 'row',
     title: doc.title,
     docNo,
@@ -265,14 +308,53 @@ async function rowDto(caller: Caller, doc: CatalogDoc, id: string): Promise<Prin
     unit: { code: unit?.code ?? '-', name: unit?.name ?? '-', ...(unit?.gstin ? { gstin: unit.gstin } : {}), ...(unit?.address ? { address: [unit.address, unit.city].filter(Boolean).join(', ') } : {}) },
     letterhead: {},
     parties: [],
-    facts: [...(doc.statusCol ? [{ label: 'Status', value: String((r[doc.statusCol] ?? '') as string) }] : []), ...linked.facts, ...facts.filter((f) => f.label !== 'Status')],
+    facts: [
+      ...(doc.statusCol ? [{ label: 'Status', value: String((r[doc.statusCol] ?? '') as string) }] : []),
+      ...linked.facts,
+      // a decimal column is not one of the plain facts above: the lead's value must be on its print
+      ...(doc.table === 'leads' && r.est_value !== null && r.est_value !== undefined ? [{ label: 'Expected Value', value: formatInr(Number(r.est_value)) }] : []),
+      ...facts.filter((f) => f.label !== 'Status'),
+    ],
     lines,
-    sections: [],
+    sections: await qualitySections(doc.table, r),
     totals: total !== null ? [{ label: 'Total', value: formatInr(total), bold: true }] : [],
     ...(total !== null ? { amountInWords: rupeesInWords(total) } : {}),
     signatures: [{ label: 'Prepared by', ...(created?.name ? { name: String(created.name) } : {}) }, { label: 'Checked by' }, { label: 'Approved by' }],
   };
+  if (!sales) return dto;
+  const { amountInWords: _generic, ...plain } = dto;
+  return { ...plain, ...sales };
 }
+
+/** The parts of a quality record that are not plain columns: the 8D stages, the check points, the revoke requests. */
+async function qualitySections(table: string, r: Row): Promise<PrintDto['sections']> {
+  if (table === 'qms_ncrs' && r.type === 'CUSTOMER') {
+    const stages = (r.eight_d ?? {}) as Record<string, { text?: string; done?: boolean; doneOn?: string | null }>;
+    const names = ['Team', 'Problem description', 'Containment action', 'Root cause', 'Corrective action', 'Implementation and check', 'Prevent recurrence', 'Team recognition'];
+    return names.map((name, i) => {
+      const st = stages[`d${i + 1}`];
+      return { title: `D${i + 1} ${name}${st?.done ? ` (passed${st.doneOn ? ` ${st.doneOn}` : ''})` : ' (open)'}`, text: st?.text || '-' };
+    });
+  }
+  if (table === 'qms_formats') {
+    const points = Array.isArray(r.points) ? (r.points as string[]) : [];
+    return points.length ? [{ title: 'Check points', text: points.map((p, i) => `${i + 1}. ${p}`).join('\n') }] : [];
+  }
+  if (table === 'qms_rejections') {
+    const asked = await query(
+      prisma,
+      `SELECT number, status, reason, decision_note FROM qms_revoke_requests WHERE rejection_id = $1::uuid ORDER BY requested_at`,
+      r.id,
+    );
+    return asked.map((q) => ({
+      title: `Revoke request ${String(q.number as string)} - ${String(q.status as string)}`,
+      text: `Reason: ${String(q.reason as string)}${q.decision_note ? `\nDecision: ${String(q.decision_note as string)}` : ''}`,
+    }));
+  }
+  return [];
+}
+
+const QUALITY_CODES: ReadonlySet<string> = new Set(['type', 'priority', 'result', 'disposition']);
 
 const LINE_TABLES: ReadonlySet<string> = new Set(['mfg_order_ops', 'mfg_order_materials', 'mfg_cost_sheets', 'mfg_mrp_suggestions']);
 
@@ -309,8 +391,10 @@ export async function buildPrintDto(caller: Caller, pageId: string, id: string):
 }
 
 /** "Original" the first time a posted document is printed, "Duplicate" after that; a draft is marked DRAFT. */
-async function copyLabel(id: string, status: string, requested?: string): Promise<string> {
-  if (!POSTED.test(status)) return 'DRAFT';
+async function copyLabel(id: string, pageId: string, status: string, requested?: string): Promise<string> {
+  const mark = salesCopyMark(pageId, status);
+  if (mark === 'DRAFT' || mark === 'CANCELLED') return mark;
+  if (mark === null && !POSTED.test(status)) return 'DRAFT';
   if (requested === 'original') return 'Original';
   if (requested === 'duplicate') return 'Duplicate';
   const n = Number((await query(prisma, `SELECT count(*)::int AS n FROM audit_logs WHERE action = 'PRINT_RENDERED' AND target_id = $1 AND detail->>'copy' IN ('Original','Duplicate')`, id).catch(() => [{ n: 0 }]))[0]?.n ?? 0);
@@ -390,8 +474,8 @@ export async function renderPrint(caller: Caller, pageId: string, id: string, ki
   const { dto, status } = await buildPrintDto(caller, pageId, id);
   // Phase 31: the custom fields switched on for PDF / Excel
   dto.facts = [...dto.facts, ...(await controlService.printFacts(pageId, id, kind === 'excel' ? 'excel' : 'pdf'))];
-  const copy = await copyLabel(id, status, copyParam);
-  const labelled: PrintDto = { ...dto, title: copy === 'DRAFT' ? `DRAFT - ${dto.title}` : `${dto.title} (${copy})` };
+  const copy = await copyLabel(id, pageId, status, copyParam);
+  const labelled: PrintDto = { ...dto, title: copy === 'DRAFT' || copy === 'CANCELLED' ? `${copy} - ${dto.title}` : `${dto.title} (${copy})` };
   const base = `${dto.title.replace(/[^A-Za-z0-9]+/g, '-')}-${dto.docNo.replace(/[^A-Za-z0-9]+/g, '-')}`;
   let buffer: Buffer;
   let contentType: string;

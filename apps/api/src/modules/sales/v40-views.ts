@@ -34,6 +34,8 @@ export interface ViewDef {
   labels: string[];
   /** replaces the page FROM (the grain changes, e.g. order lines) */
   from?: string;
+  /** the record behind a row of this tab, when it differs from the page's (SQL; may be NULL for a row with none) */
+  recordId?: string;
   cols?: Record<string, Col>;
   where?: string[];
   order?: string;
@@ -52,6 +54,9 @@ export interface PageDef {
   owner?: string | null;
   /** SQL of the row version column (default t.version); null when the table has none */
   version?: string | null;
+  /** SQL of the record a row belongs to, when the row is a line of it (a pick task of a pick wave): print, e-mail,
+   *  documents and Move Forward act on that record */
+  recordId?: string;
   number: string;
   status: string;
   search: string[];
@@ -861,8 +866,10 @@ const LEAD_COMPACT = [
   'Status',
   'Actions',
 ];
+/** The date typed on the lead; when none is typed, the earliest open follow-up planned for it. */
+const LEAD_NEXT = `COALESCE(t.next_follow_up, (SELECT min(f.due_at)::date FROM crm_followups f WHERE f.related_type='LEAD' AND f.related_id=t.id AND f.status='Open' AND f.deleted_at IS NULL))`;
 const LEADS: PageDef = {
-  from: `leads t LEFT JOIN lead_sources ls ON ls.id=t.source_id LEFT JOIN users ow ON ow.id=t.assigned_to_id ${apJoin('crm-leads')}`,
+  from: `leads t LEFT JOIN lead_sources ls ON ls.id=t.source_id LEFT JOIN users ow ON ow.id=t.assigned_to_id LEFT JOIN projects lpj ON lpj.id=t.project_id ${apJoin('crm-leads')}`,
   number: 't.number',
   status: 't.status',
   search: ['t.number', 't.name', 't.company', 't.mobile', 't.email'],
@@ -875,15 +882,15 @@ const LEADS: PageDef = {
     Mobile: t('t.mobile'),
     Email: t('t.email'),
     Source: t('ls.name'),
-    Campaign: none(),
+    Campaign: t('t.campaign'),
     Owner: t('ow.name'),
     Stage: t('t.status'),
     'Qualification Score': n('t.score'),
     'Expected Value': m('t.est_value'),
-    'Next Follow-up': d(
-      `(SELECT min(f.due_at) FROM crm_followups f WHERE f.related_type='LEAD' AND f.related_id=t.id AND f.status='Open' AND f.deleted_at IS NULL)`,
-    ),
-    'Consent Status': none(),
+    'Next Follow-up': d(LEAD_NEXT),
+    'Consent Status': t('t.consent_status'),
+    'Interested In': t('t.interest'),
+    'Project Number': t('lpj.code'),
     Status: { e: 't.status', type: 'pill' },
     Interested: t('t.interest'),
     'Converted On': d('t.converted_at'),
@@ -904,10 +911,12 @@ const LEADS: PageDef = {
     'Qualification Score',
     'Expected Value',
     'Next Follow-up',
-    'Docs',
-    'Actions',
     'Consent Status',
     'Status',
+    'Interested In',
+    'Project Number',
+    'Docs',
+    'Actions',
   ],
   compact: LEAD_COMPACT,
   views: [
@@ -1618,6 +1627,7 @@ const ENQUIRIES: PageDef = {
 
 const RES_PANEL: PanelDef = {
   title: 'Stock against the reservations',
+  id: 'p.id',
   from: `stock_reservations p LEFT JOIN warehouses pw ON pw.id=p.warehouse_id LEFT JOIN stock_balances sb ON sb.item_id=p.item_id AND sb.warehouse_id=p.warehouse_id`,
   unit: 'p.unit_id',
   soft: null,
@@ -1627,9 +1637,11 @@ const RES_PANEL: PanelDef = {
     ['Demand', 'p.required_qty', 'num'],
     ['Available', 'COALESCE(sb.on_hand,0) - COALESCE(sb.reserved_qty,0)', 'num'],
     ['Allocated', 'p.reserved_qty', 'num'],
-    ['Short', 'GREATEST(p.required_qty - p.reserved_qty, 0)', 'num'],
+    ['Issued', 'p.fulfilled_qty', 'num'],
+    // an issued, released or expired reservation waits for nothing
+    ['Short', `CASE WHEN p.status IN ('Waiting','Partial','Reserved') THEN GREATEST(p.required_qty - p.reserved_qty - p.fulfilled_qty, 0) ELSE 0 END`, 'num'],
     ['Location', 'pw.code', 'text'],
-    ['Action', `CASE WHEN p.required_qty > p.reserved_qty THEN 'Reallocate' END`, 'actions'],
+    ['Action', `CASE WHEN p.status IN ('Waiting','Partial') AND p.required_qty > p.reserved_qty + p.fulfilled_qty THEN 'Reallocate' END`, 'actions'],
   ],
 };
 const RES_COMPACT = [
@@ -1661,7 +1673,7 @@ const RESERVATIONS: PageDef = {
     'Batch Serial': t(`(SELECT b.batch_no FROM batches b WHERE b.id=t.batch_id)`),
     'Required Qty': n('t.required_qty'),
     'Reserved Qty': n('t.reserved_qty'),
-    'Short Qty': n('GREATEST(t.required_qty - t.reserved_qty, 0)'),
+    'Short Qty': n(`CASE WHEN t.status IN ('Waiting','Partial','Reserved') THEN GREATEST(t.required_qty - t.reserved_qty - t.fulfilled_qty, 0) ELSE 0 END`),
     'Reserved Until': d('t.reserved_until'),
     Status: { e: 't.status', type: 'pill' },
     Docs: none('docs'),
@@ -1711,7 +1723,7 @@ const RESERVATIONS: PageDef = {
     },
     {
       match: /^reservation exceptions$/i,
-      where: ['t.required_qty > t.reserved_qty'],
+      where: [`t.status IN ('Waiting','Partial','Reserved')`, 't.required_qty > t.reserved_qty + t.fulfilled_qty'],
       labels: [
         'Reservation No',
         'Demand Ref',
@@ -1739,11 +1751,12 @@ const DEL_COMPACT = [
   'Status',
   'Actions',
 ];
+const DELIVERY_STATUS = `CASE WHEN COALESCE(ln.qty - ln.disp - ln.closed,0) <= 0 THEN 'Delivered' WHEN t.delivery_date < CURRENT_DATE THEN 'Delayed' WHEN ln.disp > 0 THEN 'Partly delivered' ELSE 'Planned' END`;
 const DELIVERY: PageDef = {
   base: [`t.status NOT IN ${NOT_OPEN}`],
   from: `sales_orders t LEFT JOIN customers cu ON cu.id=t.customer_id ${soLines}`,
   number: 't.number',
-  status: 't.status',
+  status: DELIVERY_STATUS,
   search: ['t.number', 'cu.name'],
   order: 't.delivery_date NULLS LAST, t.number',
   cols: {
@@ -1759,10 +1772,7 @@ const DELIVERY: PageDef = {
     Transporter: t(
       `(SELECT dp.transporter FROM sales_dispatches dp WHERE dp.order_id=t.id AND dp.deleted_at IS NULL AND dp.transporter IS NOT NULL ORDER BY dp.created_at DESC LIMIT 1)`,
     ),
-    Status: {
-      e: `CASE WHEN COALESCE(ln.qty - ln.disp - ln.closed,0) <= 0 THEN 'Delivered' WHEN t.delivery_date < CURRENT_DATE THEN 'Delayed' WHEN ln.disp > 0 THEN 'Partly delivered' ELSE 'Planned' END`,
-      type: 'pill',
-    },
+    Status: { e: DELIVERY_STATUS, type: 'pill' },
     'Balance Qty': n('GREATEST(ln.qty - ln.disp - ln.closed, 0)'),
     'Days Late': n(
       `CASE WHEN COALESCE(ln.qty - ln.disp - ln.closed,0) > 0 AND t.delivery_date < CURRENT_DATE THEN CURRENT_DATE - t.delivery_date END`,
@@ -1810,6 +1820,7 @@ const CRED_COMPACT = [
 const openItems = (extra = ''): string =>
   `(SELECT COALESCE(sum(o.outstanding),0) FROM open_items o WHERE o.party_type='CUSTOMER' AND o.party_id=t.id AND o.status NOT IN ('Settled','Cancelled')${extra})`;
 const USED = `(${openItems()} + COALESCE((SELECT sum((l.qty - l.dispatched_qty - l.closed_qty) * l.rate * (1 - l.discount_pct/100)) FROM sales_order_lines l JOIN sales_orders so ON so.id=l.order_id WHERE so.customer_id=t.id AND so.status='Approved' AND so.deleted_at IS NULL AND l.qty - l.dispatched_qty - l.closed_qty > 0),0))`;
+const CREDIT_STATUS = `CASE WHEN t.credit_limit IS NULL THEN 'No limit' WHEN ${USED} > t.credit_limit THEN 'Over limit' ELSE 'Within limit' END`;
 const CREDIT_PANEL: PanelDef = {
   title: 'Customers over their limit',
   from: `customers p`,
@@ -1833,11 +1844,11 @@ const CREDIT_PANEL: PanelDef = {
 };
 const CREDIT: PageDef = {
   base: [`t.status = 'ACTIVE'`],
-  from: `customers t ${apJoin('sales-credit')}`,
+  from: `customers t LEFT JOIN customer_credit_profiles cp ON cp.customer_id=t.id LEFT JOIN projects cpj ON cpj.id=cp.project_id ${apJoin('sales-credit')}`,
   unit: null,
   owner: null,
   number: 't.code',
-  status: 't.status',
+  status: CREDIT_STATUS,
   search: ['t.code', 't.name'],
   order: 't.name, t.id',
   cols: {
@@ -1851,16 +1862,30 @@ const CREDIT: PageDef = {
     'Oldest Due Days': n(
       `(SELECT max(CURRENT_DATE - o.due_date) FROM open_items o WHERE o.party_type='CUSTOMER' AND o.party_id=t.id AND o.status NOT IN ('Settled','Cancelled') AND o.outstanding > 0 AND o.due_date < CURRENT_DATE)`,
     ),
-    Status: {
-      e: `CASE WHEN t.credit_limit IS NULL THEN 'No limit' WHEN ${USED} > t.credit_limit THEN 'Over limit' ELSE 'Within limit' END`,
-      type: 'pill',
-    },
+    Status: { e: CREDIT_STATUS, type: 'pill' },
     'Credit Days': n('t.credit_days'),
     Tier: t('t.tier'),
+    'Risk Grade': t('cp.risk_grade'),
+    'Review Date': d('cp.review_date'),
+    'Hold Status': t(`CASE WHEN t.credit_limit IS NOT NULL AND ${USED} > t.credit_limit THEN 'On hold' ELSE 'Not on hold' END`),
+    'Limit Request': t(`(SELECT 'Waiting for approval' FROM customer_credit_requests q WHERE q.customer_id=t.id AND q.status='PENDING' LIMIT 1)`),
+    'Sales Owner': t(`(SELECT u.name FROM users u WHERE u.id=t.sales_person_id)`),
+    'Project Number': t('cpj.code'),
     Docs: none('docs'),
     Actions: ACTIONS,
   },
-  register: CRED_COMPACT,
+  register: [
+    ...CRED_COMPACT.slice(0, -2),
+    'Credit Days',
+    'Risk Grade',
+    'Review Date',
+    'Hold Status',
+    'Limit Request',
+    'Sales Owner',
+    'Project Number',
+    'Status',
+    'Actions',
+  ],
   compact: CRED_COMPACT,
   views: [
     {
@@ -2089,6 +2114,8 @@ export interface V40Query {
   held?: { only?: string[]; except?: string[] };
   q?: string | undefined;
   status?: string | undefined;
+  /** "c3" ascending, "-c3" descending, by the tab's column of that key */
+  sort?: string | undefined;
   page: number;
   size: number;
 }
@@ -2175,7 +2202,13 @@ export async function runV40View(
   pageId: string,
   q: V40Query,
 ): Promise<V40Result> {
-  const { labels, view } = resolveView(def, q);
+  const resolved = resolveView(def, q);
+  const { view } = resolved;
+  // on the Sales pages the row buttons close the row, after the status they act on
+  const labels =
+    pageId.startsWith('sales-') && resolved.labels.includes('Actions')
+      ? [...resolved.labels.filter((l) => l !== 'Actions'), 'Actions']
+      : resolved.labels;
   const cols: Record<string, Col> = { ...def.cols, ...(view?.cols ?? {}) };
   const columns: V40Column[] = labels.map((label, i) => {
     const c = cols[label] ?? none();
@@ -2213,6 +2246,13 @@ export async function runV40View(
     where.push(`${def.status} = $${args.length}`);
   }
   const from = view?.from ?? def.from;
+  // "c3" / "-c3": order by the column the person picked (a column of this tab that has a source), else the tab's own order
+  let order = view?.order ?? def.order;
+  const pick = /^(-?)c(\d{1,2})$/.exec(q.sort ?? '');
+  const picked = pick ? cols[labels[Number(pick[2])] ?? ''] : undefined;
+  if (pick && picked?.e && picked.type !== 'docs' && picked.type !== 'actions') order = `(${picked.e}) ${pick[1] ? 'DESC' : 'ASC'} NULLS LAST, t.id`;
+  const recordSql = view?.recordId ?? def.recordId;
+  const record = recordSql ? `${recordSql}::text AS record_id, ` : '';
   const w = where.length ? where.join(' AND ') : 'true';
   const total = Number(
     (await query(prisma, `SELECT count(*)::int AS n FROM ${from} WHERE ${w}`, ...args))[0]?.n ?? 0,
@@ -2220,8 +2260,8 @@ export async function runV40View(
   const sel = labels.map((label, i) => `${cast(cols[label] ?? none())} AS c${i}`).join(', ');
   const rows = await query(
     prisma,
-    `SELECT t.id::text AS id, ${def.number} AS number, ${def.status} AS status, ${def.version === null ? 'NULL::text' : `${def.version ?? 't.version'}::text`} AS version, ${sel} FROM ${from} WHERE ${w}
-      ORDER BY ${view?.order ?? def.order} LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
+    `SELECT t.id::text AS id, ${record}${def.number} AS number, ${def.status} AS status, ${def.version === null ? 'NULL::text' : `${def.version ?? 't.version'}::text`} AS version, ${sel} FROM ${from} WHERE ${w}
+      ORDER BY ${order} LIMIT ${q.size} OFFSET ${(q.page - 1) * q.size}`,
     ...args,
   );
   const out: V40Result = {
@@ -2284,7 +2324,29 @@ export interface V40Summary {
   byMonth: { month: string; count: number }[];
   /** records past their date and still open (page rule below); null for a page with no such rule */
   atRisk: number | null;
+  /** Lead Management cards: share of key details filled in, share of open leads without a follow-up ahead, open value */
+  lead?: { completeness: number; open: number; riskScore: number; openValue: string };
+  /** Credit Limits and Sales Returns cards (CARD_RULES below says what each figure counts) */
+  cards?: { completeness: number; open: number; riskScore: number; metric: string | null };
 }
+
+/** What the cards of a Sales page count: the details that should be filled in, what is still open, and what is at risk. */
+const CARD_RULES: Record<string, { filled: string[]; open: string; scope: string; risk: string; metric?: string }> = {
+  'sales-credit': {
+    filled: ['t.credit_limit', 't.credit_days', 'cp.risk_grade', 'cp.review_date'],
+    // no limit yet, or a higher limit waiting for approval
+    open: `t.credit_limit IS NULL OR EXISTS (SELECT 1 FROM customer_credit_requests q WHERE q.customer_id=t.id AND q.status='PENDING')`,
+    scope: 't.credit_limit IS NOT NULL',
+    risk: `${USED} > t.credit_limit OR ${openItems(' AND o.due_date < CURRENT_DATE')} > 0`,
+  },
+  'sales-returns': {
+    filled: ['t.customer_id', 't.invoice_id', 't.warehouse_id', 't.return_date', `NULLIF(t.reason, '')`, 't.credit_note_no'],
+    open: `t.status NOT IN ('Posted','Cancelled')`,
+    scope: `t.status NOT IN ('Posted','Cancelled')`,
+    risk: 't.return_date < CURRENT_DATE - 7',
+    metric: 'COALESCE(sum(ln.qty), 0)',
+  },
+};
 
 /** What "At Risk" means on a page: a condition on the table row (alias t) that is true for a record that is late or went wrong. */
 const AT_RISK_SQL: Record<string, string> = {
@@ -2325,7 +2387,48 @@ export async function runV40Summary(def: PageDef, caller: Caller, pageId: string
   const risk = riskSql
     ? await query(prisma, `SELECT count(*)::int AS n FROM ${def.from} WHERE ${w} AND (${riskSql})`, ...args).catch(() => null)
     : null;
+  let lead: V40Summary['lead'];
+  if (pageId === 'crm-leads') {
+    const filled = ['t.company', 't.mobile', 't.email', 't.source_id', 't.assigned_to_id', 't.est_value', 't.consent_status', LEAD_NEXT]
+      .map((c) => `((${c}) IS NOT NULL)::int`)
+      .join(' + ');
+    const openLead = `t.status IN ('New','Contacted','Qualified')`;
+    const r = (
+      await query(
+        prisma,
+        `SELECT COALESCE(round(avg(${filled}) * 100 / 8), 0)::int AS completeness,
+            count(*) FILTER (WHERE ${openLead})::int AS open,
+            count(*) FILTER (WHERE ${openLead} AND (${LEAD_NEXT} IS NULL OR ${LEAD_NEXT} < current_date))::int AS risky,
+            COALESCE(sum(t.est_value) FILTER (WHERE ${openLead}), 0)::text AS value
+          FROM ${def.from} WHERE ${w}`,
+        ...args,
+      )
+    )[0]!;
+    const open = Number(r.open);
+    lead = { completeness: Number(r.completeness), open, riskScore: open ? Math.round((Number(r.risky) / open) * 100) : 0, openValue: String(r.value) };
+  }
+  const rule = CARD_RULES[pageId];
+  let cards: V40Summary['cards'];
+  if (rule) {
+    const filled = rule.filled.map((c) => `((${c}) IS NOT NULL)::int`).join(' + ');
+    const r = (
+      await query(
+        prisma,
+        `SELECT COALESCE(round(avg(${filled}) * 100 / ${rule.filled.length}), 0)::int AS completeness,
+            count(*) FILTER (WHERE ${rule.open})::int AS open,
+            count(*) FILTER (WHERE ${rule.scope})::int AS scoped,
+            count(*) FILTER (WHERE (${rule.scope}) AND (${rule.risk}))::int AS risky,
+            ${rule.metric ? `round(${rule.metric})::text` : 'NULL::text'} AS metric
+          FROM ${def.from} WHERE ${w}`,
+        ...args,
+      )
+    )[0]!;
+    const scoped = Number(r.scoped);
+    cards = { completeness: Number(r.completeness), open: Number(r.open), riskScore: scoped ? Math.round((Number(r.risky) / scoped) * 100) : 0, metric: r.metric === null ? null : String(r.metric) };
+  }
   return {
+    ...(cards ? { cards } : {}),
+    ...(lead ? { lead } : {}),
     atRisk: risk ? Number(risk[0]?.n ?? 0) : null,
     total: byStatus.reduce((n, r) => n + Number(r.count), 0),
     byStatus: byStatus.map((r) => ({ status: String(r.status), count: Number(r.count) })),

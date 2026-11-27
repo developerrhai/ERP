@@ -7,6 +7,7 @@ import { Modal } from '../../components/Modal';
 import { PasswordHints } from '../../components/PasswordHints';
 import { ApiError, api } from '../../lib/api';
 import { checkPassword } from '../../lib/password-policy';
+import { usePasswordMinLength } from '../../lib/usePasswordMinLength';
 import type { RoleCode, RoleMeta, UnitRef, User } from '../../types';
 import {
   createUser,
@@ -123,7 +124,8 @@ export function UserFormModal({
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
 
-  const pwChecks = checkPassword(tempPassword, loginId, email);
+  const minLength = usePasswordMinLength();
+  const pwChecks = checkPassword(tempPassword, loginId, email, null, minLength);
 
   const validate = (): typeof errors => {
     const e: typeof errors = {};

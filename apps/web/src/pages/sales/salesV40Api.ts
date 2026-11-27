@@ -33,6 +33,8 @@ export interface V40Params {
   department?: string;
   q?: string;
   status?: string;
+  /** "c3" ascending, "-c3" descending, by the tab's column of that key (warehouse pages) */
+  sort?: string;
   page: number;
   size: number;
 }
@@ -66,11 +68,15 @@ export interface V40Summary {
   byMonth: { month: string; count: number }[];
   /** late / failed open records by the page rule; null when the page has no rule */
   atRisk?: number | null;
+  /** Lead Management cards */
+  /** Credit Limits and Sales Returns cards */
+  cards?: { completeness: number; open: number; riskScore: number; metric: string | null };
+  lead?: { completeness: number; open: number; riskScore: number; openValue: string };
 }
 
 /** Whole-set counts of a page (GET /sales/v40/:pageId/summary) for its Analytics and Reports tabs. */
 export async function getSalesV40Summary(pageId: string): Promise<V40Summary> {
-  return (await request<V40Summary>(`/sales/v40/${pageId}/summary`)).data;
+  return (await request<V40Summary>(`${pageId.startsWith('wms-') ? '/fam' : '/sales'}/v40/${pageId}/summary`)).data;
 }
 
 export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page> {
@@ -83,6 +89,7 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
   if (p.q) qs.set('q', p.q);
   if (p.status) qs.set('status', p.status);
   if (p.department) qs.set('department', p.department);
+  if (p.sort) qs.set('sort', p.sort);
 
   // If this is an automation module (auto-workflows, auto-rules, auto-jobs, auto-webhooks), return complete V40 structure
   if (pageId.startsWith('auto-')) {
@@ -184,7 +191,9 @@ export async function getSalesV40(pageId: string, p: V40Params): Promise<V40Page
       noSource: meta.noSource ?? [],
       ...(meta.recordPage ? { recordPage: meta.recordPage } : {}),
     };
-  } catch {
+  } catch (err) {
+    // a warehouse page says what went wrong instead of looking empty
+    if (pageId.startsWith('wms-')) throw err;
     const profileFields = registry.profiles[pageId]?.fields ?? [];
     const cols: V40Column[] = profileFields.map((fld) => {
       const isNum = /amount|total|cost|price|gross|net|tax|gst|score|percent|%|qty|quantity|count|hours|rate|value/i.test(fld);

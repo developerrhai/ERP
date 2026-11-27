@@ -667,7 +667,7 @@ export function RegisterTab({
 }
 
 /** Table-level export of the rows on screen: Excel = CSV, Word = an HTML .doc Word opens, PDF = the browser's Save as PDF. */
-function exportTable(box: HTMLElement | null, title: string, kind: 'word' | 'excel' | 'pdf', say: (m: string) => void): void {
+export function exportTable(box: HTMLElement | null, title: string, kind: 'word' | 'excel' | 'pdf', say: (m: string) => void): void {
   const table = box?.querySelector('table');
   if (!table) return say('There is no table to export yet.');
   const clean = table.cloneNode(true) as HTMLTableElement;

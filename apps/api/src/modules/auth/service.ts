@@ -572,7 +572,7 @@ export const authService = {
       if (lockedUntil) throw Errors.accountLocked(minutesUntil(lockedUntil));
       throw Errors.validation({ currentPassword: 'Current password is incorrect.' });
     }
-    const problem = checkPasswordPolicy(input.newPassword, user);
+    const problem = checkPasswordPolicy(input.newPassword, user, await getSecurityPolicy());
     if (problem) throw Errors.validation({ newPassword: problem });
     if (input.newPassword === input.currentPassword) {
       throw Errors.validation({
@@ -751,7 +751,7 @@ export const authService = {
       }
 
       const user = await tx.user.findUniqueOrThrow({ where: { id: resetToken.userId } });
-      const problem = checkPasswordPolicy(input.newPassword, user);
+      const problem = checkPasswordPolicy(input.newPassword, user, await getSecurityPolicy(tx));
       if (problem) throw Errors.validation({ newPassword: problem });
 
       const sameAsCurrent = await verifyPassword(user.passwordHash, input.newPassword);

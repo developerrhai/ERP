@@ -29,6 +29,8 @@ import {
   kindOf,
   listInspections,
   planPreview,
+  returnInspection,
+  setInspectionPriority,
   submitInspection,
   updateInspection,
 } from './inspection-service';
@@ -38,6 +40,8 @@ import { QMS_V40_PAGES } from './v40-views';
 import { instrumentsService } from './instruments-service';
 import { TEMPLATE_KINDS, masterService } from './master-service';
 import { COST_CATEGORIES, DISPOSITIONS, SETTING_KEYS, registersService } from './registers-service';
+import { PRIORITIES } from './common';
+import { mountQualityV2 } from './routes-v2';
 
 const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use YYYY-MM.');
 const num = z
@@ -82,8 +86,10 @@ const rowZ = z
       .optional(),
     extra: z.record(z.string().max(200)).optional(),
     remark: z.string().trim().max(300).nullish(),
+    checkType: z.enum(['STANDARD', 'CONDITIONED']).optional(),
   })
   .strict();
+const priorityZ = z.enum(PRIORITIES).nullable().optional();
 const headerZ = z.record(z.unknown());
 const tableColZ = z
   .object({
@@ -343,6 +349,7 @@ export function createQmsRouter(): Router {
       header: headerZ.optional(),
       rows: z.array(rowZ).max(200).optional(),
       lotQty: num.optional(),
+      priority: priorityZ,
     })
     .strict();
   router.post(
@@ -408,6 +415,7 @@ export function createQmsRouter(): Router {
       header: headerZ.optional(),
       rows: z.array(rowZ).max(200).optional(),
       lotQty: num.optional(),
+      priority: priorityZ,
     })
     .strict();
   router.patch(
@@ -468,6 +476,22 @@ export function createQmsRouter(): Router {
   const cancelB = z
     .object({ reason: z.string().trim().min(3, 'Give the reason.').max(300) })
     .strict();
+  const returnB = z.object({ comment: z.string().trim().min(3, 'Add a comment saying why the record is returned.').max(500) }).strict();
+  router.post(
+    '/qms/inspections/:id/return',
+    validate({ params: idp, body: returnB }),
+    withKind('approve', async (req, res, _k, page) => {
+      send(res, await returnInspection(callerOf(req), page, String(req.params.id), validated(res, 'body', returnB).comment));
+    }),
+  );
+  const priorityB = z.object({ priority: z.enum(PRIORITIES).nullable() }).strict();
+  router.post(
+    '/qms/inspections/:id/priority',
+    validate({ params: idp, body: priorityB }),
+    withKind('edit', async (req, res, _k, page) => {
+      send(res, await setInspectionPriority(callerOf(req), page, String(req.params.id), validated(res, 'body', priorityB).priority));
+    }),
+  );
   router.post(
     '/qms/inspections/:id/cancel',
     validate({ params: idp, body: cancelB }),
@@ -930,6 +954,8 @@ export function createQmsRouter(): Router {
       );
     }),
   );
+
+  mountQualityV2(router);
 
   return router;
 }

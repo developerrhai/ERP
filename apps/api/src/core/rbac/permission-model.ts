@@ -19,6 +19,16 @@ export const ACTIONS = [
 
 export type Action = (typeof ACTIONS)[number];
 
+/** The module the Management Representative and the Quality Head hold full rights on. */
+export const QUALITY_FAMILY = 'Quality / QMS';
+/**
+ * Management Representative (MR) and Quality Head (docs2 Quality / QMS specification): the two roles of that name, and the
+ * Department Head whose home department is Quality.
+ */
+export function isQualityAdmin(u: { roleCode: string; departments: readonly string[] }): boolean {
+  return u.roleCode === 'MR' || u.roleCode === 'QUALITY_HEAD' || (u.roleCode === 'DEPT_HEAD' && u.departments[0] === 'Quality');
+}
+
 export const SCOPES = ['OWN', 'DEPARTMENT', 'UNIT', 'ALL'] as const;
 export type Scope = (typeof SCOPES)[number];
 

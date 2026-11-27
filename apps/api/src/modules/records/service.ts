@@ -271,17 +271,18 @@ export const recordService = {
     // SE-02: a page whose records live in their own table (Enquiries, Quotations, Orders ...) keeps its documents in the
     // same record_documents store; the record is looked up in that table, in a plant the caller may see. A page with no
     // such table (or a record not found there) takes the generic record path below.
-    const { printSourceOf } = await import('../docsmail/print.js');
+    const { printSourceOf, plantSql } = await import('../docsmail/print.js');
     const doc = printSourceOf(pageId);
     if (doc && /^[0-9a-f-]{36}$/i.test(id)) {
+      const plant = plantSql(doc);
       const rows = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-        `SELECT t.id::text AS id, t.${doc.numberCol}::text AS code, ${doc.statusCol ? `t.${doc.statusCol}::text` : 'NULL::text'} AS status${doc.unitCol ? `, t.${doc.unitCol}::text AS unit_id` : ''}
+        `SELECT t.id::text AS id, t.${doc.numberCol}::text AS code, ${doc.statusCol ? `t.${doc.statusCol}::text` : 'NULL::text'} AS status${plant ? `, ${plant}::text AS unit_id` : ''}
            FROM ${doc.table} t WHERE t.id = $1::uuid`,
         id,
       );
       const r = rows[0];
       if (r) {
-        if (doc.unitCol && r.unit_id && !caller.ctx.unitIds.includes(String(r.unit_id))) {
+        if (plant && r.unit_id && !caller.ctx.unitIds.includes(String(r.unit_id))) {
           throw Errors.notFound('Record not found.');
         }
         if (op) requireConcreteUnit(caller);

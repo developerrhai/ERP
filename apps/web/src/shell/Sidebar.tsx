@@ -48,6 +48,14 @@ export function Sidebar({ user, open, onNavigate }: SidebarProps) {
         }
       }
     }
+    // The Warehouse section starts with its own inbox, for the people the server lets into it
+    if (menu.status === 'ready' && menu.families.some((f) => f.items.some((i) => i.id === 'dept-inbox-warehouse'))) {
+      return labeled.map((f: RegistryFamily) =>
+        f.name === 'Warehouse / WMS' && !f.items.some((i) => i.id === 'dept-inbox-warehouse')
+          ? { ...f, items: [{ id: 'dept-inbox-warehouse', title: 'Warehouse Inbox' }, ...f.items] }
+          : f,
+      );
+    }
     return labeled;
   }, [menu.families]);
   const visible = useMemo(() => filterMenu(families, filter), [families, filter]);

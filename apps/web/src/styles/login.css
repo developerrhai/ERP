@@ -294,6 +294,11 @@
 .pw-hints li.ok:before {
   content: '✓ ';
 }
+.pw-hints + .pw-note {
+  margin: -7px 0 13px;
+  font-size: 12px;
+  color: #64748b;
+}
 .msg.static {
   margin: 0 0 12px;
 }

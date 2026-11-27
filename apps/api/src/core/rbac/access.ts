@@ -15,8 +15,10 @@ import {
   ALLOW_FLAG_FOR,
   DEFAULT_RESOURCE,
   familyResource,
+  isQualityAdmin,
   noActions,
   pageResource,
+  QUALITY_FAMILY,
 } from './permission-model';
 import type { Action, ActionFlags, Scope } from './permission-model';
 import { ADMIN_LEVEL, LEGACY_LEVELS, SUPER_USER_LEVEL } from './role-rules';
@@ -156,6 +158,7 @@ export function decideScope(user: AccessUser, pageId: string, data: AccessData):
   if (u.level >= SUPER_USER_LEVEL) return 'ALL';
   const page = pageInfo(pageId);
   if (!page) return 'OWN';
+  if (page.family === QUALITY_FAMILY && isQualityAdmin(u)) return 'ALL';
   return resolvePermission(pageId, page.family, data.rows).scope;
 }
 
@@ -202,6 +205,9 @@ export function decide(
 
   // 4. SUPER_USER (level 99) -> true.
   if (u.level >= SUPER_USER_LEVEL) return true;
+
+  // 4b. Management Representative and Quality Head: every action on every Quality / QMS page (switches above still apply).
+  if (page.family === QUALITY_FAMILY && isQualityAdmin(u)) return true;
 
   // 5. Administration family hard rule: role level below 95 -> false.
   if (page.family === ADMIN_FAMILY && u.level < ADMIN_LEVEL) return false;
@@ -273,7 +279,8 @@ export function explain(
 
   const resolved = resolvePermission(pageId, page.family, data.rows);
   const u = normalizeUser(user);
-  const effectiveScope = u.level >= SUPER_USER_LEVEL ? 'ALL' : resolved.scope;
+  const qualityAdmin = page.family === QUALITY_FAMILY && isQualityAdmin(u);
+  const effectiveScope = u.level >= SUPER_USER_LEVEL || qualityAdmin ? 'ALL' : resolved.scope;
 
   for (const action of ACTIONS) {
     if (!control || !control.enabled) {
@@ -297,6 +304,12 @@ export function explain(
     if (u.level >= SUPER_USER_LEVEL) {
       actions[action] = true;
       reasons.push(`${action}: Super User full access`);
+      continue;
+    }
+
+    if (qualityAdmin) {
+      actions[action] = true;
+      reasons.push(`${action}: Management Representative / Quality Head full access to Quality`);
       continue;
     }
 

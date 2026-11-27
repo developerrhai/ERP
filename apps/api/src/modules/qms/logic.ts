@@ -56,6 +56,19 @@ export function judgeRow(r: JudgeInput): JudgeResult {
   return { status: judged > 0 ? 'OK' : 'NA', invalid };
 }
 
+export type CheckType = 'STANDARD' | 'CONDITIONED';
+/**
+ * Result of a whole sheet: a failed Standard checkpoint rejects it; when only Conditioned checkpoints failed it is
+ * conditionally accepted; otherwise the usual rule below.
+ */
+export function sheetResult(
+  rows: { status: RowStatus; checkType: CheckType }[],
+): 'ACCEPTED' | 'REJECTED' | 'CONDITIONAL' | null {
+  if (rows.some((r) => r.status === 'NOT_OK' && r.checkType !== 'CONDITIONED')) return 'REJECTED';
+  if (rows.some((r) => r.status === 'NOT_OK')) return 'CONDITIONAL';
+  return overallResult(rows.map((r) => r.status));
+}
+
 /** NOT_OK anywhere -> REJECTED; otherwise ACCEPTED when at least one row was judged; null when nothing is filled in. */
 export function overallResult(statuses: RowStatus[]): 'ACCEPTED' | 'REJECTED' | null {
   if (statuses.includes('NOT_OK')) return 'REJECTED';

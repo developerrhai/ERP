@@ -1,7 +1,7 @@
 // Phase 21 §5.7: Automated Document Emails (SES v2 raw MIME + SMTP fallback),
 // Stored-PDF reuse + 7 MB cutoff -> 30d DMS share link, AES-256 encrypted Payslip PDF,
 // Idempotent rule dispatch, SNS webhook signature verification & bounce/complaint suppression.
-import { createMailTransport } from '../../core/mail/transport';
+import { createMailTransport, fromAddress, graphConfigured } from '../../core/mail/transport';
 import { createHash, createVerify, randomBytes } from 'node:crypto';
 import fs from 'node:fs/promises';
 import {
@@ -249,7 +249,7 @@ async function tableRecordContext(pageId: string, docId: string, comp: string): 
   if (!doc || TEMPLATED.has(pageId) || !isUuidShape(docId)) return null;
   // table and column names come from the print catalogue, never from the request
   const rows = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-    `SELECT t.* FROM ${doc.table} t WHERE t.id = $1::uuid`,
+    `SELECT t.*${doc.unitSql ? `, (${doc.unitSql}) AS unit_id` : ''} FROM ${doc.table} t WHERE t.id = $1::uuid`,
     docId,
   );
   const r = rows[0];
@@ -882,6 +882,13 @@ async function dispatchRawMime(input: {
   const configSet =
     input.stream === 'MARKETING' ? env.SES_CONFIG_SET_MKT : env.SES_CONFIG_SET_TXN;
 
+  // The company mailbox (Microsoft 365) is the sender of every ERP mail when it is set up; it only sends as itself.
+  if (!sesSenderOverride && graphConfigured()) {
+    const t = createMailTransport()!;
+    const info = await t.sendMail({ ...mailOptions, from: fromAddress() ?? input.from });
+    return { providerMessageId: info.messageId ?? input.messageIdHeader, status: 'SENT' };
+  }
+
   if (sesSenderOverride) {
     const res = await sesSenderOverride({
       raw: rawBuffer,
@@ -912,7 +919,7 @@ async function dispatchRawMime(input: {
 
   const t = createMailTransport();
   if (t) {
-    const info = await t.sendMail(mailOptions);
+    const info = await t.sendMail({ ...mailOptions, from: fromAddress() ?? input.from });
     return { providerMessageId: info.messageId ?? input.messageIdHeader, status: 'SENT' };
   }
 
@@ -1281,6 +1288,7 @@ export const emailAutomationService = {
     const msgIdHeader = `<${ctx.docId}.${ctx.version}.${Date.now()}@${env.MAIL_FROM_DOMAIN || 'sawantgroup.in'}>`;
     const fromAddr = fromAddressForDoc(ctx.docType);
 
+    // a refusal by the mail server is told to the sender (wrong sender address, sign-in failed, blocked recipient ...)
     const dispatch = await dispatchRawMime({
       from: fromAddr,
       to: cleanTo,
@@ -1294,6 +1302,14 @@ export const emailAutomationService = {
       docNo: ctx.docNo,
       stream,
       attachments: mimeAttachments,
+    }).catch(async (err: unknown) => {
+      const reason = (err instanceof Error ? err.message : String(err)).replace(/\s+/g, ' ').trim().slice(0, 300);
+      logger.error({ err: reason, docType: ctx.docType }, 'Record email was not accepted by the mail server');
+      await prisma.$executeRaw`
+        INSERT INTO outbound_messages (channel, template_id, recipient, rendered_body, status, rule_id, doc_type, doc_id, email_to, cc, bcc, subject, error, requested_by_id, body_stored, stream)
+        VALUES ('EMAIL', ${tpl?.id ?? null}::uuid, ${cleanTo[0]!.slice(0, 150)}, ${`Not sent: ${ctx.docNo}`}, 'FAILED', ${opts.ruleId ?? null}::uuid, ${ctx.docType}, ${safeOutboundDocId}::uuid,
+          ${cleanTo}::text[], ${cleanCc}::text[], ${cleanBcc}::text[], ${subject}, ${reason}, ${caller.userId}::uuid, false, ${stream})`;
+      throw Errors.validation({ email: `The email was not sent. The mail server answered: ${reason}` });
     });
 
     const renderedBodyText = bodyStored

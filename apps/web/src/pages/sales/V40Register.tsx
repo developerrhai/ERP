@@ -25,9 +25,12 @@ import { ClassicViewSwitch, useClassic } from '../frame/ClassicView';
 import { useFrame, v40TabsFor } from '../frame/V40TabFrame';
 import {
   ActivityPanel,
+  CreditWorkspace,
   Customer360Workspace,
   RecordStrip,
   RegisterKpis,
+  ReviewDialog,
+  ReviewManyDialog,
   CRM_PAGES,
 } from './SalesRegisterParts';
 import { dmy, ErrorBox, inr, Pill } from '../finance/shared';
@@ -39,6 +42,8 @@ import {
   type V40Row,
 } from './salesV40Api';
 import { FAM_PAGE_CFG, FAM_V40_IDS } from '../v40fam/famIds';
+import { QMS_V2_PAGE_CFG, QMS_V2_REGISTER_IDS } from '../qms/v2/ids';
+import { exportTable } from '../generic/RegisterTab';
 import {
   SalesAnalyticsView,
   SalesCalendarView,
@@ -51,6 +56,18 @@ import { auditRecord } from '../../lib/auditRecord';
 import './sales-v40.css';
 
 interface PageCfg {
+  /** records with no approval chain: "Submit" sends them to a department for review */
+  review?: boolean;
+  /** offers a "rows per page" list */
+  pageSizes?: number[];
+  /** the Detailed Table shows every column, these first, with Send Email / Word / Excel / PDF above it */
+  detailFirst?: string[];
+  /** the Detailed Table shows just these columns (so its row buttons stay on screen), with the same export buttons */
+  detailOnly?: string[];
+  /** why Edit / Delete are shown switched off on a row that no longer allows them */
+  locked?: { edit?: string; delete?: string };
+  /** the page carries the summary cards, the record strip and the Detailed Table */
+  dashboard?: boolean;
   noun: string;
   /** REST path of the document (get / submit / delete) */
   path?: string;
@@ -69,6 +86,7 @@ interface PageCfg {
 const PAGE_CFG: Record<string, PageCfg> = {
   // the generic families first: a page configured below (sales, CRM) must win over the family default
   ...FAM_PAGE_CFG,
+  ...QMS_V2_PAGE_CFG,
   'sales-orders': {
     noun: 'Sales Orders',
     path: '/sales/orders',
@@ -83,6 +101,7 @@ const PAGE_CFG: Record<string, PageCfg> = {
     submit: true,
     post: true,
     print: true,
+    locked: { edit: 'Only a Draft or Rejected invoice can be edited. A posted invoice is cancelled from View and raised again.', delete: 'Only a Draft invoice can be deleted.' },
   },
   'sales-dispatch': {
     noun: 'Dispatches',
@@ -97,10 +116,23 @@ const PAGE_CFG: Record<string, PageCfg> = {
     submit: true,
     post: true,
     print: true,
+    dashboard: true,
+    pageSizes: [20, 50, 100, 10],
+    detailOnly: ['Return No', 'Customer', 'Invoice Ref', 'Return Date', 'Item', 'Qty', 'Reason', 'Status'],
+    locked: { edit: 'Only a Draft or Rejected return can be edited.', delete: 'Only a Draft return can be deleted.' },
   },
-  'sales-collections': { noun: 'Payments', print: true, move: true },
+  'sales-collections': { noun: 'Payments', print: true, move: true, locked: { edit: 'Edit works on a posted receipt: this row is not one.' } },
   'sales-enquiries': { noun: 'Enquiries', print: true, move: true },
-  'crm-leads': { noun: 'Leads', path: '/crm/leads', print: true, draftStatus: 'New' },
+  'crm-leads': {
+    noun: 'Leads',
+    path: '/crm/leads',
+    print: true,
+    draftStatus: 'New',
+    review: true,
+    pageSizes: [20, 50, 100, 10],
+    detailFirst: ['Lead No', 'Lead Name', 'Consent Status', 'Status'],
+    locked: { edit: 'A converted lead is locked: work continues on its opportunity.', delete: 'Only a New lead can be deleted. Press View, then "Not qualified" to close it.' },
+  },
   'crm-opportunities': {
     noun: 'Opportunities',
     path: '/crm/opportunities',
@@ -113,9 +145,18 @@ const PAGE_CFG: Record<string, PageCfg> = {
   'crm-sources': { noun: 'Sources', print: true, move: true },
   'master-customers': { noun: 'Customers', print: true, move: true },
   'crm-customer360': { noun: 'Customers', print: true, move: true },
-  'sales-reservations': { noun: 'Reservations', print: true, move: true },
-  'sales-delivery': { noun: 'Delivery Plans', print: true, move: true },
-  'sales-credit': { noun: 'Credit Profiles', print: true, move: true },
+  'sales-reservations': { noun: 'Reservations', print: true, move: true, locked: { edit: 'A fulfilled, released or expired reservation can no longer be edited, and changing reserved stock needs the Inventory reservation right.' } },
+  'sales-delivery': { noun: 'Delivery Plans', print: true, move: true, locked: { edit: 'Everything on this order is delivered.' } },
+  'sales-credit': {
+    noun: 'Credit Profiles',
+    print: true,
+    move: true,
+    review: true,
+    dashboard: true,
+    pageSizes: [20, 50, 100, 10],
+    detailOnly: ['Customer Code', 'Customer', 'Credit Limit', 'Used Limit', 'Available Limit', 'Overdue', 'Oldest Due Days', 'Status'],
+    locked: { delete: "A customer's credit profile is not deleted: change the limit with Edit." },
+  },
   'sales-pricelist': { noun: 'Price Lists', print: true, move: true },
 };
 const EDITABLE = new Set(['Draft', 'Rejected']);
@@ -127,6 +168,8 @@ const RECORD_PAGE: Record<string, string> = { 'sales-delivery': 'sales-orders', 
 /** Buttons of the page's own row that the register already draws itself (never repeated as a proxy). */
 const FIXED_LABELS = new Set(['View', 'Open', 'Details', 'Docs', 'Email', 'Word', 'Excel', 'PDF', 'Move Forward', 'Edit', 'Delete', 'Submit']);
 const PAGE_SIZE = 20;
+/** The stored record a row stands for: itself, or the record it is a line of. */
+const recordOf = (r: V40Row): string => r.record_id ?? r.id;
 
 const num = (v: string | null): string => {
   if (v === null || v === '') return '—';
@@ -172,9 +215,11 @@ function Cell({
 function PanelTable({
   panel,
   onAllocate,
+  allocateOff,
 }: {
   panel: V40Panel;
   onAllocate?: ((id: string, action?: string) => void) | undefined;
+  allocateOff?: string | undefined;
 }) {
   return (
     <section className="sv40-panel" aria-label={panel.title}>
@@ -184,7 +229,10 @@ function PanelTable({
           <thead>
             <tr>
               {panel.columns.map((c) => (
-                <th key={c.key}>{c.label}</th>
+                // a heading sits over its figures: numbers are right-aligned in both
+                <th key={c.key} className={c.type === 'num' || c.type === 'inr' ? 'num' : undefined}>
+                  {c.label}
+                </th>
               ))}
             </tr>
           </thead>
@@ -204,6 +252,10 @@ function PanelTable({
                           className="btn sm"
                           onClick={() => onAllocate(r.id ?? '', r[c.key] ?? '')}
                         >
+                          {r[c.key]}
+                        </button>
+                      ) : allocateOff && (r[c.key] === 'Allocate' || r[c.key] === 'Reallocate') ? (
+                        <button type="button" className="btn sm" disabled title={allocateOff}>
                           {r[c.key]}
                         </button>
                       ) : (
@@ -293,16 +345,22 @@ export interface V40RegisterProps {
   /** opens the page's own record dialog for a row (View, Load Selected) */
   onOpen?: (id: string) => void;
   /** opens the record's edit form: a row "Edit" button (only for rows `canEditRow` accepts) */
-  onEdit?: ((id: string) => void) | undefined;
+  onEdit?: ((id: string, row?: V40Row) => void) | undefined;
   canEditRow?: (status: string) => boolean;
   /** bump to reload after the page changed a record */
   reloadKey?: unknown;
   /** the page's own list reloads (after Submit / Delete here) */
   onChanged?: () => void;
   /** the money panel's Allocate button: record a receipt against this invoice id */
-  onAllocate?: (id: string, action?: string) => void;
+  onAllocate?: ((id: string, action?: string) => void) | undefined;
+  /** why the panel's Allocate / Reallocate button is shown switched off for this person */
+  allocateOff?: string | undefined;
   /** page-specific row buttons (Qualify, Won, Lost ...) shown after the standard ones */
   rowExtra?: (row: V40Row, reload: () => void) => ReactNode;
+  /** page-specific buttons of the selection bar (Delete Selected, Deactivate Selected ...) */
+  bulkExtra?: (selected: V40Row[], done: () => void) => ReactNode;
+  /** shows a "Sort by" box and a Print button on each row */
+  sortable?: boolean;
   /**
    * Keep the page's own screen mounted (hidden) behind the register, so its dialogs (create, edit, allocate ...) open from
    * the register's buttons and its row actions are offered on every row.
@@ -313,13 +371,12 @@ export interface V40RegisterProps {
 }
 
 /** True when the V40 register (with its own search box) replaces the page's table. */
-export const hasV40Register = (pageId: string): boolean => SALES_V40_IDS.has(pageId) || FAM_V40_IDS.has(pageId);
+export const hasV40Register = (pageId: string): boolean => SALES_V40_IDS.has(pageId) || FAM_V40_IDS.has(pageId) || QMS_V2_REGISTER_IDS.has(pageId);
 
 /** Wrap the table of a sales page: `<V40Register pageId=… actions=… fallback={<table…/>} />`. */
 export function V40Register(props: V40RegisterProps) {
   const frame = useFrame();
-  if (!frame || (!SALES_V40_IDS.has(props.pageId) && !FAM_V40_IDS.has(props.pageId)))
-    return <>{props.fallback}</>;
+  if (!frame || !hasV40Register(props.pageId)) return <>{props.fallback}</>;
   const body = (
     <V40Body {...props} tabName={frame.tabName} first={frame.index === 0} claim={frame.claim} />
   );
@@ -341,7 +398,10 @@ function V40Body({
   reloadKey,
   onChanged,
   onAllocate,
+  allocateOff,
   rowExtra,
+  bulkExtra,
+  sortable,
   query,
   tabName,
   first,
@@ -377,8 +437,15 @@ function V40Body({
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState('');
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [msg, setMsg] = useState('');
+  // the record chosen in the "Select ..." list, so Load Selected works without ticking its row too
+  const [chosen, setChosen] = useState('');
+  const [size, setSize] = useState(PAGE_SIZE);
+  const [reviewing, setReviewing] = useState<{ id: string; number: string } | null>(null);
+  const [reviewMany, setReviewMany] = useState<V40Row[] | null>(null);
+  const detailBox = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [askDelete, setAskDelete] = useState<string[] | null>(null);
   const [moving, setMoving] = useState<V40Row | null>(null);
@@ -391,12 +458,14 @@ function V40Body({
     setPage(1);
     setPicked(new Set());
   }, [tabName, q, status]);
+  // the columns differ between tabs, so a sort choice belongs to its tab
+  useEffect(() => setSort(''), [tabName]);
 
   const department = query?.department ?? '';
   useEffect(() => setPage(1), [department]);
   const load = useLoad(
-    () => getSalesV40(pageId, { tab: tabName, first, q, status, page, size: PAGE_SIZE, ...(department ? { department } : {}) }),
-    [pageId, tabName, first, q, status, page, reloadKey, tick, department],
+    () => getSalesV40(pageId, { tab: tabName, first, q, status, page, size, ...(sort ? { sort } : {}), ...(department ? { department } : {}) }),
+    [pageId, tabName, first, q, status, page, size, sort, reloadKey, tick, department],
   );
   const data = load.data;
   useEffect(() => setOtherPage(data?.recordPage ?? ''), [data]);
@@ -404,12 +473,14 @@ function V40Body({
   const columns = useColumnChoice(pageId, data?.columns ?? [], (c) => c.type === 'actions');
   for (const r of rows) if (r.status) seen.current.add(r.status);
   const total = data?.total ?? 0;
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pages = Math.max(1, Math.ceil(total / size));
   const docsTab = v40TabsFor(pageId).findIndex((t) => /^documents$/i.test(t));
   const selectedRows = rows.filter((r) => picked.has(r.id));
+  const listed = chosen && q === chosen ? rows.find((r) => r.number === chosen) : undefined;
+  const loadTarget = selectedRows[0] ?? listed;
   // Tell the page toolbar (Word, Industry PDF, Send Email, Excel, Move Forward ...) which record is ticked, so those
   // buttons act on it instead of answering "select a record first" (QA: toolbar buttons did nothing on CRM screens).
-  const activeId = selectedRows[0]?.id ?? '';
+  const activeId = selectedRows[0] ? recordOf(selectedRows[0]) : '';
   const activeNo = selectedRows[0]?.number ?? '';
   useEffect(() => {
     const announce = (): void => {
@@ -439,23 +510,49 @@ function V40Body({
     });
   const allOn = rows.length > 0 && rows.every((r) => picked.has(r.id));
 
+  /** Opens the printed record in a hidden frame and sends it to the printer. */
+  async function printRow(r: V40Row): Promise<void> {
+    try {
+      const file = await docsMailApi.print(recPage, recordOf(r), 'standard');
+      const url = URL.createObjectURL(file.blob);
+      const frameEl = document.createElement('iframe');
+      frameEl.style.display = 'none';
+      frameEl.title = `Print ${r.number}`;
+      frameEl.src = url;
+      frameEl.onload = () => {
+        try {
+          frameEl.contentWindow?.focus();
+          frameEl.contentWindow?.print();
+        } catch {
+          window.open(url, '_blank', 'noopener');
+        }
+      };
+      document.body.appendChild(frameEl);
+      setTimeout(() => {
+        frameEl.remove();
+        URL.revokeObjectURL(url);
+      }, 60_000);
+    } catch (e) {
+      toast(toUiMessage(e));
+    }
+  }
   async function pdf(r: V40Row): Promise<void> {
     try {
-      saveFile(await docsMailApi.print(recPage, r.id, 'standard'), `${r.number || 'document'}.pdf`);
+      saveFile(await docsMailApi.print(recPage, recordOf(r), 'standard'), `${r.number || 'document'}.pdf`);
     } catch (e) {
       toast(toUiMessage(e));
     }
   }
   async function word(r: V40Row): Promise<void> {
     try {
-      saveFile(await docsMailApi.print(recPage, r.id, 'word'), `${r.number || 'document'}.docx`);
+      saveFile(await docsMailApi.print(recPage, recordOf(r), 'word'), `${r.number || 'document'}.docx`);
     } catch (e) {
       toast(toUiMessage(e));
     }
   }
   async function excel(r: V40Row): Promise<void> {
     try {
-      saveFile(await docsMailApi.print(recPage, r.id, 'excel'), `${r.number || 'document'}.xlsx`);
+      saveFile(await docsMailApi.print(recPage, recordOf(r), 'excel'), `${r.number || 'document'}.xlsx`);
     } catch (e) {
       toast(toUiMessage(e));
     }
@@ -536,7 +633,7 @@ function V40Body({
   const docParam = params.get('doc');
   const docRow = rows.find((r) => r.id === docParam) ?? selectedRows[0] ?? rows[0];
   // the real-data tab views exist for the pages the sales endpoint serves
-  const realViews = SALES_V40_IDS.has(pageId);
+  const realViews = SALES_V40_IDS.has(pageId) || pageId.startsWith('wms-');
   const view = !realViews
     ? null
     : isAnalyticsTab(tabName)
@@ -554,25 +651,31 @@ function V40Body({
   const proxy = (r: V40Row, label: string): void => {
     if (!classic?.press(r.number, label)) toast(`${label} is not available for ${r.number} right now.`);
   };
+  // a row whose record link is empty (a scan of an unknown code) has no record to print, send, move or attach to
+  const noRecord = (r: V40Row): boolean => 'record_id' in r && r.record_id === null;
   const rowButtons = (r: V40Row, inModal = false): ReactNode => (
     <>
       {inModal ? null : (
-        <button type="button" className="btn sm" onClick={() => (onOpen ? onOpen(r.id) : setDetail(r))}>
+        <button type="button" className="btn sm" onClick={() => (onOpen ? onOpen(recordOf(r)) : setDetail(r))}>
           View
         </button>
       )}
       {onEdit && (canEditRow ? canEditRow(r.status) : EDITABLE.has(r.status)) ? (
-        <button type="button" className="btn sm" onClick={() => onEdit(r.id)}>
+        <button type="button" className="btn sm" onClick={() => onEdit(recordOf(r), r)}>
           Edit
         </button>
       ) : !onEdit && hostActions(r).includes('Edit') ? (
         <button type="button" className="btn sm" onClick={() => proxy(r, 'Edit')}>
           Edit
         </button>
+      ) : onEdit && cfg.locked?.edit ? (
+        <button type="button" className="btn sm" disabled title={cfg.locked.edit}>
+          Edit
+        </button>
       ) : null}
-      {cfg.print ? (
+      {cfg.print && !noRecord(r) ? (
         <>
-          <button type="button" className="btn sm" onClick={() => setEmail(r.id)}>
+          <button type="button" className="btn sm" onClick={() => setEmail(recordOf(r))}>
             Email
           </button>
           <button type="button" className="btn sm" onClick={() => void pdf(r)}>
@@ -584,6 +687,11 @@ function V40Body({
           <button type="button" className="btn sm" onClick={() => void excel(r)}>
             Excel
           </button>
+          {sortable ? (
+            <button type="button" className="btn sm" onClick={() => void printRow(r)}>
+              Print
+            </button>
+          ) : null}
         </>
       ) : null}
       {cfg.submit && actions.submit && EDITABLE.has(r.status) ? (
@@ -618,8 +726,17 @@ function V40Body({
         <button type="button" className="btn sm danger" onClick={() => proxy(r, 'Delete')}>
           Delete
         </button>
+      ) : cfg.locked?.delete && actions.delete ? (
+        <button type="button" className="btn sm danger" disabled title={cfg.locked.delete}>
+          Delete
+        </button>
       ) : null}
-      {cfg.path || cfg.move ? (
+      {cfg.review && actions.submit && !noRecord(r) ? (
+        <button type="button" className="btn sm" title="Send to a department for review" onClick={() => setReviewing({ id: recordOf(r), number: r.number })}>
+          Submit
+        </button>
+      ) : null}
+      {(cfg.path || cfg.move) && !noRecord(r) ? (
         <button type="button" className="btn sm primary" onClick={() => setMoving(r)}>
           Move Forward
         </button>
@@ -633,7 +750,7 @@ function V40Body({
           360° Track
         </button>
       ) : null}
-      {docsTab >= 0 ? (
+      {docsTab >= 0 && !noRecord(r) ? (
         <button type="button" className="btn sm" onClick={() => openDocs(r.id)}>
           Docs
         </button>
@@ -641,6 +758,17 @@ function V40Body({
     </>
   );
 
+  // Detailed Table: the lead page shows every column (consent and status first); the other pages their first eight
+  const dataColumns = columns.filter((c) => c.type !== 'actions' && c.type !== 'docs');
+  const firstLabels = cfg.detailFirst ?? [];
+  const only = (cfg.detailOnly ?? []).flatMap((l) => dataColumns.filter((c) => c.label === l));
+  const detailColumns = only.length
+    ? only
+    : cfg.detailFirst
+      ? [...firstLabels.flatMap((l) => dataColumns.filter((c) => c.label === l)), ...dataColumns.filter((c) => !firstLabels.includes(c.label))]
+      : dataColumns.slice(0, 8);
+
+  const dashboard = CRM_PAGES.has(pageId) || Boolean(cfg.dashboard);
   const activity = ['crm-followups', 'crm-meetings', 'crm-feedback'].includes(pageId) ? (
     <ActivityPanel pageId={pageId} rows={rows} columns={columns} canAdd={Boolean(actions.add)} onSaved={reload} />
   ) : null;
@@ -660,30 +788,36 @@ function V40Body({
       {view === 'reports' ? <SalesReportsView pageId={pageId} noun={cfg.noun} /> : null}
       {view ? null : (
         <>
-          {CRM_PAGES.has(pageId) ? <RegisterKpis pageId={pageId} reloadKey={tick} /> : null}
-          {CRM_PAGES.has(pageId) ? (
+          {dashboard ? <RegisterKpis pageId={pageId} reloadKey={`${tick}-${String(total)}-${String(reloadKey ? 1 : 0)}`} /> : null}
+          {dashboard ? (
             <RecordStrip
               pageId={pageId}
+              recordPage={recPage}
               rows={rows}
               actions={actions}
               canSubmitDoc={Boolean(cfg.submit)}
               canEdit={(st) => (canEditRow ? canEditRow(st) : EDITABLE.has(st))}
               canDelete={(st) => Boolean(cfg.path) && st === (cfg.draftStatus ?? 'Draft')}
+              deleteWhy={cfg.locked?.delete}
               onLoad={onOpen}
               onEdit={onEdit}
               onDelete={(id) => setAskDelete([id])}
               onSubmit={(id) => void submit([id])}
+              review={Boolean(cfg.review)}
             />
           ) : null}
           {/* V40 order: the Meeting Calendar / Customer 360 workspace first, the detailed table under it */}
           {pageId === 'crm-meetings' ? activity : null}
           {pageId === 'crm-customer360' ? <Customer360Workspace rows={rows} columns={columns} onOpen={onOpen} /> : null}
+          {pageId === 'sales-credit' ? <CreditWorkspace rows={rows} columns={columns} onOpen={onOpen} /> : null}
           <div className="toolbar sv40-toolbar">
             <select
               aria-label="Select record"
-              value=""
+              value={listed ? chosen : ''}
               onChange={(e) => {
-                if (e.target.value) setQ(e.target.value);
+                if (!e.target.value) return;
+                setChosen(e.target.value);
+                setQ(e.target.value);
               }}
             >
               <option value="">{`Select ${cfg.noun}`}</option>
@@ -707,6 +841,26 @@ function V40Body({
                 </option>
               ))}
             </select>
+            {sortable ? (
+              <select aria-label="Sort by" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
+                <option value="">Sort by: usual order</option>
+                {columns
+                  .filter((c) => c.source && c.type !== 'actions' && c.type !== 'docs')
+                  .flatMap((c) => [
+                    <option key={c.key} value={c.key}>{`${c.label} (A to Z, low to high)`}</option>,
+                    <option key={`-${c.key}`} value={`-${c.key}`}>{`${c.label} (Z to A, high to low)`}</option>,
+                  ])}
+              </select>
+            ) : null}
+            {cfg.pageSizes ? (
+              <select aria-label="Rows per page" value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(1); }}>
+                {cfg.pageSizes.map((n) => (
+                  <option key={n} value={n}>
+                    {n} rows
+                  </option>
+                ))}
+              </select>
+            ) : null}
             <span className="sv40-count">{total} records</span>
           </div>
           {picked.size > 0 || rows.length > 0 ? (
@@ -715,9 +869,9 @@ function V40Body({
               <button
                 type="button"
                 className="btn sm"
-                disabled={picked.size === 0 || !onOpen}
-                title={!onOpen ? 'These records have no separate form: press View in the table.' : picked.size === 0 ? 'Tick a record in the table first.' : undefined}
-                onClick={() => selectedRows[0] && onOpen?.(selectedRows[0].id)}
+                disabled={!loadTarget || !onOpen}
+                title={!onOpen ? 'These records have no separate form: press View in the table.' : !loadTarget ? 'Tick a record in the table, or choose it in the list, first.' : undefined}
+                onClick={() => loadTarget && onOpen?.(recordOf(loadTarget))}
               >
                 Load Selected
               </button>
@@ -741,6 +895,17 @@ function V40Body({
                   Submit Selected
                 </button>
               ) : null}
+              {cfg.review && actions.submit ? (
+                <button
+                  type="button"
+                  className="btn sm"
+                  disabled={selectedRows.length === 0}
+                  title={selectedRows.length === 0 ? 'Tick the records to submit first.' : undefined}
+                  onClick={() => setReviewMany(selectedRows)}
+                >
+                  Submit Selected
+                </button>
+              ) : null}
               {cfg.path && actions.delete ? (
                 <button
                   type="button"
@@ -752,6 +917,10 @@ function V40Body({
                   Delete Selected
                 </button>
               ) : null}
+              {bulkExtra?.(selectedRows, () => {
+                setPicked(new Set());
+                reload();
+              })}
             </div>
           ) : null}
           <div className="card table-wrap">
@@ -792,7 +961,7 @@ function V40Body({
                         return (
                           <td key={c.key} className="row-actions">
                             <div className="sv40-wrap">
-                              <HolderNote holder={holders.get(r.id)} />
+                              <HolderNote holder={holders.get(recordOf(r))} />
                               {rowButtons(r)}
                             </div>
                           </td>
@@ -838,31 +1007,51 @@ function V40Body({
               Next
             </button>
           </div>
-          {CRM_PAGES.has(pageId) && rows.length > 0 ? (
+          {dashboard && rows.length > 0 ? (
             <section className="sv40-panel" aria-label={`${cfg.noun} Register – Detailed Table`}>
-              <h3>{cfg.noun} Register – Detailed Table</h3>
-              <div className="table-wrap">
+              <div className="sv40-detail-head">
+                <h3>{cfg.noun} Register – Detailed Table</h3>
+                {cfg.detailFirst || cfg.detailOnly ? (
+                  <div className="actions">
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() => (selectedRows[0] ? setEmail(recordOf(selectedRows[0])) : toast('Tick a row first, then press Send Email.'))}
+                    >
+                      Send Email
+                    </button>
+                    {actions.export ? (
+                      <>
+                        <button type="button" className="btn sm" onClick={() => exportTable(detailBox.current, `${cfg.noun} Register`, 'word', toast)}>
+                          Word
+                        </button>
+                        <button type="button" className="btn sm" onClick={() => exportTable(detailBox.current, `${cfg.noun} Register`, 'excel', toast)}>
+                          Excel
+                        </button>
+                        <button type="button" className="btn sm" onClick={() => exportTable(detailBox.current, `${cfg.noun} Register`, 'pdf', toast)}>
+                          PDF
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              <div className="table-wrap" ref={detailBox}>
                 <table className="register-table">
                   <thead>
                     <tr>
-                      {columns
-                        .filter((c) => c.type !== 'actions' && c.type !== 'docs')
-                        .slice(0, 8)
-                        .map((c) => (
-                          <th key={c.key}>{c.label}</th>
-                        ))}
+                      {detailColumns.map((c) => (
+                        <th key={c.key}>{c.label}</th>
+                      ))}
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((r) => (
                       <tr key={r.id}>
-                        {columns
-                          .filter((c) => c.type !== 'actions' && c.type !== 'docs')
-                          .slice(0, 8)
-                          .map((c) => (
-                            <Cell key={c.key} col={c} row={r} />
-                          ))}
+                        {detailColumns.map((c) => (
+                          <Cell key={c.key} col={c} row={r} />
+                        ))}
                         <td className="row-actions">{rowButtons(r)}</td>
                       </tr>
                     ))}
@@ -874,7 +1063,13 @@ function V40Body({
           {pageId === 'crm-followups' || pageId === 'crm-feedback' ? activity : null}
         </>
       )}
-      {!view && data?.panel ? <PanelTable panel={data.panel} onAllocate={onAllocate} /> : null}
+      {!view && data?.panel ? <PanelTable panel={data.panel} onAllocate={onAllocate} allocateOff={allocateOff} /> : null}
+      {reviewing ? (
+        <ReviewDialog pageId={recPage} id={reviewing.id} number={reviewing.number} onClose={() => setReviewing(null)} onDone={() => { setReviewing(null); reload(); }} />
+      ) : null}
+      {reviewMany ? (
+        <ReviewManyDialog pageId={recPage} rows={reviewMany} onClose={() => setReviewMany(null)} onDone={() => { setReviewMany(null); setPicked(new Set()); reload(); }} />
+      ) : null}
       {showDocs ? (
         docRow ? (
           <>
@@ -900,7 +1095,7 @@ function V40Body({
             </label>
             <DocumentsPanel
               schema={docSchema}
-              row={{ id: docRow.id, code: docRow.number, status: docRow.status }}
+              row={{ id: recordOf(docRow), code: docRow.number, status: docRow.status }}
               canEdit={actions.edit}
               onChanged={reload}
             />
@@ -953,7 +1148,7 @@ function V40Body({
       {moving ? (
         <MoveForwardDialog
           docType={recPage}
-          docId={moving.id}
+          docId={recordOf(moving)}
           docNo={moving.number}
           onClose={() => setMoving(null)}
           onMoved={() => {

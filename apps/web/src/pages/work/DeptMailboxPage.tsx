@@ -8,6 +8,7 @@ import { HistoryDrawer, MoveForwardDialog, ReturnDialog } from '../../components
 import { TabStrip } from '../../components/TabStrip';
 import { useToast } from '../../components/Toast';
 import { docsMailApi, type MailRow } from '../../lib/docsMailApi';
+import { toUiMessage } from '../../lib/errors';
 import {
   workApi,
   type Dept,
@@ -16,7 +17,6 @@ import {
   type MovementState,
 } from '../../lib/workApi';
 import type { User } from '../../types';
-import { generateDeptInboxFallback } from './deptInboxFallback';
 import { duplicateMessage, scanDuplicates } from '../../components/dupScan';
 import { tableToCsv } from '../../components/ActionBar';
 
@@ -185,7 +185,7 @@ export function DeptMailboxPage({
     if (spec.mail) {
       jobs.push(
         docsMailApi
-          .inbox()
+          .inbox(dept.name)
           .then(
             (mail) => {
               if (alive) setMailBlocked(false);
@@ -200,7 +200,7 @@ export function DeptMailboxPage({
             mail
               .filter((x) =>
                 spec.mail === 'unread'
-                  ? !x.read
+                  ? !x.read && x.mine !== false
                   : spec.mail === 'attachments'
                     ? attachmentCount(x) > 0
                     : true,
@@ -212,21 +212,15 @@ export function DeptMailboxPage({
     void Promise.all(jobs).then(
       (parts) => {
         if (!alive) return;
-        const flat = parts.flat();
-        if (flat.length === 0) {
-          const fallback = generateDeptInboxFallback(dept.name);
-          setRows(fallback);
-        } else {
-          setRows(flat.sort((a, b) => b.at.localeCompare(a.at)));
-        }
+        // only what is really in the mailbox: an empty one says so
+        setRows(parts.flat().sort((a, b) => b.at.localeCompare(a.at)));
         setError('');
         setBusy(false);
       },
-      () => {
+      (err: unknown) => {
         if (!alive) return;
-        const fallback = generateDeptInboxFallback(dept.name);
-        setRows(fallback);
-        setError('');
+        setRows([]);
+        setError(toUiMessage(err));
         setBusy(false);
       },
     );
@@ -234,8 +228,8 @@ export function DeptMailboxPage({
       (c) => alive && setCounts(c),
       () => undefined,
     );
-    void docsMailApi.inbox().then(
-      (m) => alive && setUnread(m.filter((x) => !x.read).length),
+    void docsMailApi.inbox(dept.name).then(
+      (m) => alive && setUnread(m.filter((x) => !x.read && x.mine !== false).length),
       () => undefined,
     );
     return () => {
@@ -248,7 +242,7 @@ export function DeptMailboxPage({
       rows.filter((r) => {
         // Tab-specific filtering across all 12 views
         if (view === 'unread') {
-          if (r.kind !== 'mail' || r.mail.read) return false;
+          if (r.kind !== 'mail' || r.mail.read || r.mail.mine === false) return false;
         } else if (view === 'attachments') {
           const hasAtt = r.kind === 'mail' ? attachmentCount(r.mail) > 0 : true;
           if (!hasAtt) return false;

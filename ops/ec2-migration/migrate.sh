@@ -88,6 +88,19 @@ write_ecosystem() { # app file
   mkdir -p "$(dirname "$2")"
   ( umask 077; ecosystem_json "$1" > "$2" )
 }
+# puts one Node version under /opt/node, leaving the system Node alone
+install_node() { # version
+  [ ! -x "/opt/node/v$1/bin/node" ] || return 0
+  echo "-- installing Node $1 into /opt/node"
+  local work file="node-v$1-linux-x64.tar.xz"
+  work=$(mktemp -d); cd "$work"
+  curl -fsSLO "https://nodejs.org/dist/v$1/$file"
+  curl -fsSLO "https://nodejs.org/dist/v$1/SHASUMS256.txt"
+  grep " $file\$" SHASUMS256.txt | sha256sum -c -
+  sudo mkdir -p "/opt/node/v$1"
+  sudo tar -xJf "$file" -C "/opt/node/v$1" --strip-components=1
+  cd /tmp; rm -rf "$work"
+}
 EOF
 
 # run src|dst [args...] <<'EOF' remote script EOF
@@ -267,17 +280,7 @@ if [ "$swapmb" -gt 0 ] && [ -z "$(swapon --show --noheadings)" ]; then
 fi
 
 # The app gets its own copy of Node, so other apps keep their current version.
-if [ "$(node -p process.versions.node)" != "$nodev" ] && [ ! -x "/opt/node/v$nodev/bin/node" ]; then
-  echo "-- installing Node $nodev into /opt/node"
-  work=$(mktemp -d); cd "$work"
-  file="node-v$nodev-linux-x64.tar.xz"
-  curl -fsSLO "https://nodejs.org/dist/v$nodev/$file"
-  curl -fsSLO "https://nodejs.org/dist/v$nodev/SHASUMS256.txt"
-  grep " $file\$" SHASUMS256.txt | sha256sum -c -
-  sudo mkdir -p "/opt/node/v$nodev"
-  sudo tar -xJf "$file" -C "/opt/node/v$nodev" --strip-components=1
-  cd /tmp; rm -rf "$work"
-fi
+if [ "$(node -p process.versions.node)" != "$nodev" ]; then install_node "$nodev"; fi
 
 if [ -n "$pgmajor" ]; then
   if sudo -u postgres psql -Atc 'select 1' >/dev/null 2>&1; then
@@ -314,10 +317,7 @@ sudo -u postgres psql -At -F' ' -d "$1" -c "
 EOF
 }
 
-copy_db() { # strict(1|0)
-  local strict=$1 roles role missing a b
-  if [ "$DB_WHERE" = external ]; then say "External database: nothing to copy"; return 0; fi
-
+guard_db() { # never touch a database on server 3 that this script did not create
   run dst "$DB_NAME" <<'EOF'
 mkdir -p "$M"; chmod 700 "$M"
 exists=$(sudo -u postgres psql -Atc "select 1 from pg_database where datname='$1'")
@@ -325,7 +325,10 @@ if [ -n "$exists" ] && [ "$(cat "$M/db-name" 2>/dev/null || true)" != "$1" ]; th
   echo "STOP: database $1 already exists on server 3 and this script did not create it"; exit 1
 fi
 EOF
+}
 
+copy_roles() {
+  local roles role missing
   say "Database users"
   roles=$(run src "$DB_NAME" "$DB_USER" <<'EOF'
 { echo "$2"
@@ -360,6 +363,13 @@ EOF
 EOF
     echo "  $role: copied"
   done
+}
+
+copy_db() { # strict(1|0)
+  local strict=$1 a b
+  if [ "$DB_WHERE" = external ]; then say "External database: nothing to copy"; return 0; fi
+  guard_db
+  copy_roles
 
   say "Copying database $DB_NAME"
   on src "cd /tmp && sudo -u postgres pg_dump -Fc '$DB_NAME'" </dev/null | on dst "umask 077; cat > ec2-migration/db.dump"
@@ -428,6 +438,177 @@ echo "files copied"
 EOF
 }
 
+# ------------------------------------- deploy this laptop's code with an empty database
+
+db_mode() { # prints clean (laptop code + empty database) or copy
+  run dst <<'EOF'
+if [ -f "$M/clean" ]; then echo clean; else echo copy; fi
+EOF
+}
+
+PACKAGE=""
+package_local() {
+  local api="$ROOT/apps/api" work
+  say "Building the backend from this laptop's code"
+  (cd "$api" && npm run build) || die "The local build failed"
+  [ -f "$api/dist/seed-prod.js" ] || die "dist/seed-prod.js is missing after the build"
+  work=$(mktemp -d)
+  # the API reads the menu registry from outside its own folder, so ship it inside
+  mkdir -p "$work/registry"
+  cp "$ROOT/packages/registry/registry.json" "$ROOT/packages/registry/registry.v2.json" "$work/registry/"
+  PACKAGE="$work/erp-api.tar.gz"
+  tar -czf "$PACKAGE" -C "$api" dist package.json package-lock.json prisma -C "$work" registry
+}
+
+ADMIN_LOGIN="" ADMIN_NAME="" ADMIN_EMAIL="" ADMIN_PASSWORD=""
+ask_admin() {
+  local again
+  printf '\nThe first admin login for the new, empty ERP.\n'
+  read -r -p 'Login ID (3-64 letters, digits . _ @ -): ' ADMIN_LOGIN
+  read -r -p 'Full name: ' ADMIN_NAME
+  read -r -p 'Email: ' ADMIN_EMAIL
+  read -r -s -p 'Temporary password, 12 characters or more (hidden while you type): ' ADMIN_PASSWORD; echo
+  read -r -s -p 'Type the password again: ' again; echo
+  [[ $ADMIN_LOGIN =~ ^[A-Za-z0-9._@-]{3,64}$ ]] || die "That login ID is not allowed. Nothing was changed."
+  [ ${#ADMIN_NAME} -ge 2 ] || die "Enter the full name. Nothing was changed."
+  [[ $ADMIN_EMAIL =~ ^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$ ]] || die "Enter a valid email. Nothing was changed."
+  [ ${#ADMIN_PASSWORD} -ge 12 ] && [ ${#ADMIN_PASSWORD} -le 128 ] ||
+    die "The password needs 12 to 128 characters. Nothing was changed."
+  [ "$ADMIN_PASSWORD" = "$again" ] || die "The passwords differ. Nothing was changed."
+}
+
+# Creates the tables, then the default setup and the first admin. SUPERADMIN_*
+# travel inside the script text, so the password is never on a command line.
+build_db() {
+  {
+    printf 'export SUPERADMIN_LOGIN_ID=%q SUPERADMIN_NAME=%q SUPERADMIN_EMAIL=%q SUPERADMIN_PASSWORD=%q\n' \
+      "$ADMIN_LOGIN" "$ADMIN_NAME" "$ADMIN_EMAIL" "$ADMIN_PASSWORD"
+    cat <<'EOF'
+node -e '
+  const fs = require("fs"); const path = require("path"); const { spawnSync } = require("child_process");
+  const [file, dir] = process.argv.slice(1);
+  const app = JSON.parse(fs.readFileSync(file)).apps[0];
+  const env = { ...process.env, ...app.env };
+  for (const k of Object.keys(process.env)) if (k.startsWith("SUPERADMIN_")) env[k] = process.env[k];
+  env.PATH = path.dirname(app.interpreter) + path.delimiter + env.PATH; // same Node as the app
+  const go = (cmd, args) => {
+    const r = spawnSync(cmd, args, { cwd: dir, env, stdio: "inherit" });
+    if (r.status !== 0) { console.error("STOP: building the database failed"); process.exit(1); }
+  };
+  const version = JSON.parse(fs.readFileSync(path.join(dir, "package.json"))).devDependencies.prisma;
+  go("npx", ["--yes", "prisma@" + version, "migrate", "deploy"]);
+  go(app.interpreter, ["dist/seed-prod.js"]);
+' "$M/erp.ecosystem.json" "$1"
+EOF
+  } | run dst "$APP_DIR"
+}
+
+schema_columns() { # src|dst
+  run "$1" "$DB_NAME" <<'EOF'
+sudo -u postgres psql -At -d "$1" -c "
+  SELECT table_name || '.' || column_name FROM information_schema.columns
+  WHERE table_schema = 'public' ORDER BY 1"
+EOF
+}
+
+cmd_deploy() {
+  local nodev facts owner encoding collate ctype old new missing
+  nodev=$(node -p process.versions.node) || die "Node is not installed on this laptop"
+  [[ $nodev == 20.* ]] || die "This laptop runs Node $nodev, but the new code needs Node 20"
+  guard_not_live
+  cmd_check
+  [ "$DB_WHERE" = local ] || die "deploy only supports a database on the app's own server"
+  package_local
+  confirm "DEPLOY to server 3 ($DST_HOST):
+  - the backend code on this laptop, including changes not committed to git
+  - the settings (.env) from server 1
+  - a NEW EMPTY database: no records or uploaded files are copied
+Server 1 is only read. Any earlier copy of the ERP on server 3 is replaced." DEPLOY
+  ask_admin
+
+  guard_db
+  run dst <<'EOF'
+rm -f "$M/clean"
+EOF
+  copy_roles
+
+  say "Uploading the code"
+  run dst "$APP_DIR" "$APP" <<'EOF'
+dir=$1
+if [ -d "$dir" ] && [ -n "$(sudo ls -A "$dir")" ] && [ ! -f "$dir/.ec2-migration" ]; then
+  echo "STOP: $dir on server 3 has files this script did not put there"; exit 1
+fi
+pm2 delete "$2" >/dev/null 2>&1 || true
+sudo mkdir -p "$dir"
+sudo touch "$dir/.ec2-migration"
+sudo rm -rf "$dir/dist" "$dir/prisma" "$dir/registry" "$dir/storage"
+sudo chown -R "$(id -un):$(id -gn)" "$dir"
+EOF
+  on dst "tar -C '$APP_DIR' --no-same-owner -xzf -" <"$PACKAGE"
+  rm -rf "$(dirname "$PACKAGE")"
+  # .env goes straight from one server to the other and is never shown
+  on src "sudo cat '$APP_DIR/.env' 2>/dev/null || true" </dev/null | on dst "umask 077; cat > '$APP_DIR/.env'"
+  run src "$APP" <<'EOF' | on dst "umask 077; mkdir -p ec2-migration; cat > ec2-migration/erp.ecosystem.json"
+ecosystem_json "$1"
+EOF
+
+  say "Installing Node $nodev and the packages on server 3 (several minutes)"
+  run dst "$APP_DIR" "$nodev" <<'EOF'
+dir=$1 nodev=$2
+install_node "$nodev"
+export PATH="/opt/node/v$nodev/bin:$PATH"
+node -e '
+  const fs = require("fs"); const [file, dir, node] = process.argv.slice(1);
+  const j = JSON.parse(fs.readFileSync(file));
+  for (const a of j.apps) {
+    a.interpreter = node; a.exec_mode = "fork"; a.instances = 1; delete a.nodeVersion;
+    a.env.REGISTRY_PATH = dir + "/registry/registry.json";
+    a.env.REGISTRY_V2_PATH = dir + "/registry/registry.v2.json";
+    if (!a.script.startsWith(dir + "/") || !fs.existsSync(a.script)) {
+      console.error("STOP: start file must be inside " + dir + " and exist: " + a.script); process.exit(1);
+    }
+  }
+  fs.writeFileSync(file, JSON.stringify(j, null, 2), { mode: 0o600 });
+' "$M/erp.ecosystem.json" "$dir" "/opt/node/v$nodev/bin/node"
+cd "$dir"
+npm install --omit=dev --ignore-scripts --no-audit --no-fund
+npx --yes "prisma@$(node -p 'require("./package.json").devDependencies.prisma')" generate
+EOF
+
+  say "Creating an empty database $DB_NAME"
+  facts=$(run src "$DB_NAME" <<'EOF'
+sudo -u postgres psql -At -c "SELECT concat_ws('|', pg_get_userbyid(datdba), pg_encoding_to_char(encoding), datcollate, datctype)
+  FROM pg_database WHERE datname = '$1'"
+EOF
+  )
+  IFS='|' read -r owner encoding collate ctype <<<"$facts"
+  [ -n "$owner" ] && [ -n "$ctype" ] || die "Could not read the database settings on server 1"
+  run dst "$DB_NAME" "$owner" "$encoding" "$collate" "$ctype" <<'EOF'
+echo "$1" > "$M/db-name"
+sudo -u postgres dropdb --if-exists --force "$1"   # only ever a database this script made
+sudo -u postgres createdb -T template0 -O "$2" -E "$3" --lc-collate="$4" --lc-ctype="$5" "$1"
+EOF
+
+  say "Creating the tables, default setup and admin login"
+  build_db
+  ADMIN_PASSWORD=""
+
+  say "Comparing the table layout with server 1"
+  old=$(schema_columns src)
+  new=$(schema_columns dst)
+  missing=$(comm -23 <(sort <<<"$old") <(sort <<<"$new"))
+  if [ -z "$missing" ]; then
+    echo "  every column on server 1 also exists on server 3"
+  else
+    warn "$(wc -l <<<"$missing") columns exist on server 1 but not on server 3 (first 20 below). Check these before cutover."
+    head -n 20 <<<"$missing"
+  fi
+  run dst <<'EOF'
+touch "$M/clean"
+EOF
+  say "Deployed with an empty database. The app is NOT started yet."
+}
+
 # ---------------------------------------------------------------- start / stop on server 3
 
 start_target() {
@@ -455,6 +636,8 @@ public_health() { # domain
 
 cmd_copy() {
   guard_not_live
+  [ "$(db_mode)" != clean ] || die "Server 3 has the laptop's code and an empty database; copy would replace both with server 1's.
+If you really want that, first delete ~/ec2-migration/clean on server 3."
   cmd_check
   confirm "Practice copy: server 1 is only read. The ERP database and folder on server 3 are replaced." COPY
   copy_db 0
@@ -463,9 +646,11 @@ cmd_copy() {
 }
 
 cmd_test() {
+  local risk="It runs on a copy of real data: queued jobs may SEND REAL EMAILS or messages while it is up."
   guard_not_live
-  confirm "Start the copied app on server 3 for a health check, then stop it.
-It runs on a copy of real data: queued jobs may SEND REAL EMAILS or messages while it is up." TEST
+  if [ "$(db_mode)" = clean ]; then risk="It uses the new empty database."; fi
+  confirm "Start the app on server 3 for a health check, then stop it.
+$risk" TEST
   trap 'stop_target || warn "Could not stop the test app. On server 3 run: pm2 delete $APP"' EXIT
   start_target
   say "Test passed. Stopping the test app."
@@ -576,12 +761,16 @@ undo_cutover() {
 }
 
 cmd_cutover() {
+  local mode data="Server 1's database and files are copied to server 3."
   load_db
   guard_not_live
+  mode=$(db_mode)
+  if [ "$mode" = clean ]; then data="Users get the NEW EMPTY database. Records on server 1 stay there."; fi
   cmd_check
   curl -sS -m 15 -o /dev/null "https://$NEW_DOMAIN$PUBLIC_PREFIX/api/v1/health" || die "HTTPS for $NEW_DOMAIN is not ready. Run the web step."
-  on dst "test -f ec2-migration/erp.ecosystem.json" </dev/null || die "Run the copy step first"
+  on dst "test -f ec2-migration/erp.ecosystem.json" </dev/null || die "Run the deploy or copy step first"
   confirm "CUTOVER: the ERP goes offline now, until server 3 is healthy.
+$data
 Switch off any ERP cron jobs on server 1 first, and make sure nobody is deploying." CUTOVER
 
   run src "$APP" <<'EOF'
@@ -594,8 +783,10 @@ EOF
 pm2 stop "$1" >/dev/null
 EOF
   stop_target
-  copy_db 1
-  copy_files
+  if [ "$mode" != clean ]; then # clean: keep the deployed code and the new database
+    copy_db 1
+    copy_files
+  fi
   say "Starting on server 3"
   start_target
   public_health "$NEW_DOMAIN" || die "Healthy on the server, but not through https://$NEW_DOMAIN"
@@ -651,12 +842,16 @@ Local files changed only. Now, by hand:
        git add vercel.json apps/web/vercel.json
        git commit -m "point web at the new API server" -- vercel.json apps/web/vercel.json
   3. In your private deploy script, change the server address and key to server 3.
+
+If you used 'deploy', the new backend also needs the new web code: commit and
+push the matching apps/web and packages changes, not only the two files above.
 MSG
 }
 
 case "${1:-}" in
   check) cmd_check ;;
   prepare) cmd_prepare ;;
+  deploy) cmd_deploy ;;
   copy) cmd_copy ;;
   test) cmd_test ;;
   web) cmd_web ;;
@@ -665,7 +860,7 @@ case "${1:-}" in
   frontend) cmd_frontend ;;
   rollback) cmd_rollback ;;
   *)
-    echo "Usage: ./migrate.sh check|prepare|copy|web|test|cutover|forward|frontend|rollback"
+    echo "Usage: ./migrate.sh check|prepare|deploy|web|test|cutover|forward|frontend|rollback   (copy instead of deploy to move the old data)"
     exit 1
     ;;
 esac

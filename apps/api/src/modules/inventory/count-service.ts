@@ -665,6 +665,23 @@ export const countService = {
     });
   },
 
+  /** The planned date of a count that has not started. */
+  async reschedule(caller: Caller, id: string, version: number, plannedDate: string) {
+    return prisma.$transaction(async (tx) => {
+      const c = await loadCount(caller, id, tx);
+      if (c.version !== version) throw Errors.versionConflict();
+      if (c.status !== 'Planned') throw Errors.conflict(`Only a Planned count can be changed; this one is ${c.status}.`);
+      await tx.stockCount.update({
+        where: { id },
+        data: { plannedDate: new Date(`${plannedDate}T00:00:00Z`), version: { increment: 1 }, updatedById: caller.auth.userId },
+      });
+      await writeAudit(tx, caller, 'COUNT_STATUS_CHANGED', 'Count', { id, code: c.code }, c.countType === 'PHYSICAL' ? 'wms-physical' : 'wms-cycle', {
+        plannedDate: { from: c.plannedDate.toISOString().slice(0, 10), to: plannedDate },
+      });
+      return head(await tx.stockCount.findUniqueOrThrow({ where: { id } }));
+    });
+  },
+
   async cancel(caller: Caller, id: string, version: number) {
     return prisma.$transaction(async (tx) => {
       const c = await loadCount(caller, id, tx);

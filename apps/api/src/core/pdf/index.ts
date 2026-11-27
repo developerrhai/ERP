@@ -3,10 +3,14 @@
 // drawn with the font that has its glyphs, and pdfkit's fontkit applies the OpenType shaping
 // (conjuncts such as क्ष / ज्ञ, matras, reph) for the Devanagari runs. The gate test compares that
 // shaping with HarfBuzz.
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import PDFDocument from 'pdfkit';
 
-const FONT_DIR = path.resolve(__dirname, '..', '..', '..', 'assets', 'fonts');
+// The source tree keeps the fonts in apps/api/assets. `npm run build` copies them into dist/assets,
+// because a server receives only dist/ and not the source folders.
+const SOURCE_FONTS = path.resolve(__dirname, '..', '..', '..', 'assets', 'fonts');
+const FONT_DIR = existsSync(SOURCE_FONTS) ? SOURCE_FONTS : path.resolve(__dirname, '..', '..', 'assets', 'fonts');
 
 export const FONT_FILES = {
   sans: path.join(FONT_DIR, 'NotoSans_400Regular.ttf'),

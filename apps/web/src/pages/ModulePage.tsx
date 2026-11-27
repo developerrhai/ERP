@@ -186,6 +186,9 @@ import { DevicesPage, LiveBoardPage, PoliciesPage, PunchSitesPage } from './atte
 import { DeptMailPage, DocumentCenterPage, LettersPage, MailAutomationPage } from './docsmail/DocsMailPages';
 import { CertificatesPage } from './qms/CertificatesPage';
 import { SCREEN_PAGES } from './screens/screenPages';
+import { WMS_PAGES, WmsPage } from './wms/WmsPage';
+import { IncomingQuality } from './qms/v2/IncomingExtras';
+import { QMS_V2_PAGES, QmsV2Page } from './qms/v2/QmsV2Page';
 
 // FamV40Body's own register/Add/Edit is local-state-only and never persists — it fakes a success toast
 // and silently drops the row on refresh (see project-famv40body-mock-data-scope memory). PageBody always
@@ -270,7 +273,7 @@ function GuardedPage({ user, page, sub }: { user: User; page: PageLookup; sub?: 
       {pageId === 'admin-formats' || pageId === 'dashboard' ? null : (
         <SettingsLauncher pageId={pageId} title={page.item.title} />
       )}
-      {SCREEN_PAGES.has(pageId) || pageId === 'dashboard' ? null : (
+      {SCREEN_PAGES.has(pageId) || pageId === 'dashboard' || pageId === 'qms-dashboard' ? null : (
         <ActionBar actions={perms.actions} mode="page" pageId={pageId} />
       )}
       {v40TabsFor(pageId).length > 0 ? (
@@ -305,6 +308,14 @@ function PageBody({
         actions={actions}
       />
     );
+  }
+  // Warehouse / WMS pages inside their V40 tabs: one register with the same buttons everywhere (wms/WmsPage.tsx)
+  if (WMS_PAGES.has(pageId)) {
+    return <WmsPage pageId={pageId} title={page.item.title} sub={page.purpose ?? page.family.name} actions={actions} />;
+  }
+  // Quality / QMS pages of the v2 specification (qms/v2)
+  if (QMS_V2_PAGES.has(pageId)) {
+    return <QmsV2Page pageId={pageId} title={page.item.title} sub={page.purpose ?? page.family.name} actions={actions} />;
   }
   if (/^dept-inbox-.+$/.test(pageId)) return <DeptMailboxPage pageId={pageId} user={user} />;
   if (/^dept-work-.+$/.test(pageId)) return <DeptWorkCenterPage pageId={pageId} />;
@@ -425,14 +436,7 @@ function PageBody({
     case 'qms-plans':
       return <PlansPage actions={actions} />;
     case 'qms-incoming':
-      return (
-        <InspectionPage
-          kinds={['INCOMING']}
-          title="Incoming Quality"
-          sub="Raw-material inspection sheets. A goods receipt of an item that needs inspection creates the lot; the usage decision releases or blocks the stock."
-          actions={actions}
-        />
-      );
+      return <IncomingQuality actions={actions} />;
     case 'qms-process':
       return (
         <InspectionPage

@@ -83,16 +83,32 @@ export const mailService27 = {
     });
   },
 
-  async inbox(caller: Caller): Promise<Row[]> {
-    return query(
-      prisma,
-      `SELECT m.id, m.subject, m.body, m.from_department, m.created_at, u.name AS from_name,
+  /**
+   * My mail; or, with a department, the department's mailbox: every message sent to that department, for its members and
+   * for Owner / Admin (also the ones they sent themselves), plus - for a member - mail sent to them by name.
+   */
+  async inbox(caller: Caller, department?: string): Promise<Row[]> {
+    const select = `SELECT m.id, m.subject, m.body, m.from_department, m.to_department, m.created_at, u.name AS from_name,
+              ($1::uuid = ANY(m.to_user_ids)) AS mine,
               EXISTS (SELECT 1 FROM internal_message_reads r WHERE r.message_id = m.id AND r.user_id = $1::uuid) AS read,
               (SELECT count(*)::int FROM internal_message_attachments a WHERE a.message_id = m.id) AS attachments
-         FROM internal_messages m JOIN users u ON u.id = m.from_user_id
-        WHERE $1::uuid = ANY(m.to_user_ids) AND m.unit_id = ANY($2::uuid[]) ORDER BY m.created_at DESC LIMIT 100`,
+         FROM internal_messages m JOIN users u ON u.id = m.from_user_id`;
+    if (!department) {
+      return query(prisma, `${select} WHERE $1::uuid = ANY(m.to_user_ids) AND m.unit_id = ANY($2::uuid[]) ORDER BY m.created_at DESC LIMIT 100`, caller.auth.user.id, caller.ctx.unitIds);
+    }
+    const member = accessUserOf(caller.auth.user).departments.some((d) => d.toLowerCase() === department.toLowerCase());
+    return query(
+      prisma,
+      `${select}
+        WHERE m.unit_id = ANY($2::uuid[]) AND (
+              (lower($3) = ANY(string_to_array(lower(COALESCE(m.to_department, '')), ', ')) AND ($4::boolean OR $1::uuid = ANY(m.to_user_ids)))
+           OR ($5::boolean AND m.to_department IS NULL AND $1::uuid = ANY(m.to_user_ids)))
+        ORDER BY m.created_at DESC LIMIT 100`,
       caller.auth.user.id,
       caller.ctx.unitIds,
+      department,
+      member || isElevated(caller),
+      member,
     );
   },
   async sent(caller: Caller): Promise<Row[]> {
@@ -110,7 +126,10 @@ export const mailService27 = {
   async open(caller: Caller, id: string): Promise<Row> {
     const m = (await query(prisma, `SELECT m.*, u.name AS from_name FROM internal_messages m JOIN users u ON u.id = m.from_user_id WHERE m.id = $1::uuid`, id))[0];
     const me = caller.auth.user.id;
-    if (!m || !caller.ctx.unitIds.includes(S(m.unit_id)) || (S(m.from_user_id) !== me && !(m.to_user_ids as string[]).includes(me))) throw Errors.notFound('Message not found.');
+    // department mail is also open to the members of a department it was sent to, and to Owner / Admin
+    const mailbox = S(m?.to_department).split(', ').filter(Boolean);
+    const ofMyDepartment = mailbox.length > 0 && (isElevated(caller) || accessUserOf(caller.auth.user).departments.some((d) => mailbox.some((x) => x.toLowerCase() === d.toLowerCase())));
+    if (!m || !caller.ctx.unitIds.includes(S(m.unit_id)) || (S(m.from_user_id) !== me && !(m.to_user_ids as string[]).includes(me) && !ofMyDepartment)) throw Errors.notFound('Message not found.');
     if ((m.to_user_ids as string[]).includes(me)) await query(prisma, `INSERT INTO internal_message_reads (message_id, user_id) VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING`, id, me);
     const attachments = await query(prisma, `SELECT label, page_id, record_id, format FROM internal_message_attachments WHERE message_id = $1::uuid`, id);
     const { to_user_ids: _omit, ...rest } = m;

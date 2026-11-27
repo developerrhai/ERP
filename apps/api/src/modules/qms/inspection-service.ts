@@ -22,8 +22,10 @@ import {
 } from '../procurement/core';
 import type { Row } from '../procurement/core';
 import { D } from '../inventory/money';
-import { headerErrors, judgeRow, overallResult } from './logic';
-import type { HeaderField, RowStatus, RowType } from './logic';
+import { headerErrors, judgeRow, sheetResult } from './logic';
+import type { CheckType, HeaderField, RowStatus, RowType } from './logic';
+import { alertPeople, assertCriticalAllowed, escalate, event, featureOn, qualityLeads, trail } from './common';
+import type { Priority } from './common';
 
 export const S = (v: unknown): string => {
   if (v === null || v === undefined) return '';
@@ -72,8 +74,11 @@ export interface RowInput {
   readings?: (string | number | null)[];
   extra?: Record<string, string>;
   remark?: string | null;
+  /** STANDARD (default) or CONDITIONED: an out-of-limit conditioned checkpoint does not reject the sheet. */
+  checkType?: CheckType | undefined;
 }
 export interface InspectionInput {
+  priority?: Priority | null | undefined;
   kind: Kind;
   templateId?: string | undefined;
   planId?: string | undefined;
@@ -194,6 +199,7 @@ interface JudgedRow {
   extra: Record<string, string>;
   status: RowStatus;
   remark: string | null;
+  checkType: CheckType;
 }
 function judgeAll(rows: RowInput[], maxReadings: number): JudgedRow[] {
   const errs: Record<string, string> = {};
@@ -238,10 +244,17 @@ function judgeAll(rows: RowInput[], maxReadings: number): JudgedRow[] {
       extra: r.extra ?? {},
       status: j.status,
       remark: r.remark?.trim() || null,
+      checkType: r.checkType === 'CONDITIONED' ? ('CONDITIONED' as const) : ('STANDARD' as const),
     };
   });
   if (Object.keys(errs).length) throw Errors.validation(errs);
   return out;
+}
+/** A conditioned checkpoint can only be added while the switch is on. */
+async function assertChecksAllowed(db: Db, rows: JudgedRow[]): Promise<void> {
+  const i = rows.findIndex((r) => r.checkType === 'CONDITIONED');
+  if (i >= 0 && !(await featureOn(db, 'CONDITIONED_CHECKS')))
+    throw Errors.validation({ [`rows.${i}.checkType`]: 'Conditioned checkpoints are switched off in Template & Feature.' });
 }
 async function writeRows(tx: Db, id: string, rows: JudgedRow[]): Promise<void> {
   await exec(tx, `DELETE FROM qms_inspection_rows WHERE inspection_id=$1::uuid`, id);
@@ -260,6 +273,7 @@ async function writeRows(tx: Db, id: string, rows: JudgedRow[]): Promise<void> {
       extra: JSON.stringify(r.extra),
       rowStatus: r.status,
       remark: r.remark,
+      checkType: r.checkType,
     });
 }
 
@@ -292,7 +306,7 @@ const rowCfg = (t: Row): { readings?: number } =>
 
 // ------------------------------------------------------------------------------------------------ read
 const SELECT = `SELECT t.*, i.name AS item_name, i.code AS item_code, c.name AS customer_name, s.name AS supplier_name,
-    u.name AS inspector_name, d.name AS decided_by_name
+    u.name AS inspector_name, d.name AS decided_by_name, (SELECT x.name FROM users x WHERE x.id=t.returned_by_id) AS returned_by_name
   FROM qms_inspections t
   LEFT JOIN items i ON i.id=t.item_id LEFT JOIN customers c ON c.id=t.customer_id LEFT JOIN suppliers s ON s.id=t.supplier_id
   LEFT JOIN users u ON u.id=t.inspector_id LEFT JOIN users d ON d.id=t.decided_by_id`;
@@ -367,6 +381,7 @@ export async function getInspection(caller: Caller, pageId: string, id: string):
   );
   const out = norm(r);
   out.rows = rows.map((x) => norm(x));
+  out.events = await trail('INSPECTION', id);
   out.headerLabels = await headerLabels(
     prisma,
     (r.template_snapshot as { headerFields: HeaderField[] }).headerFields,
@@ -498,6 +513,7 @@ export async function createInspection(
       input.planId,
     );
     const rows = judgeAll(input.rows ?? planRows(plan), Math.max(rowCfg(tpl).readings ?? 5, 1));
+    await assertChecksAllowed(tx, rows);
     const date = input.docDate ?? todayIst();
     const no = await number(tx, input.kind, unitId, fy.id);
     const rid = await insertRow(tx, 'qms_inspections', {
@@ -524,10 +540,12 @@ export async function createInspection(
       header,
       lotQty: num(input.lotQty),
       inspectorId: input.inspectorId ?? caller.auth.userId,
+      priority: input.priority ?? null,
       createdById: caller.auth.userId,
       updatedById: caller.auth.userId,
     });
     await writeRows(tx, rid, rows);
+    if (input.priority === 'CRITICAL') await escalateSheet(tx, { id: rid, number: no, unitId, kind: input.kind });
     await audit(
       tx,
       caller,
@@ -558,7 +576,7 @@ export async function updateInspection(
   pageId: string,
   id: string,
   ifMatch: number,
-  body: Partial<Pick<InspectionInput, 'docDate' | 'header' | 'rows' | 'lotQty'>>,
+  body: Partial<Pick<InspectionInput, 'docDate' | 'header' | 'rows' | 'lotQty' | 'priority'>>,
 ): Promise<Row> {
   const sc = await scopeSql(caller, pageId);
   await prisma.$transaction(async (tx) => {
@@ -584,8 +602,12 @@ export async function updateInspection(
     if (Object.keys(errs).length) throw Errors.validation(errs);
     const refs = refsOf(snap.headerFields, header);
     await assertRefs(tx, refs);
-    if (body.rows)
-      await writeRows(tx, id, judgeAll(body.rows, Math.max(snap.rowConfig.readings ?? 5, 1)));
+    if (body.rows) {
+      const judged = judgeAll(body.rows, Math.max(snap.rowConfig.readings ?? 5, 1));
+      await assertChecksAllowed(tx, judged);
+      await writeRows(tx, id, judged);
+    }
+    if (body.priority !== undefined) await changePriority(tx, caller, cur, body.priority);
     await exec(
       tx,
       `UPDATE qms_inspections SET header=$1::jsonb, doc_date=COALESCE($2::date, doc_date), lot_qty=CASE WHEN $3::boolean THEN $4::numeric ELSE lot_qty END,
@@ -642,14 +664,16 @@ export async function submitInspection(
     await instrumentCheck(tx, snap.headerFields, header, todayIst());
     const rows = await query(
       tx,
-      `SELECT row_status FROM qms_inspection_rows WHERE inspection_id=$1::uuid`,
+      `SELECT row_status, check_type FROM qms_inspection_rows WHERE inspection_id=$1::uuid`,
       id,
     );
     if (rows.length === 0)
       throw Errors.validation({ rows: 'Add at least one characteristic to check.' });
     if (rows.some((r) => S(r.row_status) === 'PENDING'))
       throw Errors.validation({ rows: 'Fill in the readings of every row before submitting.' });
-    const computed = overallResult(rows.map((r) => S(r.row_status) as RowStatus));
+    const computed = sheetResult(
+      rows.map((r) => ({ status: S(r.row_status) as RowStatus, checkType: S(r.check_type) as CheckType })),
+    );
     const result = body.result ?? computed;
     if (!result)
       throw Errors.validation({ result: 'Choose accepted, rejected or conditionally accepted.' });
@@ -662,17 +686,36 @@ export async function submitInspection(
           result: 'A reading is out of limit. Choose rejected or conditionally accepted.',
         },
       );
+    if (computed === 'CONDITIONAL' && result === 'ACCEPTED')
+      throw new AppError(
+        422,
+        'QMS_CONDITION_NOT_MET',
+        'A conditioned checkpoint is not met. Choose conditionally accepted or rejected.',
+        { result: 'A conditioned checkpoint is not met. Choose conditionally accepted or rejected.' },
+      );
     if (result === 'CONDITIONAL' && (body.note ?? '').trim().length < 3)
       throw Errors.validation({ note: 'Say on what condition the lot is accepted.' });
     await exec(
       tx,
       `UPDATE qms_inspections SET status='Submitted', result=$1, result_note=$2, inspector_id=COALESCE(inspector_id,$3::uuid), submitted_at=now(),
-         updated_by_id=$3::uuid, updated_at=now(), version=version+1 WHERE id=$4::uuid`,
+         return_comment=NULL, returned_at=NULL, returned_by_id=NULL, updated_by_id=$3::uuid, updated_at=now(), version=version+1 WHERE id=$4::uuid`,
       result,
       body.note?.trim() || null,
       caller.auth.userId,
       id,
     );
+    await event(tx, 'INSPECTION', id, 'SUBMITTED', caller.auth.userId, body.note);
+    if (S(cur.kind) === 'INCOMING')
+      await alertPeople(
+        tx,
+        (await qualityLeads(tx, S(cur.unit_id))).filter((u) => u !== caller.auth.userId),
+        'quality.pending',
+        `${S(cur.number)} is waiting for acceptance`,
+        'An incoming inspection sheet was submitted and waits for the usage decision.',
+        { type: 'qms_inspection', id },
+        '/m/qms-incoming?tab=1',
+        `quality-pending:${id}:${Number(cur.version)}`,
+      );
     await audit(
       tx,
       caller,
@@ -719,6 +762,7 @@ export async function decideInspection(
     if (!cur) throw Errors.notFound('Inspection not found.');
     if (S(cur.status) !== 'Submitted')
       throw Errors.conflict('Only a submitted inspection can get a usage decision.');
+    await assertCriticalAllowed(tx, caller, cur.priority);
     const acc = D(S(body.acceptedQty));
     const rej = D(S(body.rejectedQty));
     if (acc.lt(0) || rej.lt(0) || acc.plus(rej).lte(0))
@@ -774,6 +818,7 @@ export async function decideInspection(
       caller.auth.userId,
       id,
     );
+    await event(tx, 'INSPECTION', id, decision === 'REJECTED' ? 'REJECTED' : 'ACCEPTED', caller.auth.userId, note);
     // After the UPDATE (same transaction): the manufacturing hook re-reads the order's decided inspections
     // (syncOrder sums accepted_qty of status='Decided'), so the sheet must already be Decided here.
     if (S(cur.source_type) === 'MFG_LOT' && lotHook)
@@ -869,6 +914,83 @@ export async function cancelInspection(
       pageId,
       { reason },
     );
+  }, TX);
+  return getInspection(caller, pageId, id);
+}
+
+const escalateSheet = (db: Db, r: { id: string; number: string; unitId: string; kind: string }): Promise<void> =>
+  escalate(db, {
+    id: r.id,
+    number: r.number,
+    unitId: r.unitId,
+    type: 'qms_inspection',
+    what: `${PROCESS_NAME[r.kind as Kind]} inspection marked Critical.`,
+    link: `/m/${PAGE_OF_KIND[r.kind as Kind]}`,
+  });
+
+async function changePriority(tx: Db, caller: Caller, cur: Row, priority: Priority | null): Promise<void> {
+  const before = cur.priority === null ? null : S(cur.priority);
+  if (before === priority) return;
+  // a Critical mark cannot be taken off by someone who could not release a Critical record
+  if (before === 'CRITICAL') await assertCriticalAllowed(tx, caller, before);
+  await exec(tx, `UPDATE qms_inspections SET priority=$1 WHERE id=$2::uuid`, priority, S(cur.id));
+  await event(tx, 'INSPECTION', S(cur.id), 'PRIORITY', caller.auth.userId, priority ?? 'None');
+  if (priority === 'CRITICAL')
+    await escalateSheet(tx, { id: S(cur.id), number: S(cur.number), unitId: S(cur.unit_id), kind: S(cur.kind) });
+}
+
+/** Priority can be set while the sheet is still open (Draft or waiting for the usage decision). */
+export async function setInspectionPriority(caller: Caller, pageId: string, id: string, priority: Priority | null): Promise<Row> {
+  const sc = await scopeSql(caller, pageId);
+  await prisma.$transaction(async (tx) => {
+    const cur = (
+      await query(tx, `SELECT t.* FROM qms_inspections t WHERE t.id=$${sc.args.length + 1}::uuid AND ${sc.sql} FOR UPDATE OF t`, ...sc.args, id)
+    )[0];
+    if (!cur) throw Errors.notFound('Inspection not found.');
+    if (!['Draft', 'Submitted'].includes(S(cur.status)))
+      throw Errors.conflict('The priority of a decided or cancelled sheet cannot be changed.');
+    await changePriority(tx, caller, cur, priority);
+    await exec(tx, `UPDATE qms_inspections SET updated_by_id=$1::uuid, updated_at=now(), version=version+1 WHERE id=$2::uuid`, caller.auth.userId, id);
+    await audit(tx, caller, caller.auth.userId, 'QMS_INSPECTION_PRIORITY', 'qms_inspection', { id, code: S(cur.number) }, pageId, {
+      priority: priority ?? 'None',
+    });
+  }, TX);
+  return getInspection(caller, pageId, id);
+}
+
+/** Pending Acceptance: send a submitted sheet back to the inspector. The comment is compulsory. */
+export async function returnInspection(caller: Caller, pageId: string, id: string, comment: string): Promise<Row> {
+  const text = comment.trim();
+  if (text.length < 3) throw Errors.validation({ comment: 'Add a comment saying why the record is returned.' });
+  const sc = await scopeSql(caller, pageId);
+  await prisma.$transaction(async (tx) => {
+    const cur = (
+      await query(tx, `SELECT t.* FROM qms_inspections t WHERE t.id=$${sc.args.length + 1}::uuid AND ${sc.sql} FOR UPDATE OF t`, ...sc.args, id)
+    )[0];
+    if (!cur) throw Errors.notFound('Inspection not found.');
+    if (S(cur.status) !== 'Submitted') throw Errors.conflict('Only a submitted inspection can be returned.');
+    await exec(
+      tx,
+      `UPDATE qms_inspections SET status='Draft', result=NULL, submitted_at=NULL, return_comment=$1, returned_at=now(), returned_by_id=$2::uuid,
+         updated_by_id=$2::uuid, updated_at=now(), version=version+1 WHERE id=$3::uuid`,
+      text,
+      caller.auth.userId,
+      id,
+    );
+    await event(tx, 'INSPECTION', id, 'RETURNED', caller.auth.userId, text);
+    await alertPeople(
+      tx,
+      [cur.inspector_id, cur.created_by_id].filter(Boolean).map((x) => S(x)),
+      'quality.returned',
+      `${S(cur.number)} was returned to you`,
+      text,
+      { type: 'qms_inspection', id },
+      `/m/${pageId}`,
+      `quality-returned:${id}:${Number(cur.version)}`,
+    );
+    await audit(tx, caller, caller.auth.userId, 'QMS_INSPECTION_RETURNED', 'qms_inspection', { id, code: S(cur.number) }, pageId, {
+      comment: text,
+    });
   }, TX);
   return getInspection(caller, pageId, id);
 }

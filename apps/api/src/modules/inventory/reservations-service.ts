@@ -11,7 +11,7 @@ import { escapeLike } from '../../core/http/query-safety';
 import { NumberingService } from '../../core/numbering';
 import type { Caller } from '../records/service';
 import { D, num, round3, str } from './money';
-import { availability, lockInOrder, runAllocator } from './stock/stock-service';
+import { availability, lockInOrder, reservationStatus, runAllocator } from './stock/stock-service';
 import { concreteUnit, writeAudit } from './typed';
 
 export const PRIORITIES = ['Critical', 'High', 'Medium', 'Low'] as const;
@@ -266,6 +266,80 @@ export const reservationService = {
       },
     });
     return dto(r);
+  },
+
+  /**
+   * Edit an open reservation: how much is needed, how urgent it is and how long it is kept. Needing less than is
+   * reserved gives the extra back to free stock; needing more waits for the allocator like any new demand.
+   */
+  async update(
+    caller: Caller,
+    id: string,
+    version: number,
+    p: { requiredQty?: number | string | undefined; priority?: (typeof PRIORITIES)[number] | undefined; reservedUntil?: string | undefined },
+  ) {
+    const cur = await prisma.stockReservation.findUnique({ where: { id } });
+    if (!cur || (caller.ctx.unitId && cur.unitId !== caller.ctx.unitId))
+      throw Errors.notFound('Reservation not found.');
+    if (cur.version !== version) throw Errors.versionConflict();
+    if (!['Waiting', 'Partial', 'Reserved'].includes(cur.status))
+      throw Errors.conflict(`A ${cur.status} reservation can no longer be edited.`);
+    const required = p.requiredQty === undefined ? D(cur.requiredQty.toString()) : round3(D(p.requiredQty));
+    const fulfilled = D(cur.fulfilledQty.toString());
+    if (required.lessThanOrEqualTo(0))
+      throw Errors.validation({ requiredQty: 'Enter a quantity greater than 0.' });
+    if (required.lessThanOrEqualTo(fulfilled))
+      throw Errors.validation({ requiredQty: `${str(fulfilled)} is already issued: the quantity must be more than that.` });
+    if (p.reservedUntil && p.reservedUntil !== isoOf(cur.reservedUntil) && p.reservedUntil < todayIso())
+      throw Errors.validation({ reservedUntil: 'The date cannot be in the past.' });
+    return prisma.$transaction(async (tx) => {
+      await lockInOrder(tx, [{ warehouseId: cur.warehouseId, itemId: cur.itemId }]);
+      const rows = await tx.$queryRaw<{ reserved_qty: string; version: number }[]>`
+        SELECT reserved_qty::text, version FROM stock_reservations WHERE id = ${id}::uuid FOR UPDATE`;
+      const locked = rows[0];
+      if (!locked || locked.version !== version) throw Errors.versionConflict();
+      const had = D(locked.reserved_qty);
+      const room = required.minus(fulfilled);
+      const kept = had.greaterThan(room) ? room : had;
+      const freed = had.minus(kept);
+      if (freed.greaterThan(0))
+        await tx.$executeRaw`UPDATE stock_balances SET reserved_qty = reserved_qty - ${str(freed)}::numeric
+          WHERE item_id = ${cur.itemId}::uuid AND warehouse_id = ${cur.warehouseId}::uuid`;
+      const status = reservationStatus(kept, fulfilled, required);
+      const priority = p.priority ?? cur.priority;
+      const until = p.reservedUntil ?? isoOf(cur.reservedUntil);
+      await tx.$executeRaw`
+        UPDATE stock_reservations SET required_qty = ${str(required)}::numeric, reserved_qty = ${str(kept)}::numeric, status = ${status},
+          priority = ${priority}, reserved_until = ${until}::date,
+          version = version + 1, updated_at = now(), updated_by_id = ${caller.auth.userId}::uuid WHERE id = ${id}::uuid`;
+      await runAllocator(tx, cur.itemId, cur.warehouseId);
+      await writeAudit(tx, caller, 'RESERVATION_UPDATED', 'Reservation', { id, code: cur.code }, 'inv-reservation', {
+        unitId: cur.unitId,
+        before: { requiredQty: cur.requiredQty.toString(), priority: cur.priority, reservedUntil: isoOf(cur.reservedUntil) },
+        after: { requiredQty: str(required), priority, reservedUntil: until },
+      });
+      return dto(await tx.stockReservation.findUniqueOrThrow({ where: { id } }));
+    });
+  },
+
+  /** "Reallocate": give the free stock of this item to the waiting demands now, highest priority first. */
+  async reallocate(caller: Caller, id: string) {
+    const cur = await prisma.stockReservation.findUnique({ where: { id } });
+    if (!cur || (caller.ctx.unitId && cur.unitId !== caller.ctx.unitId))
+      throw Errors.notFound('Reservation not found.');
+    if (!['Waiting', 'Partial', 'Reserved'].includes(cur.status))
+      throw Errors.conflict(`A ${cur.status} reservation takes no more stock.`);
+    return prisma.$transaction(async (tx) => {
+      await lockInOrder(tx, [{ warehouseId: cur.warehouseId, itemId: cur.itemId }]);
+      await runAllocator(tx, cur.itemId, cur.warehouseId);
+      const after = await tx.stockReservation.findUniqueOrThrow({ where: { id } });
+      const added = D(after.reservedQty.toString()).minus(D(cur.reservedQty.toString()));
+      await writeAudit(tx, caller, 'RESERVATION_UPDATED', 'Reservation', { id, code: cur.code }, 'inv-reservation', {
+        unitId: cur.unitId,
+        reallocated: str(added),
+      });
+      return { ...dto(after), added: Number(str(added)) };
+    });
   },
 
   /** Daily job: reservations past their date end as Expired (BR-INV-16). */

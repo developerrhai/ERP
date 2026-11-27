@@ -108,16 +108,50 @@ export const leadCrud = makeCrud({
     'interest',
     'estValue',
     'score',
+    'campaign',
+    'consentStatus',
+    'nextFollowUp',
+    'projectNumber',
+    'stage',
   ],
   lineKeys: [],
   canEdit: notTerminal(['Converted']),
-  prepare(c) {
+  extraSelect: 'ls.name AS source_name, ow.name AS owner_name, pj.code AS project_number, t.status AS stage',
+  extraJoin:
+    'LEFT JOIN lead_sources ls ON ls.id = t.source_id LEFT JOIN users ow ON ow.id = t.assigned_to_id LEFT JOIN projects pj ON pj.id = t.project_id',
+  async decorate(db, h) {
+    const r = (
+      await query(
+        db,
+        `SELECT (SELECT name FROM lead_sources WHERE id=$1::uuid) AS source_name, (SELECT name FROM users WHERE id=$2::uuid) AS owner_name,
+                (SELECT code FROM projects WHERE id=$3::uuid) AS project_number`,
+        h.source_id ?? null,
+        h.assigned_to_id ?? null,
+        h.project_id ?? null,
+      )
+    )[0];
+    return { sourceName: r?.source_name ?? null, ownerName: r?.owner_name ?? null, projectNumber: r?.project_number ?? null, stage: h.status };
+  },
+  async prepare(c) {
     if (!c.header.name && !c.existing) throw Errors.validation({ name: 'Enter the lead name.' });
-    return { header: c.header, lines: [] };
+    const header = await resolveProject(c.tx, { ...c.header });
+    if (header.nextFollowUp === '') header.nextFollowUp = null;
+    // the Stage of the form is the lead's status; "Not qualified" keeps asking for its reason on its own button
+    if ('stage' in header) {
+      const stage = S(header.stage);
+      delete header.stage;
+      const was = c.existing ? S(c.existing.status) : 'New';
+      if (stage && stage !== was) {
+        if (stage === 'Unqualified') throw Errors.validation({ stage: 'Save the lead, then press "Not qualified" and say why.' });
+        header.status = stage;
+        if (was === 'Unqualified') header.lostReason = null;
+      }
+    }
+    return { header, lines: [] };
   },
 });
 /** Turns a typed Project Number into project_id (blank clears it; an unknown number is a field error). */
-async function resolveProject(tx: Db, header: Row): Promise<Row> {
+export async function resolveProject(tx: Db, header: Row): Promise<Row> {
   if (!('projectNumber' in header)) return header;
   const code = S(header.projectNumber).trim();
   delete header.projectNumber;
@@ -531,6 +565,7 @@ export const crmActions = {
         status: 'Prospecting',
         customerId: body.customerId ?? null,
         leadId: id,
+        projectId: cur.project_id ?? null,
         title: body.title ?? (S(l.interest) || S(l.name)),
         amount: body.amount ?? (S(l.est_value) || '0'),
         ownerId: l.assigned_to_id ?? caller.auth.userId,

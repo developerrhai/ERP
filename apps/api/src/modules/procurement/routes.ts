@@ -750,6 +750,29 @@ export function createProcurementRouter(): Router {
       res.json({ data: r.rows, meta: { page: q.page, size: q.size, total: r.total } });
     }),
   );
+  router.get(
+    '/wms/putaway/eligible',
+    g('wms-putaway', 'add'),
+    h(async (req, res) => res.json({ data: await putaway.eligible(callerOf(req)) })),
+  );
+  const putawayB = z.object({ grnLineId: uuid, batchId: uuid.nullish(), qty: pos, suggestedBinId: uuid.nullish(), priority: z.number().int().min(1).max(999).optional() }).strict();
+  router.post(
+    '/wms/putaway/tasks',
+    g('wms-putaway', 'add'),
+    validate({ body: putawayB }),
+    h(async (req, res) => res.status(201).json({ data: await putaway.create(callerOf(req), validated(res, 'body', putawayB)) })),
+  );
+  verb(
+    '/wms/putaway/:id/update',
+    'wms-putaway',
+    'edit',
+    'pa-update',
+    z.object({ suggestedBinId: uuid.nullish(), priority: z.number().int().min(1).max(999).optional() }).strict(),
+    (req, id, b) => putaway.update(callerOf(req), id, b),
+  );
+  verb('/wms/putaway/:id/cancel', 'wms-putaway', 'delete', 'pa-cancel', reasonB, (req, id, b) =>
+    putaway.cancel(callerOf(req), id, b.reason),
+  );
   verb('/wms/putaway/:id/claim', 'wms-putaway', 'edit', 'pa-claim', empty, (req, id) =>
     putaway.claim(callerOf(req), id),
   );

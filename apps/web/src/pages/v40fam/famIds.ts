@@ -142,9 +142,10 @@ const NOUNS: Record<string, string> = {
 
 export const FAM_V40_IDS: ReadonlySet<string> = new Set(Object.keys(NOUNS));
 
-export const FAM_PAGE_CFG: Record<string, { noun: string; print?: boolean }> = Object.fromEntries(
+export const FAM_PAGE_CFG: Record<string, { noun: string; print?: boolean; move?: boolean }> = Object.fromEntries(
   Object.entries(NOUNS).map(([id, noun]) => [
     id,
-    id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') || id.startsWith('inv-') || id.startsWith('auto-') || id.startsWith('pay-') || id.startsWith('fin-') || id.startsWith('scm-') ? { noun, print: true } : { noun },
+    // every warehouse page prints and e-mails its rows and moves them to the next department
+    id.startsWith('wms-') ? { noun, print: true, move: true } : id === 'gate-out' || id === 'log-shipments' || id.startsWith('sales-') || id.startsWith('crm-') || id.startsWith('tax-') || id.startsWith('inv-') || id.startsWith('auto-') || id.startsWith('pay-') || id.startsWith('fin-') || id.startsWith('scm-') ? { noun, print: true } : { noun },
   ]),
 );

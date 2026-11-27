@@ -73,7 +73,10 @@ function FormEditor({
           setLabels((d.headerLabels as Record<string, string>) ?? {});
         })
       : qget<Template>('/templates/resolve', { kind }).then((t) => {
-          if (alive) setTpl(t);
+          if (!alive) return;
+          setTpl(t);
+          // a new quality meeting belongs to Quality unless another department is chosen
+          if (kind === 'MOM' && t.headerFields.some((f) => f.key === 'department')) setData((d) => ({ department: 'Quality', ...d }));
         });
     load.catch((e: unknown) => alive && setMsg(toUiError(e).message));
     return () => {
@@ -228,6 +231,30 @@ function FormEditor({
   );
 }
 
+interface Meeting {
+  department: string;
+  attendees: string;
+  agenda: string;
+  actionItems: number;
+  openActions: number;
+  owners: string;
+  targetDate: string;
+}
+/** The meeting register's columns: who attended, what was discussed, who has to act and by when. */
+function MeetingCells({ meeting }: { meeting: Meeting | undefined }) {
+  const brief = (v: string): string => (v.length > 80 ? `${v.slice(0, 79)}…` : v || '—');
+  return (
+    <>
+      <td>{meeting?.department || '—'}</td>
+      <td className="qv-long" title={meeting?.attendees}>{brief(meeting?.attendees ?? '')}</td>
+      <td className="qv-long" title={meeting?.agenda}>{brief(meeting?.agenda ?? '')}</td>
+      <td>{meeting?.actionItems ? `${meeting.actionItems} (${meeting.openActions} open)` : '—'}</td>
+      <td>{meeting?.owners || '—'}</td>
+      <td>{meeting?.targetDate ? dmy(meeting.targetDate) : '—'}</td>
+    </>
+  );
+}
+
 export function FormList({ kind, actions }: { kind: FormKind; actions: ActionSet }) {
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
@@ -258,20 +285,32 @@ export function FormList({ kind, actions }: { kind: FormKind; actions: ActionSet
       </div>
       <ErrorBox message={list.error} />
       <div className="card table-wrap">
-        <table>
+        <table className={kind === 'MOM' ? 'qv-mom' : undefined}>
           <thead>
             <tr>
               <th>Number</th>
               <th>Date</th>
+              {kind === 'MOM' ? <th>Status</th> : null}
               <th>Title</th>
-              <th>Customer / supplier</th>
-              <th>Status</th>
+              {kind === 'MOM' ? (
+                <>
+                  <th>Department</th>
+                  <th>Attendees</th>
+                  <th>Agenda</th>
+                  <th>Action items</th>
+                  <th>Responsible owner</th>
+                  <th>Target date</th>
+                </>
+              ) : (
+                <th>Customer / supplier</th>
+              )}
+              {kind === 'MOM' ? null : <th>Status</th>}
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {list.data && list.data.rows.length === 0 && !list.loading ? (
-              <Empty cols={6}>Nothing here yet.</Empty>
+              <Empty cols={kind === 'MOM' ? 11 : 6}>Nothing here yet.</Empty>
             ) : null}
             {(list.data?.rows ?? []).map((r) => (
               <tr key={s(r.id)}>
@@ -285,11 +324,18 @@ export function FormList({ kind, actions }: { kind: FormKind; actions: ActionSet
                   </button>
                 </td>
                 <td>{dmy(s(r.docDate))}</td>
-                <td>{s(r.title)}</td>
-                <td>{s(r.customerName) || s(r.supplierName)}</td>
-                <td>
-                  <Pill tone={STATUS_TONE[s(r.status)]}>{s(r.status)}</Pill>
-                </td>
+                {kind === 'MOM' ? (
+                  <td>
+                    <Pill tone={STATUS_TONE[s(r.status)]}>{s(r.status)}</Pill>
+                  </td>
+                ) : null}
+                <td className={kind === 'MOM' ? 'qv-long' : undefined}>{s(r.title)}</td>
+                {kind === 'MOM' ? <MeetingCells meeting={r.meeting as Meeting | undefined} /> : <td>{s(r.customerName) || s(r.supplierName)}</td>}
+                {kind === 'MOM' ? null : (
+                  <td>
+                    <Pill tone={STATUS_TONE[s(r.status)]}>{s(r.status)}</Pill>
+                  </td>
+                )}
                 <td className="row-actions">
                   {kind === 'MOM' ? (
                     <RecordActions docType="qms-mom" id={s(r.id)} number={s(r.number)} status={s(r.status)} onChanged={list.reload}>

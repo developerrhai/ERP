@@ -210,6 +210,7 @@ export const registersService = {
       if (!cur) throw Errors.notFound('Register entry not found.');
       checkVersion(cur, ifMatch);
       if (S(cur.status) === 'Cancelled') throw Errors.conflict('This entry is cancelled.');
+      if (S(cur.status) === 'Revoked') throw Errors.conflict('This rejection was revoked.');
       if (disposition !== 'HOLD' && (note ?? '').trim().length < 3 && disposition !== 'SCRAP')
         throw Errors.validation({
           dispositionNote:
@@ -254,6 +255,7 @@ export const registersService = {
           'This entry came from an inspection decision and cannot be cancelled.',
         );
       if (S(cur.status) === 'Cancelled') throw Errors.conflict('This entry is already cancelled.');
+      if (S(cur.status) === 'Revoked') throw Errors.conflict('This rejection was revoked.');
       await exec(
         tx,
         `UPDATE qms_rejections SET status='Cancelled', disposition_note=$1, updated_by_id=$2::uuid, updated_at=now(), version=version+1 WHERE id=$3::uuid`,
@@ -278,7 +280,7 @@ export const registersService = {
   async rejectionSummary(caller: Caller, pageId: string, month: string) {
     const sc = await scopeSql(caller, pageId);
     const args = [...sc.args, monthStart(month), nextMonth(month)];
-    const base = `FROM qms_rejections t WHERE ${sc.sql} AND t.status <> 'Cancelled' AND t.reject_date >= $${args.length - 1}::date AND t.reject_date < $${args.length}::date`;
+    const base = `FROM qms_rejections t WHERE ${sc.sql} AND t.status NOT IN ('Cancelled','Revoked') AND t.reject_date >= $${args.length - 1}::date AND t.reject_date < $${args.length}::date`;
     const by = async (col: string) =>
       (
         await query(

@@ -44,6 +44,23 @@ function refsOf(fields: HeaderField[], data: Record<string, unknown>) {
   return { customerId: pick('customer'), supplierId: pick('supplier'), itemId: pick('item') };
 }
 
+/** The columns of the meeting register, read from the meeting's own fields. */
+function meetingSummary(data: Record<string, unknown>) {
+  const table = (k: string): Record<string, string>[] => (Array.isArray(data[k]) ? (data[k] as Record<string, string>[]) : []);
+  const actions = table('action_items');
+  const open = actions.filter((a) => !/^(done|closed)$/i.test(S(a.status).trim()));
+  const list = (values: unknown[]): string => [...new Set(values.map((v) => S(v).trim()).filter(Boolean))].join(', ');
+  return {
+    department: S(data.department),
+    attendees: list(table('attendees').map((a) => a.name)),
+    agenda: S(data.agenda),
+    actionItems: actions.length,
+    openActions: open.length,
+    owners: list(actions.map((a) => a.responsible)),
+    targetDate: open.map((a) => S(a.due_date)).filter(Boolean).sort()[0] ?? '',
+  };
+}
+
 export interface FormInput {
   kind: FormKind;
   title: string;
@@ -106,7 +123,12 @@ export const formsService = {
       ...args,
     );
     return {
-      rows: rows.map((r) => ({ ...norm(r), data: undefined, templateSnapshot: undefined })),
+      rows: rows.map((r) => ({
+        ...norm(r),
+        data: undefined,
+        templateSnapshot: undefined,
+        ...(S(r.kind) === 'MOM' ? { meeting: meetingSummary(r.data as Record<string, unknown>) } : {}),
+      })),
       total,
     };
   },

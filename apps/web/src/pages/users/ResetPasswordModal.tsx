@@ -6,6 +6,7 @@ import { Modal } from '../../components/Modal';
 import { PasswordHints } from '../../components/PasswordHints';
 import { ApiError } from '../../lib/api';
 import { checkPassword } from '../../lib/password-policy';
+import { usePasswordMinLength } from '../../lib/usePasswordMinLength';
 import type { User } from '../../types';
 import { resetUserPassword } from './usersApi';
 
@@ -21,7 +22,8 @@ export function ResetPasswordModal({ user, onClose, onDone }: Props) {
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
-  const checks = checkPassword(password, user.loginId, user.email);
+  const minLength = usePasswordMinLength();
+  const checks = checkPassword(password, user.loginId, user.email, null, minLength);
   const ok = checks.every((c) => c.ok);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {

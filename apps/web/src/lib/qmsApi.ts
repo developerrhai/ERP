@@ -84,8 +84,8 @@ export async function qpost<T = Row>(
     })
   ).data;
 }
-export async function qput<T = Row>(path: string, body: unknown): Promise<T> {
-  return (await request<T>(`/qms${path}`, { method: 'PUT', body })).data;
+export async function qput<T = Row>(path: string, body: unknown, version?: number): Promise<T> {
+  return (await request<T>(`/qms${path}`, { method: 'PUT', body, ...(version !== undefined ? { headers: ifm(version) } : {}) })).data;
 }
 export async function qpatch<T = Row>(path: string, version: number, body: unknown): Promise<T> {
   return (await request<T>(`/qms${path}`, { method: 'PATCH', body, headers: ifm(version) })).data;

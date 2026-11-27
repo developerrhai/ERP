@@ -76,6 +76,30 @@ export function mountStockRoutes(r: Router): void {
       });
     }),
   );
+  const upd = z
+    .object({
+      requiredQty: qtyNum.optional(),
+      priority: z.enum(['Critical', 'High', 'Medium', 'Low']).optional(),
+      reservedUntil: isoDate.optional(),
+    })
+    .strict();
+  r.put(
+    '/reservations/:id',
+    requirePageAction('inv-reservation', 'edit'),
+    validate({ params: idParams, body: upd }),
+    asyncHandler(async (req: Request, res: Response) => {
+      const c = await reservationService.update(callerOf(req), String(req.params.id), ver(req), validated(res, 'body', upd));
+      res.set('ETag', `"${c.version}"`).json({ data: c });
+    }),
+  );
+  r.post(
+    '/reservations/:id/reallocate',
+    requirePageAction('inv-reservation', 'edit'),
+    validate({ params: idParams, body: z.object({}).strict().default({}) }),
+    asyncHandler(async (req: Request, res: Response) => {
+      res.json({ data: await reservationService.reallocate(callerOf(req), String(req.params.id)) });
+    }),
+  );
   const ext = z.object({ days: z.number().int().min(1).max(90) }).strict();
   r.post(
     '/reservations/:id/extend',

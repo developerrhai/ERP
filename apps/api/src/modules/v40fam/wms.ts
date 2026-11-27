@@ -29,6 +29,29 @@ const binCap = (level: Level, id: string): string =>
 const skuCount = (level: Level, id: string): string =>
   `(SELECT count(*) FROM (SELECT l.item_id FROM stock_ledger l JOIN ${BIN_FROM} ON b.id = l.bin_id WHERE b.deleted_at IS NULL AND ${inSet(level, id)} GROUP BY l.item_id HAVING sum(l.qty_in - l.qty_out) > 0) q)`;
 
+/** Latest planned date of a count that counted a line in the bins of the set. */
+const lastCount = (level: Level, id: string): string =>
+  `(SELECT max(sc.planned_date) FROM stock_count_lines cl JOIN stock_counts sc ON sc.id = cl.count_id JOIN ${BIN_FROM} ON b.id = cl.bin_id WHERE cl.count1_qty IS NOT NULL AND sc.deleted_at IS NULL AND ${inSet(level, id)})`;
+
+/** Open demand (stock reservations still waiting) with the Allocate / Reallocate button of its warehouse. */
+const demandPanel = (): PanelDef =>
+  allocPanel({
+    title: 'Open demand waiting for stock',
+    from: `stock_reservations p JOIN items pi ON pi.id = p.item_id JOIN warehouses pw ON pw.id = p.warehouse_id
+      LEFT JOIN LATERAL (SELECT COALESCE(sum(sb.on_hand - sb.reserved_qty), 0) AS free FROM stock_balances sb WHERE sb.item_id = p.item_id AND sb.warehouse_id = p.warehouse_id) av ON true`,
+    unit: 'pw.unit_id',
+    soft: null,
+    id: 'p.warehouse_id',
+    order: 'p.code',
+    record: `p.code || ' / ' || pi.code`,
+    demand: 'p.required_qty',
+    available: 'av.free',
+    allocated: 'p.reserved_qty',
+    short: 'GREATEST(p.required_qty - p.fulfilled_qty - p.reserved_qty, 0)',
+    location: 'pw.code',
+    action: `CASE WHEN p.status NOT IN ('Waiting','Partial','Reserved') THEN NULL WHEN p.reserved_qty > 0 THEN 'Reallocate' ELSE 'Allocate' END`,
+  });
+
 /** Workspace panel of a zone / rack / shelf / bin: pending put-away (demand), free capacity (available), still to be picked (allocated). */
 function placePanel(
   title: string,
@@ -46,7 +69,8 @@ function placePanel(
     from,
     unit,
     soft,
-    id: 'p.id',
+    // the button of a row allocates the open demand of its warehouse
+    id: 'pw.id',
     order: 'p.code',
     record: 'p.code',
     demand: dem,
@@ -54,7 +78,7 @@ function placePanel(
     allocated: openPick(level, 'p.id'),
     short: `GREATEST(${dem} - ${avail}, 0)`,
     location,
-    action: `CASE WHEN ${dem} > ${avail} THEN 'Reallocate' WHEN ${dem} > 0 THEN 'Allocate' END`,
+    action: `CASE WHEN ${openPick(level, 'p.id')} > 0 THEN 'Reallocate' ELSE 'Allocate' END`,
   });
 }
 
@@ -104,7 +128,7 @@ const whPanel = (): PanelDef => {
     allocated: alloc,
     short: `GREATEST(${dem} - ${alloc}, 0)`,
     location: 'p.name',
-    action: `CASE WHEN ${dem} - ${alloc} > 0 AND ${avail} > 0 THEN 'Allocate' WHEN ${dem} - ${alloc} > 0 THEN 'Reallocate' END`,
+    action: `CASE WHEN ${alloc} > 0 THEN 'Reallocate' ELSE 'Allocate' END`,
   });
 };
 const whRules = (): PanelDef => ({
@@ -128,22 +152,23 @@ const whRules = (): PanelDef => ({
 
 const WAREHOUSES: PageDef = {
   from: `warehouses t LEFT JOIN units un ON un.id = t.unit_id ${apJoin('wms-warehouses')}`,
+  owner: null,
   number: 't.code',
-  status: 't.status',
+  status: 'initcap(t.status::text)',
   search: ['t.code', 't.name', 't.address', 't.manager', 'un.name'],
   order: 't.code',
   cols: {
     'Warehouse Code': t('t.code'),
     'Warehouse Name': t('t.name'),
     Branch: t('un.name'),
-    Address: t(`COALESCE(NULLIF(t.address, ''), 'Talwade Industrial Area, Sector 10, Pune')`),
-    Manager: t(`COALESCE(NULLIF(t.manager, ''), 'Rajesh Kulkarni')`),
-    'Total Capacity': n(`COALESCE(NULLIF(t.total_capacity, 0), 50000)`),
-    'Used Capacity': n(`COALESCE((SELECT sum(sb.on_hand) FROM stock_balances sb WHERE sb.warehouse_id = t.id), 12500)`),
-    'Dock Doors': n(`COALESCE(NULLIF(t.dock_doors, 0), 6)`),
-    'Operating Hours': t(`COALESCE(NULLIF(t.operating_hours, ''), '24x7 Multi-Shift')`),
-    'Temperature Zone': t(`COALESCE(NULLIF(t.temperature_zone, ''), 'Ambient 20-25°C')`),
-    Status: pill('t.status'),
+    Address: t('t.address'),
+    Manager: t('t.manager'),
+    'Total Capacity': n('t.total_capacity'),
+    'Used Capacity': n(`(SELECT COALESCE(sum(sb.on_hand), 0) FROM stock_balances sb WHERE sb.warehouse_id = t.id)`),
+    'Dock Doors': n('t.dock_doors'),
+    'Operating Hours': t('t.operating_hours'),
+    'Temperature Zone': t('t.temperature_zone'),
+    Status: pill('initcap(t.status::text)'),
     'Project Number': none(),
     ...common('wms-warehouses', 't.code'),
   },
@@ -206,11 +231,11 @@ const ZONES: PageDef = {
     'Zone Name': t('t.name'),
     'Zone Type': t('t.zone_type'),
     Capacity: n('t.capacity'),
-    Used: n(`COALESCE(NULLIF(${held('zone', 't.id')}, 0), 240)`),
+    Used: n(held('zone', 't.id')),
     'Storage Class': t('t.storage_class'),
-    Temperature: t(`COALESCE(t.temperature, 'Ambient 20-25°C')`),
-    'Putaway Priority': n(`COALESCE(t.putaway_priority, 1)`),
-    'Pick Sequence': n(`COALESCE(t.pick_sequence, 10)`),
+    Temperature: t('t.temperature'),
+    'Putaway Priority': n('t.putaway_priority'),
+    'Pick Sequence': n('t.pick_sequence'),
     Status: pill('t.status'),
     ...common('wms-zones', 't.code'),
   },
@@ -272,10 +297,10 @@ const RACKS: PageDef = {
     'Rack Type': t('t.rack_type'),
     Levels: n('t.levels'),
     'Max Load': n('t.max_load_kg'),
-    Demand: n(`COALESCE(NULLIF(${pendingPut('rack', 't.id')}, 0), 12)`),
-    Available: n(`COALESCE(NULLIF(GREATEST(${binCap('rack', 't.id')} - ${held('rack', 't.id')}, 0), 0), 180)`),
-    Allocated: n(`COALESCE(NULLIF(${openPick('rack', 't.id')}, 0), 45)`),
-    Short: n('0'),
+    Demand: n(pendingPut('rack', 't.id')),
+    Available: n(`GREATEST(${binCap('rack', 't.id')} - ${held('rack', 't.id')}, 0)`),
+    Allocated: n(openPick('rack', 't.id')),
+    Short: n(`GREATEST(${pendingPut('rack', 't.id')} - GREATEST(${binCap('rack', 't.id')} - ${held('rack', 't.id')}, 0), 0)`),
     Location: t(`w.name || ' · ' || z.code || ' · Aisle ' || t.aisle`),
     Status: pill('t.status'),
     ...common('wms-racks', 't.code'),
@@ -350,8 +375,8 @@ const SHELVES: PageDef = {
     'Max Weight': n('t.max_weight_kg'),
     'SKU Count': n(skuCount('shelf', 't.id')),
     'Occupied %': n(`round(${held('shelf', 't.id')} / NULLIF(${binCap('shelf', 't.id')}, 0) * 100, 1)`),
-    'Storage Rule': t(`COALESCE(t.storage_rule, 'Standard FIFO')`),
-    'Last Count': d('t.created_at'),
+    'Storage Rule': t('t.storage_rule'),
+    'Last Count': d(lastCount('shelf', 't.id')),
     Status: pill('t.status'),
     ...common('wms-shelves', 't.code'),
   },
@@ -398,6 +423,7 @@ const BINS: PageDef = {
     LEFT JOIN wms_racks r ON r.id = COALESCE(t.rack_id, s.rack_id) LEFT JOIN wms_zones z ON z.id = COALESCE(t.zone_id, r.zone_id) ${apJoin('wms-bins')}`,
   unit: 'w.unit_id',
   soft: 't.deleted_at',
+  owner: null,
   number: 't.code',
   status: 't.status',
   search: ['t.code', 't.name', 'w.name', 'z.code', 'r.code', 's.code'],
@@ -413,7 +439,7 @@ const BINS: PageDef = {
     Occupied: n(held('bin', 't.id')),
     Available: n(`GREATEST(COALESCE(t.capacity, 0) - ${held('bin', 't.id')}, 0)`),
     'SKU Count': n(skuCount('bin', 't.id')),
-    'Putaway Priority': n(`COALESCE(t.putaway_priority, 1)`),
+    'Putaway Priority': none('num'),
     Status: pill('t.status'),
     ...common('wms-bins', 't.code'),
   },
@@ -460,7 +486,7 @@ const pickPanel = (): PanelDef =>
       LEFT JOIN LATERAL (SELECT COALESCE(sum(sb.on_hand - sb.reserved_qty), 0) AS free FROM stock_balances sb WHERE sb.item_id = p.item_id AND sb.warehouse_id = pw.warehouse_id) av ON true`,
     unit: 'pw.unit_id',
     soft: 'pw.deleted_at',
-    id: 'p.id',
+    id: 'pw.warehouse_id',
     order: 'pw.number DESC, p.line_no',
     record: `pw.number || ' / ' || pi.code`,
     demand: 'p.required_qty',
@@ -468,7 +494,7 @@ const pickPanel = (): PanelDef =>
     allocated: 'p.picked_qty',
     short: 'p.short_qty',
     location: 'pb.code',
-    action: `CASE WHEN p.short_qty > 0 THEN 'Reallocate' WHEN p.status = 'Open' THEN 'Allocate' END`,
+    action: `CASE WHEN p.status NOT IN ('Open','Short') THEN NULL WHEN p.short_qty > 0 THEN 'Reallocate' ELSE 'Allocate' END`,
   });
 const PICK_REG = [
   'Pick Task No',
@@ -483,6 +509,7 @@ const PICK_REG = [
   'Route Seq',
   'Short Qty',
   'Status',
+  'Wave Status',
   'Actions',
 ];
 const PICK: PageDef = {
@@ -491,9 +518,11 @@ const PICK: PageDef = {
   unit: 'pw.unit_id',
   soft: 'pw.deleted_at',
   owner: 'pw.created_by_id',
-  version: null,
+  version: 'pw.version',
+  // a row is a pick task; View, Edit, print, e-mail, documents and Move Forward act on its wave, so the status is the wave's
+  recordId: 'pw.id',
   number: `pw.number || '-' || t.line_no`,
-  status: 't.status',
+  status: 'pw.status',
   search: ['pw.number', 'pw.reference', 'i.code', 'i.name', 'sb.code'],
   order: 'pw.planned_date DESC, pw.number DESC, t.route_seq, t.line_no',
   cols: {
@@ -505,10 +534,11 @@ const PICK: PageDef = {
     'Source Bin': t('sb.code'),
     'Required Qty': n('t.required_qty'),
     'Picked Qty': n('t.picked_qty'),
-    Picker: t(`'Picker Team 1'`),
-    'Route Seq': n(`COALESCE(t.route_seq, t.line_no)`),
+    Picker: none(),
+    'Route Seq': n('t.route_seq'),
     'Short Qty': n('t.short_qty'),
     Status: pill('t.status'),
+    'Wave Status': pill('pw.status'),
     ...common('wms-pick', `pw.number || '-' || t.line_no`),
   },
   register: PICK_REG,
@@ -519,7 +549,7 @@ const PICK: PageDef = {
     view('Route Optimization', PICK_REG, { order: 'pw.number DESC, t.route_seq, t.line_no' }),
     view(
       'Batch Serial Pick',
-      ['Item', 'Batch Serial', 'Required Qty', 'Picked Qty', 'Short Qty', 'Status', 'Pick Task No', 'Actions'],
+      ['Item', 'Batch Serial', 'Required Qty', 'Picked Qty', 'Short Qty', 'Status', 'Wave No', 'Pick Task No', 'Wave Status', 'Actions'],
       { panel: pickPanel() },
     ),
     view('Short Picks', PICK_REG, { panel: pickPanel(), where: [`(t.status = 'Short' OR t.short_qty > 0)`] }),
@@ -550,7 +580,7 @@ const packPanel = (): PanelDef =>
       LEFT JOIN LATERAL (SELECT COALESCE(sum(k.required_qty), 0) AS req, COALESCE(sum(k.picked_qty), 0) AS picked FROM pick_tasks k WHERE k.wave_id = p.wave_id) pk ON true`,
     unit: 'p.unit_id',
     soft: 'p.deleted_at',
-    id: 'p.id',
+    id: 'pw.warehouse_id',
     order: 'p.created_at DESC',
     record: 'p.number',
     demand: 'pk.req',
@@ -558,7 +588,7 @@ const packPanel = (): PanelDef =>
     allocated: 'p.cartons',
     short: 'GREATEST(pk.req - pk.picked, 0)',
     location: 'pw.number',
-    action: `CASE WHEN p.label_status = 'Pending' THEN 'Allocate' END`,
+    action: `CASE WHEN pw.warehouse_id IS NOT NULL AND p.status IN ('Open','Packed') THEN 'Allocate' END`,
   });
 const PACK: PageDef = {
   from: `pack_units t LEFT JOIN pick_waves pw ON pw.id = t.wave_id LEFT JOIN sales_orders so ON so.number = pw.reference AND so.deleted_at IS NULL
@@ -578,9 +608,9 @@ const PACK: PageDef = {
     'Gross Weight': n('t.gross_kg'),
     'Volumetric Weight': n('t.volumetric_kg'),
     'Label Status': pill('t.label_status'),
-    Packer: t(`'Packer Team A'`),
+    Packer: none(),
     'QC Check': pill(`CASE WHEN t.qc_check THEN 'Pass' ELSE 'Pending' END`),
-    'Dispatch Ready': pill(`CASE WHEN t.status = 'Ready' THEN 'Ready' ELSE 'Waiting' END`),
+    'Dispatch Ready': pill(`CASE WHEN t.status = 'Dispatched' THEN 'Dispatched' WHEN t.status = 'Packed' THEN 'Ready' ELSE 'Waiting' END`),
     Status: pill('t.status'),
     ...common('wms-packing', 't.number'),
   },
@@ -610,7 +640,7 @@ const countPanel = (kind: string): PanelDef =>
     unit: 'p.unit_id',
     soft: 'p.deleted_at',
     where: [kind],
-    id: 'p.id',
+    id: 'p.warehouse_id',
     order: 'p.planned_date DESC NULLS LAST, p.code DESC',
     record: 'p.code',
     demand: countLines('p.id'),
@@ -618,7 +648,7 @@ const countPanel = (kind: string): PanelDef =>
     allocated: `(SELECT count(*) FROM stock_count_lines cl WHERE cl.count_id = p.id AND cl.final_qty IS NOT NULL)`,
     short: `${countLines('p.id')} - ${countedLines('p.id')}`,
     location: 'pw.code',
-    action: `NULL`,
+    action: `CASE WHEN p.status IN ('Planned','Counting','Under Review','Approved') THEN 'Allocate' END`,
   });
 const CYCLE_KIND = `p.count_type IN ('CYCLE','POWDER_WEEKLY')`;
 const CYCLE_REG = [
@@ -641,6 +671,7 @@ const zonesOfCount = `(SELECT string_agg(DISTINCT z.code, ', ') FROM stock_count
 const CYCLE: PageDef = {
   from: `stock_counts t JOIN warehouses w ON w.id = t.warehouse_id ${apJoin('wms-cycle')}`,
   soft: 't.deleted_at',
+  owner: null,
   base: [`t.count_type IN ('CYCLE','POWDER_WEEKLY')`],
   number: 't.code',
   status: 't.status',
@@ -650,14 +681,14 @@ const CYCLE: PageDef = {
     'Count Plan No': t('t.code'),
     Warehouse: t('w.name'),
     Zone: t(zonesOfCount),
-    'ABC Class': t(`'Class A'`),
+    'ABC Class': none(),
     Frequency: t('t.frequency'),
     'Planned Date': d('t.planned_date'),
     'Items Planned': n(countLines('t.id')),
     'Items Counted': n(countedLines('t.id')),
     'Variance Lines': n(`(SELECT count(*) FROM stock_count_lines cl WHERE cl.count_id = t.id AND cl.final_qty != cl.system_qty)`),
-    'Accuracy %': n(`COALESCE(t.accuracy_pct, 99.8)`),
-    Supervisor: t(`'Ramesh Patil'`),
+    'Accuracy %': n('t.accuracy_pct'),
+    Supervisor: none(),
     Status: pill('t.status'),
     ...common('wms-cycle', 't.code'),
   },
@@ -692,6 +723,7 @@ const PHYS: PageDef = {
   from: `stock_counts t JOIN warehouses w ON w.id = t.warehouse_id LEFT JOIN stock_vouchers rv ON rv.id = t.reconciliation_voucher_id
     LEFT JOIN users au ON au.id = rv.approved_by_id ${apJoin('wms-physical')}`,
   soft: 't.deleted_at',
+  owner: null,
   base: [`t.count_type = 'PHYSICAL'`],
   number: 't.code',
   status: 't.status',
@@ -701,7 +733,7 @@ const PHYS: PageDef = {
     'Physical Count No': t('t.code'),
     Warehouse: t('w.name'),
     'Freeze Date': d('t.snapshot_at'),
-    'Count Team': t(`'Audit Squad Alpha'`),
+    'Count Team': t(`(SELECT string_agg(DISTINCT cu.name, ', ') FROM stock_count_lines cl JOIN users cu ON cu.id IN (cl.count1_by_id, cl.count2_by_id) WHERE cl.count_id = t.id)`),
     Items: n(countLines('t.id')),
     'First Count Variance': n(
       `(SELECT sum(cl.count1_qty - cl.system_qty) FROM stock_count_lines cl WHERE cl.count_id = t.id AND cl.count1_qty IS NOT NULL)`,
@@ -770,7 +802,7 @@ const trPanel = (): PanelDef =>
     unit: 'p.unit_id',
     soft: 'p.deleted_at',
     where: [`p.kind = 'TRANSFER'`],
-    id: 'p.id',
+    id: 'p.warehouse_id',
     order: 'p.posting_date DESC, p.number DESC',
     record: 'p.number',
     demand: 'COALESCE(p.dispatched_qty, p.total_qty, 0)',
@@ -778,7 +810,7 @@ const trPanel = (): PanelDef =>
     allocated: 'COALESCE(p.received_qty, 0)',
     short: `CASE WHEN p.expected_receipt < CURRENT_DATE THEN GREATEST(COALESCE(p.dispatched_qty, 0) - COALESCE(p.received_qty, 0), 0) ELSE 0 END`,
     location: 'pdw.code',
-    action: `NULL`,
+    action: `CASE WHEN p.status IN ('Draft','Approved','Pending Approval') THEN 'Allocate' END`,
   });
 const TRANSFER: PageDef = {
   from: `stock_vouchers t LEFT JOIN warehouses sw ON sw.id = t.warehouse_id LEFT JOIN warehouses dw ON dw.id = t.to_warehouse_id ${apJoin('wms-transfer')}`,
@@ -796,7 +828,7 @@ const TRANSFER: PageDef = {
     'Dispatch Ref': t('COALESCE(t.vehicle_ref, t.reference)'),
     'In Transit Qty': n('GREATEST(COALESCE(t.dispatched_qty, t.total_qty, 0) - COALESCE(t.received_qty, 0), 0)'),
     'Received Qty': n('t.received_qty'),
-    'Putaway Qty': n('COALESCE(t.received_qty, 0)'),
+    'Putaway Qty': none('num'),
     Variance: n('abs(COALESCE(t.dispatched_qty, t.total_qty, 0) - COALESCE(t.received_qty, 0))'),
     'Expected Date': d('t.expected_receipt'),
     Status: pill('t.status'),
@@ -831,14 +863,15 @@ const BARCODE_REG = [
   'Status',
   'Actions',
 ];
-const SCAN_FROM = `(SELECT se.id, se.raw AS barcode, CASE WHEN se.valid THEN 'Valid' ELSE 'Invalid' END AS status, se.result_kind, se.message, se.created_at, se.item_id, NULL::timestamptz AS deleted_at FROM scan_events se) t
+const SCAN_SEARCH = ['t.barcode', 'i.code', 'i.name'];
+const SCAN_FROM = `(SELECT se.id, se.raw AS barcode, se.raw AS code, CASE WHEN se.valid THEN 'Valid' ELSE 'Invalid' END AS status, se.result_kind, se.message, se.created_at, se.item_id, NULL::timestamptz AS deleted_at FROM scan_events se) t
     LEFT JOIN items i ON i.id = t.item_id`;
 const SCAN_COLS = {
   Barcode: t('t.barcode'),
   Item: t(`i.code || ' - ' || i.name`),
   'Barcode Type': t('t.result_kind'),
   UOM: t('i.base_uom'),
-  'Last Printed': d('t.created_at'),
+  'Last Printed': none('date'),
   Status: pill('t.status'),
 };
 const BARCODE: PageDef = {
@@ -846,34 +879,36 @@ const BARCODE: PageDef = {
   unit: null,
   soft: 't.deleted_at',
   owner: null,
+  // the scan tabs list scan events, which carry no version
   version: null,
-  base: [`(t.barcode IS NOT NULL OR t.code IS NOT NULL)`],
   number: `COALESCE(t.barcode, t.code)`,
-  status: 't.status',
+  status: 'initcap(t.status::text)',
   search: ['t.barcode', 't.code', 't.name'],
   order: 't.code',
   cols: {
-    Barcode: t(`COALESCE(t.barcode, '890123' || LPAD(SUBSTRING(t.id::text, 1, 6), 6, '0'))`),
+    Barcode: t('t.barcode'),
     Item: t(`t.code || ' - ' || t.name`),
-    'Barcode Type': t(`COALESCE(t.type, 'CODE128')`),
+    'Barcode Type': none(),
     UOM: t('t.base_uom'),
-    'Label Template': t(`'Standard SKU 50x25'`),
-    Printer: t(`'Zebra-WH-01'`),
-    'Last Printed': d('t.created_at'),
-    'Scan Count': n(`(SELECT COALESCE(count(*), 0) FROM scan_events se WHERE se.raw = t.barcode) + 12`),
-    'Invalid Scans': n(`(SELECT COALESCE(count(*), 0) FROM scan_events se WHERE se.raw = t.barcode AND se.valid = false)`),
-    Status: pill('t.status'),
+    'Label Template': none(),
+    Printer: none(),
+    'Last Printed': none('date'),
+    'Scan Count': n(`(SELECT count(*) FROM scan_events se WHERE se.raw = t.barcode)`),
+    'Invalid Scans': n(`(SELECT count(*) FROM scan_events se WHERE se.raw = t.barcode AND se.valid = false)`),
+    Status: pill('initcap(t.status::text)'),
     ...common('wms-barcode', 't.barcode'),
   },
   register: BARCODE_REG,
   compact: BARCODE_REG,
   views: [
-    view('Barcode Registry', BARCODE_REG),
-    view('Label Templates', BARCODE_REG),
-    view('Scan Transactions', BARCODE_REG, { from: SCAN_FROM, order: 't.created_at DESC', cols: SCAN_COLS }),
+    view('Barcode Registry', BARCODE_REG, { panel: demandPanel() }),
+    view('Label Templates', BARCODE_REG, { panel: demandPanel() }),
+    view('Scan Transactions', BARCODE_REG, { from: SCAN_FROM, order: 't.created_at DESC', cols: SCAN_COLS, recordId: 't.item_id', search: SCAN_SEARCH }),
     view('Printer Setup', BARCODE_REG),
     view('Invalid Scans', ['Barcode', 'Item', 'Barcode Type', 'UOM', 'Status', 'Actions'], {
       from: SCAN_FROM,
+      recordId: 't.item_id',
+      search: SCAN_SEARCH,
       where: [`t.status = 'Invalid'`],
       order: 't.created_at DESC',
       cols: SCAN_COLS,
@@ -893,34 +928,9 @@ const BARCODE: PageDef = {
         owner: 'pu.name',
       }),
     }),
-    view('Scan Productivity', BARCODE_REG, { from: SCAN_FROM, order: 't.created_at DESC', cols: SCAN_COLS }),
+    view('Scan Productivity', BARCODE_REG, { from: SCAN_FROM, order: 't.created_at DESC', cols: SCAN_COLS, recordId: 't.item_id', search: SCAN_SEARCH }),
   ],
 };
-
-const RFID_FROM = `(
-  SELECT
-    gen_random_uuid() AS id,
-    'EPC96-' || LPAD(i::text, 4, '0') || '-WMS' AS tag_code,
-    'Active' AS status,
-    'BT-2026-' || LPAD((i * 3)::text, 4, '0') AS batch_no,
-    NOW() - (i || ' hours')::interval AS created_at,
-    NOW() - (i || ' minutes')::interval AS last_printed_at,
-    NULL::timestamptz AS deleted_at,
-    w.id AS warehouse_id,
-    w.name AS warehouse_name,
-    w.unit_id,
-    b.id AS bin_id,
-    b.code AS bin_code,
-    sh.id AS shelf_id,
-    sh.code AS shelf_code,
-    it.code AS item_code,
-    it.name AS item_name
-  FROM generate_series(1, 20) i
-  CROSS JOIN LATERAL (SELECT id, name, unit_id FROM warehouses WHERE deleted_at IS NULL ORDER BY code LIMIT 1) w
-  LEFT JOIN LATERAL (SELECT id, code FROM wms_bins WHERE deleted_at IS NULL ORDER BY code LIMIT 1 OFFSET (i % 5)) b ON true
-  LEFT JOIN LATERAL (SELECT id, code FROM wms_shelves WHERE deleted_at IS NULL ORDER BY code LIMIT 1 OFFSET (i % 4)) sh ON true
-  LEFT JOIN LATERAL (SELECT code, name FROM items WHERE deleted_at IS NULL ORDER BY code LIMIT 1 OFFSET (i % 8)) it ON true
-) t`;
 
 const RFID_REG = [
   'Tag EPC',
@@ -936,33 +946,34 @@ const RFID_REG = [
   'Actions',
 ];
 const RFID: PageDef = {
-  from: `${RFID_FROM} ${apJoin('wms-rfid')}`,
-  unit: 't.unit_id',
+  from: `wms_rfid_tags t JOIN warehouses w ON w.id = t.warehouse_id LEFT JOIN wms_bins b ON b.id = t.bin_id LEFT JOIN wms_shelves sh ON sh.id = t.shelf_id ${apJoin('wms-rfid')}`,
+  unit: 'w.unit_id',
   soft: 't.deleted_at',
   number: 't.tag_code',
   status: 't.status',
-  search: ['t.tag_code', 't.bin_code', 't.shelf_code', 't.warehouse_name', 't.item_code', 't.item_name'],
+  search: ['t.tag_code', 'b.code', 'sh.code', 'w.name'],
   order: 't.tag_code ASC',
   cols: {
     'Tag EPC': t('t.tag_code'),
-    Item: t(`COALESCE(t.item_code || ' - ' || t.item_name, 'SKU-7700' || SUBSTRING(t.tag_code, 7, 2))`),
-    'Batch Serial': t(`t.batch_no`),
-    'Reader Zone': t(`COALESCE(t.warehouse_name, 'Main Warehouse')`),
-    'Last Read Time': d(`t.last_printed_at`),
-    'Read Strength': t(`'-58 dBm'`),
-    'Expected Location': t(`COALESCE('Bin ' || t.bin_code, 'Shelf ' || t.shelf_code, 'Bin A-01-01')`),
-    'Actual Location': t(`COALESCE('Bin ' || t.bin_code, 'Shelf ' || t.shelf_code, 'Bin A-01-01')`),
-    Exception: none(),
+    // the items now held in the bin the tag is stuck on
+    Item: t(`(SELECT string_agg(i.code || ' - ' || i.name, ', ') FROM (SELECT l.item_id FROM stock_ledger l WHERE l.bin_id = t.bin_id GROUP BY l.item_id HAVING sum(l.qty_in - l.qty_out) > 0) q JOIN items i ON i.id = q.item_id)`),
+    'Batch Serial': none(),
+    'Reader Zone': t(`COALESCE((SELECT z.code FROM wms_zones z WHERE z.id = b.zone_id), b.zone)`),
+    'Last Read Time': none('date'),
+    'Read Strength': none(),
+    'Expected Location': t(`COALESCE('Bin ' || b.code, 'Shelf ' || sh.code)`),
+    'Actual Location': none(),
+    Exception: t(`CASE WHEN t.status = 'Lost' THEN 'Tag reported lost' END`),
     Status: pill('t.status'),
     ...common('wms-rfid', 't.tag_code'),
   },
   register: RFID_REG,
   compact: RFID_REG,
   views: [
-    view('RFID Tag Registry', RFID_REG),
+    view('RFID Tag Registry', RFID_REG, { panel: demandPanel() }),
     view('Reader Setup', RFID_REG),
     view('Read Events', RFID_REG, { order: 't.last_printed_at DESC NULLS LAST' }),
-    view('Portal Mapping', RFID_REG),
+    view('Portal Mapping', RFID_REG, { order: 'w.code, b.code NULLS LAST, t.tag_code' }),
     view('Missed Reads', RFID_REG, { where: [`t.status = 'Lost'`] }),
     view('RFID Accuracy', RFID_REG),
   ],
@@ -992,6 +1003,8 @@ const PUTAWAY: PageDef = {
     LEFT JOIN wms_bins fb ON fb.id = t.from_bin_id LEFT JOIN wms_bins sb ON sb.id = t.suggested_bin_id LEFT JOIN users op ON op.id = t.operator_id ${apJoin('wms-putaway')}`,
   unit: 't.unit_id',
   soft: null,
+  // a put-away task is made by a goods receipt and taken by whoever is on the floor
+  owner: null,
   number: 't.task_no',
   status: 't.status',
   search: ['t.task_no', 'g.number', 'i.code', 'i.name', 'sb.code'],

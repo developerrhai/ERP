@@ -80,6 +80,10 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+/* a number column's heading sits over its figures */
+.sv40-panel .register-table th.num {
+  text-align: right;
+}
 /* the CRM "Detailed Table" and the report panels have no tick-box column, so only their first column may stay pinned */
 .sv40-panel .register-table :is(th, td):nth-child(2),
 .fv40-panel .register-table :is(th, td):nth-child(2) {
@@ -286,5 +290,79 @@
 @media (prefers-reduced-motion: reduce) {
   .card.pipeline-card {
     transition: none;
+  }
+}
+
+/* long document forms: group headings, the multi-item picker, and lines that wrap instead of scrolling sideways */
+.doc-section {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+.doc-picker {
+  border: 1px solid var(--line, #dde);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.doc-picker-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.doc-picker-head > div {
+  flex: 1 1 240px;
+  display: flex;
+  flex-direction: column;
+}
+.doc-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+.doc-picker-row > select {
+  flex: 1 1 260px;
+  height: auto;
+  min-width: 0;
+}
+.doc-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.doc-line {
+  border: 1px solid var(--line, #dde);
+  border-radius: 10px;
+  padding: 8px 10px 10px;
+  margin: 0;
+  min-width: 0;
+}
+.doc-line > legend {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 4px;
+}
+.doc-line-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.doc-line-grid > .field {
+  margin: 0;
+  min-width: 0;
+}
+.doc-line-grid > .field:nth-child(-n + 2) {
+  grid-column: span 2;
+}
+@media (max-width: 480px) {
+  .doc-line-grid > .field:nth-child(-n + 2) {
+    grid-column: 1 / -1;
   }
 }

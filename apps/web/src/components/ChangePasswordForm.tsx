@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { ApiError, changePassword } from '../lib/api';
 import { checkPassword } from '../lib/password-policy';
+import { usePasswordMinLength } from '../lib/usePasswordMinLength';
 import type { User } from '../types';
 import { PasswordField } from './Field';
 import { PasswordHints } from './PasswordHints';
@@ -23,9 +24,11 @@ export function ChangePasswordForm({ user, submitLabel, submitClassName, onDone 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const inFlight = useRef(false);
 
-  const checks = checkPassword(next, user.loginId, user.email);
+  const minLength = usePasswordMinLength();
+  const checks = checkPassword(next, user.loginId, user.email, user.name, minLength);
   const confirmOk = confirm.length > 0 && confirm === next;
-  const canSubmit = current.length > 0 && checks.every((c) => c.ok) && confirmOk && !pending;
+  const unchanged = next.length > 0 && next === current;
+  const canSubmit = current.length > 0 && checks.every((c) => c.ok) && !unchanged && confirmOk && !pending;
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -71,7 +74,7 @@ export function ChangePasswordForm({ user, submitLabel, submitClassName, onDone 
         label="New password"
         autoComplete="new-password"
         value={next}
-        error={fieldErrors.newPassword}
+        error={unchanged ? 'New password must be different from the current one.' : fieldErrors.newPassword}
         onChange={(e) => setNext(e.target.value)}
       />
       <PasswordHints checks={checks} />

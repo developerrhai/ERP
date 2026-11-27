@@ -13,6 +13,7 @@ import { dmy, Empty, ErrorBox, PageHead, Pill, todayIso } from '../finance/share
 import { DynamicFields, STATUS_TONE, Tabs, s } from './Shared';
 import { DateField } from '../../ui/components';
 import { withPlantV40 } from '../plant/PlantV40';
+import { CommentDialog, PrioritySelect, Trail, type TrailEvent } from './v2/shared';
 
 export type Kind = 'INCOMING' | 'IN_PROCESS' | 'PRE_DISPATCH' | 'ISIR' | 'WELDING' | 'VT';
 export const KIND_LABEL: Record<Kind, string> = {
@@ -35,6 +36,7 @@ interface RowState {
   readings: string[];
   extra: Record<string, string>;
   remark: string;
+  checkType: 'STANDARD' | 'CONDITIONED';
   rowStatus?: string;
 }
 const blankRow = (n: number, attribute: boolean): RowState => ({
@@ -48,6 +50,7 @@ const blankRow = (n: number, attribute: boolean): RowState => ({
   readings: Array.from({ length: n }, () => ''),
   extra: {},
   remark: '',
+  checkType: 'STANDARD',
 });
 const fromApi = (r: Row, n: number): RowState => {
   const rd = ((r.readings as unknown[] | undefined) ?? []).map((x) => s(x));
@@ -63,6 +66,7 @@ const fromApi = (r: Row, n: number): RowState => {
     readings: rd,
     extra: (r.extra as Record<string, string> | undefined) ?? {},
     remark: s(r.remark),
+    checkType: s(r.checkType) === 'CONDITIONED' ? 'CONDITIONED' : 'STANDARD',
     rowStatus: s(r.rowStatus),
   };
 };
@@ -77,6 +81,7 @@ const toApi = (r: RowState) => ({
   readings: r.readings,
   extra: r.extra,
   remark: r.remark || null,
+  checkType: r.checkType,
 });
 const STATUS_WORDS: Record<string, string> = {
   PENDING: 'Waiting',
@@ -85,7 +90,7 @@ const STATUS_WORDS: Record<string, string> = {
   NA: 'No limit',
 };
 
-function SheetEditor({
+export function SheetEditor({
   kind,
   id,
   actions,
@@ -114,6 +119,8 @@ function SheetEditor({
   const [rej, setRej] = useState('');
   const [dnote, setDnote] = useState('');
   const [reason, setReason] = useState('');
+  const [priority, setPriority] = useState('');
+  const [returning, setReturning] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const status = doc ? s(doc.status) : 'Draft';
@@ -157,6 +164,7 @@ function SheetEditor({
         setRows(((d.rows as Row[]) ?? []).map((r) => fromApi(r, n)));
         setDocDate(s(d.docDate));
         setLotQty(s(d.lotQty));
+        setPriority(s(d.priority));
         setResult(s(d.result));
         setAcc(s(d.lotQty));
         setRej('0');
@@ -225,6 +233,7 @@ function SheetEditor({
         header,
         rows: rows.filter((r) => r.label.trim() !== '').map(toApi),
         ...(lotQty ? { lotQty } : {}),
+        priority: priority || null,
       };
       const d = doc
         ? await qpatch(`/inspections/${s(doc.id)}`, Number(doc.version), body)
@@ -334,6 +343,11 @@ function SheetEditor({
           usage decision.
         </div>
       ) : null}
+      {doc && doc.returnComment ? (
+        <div className="msg warn show static" role="status">
+          Returned by {s(doc.returnedByName) || 'the approver'}: {s(doc.returnComment)}
+        </div>
+      ) : null}
       {doc ? (
         <p>
           <Pill tone={STATUS_TONE[status]}>{status}</Pill>{' '}
@@ -349,6 +363,12 @@ function SheetEditor({
             disabled={!editable}
             onChange={(e) => setDocDate(e.target.value)}
           />
+        </div>
+        <div className="field">
+          <label htmlFor="sh-priority">Priority</label>
+          <PrioritySelect id="sh-priority" optional value={priority} disabled={!editable} onChange={setPriority} />
+          {errors.priority ? <div className="field-error">{errors.priority}</div> : null}
+          {priority === 'CRITICAL' ? <small className="qv-warn">Critical: the Quality Head and the MR are alerted, and only they or an administrator can take the usage decision.</small> : null}
         </div>
         {!doc || doc.lotQty !== null ? (
           <div className="field">
@@ -391,6 +411,7 @@ function SheetEditor({
               <th>Specification</th>
               <th>Method</th>
               <th>Type</th>
+              <th>Checkpoint</th>
               <th>Lower</th>
               <th>Upper</th>
               {Array.from({ length: readings }, (_, i) => (
@@ -403,7 +424,7 @@ function SheetEditor({
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <Empty cols={8 + readings + extraCols.length}>
+              <Empty cols={9 + readings + extraCols.length}>
                 No rows yet. Add a characteristic below, or pick an item that has an inspection
                 plan.
               </Empty>
@@ -461,6 +482,19 @@ function SheetEditor({
                   </select>
                 </td>
                 <td>
+                  <select
+                    aria-label={`Checkpoint ${i + 1}`}
+                    value={r.checkType}
+                    disabled={!editable}
+                    title="Conditioned: if this checkpoint is out of limit the sheet is conditionally accepted instead of rejected"
+                    onChange={(e) => setRow(i, { checkType: e.target.value as RowState['checkType'] })}
+                  >
+                    <option value="STANDARD">Standard</option>
+                    <option value="CONDITIONED">Conditioned</option>
+                  </select>
+                  {errors[`rows.${i}.checkType`] ? <div className="field-error">{errors[`rows.${i}.checkType`]}</div> : null}
+                </td>
+                <td>
                   <input
                     aria-label={`Lower limit ${i + 1}`}
                     size={6}
@@ -505,7 +539,7 @@ function SheetEditor({
                             : 'draft'
                       }
                     >
-                      {STATUS_WORDS[r.rowStatus] ?? r.rowStatus}
+                      {r.rowStatus === 'NOT_OK' && r.checkType === 'CONDITIONED' ? 'Conditioned' : (STATUS_WORDS[r.rowStatus] ?? r.rowStatus)}
                     </Pill>
                   ) : null}
                 </td>
@@ -582,7 +616,33 @@ function SheetEditor({
             onClick={() => void decide()}
           >
             Record usage decision
+          </button>{' '}
+          <button type="button" className="btn" disabled={busy} onClick={() => setReturning(true)}>
+            Return
           </button>
+        </>
+      ) : null}
+      {returning && doc ? (
+        <CommentDialog
+          title="Return"
+          text={`${s(doc.number)} goes back to the inspector as a draft.`}
+          label="Add Comment"
+          action="Return"
+          onClose={() => setReturning(false)}
+          onSubmit={async (comment) => {
+            const out = await qpost(`/inspections/${s(doc.id)}/return`, { comment });
+            setDoc(out);
+            setResult('');
+            setReturning(false);
+            toast(`${s(out.number)} returned.`);
+            onChanged();
+          }}
+        />
+      ) : null}
+      {doc && ((doc.events as TrailEvent[] | undefined)?.length ?? 0) > 0 ? (
+        <>
+          <h3>Approval trail</h3>
+          <Trail events={doc.events as TrailEvent[]} />
         </>
       ) : null}
       {doc && status === 'Decided' ? (

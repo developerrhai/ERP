@@ -2674,8 +2674,53 @@
   "Reports",
   "Audit Trail"
  ],
+ "qms-customer-ncr": [
+  "Complaint Register",
+  "Customer Summary",
+  "8D Quality",
+  "Gate Chart",
+  "Summary & Gauge",
+  "Pending Acceptance",
+  "Priority",
+  "Documents",
+  "Audit Trail"
+ ],
+ "qms-conformance-ncr": [
+  "NCR Register",
+  "Root Cause & Closure",
+  "Summary",
+  "Pending Acceptance",
+  "Priority",
+  "Documents",
+  "Audit Trail"
+ ],
+ "qms-templates": [
+  "Checklists",
+  "Audit Forms",
+  "Record Doc. Format",
+  "Inspection & Form Templates",
+  "Feature Switches",
+  "Documents",
+  "Audit Trail"
+ ],
+ "qms-rejection-revoke": [
+  "Rejection Register",
+  "Pending Revokes",
+  "Revoked",
+  "Documents",
+  "Audit Trail"
+ ],
+ "qms-copq": [
+  "COPQ Summary",
+  "Monthly Trend",
+  "Cost Entries",
+  "Audit Trail"
+ ],
  "qms-incoming": [
   "Inspection Queue",
+  "Pending Acceptance",
+  "Priority",
+  "Record Doc. Format",
   "Results",
   "Accepted Stock",
   "Rejected & Vendor Return",

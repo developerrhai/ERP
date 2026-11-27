@@ -13,6 +13,7 @@ const v40Q = z
     first: z.enum(['0', '1']).default('0'),
     q: z.string().trim().max(100).optional(),
     status: z.string().max(24).optional(),
+    sort: z.string().regex(/^-?c\d{1,2}$/).optional(),
     ...pageQuery,
   })
   .strict();
@@ -48,6 +49,7 @@ export function mountV40(
         first: q.first === '1',
         q: q.q,
         status: q.status,
+        sort: q.sort,
         page: q.page,
         size: q.size,
       });

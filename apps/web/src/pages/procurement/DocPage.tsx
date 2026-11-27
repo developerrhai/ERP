@@ -1,7 +1,7 @@
 // One screen for the header + lines purchasing documents: Purchase Requisition, RFQ, Vendor Quotation, Purchase Order,
 // Rate Contract and Debit Note. A document goes Draft -> Submit -> Approved (-> Post / Cancel where it posts).
 // The list, the "New" form (header fields + line grid) and the detail dialog are driven by a small config per page.
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EmailDocDialog } from '../../components/EmailDocDialog';
 import { HistoryDrawer, MoveForwardDialog } from '../../components/MoveForward';
@@ -19,6 +19,7 @@ import {
   createDoc,
   deleteDoc,
   getDoc,
+  getJson,
   listDocs,
   lookupCustomers,
   lookupLeads,
@@ -35,6 +36,8 @@ import type { ActionSet } from '../../types';
 import { dmy, Empty, ErrorBox, inr, PageHead, Pill, todayIso } from '../finance/shared';
 import { useFrame } from '../frame/V40TabFrame';
 import { V40Register } from '../sales/V40Register';
+import { ReviewDialog } from '../sales/SalesRegisterParts';
+import { Confirm } from '../wms/WmsRegister';
 import { DocumentsPanel } from '../generic/DocumentsPanel';
 import type { PageSchema } from '../generic/engineApi';
 import { V40Body } from './V40Body';
@@ -54,6 +57,7 @@ type FieldType =
   | 'customer'
   | 'user'
   | 'lead'
+  | 'leadSource'
   | 'project'
   | 'datetime';
 export interface FieldCfg {
@@ -74,6 +78,8 @@ export interface FieldCfg {
   clearable?: boolean;
   /** greyed text inside an empty read-only field */
   placeholder?: string;
+  /** header only: a heading drawn above this field, to group a long form */
+  section?: string;
 }
 /** Extra input for an action: asked in a small dialog first; `body` is always sent. */
 export interface MoreExtra {
@@ -106,6 +112,16 @@ export interface DocCfg {
   more?: [string, string, string, boolean, MoreExtra?][];
   /** CRM records stay editable in every stage except these (the server's own `canEdit` rule); others: Draft / Rejected only */
   noEditStatuses?: string[];
+  /** the status in which the record can still be deleted from its pop-up (CRM records) */
+  deleteStatus?: string;
+  /** no approval chain: the pop-up offers "Submit for Approval", a handover to a department for review */
+  review?: boolean;
+  /** the pop-up lists every column once, with a dash for what is empty (not only what holds a value) */
+  showAll?: boolean;
+  /** the form offers "Multiple Product / Item Selection": pick several items and add them as lines at once */
+  itemPicker?: boolean;
+  /** each line is drawn as a block that wraps, so no field hides behind a sideways scroll */
+  wrapLines?: boolean;
 }
 
 /** Whether the record's status still allows Edit; mirrors the server rule of the same page. */
@@ -354,12 +370,15 @@ export function LookupCombo<T extends { id: string }>({
   search,
   label,
   onPick,
+  known,
 }: {
   id: string;
   value: string;
   search: (q: string) => Promise<T[]>;
   label: (r: T) => string;
   onPick: (r: T | null) => void;
+  /** the text of the value the form already knows (a record outside the first page of the search) */
+  known?: string | undefined;
 }) {
   const [picked, setPicked] = useState<{ value: string; label: string } | null>(null);
   useEffect(() => {
@@ -368,6 +387,10 @@ export function LookupCombo<T extends { id: string }>({
       return;
     }
     if (picked?.value === value) return;
+    if (known) {
+      setPicked({ value, label: known });
+      return;
+    }
     let live = true;
     void search('')
       .then((rows) => {
@@ -409,11 +432,14 @@ function Input({
   onChange,
   error,
   idSuffix = '',
+  known,
 }: {
   f: FieldCfg;
   value: string;
   onChange: (v: string, extra?: Record<string, string>) => void;
   error?: string | undefined;
+  /** item fields: the label of the picked item */
+  known?: string | undefined;
   /** Makes the element id unique per line (every line used the same id before - labels and screen readers broke). */
   idSuffix?: string;
 }) {
@@ -437,6 +463,16 @@ function Input({
   );
   const people = useLoad<Option[]>(
     () => (f.type === 'user' ? lookupSalespeople() : Promise.resolve([])),
+    [f.type],
+  );
+  // the lead sources come as one short list (their endpoint takes no paging)
+  const sources = useLoad<Option[]>(
+    () =>
+      f.type === 'leadSource'
+        ? getJson<{ id: string; name: string; status?: string }[]>('/crm/sources').then((rows) =>
+            rows.map((r) => ({ id: r.id, label: r.status && r.status !== 'ACTIVE' ? `${r.name} (switched off)` : r.name })),
+          )
+        : Promise.resolve([]),
     [f.type],
   );
   const navigate = useNavigate();
@@ -472,6 +508,17 @@ function Input({
         label={(o) => o.label}
         onPick={(o) => onChange(o?.id ?? '')}
       />
+    );
+  else if (f.type === 'leadSource')
+    control = (
+      <select {...common} value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">Choose a source…</option>
+        {(sources.data ?? []).map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.label}
+          </option>
+        ))}
+      </select>
     );
   else if (f.type === 'user')
     control = (
@@ -529,6 +576,7 @@ function Input({
       <LookupCombo<Ref>
         id={fid}
         value={value}
+        known={known}
         search={lookupItems}
         label={(o) => `${o.code} · ${o.name}`}
         onPick={(o) =>
@@ -648,6 +696,64 @@ function TotalsPanel({ lines }: { lines: Record<string, string>[] }) {
   );
 }
 
+/** A line nothing has been entered on yet. */
+const untouched = (fields: FieldCfg[], l: Record<string, string>): boolean =>
+  fields.every((f) => (l[f.key] ?? '') === (f.def ?? ''));
+
+/** "Multiple Product / Item Selection": search, tick several items, add them as lines. */
+function ItemPicker({ onAdd, onBlank, onClear }: { onAdd: (items: Ref[]) => void; onBlank: () => void; onClear: () => void }) {
+  const [q, setQ] = useState('');
+  const [chosen, setChosen] = useState<string[]>([]);
+  const found = useLoad<Ref[]>(() => lookupItems(q), [q]);
+  const items = found.data ?? [];
+  const picked = items.filter((i) => chosen.includes(i.id));
+  return (
+    <section className="doc-picker" aria-label="Multiple Product / Item Selection">
+      <div className="doc-picker-head">
+        <div>
+          <b>Multiple Product / Item Selection</b>
+          <small className="muted">Choose one or more items (Ctrl or Shift for several), add them, then fill quantity, rate and GST.</small>
+        </div>
+        <button type="button" className="btn sm" onClick={onBlank}>
+          ＋ Blank Item
+        </button>
+        <button type="button" className="btn sm" onClick={onClear}>
+          Clear Items
+        </button>
+      </div>
+      <input aria-label="Search products or materials" placeholder="Search products / materials…" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="doc-picker-row">
+        <select
+          multiple
+          size={6}
+          aria-label="Products / Materials"
+          value={chosen}
+          onChange={(e) => setChosen(Array.from(e.target.selectedOptions, (o) => o.value))}
+        >
+          {items.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.code} · {i.name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="btn sm primary"
+          disabled={picked.length === 0}
+          title={picked.length === 0 ? 'Choose items in the list first.' : undefined}
+          onClick={() => {
+            onAdd(picked);
+            setChosen([]);
+          }}
+        >
+          Add Selected
+        </button>
+      </div>
+      {items.length === 0 && !found.loading ? <small className="muted">No item matches this search.</small> : null}
+    </section>
+  );
+}
+
 const INT_KEYS = ['leadDays', 'rating', 'probability', 'durationMin', 'score'];
 
 /** ISO instant -> the "YYYY-MM-DDTHH:mm" value of a datetime-local input, in the browser's time zone. */
@@ -679,7 +785,7 @@ function toBody(
     }
     if (v === '') {
       if (editing && f.clearable && !(f.type === 'lead' && keepRelation))
-        out[f.key] = f.type === 'lead' || f.type === 'ref' ? null : '';
+        out[f.key] = f.type === 'lead' || f.type === 'ref' || f.type === 'leadSource' ? null : '';
       continue;
     }
     if (f.type === 'lead') out.relatedType = 'LEAD';
@@ -725,7 +831,12 @@ function DocForm({
   const [lines, setLines] = useState<Record<string, string>[]>(() =>
     cfg.lines
       ? doc && Array.isArray(doc.lines) && doc.lines.length
-        ? (doc.lines as Row[]).map((l) => ({ ...initial(cfg.lines ?? [], l), id: s(l.id) }))
+        ? (doc.lines as Row[]).map((l) => ({
+            ...initial(cfg.lines ?? [], l),
+            id: s(l.id),
+            // the item's own code and name, so the picker shows it even when it is not among the first search results
+            _item: [s(l.itemCode), s(l.itemName)].filter(Boolean).join(' · '),
+          }))
         : [initial(cfg.lines, null)]
       : [],
   );
@@ -798,18 +909,74 @@ function DocForm({
       <ErrorBox message={msg} />
       <div className="form-grid">
         {cfg.header.map((f) => (
-          <Input
-            key={f.key}
-            f={f}
-            value={head[f.key] ?? ''}
-            error={fields[f.key]}
-            onChange={(v) => setHead((h) => ({ ...h, [f.key]: v }))}
-          />
+          <Fragment key={f.key}>
+            {f.section ? <h3 className="doc-section">{f.section}</h3> : null}
+            <Input
+              f={f}
+              value={head[f.key] ?? ''}
+              error={fields[f.key]}
+              onChange={(v) => setHead((h) => ({ ...h, [f.key]: v }))}
+            />
+          </Fragment>
         ))}
       </div>
       {cfg.lines ? (
         <>
           <h3>Lines</h3>
+          {cfg.itemPicker ? (
+            <ItemPicker
+              onBlank={() => setLines((ls) => [...ls, initial(cfg.lines ?? [], null)])}
+              onClear={() => setLines([initial(cfg.lines ?? [], null)])}
+              onAdd={(items) =>
+                setLines((ls) => [
+                  ...ls.filter((l) => !untouched(cfg.lines ?? [], l)),
+                  ...items.map((o) => ({
+                    ...initial(cfg.lines ?? [], null),
+                    itemId: o.id,
+                    _item: `${o.code} · ${o.name}`,
+                    ...ownColumns(cfg.lines, { uom: o.uom ?? '', unit: o.uom ?? '', hsnSac: o.hsnSac ?? '', gstPct: o.gstPct ?? '' }),
+                  })),
+                ])
+              }
+            />
+          ) : null}
+          {cfg.wrapLines ? (
+            <div className="doc-lines">
+              {lines.map((l, i) => (
+                <fieldset className="doc-line" key={l.id || i}>
+                  <legend>Line {i + 1}</legend>
+                  <div className="doc-line-grid">
+                    {cfg.lines?.map((f) => (
+                      <Input
+                        key={f.key}
+                        f={f}
+                        idSuffix={`-l${i}`}
+                        known={f.type === 'item' ? l._item : undefined}
+                        value={l[f.key] ?? ''}
+                        error={fields[`lines.${i}.${f.key}`]}
+                        onChange={(v, extra) =>
+                          setLines((ls) =>
+                            ls.map((x, j) =>
+                              j === i ? { ...x, [f.key]: v, ...(f.type === 'item' ? { _item: '' } : {}), ...ownColumns(cfg.lines, extra) } : x,
+                            ),
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn sm danger"
+                    disabled={lines.length === 1}
+                    title={lines.length === 1 ? 'A document needs at least one line.' : undefined}
+                    onClick={() => setLines((ls) => ls.filter((_x, j) => j !== i))}
+                  >
+                    Remove
+                  </button>
+                </fieldset>
+              ))}
+            </div>
+          ) : (
           <div className="table-wrap">
             <table>
               <thead>
@@ -856,6 +1023,7 @@ function DocForm({
               </tbody>
             </table>
           </div>
+          )}
           <button
             type="button"
             className="btn sm"
@@ -965,6 +1133,9 @@ function DocDetail({
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState('');
+  const [reviewing, setReviewing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const { pageId: routePage = '' } = useParams();
   const [asking, setAsking] = useState<{ name: string; label: string; extra: MoreExtra } | null>(
     null,
   );
@@ -986,6 +1157,14 @@ function DocDetail({
     return () => window.removeEventListener('v40-submit-record', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cfg.pageId, editable, actions.submit, doc.id]);
+
+  const remove = (): void => {
+    setBusy(true);
+    deleteDoc(cfg.path, doc.id, doc.version)
+      .then(onDeleted)
+      .catch((e: unknown) => setMsg(toUiMessage(e)))
+      .finally(() => setBusy(false));
+  };
 
   async function run(name: string, label: string, body: unknown = {}, withVersion = false) {
     setBusy(true);
@@ -1012,20 +1191,19 @@ function DocDetail({
               Edit
             </button>
           ) : null}
-          {editable && actions.delete && doc.status === 'Draft' ? (
+          {actions.delete && ((editable && doc.status === 'Draft') || (cfg.deleteStatus !== undefined && doc.status === cfg.deleteStatus)) ? (
             <button
               type="button"
               className="btn danger"
               disabled={busy}
-              onClick={() => {
-                setBusy(true);
-                deleteDoc(cfg.path, doc.id, doc.version)
-                  .then(onDeleted)
-                  .catch((e: unknown) => setMsg(toUiMessage(e)))
-                  .finally(() => setBusy(false));
-              }}
+              onClick={() => (cfg.deleteStatus ? setConfirmDelete(true) : remove())}
             >
               Delete
+            </button>
+          ) : null}
+          {cfg.review && actions.submit ? (
+            <button type="button" className="btn primary" onClick={() => setReviewing(true)}>
+              Submit for Approval
             </button>
           ) : null}
           {editable && actions.submit ? (
@@ -1115,7 +1293,7 @@ function DocDetail({
         ) : null}
         {/* the other things typed on the entry form, once they hold a value */}
         {cfg.header
-          .filter((f) => (f.type === 'text' || f.type === 'date' || f.type === 'number') && !cfg.columns.some((c) => c.key === f.key) && s(doc[f.key]) !== '')
+          .filter((f) => !cfg.showAll && (f.type === 'text' || f.type === 'date' || f.type === 'number') && !cfg.columns.some((c) => c.key === f.key) && s(doc[f.key]) !== '')
           .map((f) => (
             <div key={f.key}>
               <dt>{f.label}</dt>
@@ -1146,6 +1324,21 @@ function DocDetail({
         </div>
       ) : null}
       {cfg.invite ? <InviteBox cfg={cfg} doc={doc} onChanged={onChanged} /> : null}
+      {confirmDelete ? (
+        <Confirm
+          title={`Delete ${s(doc.number)}?`}
+          text="It leaves every list."
+          action="Delete"
+          onClose={() => setConfirmDelete(false)}
+          onConfirm={() => {
+            setConfirmDelete(false);
+            remove();
+          }}
+        />
+      ) : null}
+      {reviewing ? (
+        <ReviewDialog pageId={routePage} id={doc.id} number={s(doc.number)} onClose={() => setReviewing(false)} onDone={() => setReviewing(false)} />
+      ) : null}
       {asking ? (
         <AskDialog
           title={asking.label}

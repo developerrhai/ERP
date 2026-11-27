@@ -3,8 +3,10 @@
 // and submits to POST /auth/password-reset/confirm.
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { PasswordChecklist } from '../components/PasswordChecklist';
+import { PasswordHints } from '../components/PasswordHints';
 import { ApiError, confirmPasswordReset } from '../lib/api';
+import { checkPassword, PASSWORD_MAX_LENGTH } from '../lib/password-policy';
+import { usePasswordMinLength } from '../lib/usePasswordMinLength';
 import { LoginLayout } from './LoginLayout';
 
 export function ResetPasswordPage() {
@@ -14,6 +16,9 @@ export function ResetPasswordPage() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const minLength = usePasswordMinLength();
+  const checks = checkPassword(newPassword, null, null, null, minLength);
+  const mismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
 
   useEffect(() => {
     // Read from fragment #token=...
@@ -35,12 +40,12 @@ export function ResetPasswordPage() {
       setError('This reset link has expired or was already used. Ask for a new one.');
       return;
     }
-    if (newPassword.length < 12) {
-      setError('Password must be at least 12 characters.');
+    if (newPassword.length < minLength) {
+      setError(`Password must be at least ${minLength} characters.`);
       return;
     }
-    if (newPassword.length > 128) {
-      setError('Password must be at most 128 characters.');
+    if (newPassword.length > PASSWORD_MAX_LENGTH) {
+      setError(`Password must be at most ${PASSWORD_MAX_LENGTH} characters.`);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -123,14 +128,15 @@ export function ResetPasswordPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
+            {mismatch ? <span className="field-error">Passwords do not match.</span> : null}
           </div>
 
-          <PasswordChecklist password={newPassword} confirmPassword={confirmPassword} />
+          <PasswordHints checks={checks} note="It must not contain your name, login ID or email." />
 
           <button
             className="auth-submit x-mt-1_25rem"
             type="submit"
-            disabled={pending || newPassword.length < 12 || newPassword !== confirmPassword}
+            disabled={pending || !checks.every((c) => c.ok) || newPassword !== confirmPassword}
             aria-busy={pending}
           >
             {pending ? 'Saving…' : 'Set New Password'}

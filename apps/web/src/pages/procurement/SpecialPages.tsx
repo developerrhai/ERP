@@ -1791,7 +1791,7 @@ export function PutawayPage({ actions }: { actions: ActionSet }) {
   );
 }
 
-function BinDialog({
+export function BinDialog({
   task,
   onClose,
   onDone,

@@ -62,6 +62,7 @@ import {
   returnService,
 } from './fulfilment-service';
 import { holderScope } from '../work/holder-filter';
+import { creditProfileService, deliveryPlanService, receiptEditService } from './edit-service';
 
 const V40_GUARD: Record<string, string> = { 'master-customers': 'crm-customer360' };
 
@@ -313,7 +314,12 @@ export function createSalesRouter(): Router {
         assignedToId: uuid.nullish(),
         interest: z.string().max(300).nullish(),
         estValue: dec.nullish(),
-        score: z.number().int().min(0).max(100).optional(),
+        score: z.number().int().min(0, 'Use 0 to 100.').max(100, 'Use 0 to 100.').optional(),
+        campaign: z.string().trim().max(150).nullish(),
+        consentStatus: z.enum(['Pending', 'Granted', 'Withdrawn']).nullish(),
+        nextFollowUp: z.union([z.literal(''), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter a date (YYYY-MM-DD).')]).nullish(),
+        projectNumber: z.string().trim().max(50).nullish(),
+        stage: z.enum(['New', 'Contacted', 'Qualified', 'Unqualified']).optional(),
       })
       .strict(),
     { submit: false },
@@ -679,6 +685,9 @@ export function createSalesRouter(): Router {
         paymentTermId: uuid.nullish(),
         priceListId: uuid.nullish(),
         customerRef: z.string().max(60).nullish(),
+        customerPoNo: z.string().trim().max(60).nullish(),
+        deliveryDate: z.union([z.literal(''), ymd]).nullish(),
+        projectNumber: z.string().trim().max(50).nullish(),
         notes: z.string().max(500).nullish(),
         lines: z.array(qLine).min(1).max(300),
       })
@@ -1188,6 +1197,77 @@ export function createSalesRouter(): Router {
     '/sales/credit/overview',
     g('sales-credit', 'view'),
     h(async (_req, res) => res.json({ data: await creditOverview() })),
+  );
+  router.get(
+    '/sales/credit/:id',
+    g('sales-credit', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) => res.json({ data: await creditProfileService.get(String(req.params.id)) })),
+  );
+  const creditNotes = z
+    .object({
+      riskGrade: z.enum(['', 'Low', 'Medium', 'High']).nullish(),
+      reviewDate: z.union([z.literal(''), ymd]).nullish(),
+      projectNumber: z.string().trim().max(50).nullish(),
+    })
+    .strict();
+  router.put(
+    '/sales/credit/:id/profile',
+    g('sales-credit', 'edit'),
+    validate({ params: idp, body: creditNotes }),
+    h(async (req, res) =>
+      res.json({ data: await creditProfileService.save(callerOf(req), String(req.params.id), validated(res, 'body', creditNotes)) }),
+    ),
+  );
+
+  // ------------------------------------------------------------------ edit: delivery promise, receipt reference
+  router.get(
+    '/sales/delivery/:id',
+    g('sales-delivery', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) => send(res, await deliveryPlanService.get(callerOf(req), String(req.params.id)))),
+  );
+  const reschedule = z
+    .object({
+      deliveryDate: ymd,
+      shipTo: z.string().trim().max(300).nullish(),
+      reason: z.string().trim().min(5, 'Give a reason of at least 5 letters.').max(300),
+    })
+    .strict();
+  router.put(
+    '/sales/delivery/:id',
+    g('sales-delivery', 'edit'),
+    validate({ params: idp, body: reschedule }),
+    h(async (req, res) =>
+      send(
+        res,
+        await deliveryPlanService.reschedule(callerOf(req), String(req.params.id), parseIfMatch(req.get('if-match')), validated(res, 'body', reschedule)),
+      ),
+    ),
+  );
+  router.get(
+    '/sales/receipts/:id',
+    g('sales-collections', 'view'),
+    validate({ params: idp }),
+    h(async (req, res) => send(res, await receiptEditService.get(callerOf(req), String(req.params.id)))),
+  );
+  const receiptEdit = z
+    .object({
+      mode: z.enum(['NEFT', 'RTGS', 'IMPS', 'UPI', 'Cheque', 'Cash']).optional(),
+      reference: z.string().trim().max(60).nullish(),
+    })
+    .strict();
+  router.put(
+    '/sales/receipts/:id',
+    // correcting a booked receipt needs the same right as booking it
+    g('sales-collections', 'post'),
+    validate({ params: idp, body: receiptEdit }),
+    h(async (req, res) =>
+      send(
+        res,
+        await receiptEditService.update(callerOf(req), String(req.params.id), parseIfMatch(req.get('if-match')), validated(res, 'body', receiptEdit)),
+      ),
+    ),
   );
   // ------------------------------------------------------------------ demand planning + credit view
   router.get(

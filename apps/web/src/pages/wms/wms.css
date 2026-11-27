@@ -1,0 +1,19 @@
+/* Warehouse register (wms/WmsRegister.tsx) */
+.wms-kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px 16px;
+  margin: 0 0 12px;
+}
+.wms-kv dt {
+  font-size: 12px;
+  color: var(--muted, #64748b);
+}
+.wms-kv dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.wms-page .sv40-toolbar {
+  flex-wrap: wrap;
+}

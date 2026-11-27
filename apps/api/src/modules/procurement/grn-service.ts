@@ -726,7 +726,142 @@ async function createPutawayTasks(
   return n;
 }
 
+/** Posted receipt quantity (base unit) that is usable and has no put-away task, per line and batch. */
+const FREE_TO_PUT = `
+  WITH usable AS (
+    SELECT l.id AS grn_line_id, b.batch_id, g.id AS grn_id, g.number AS grn_no, g.unit_id, g.fy_id, g.warehouse_id, l.item_id,
+           CASE WHEN b.batch_id IS NULL THEN CASE WHEN l.qc_required THEN COALESCE(l.accepted_qty * l.base_qty / NULLIF(l.received_qty, 0), 0) ELSE l.base_qty END
+                ELSE LEAST(b.qty, CASE WHEN l.qc_required THEN COALESCE(l.accepted_qty * l.base_qty / NULLIF(l.received_qty, 0), 0) ELSE b.qty END) END AS qty
+      FROM goods_receipt_lines l
+      JOIN goods_receipts g ON g.id = l.grn_id AND g.status = 'Posted' AND g.deleted_at IS NULL
+      LEFT JOIN goods_receipt_batches b ON b.grn_line_id = l.id AND b.batch_id IS NOT NULL
+  )
+  SELECT u.*, u.qty - COALESCE((SELECT sum(t.qty) FROM putaway_tasks t
+                                 WHERE t.grn_line_id = u.grn_line_id AND t.batch_id IS NOT DISTINCT FROM u.batch_id AND t.status <> 'Cancelled'), 0) AS free
+    FROM usable u`;
+
+async function refreshPutawayStatus(tx: Db, grnId: string): Promise<void> {
+  await exec(
+    tx,
+    `UPDATE goods_receipts g SET putaway_status = (
+        SELECT CASE WHEN count(*) = 0 THEN 'NONE'
+                    WHEN count(*) FILTER (WHERE status IN ('Open','Assigned','Exception')) = 0 THEN 'DONE'
+                    WHEN count(*) FILTER (WHERE status = 'Done') = 0 THEN 'PENDING' ELSE 'PARTIAL' END
+          FROM putaway_tasks WHERE grn_id = g.id AND status <> 'Cancelled') WHERE g.id = $1::uuid`,
+    grnId,
+  );
+}
+
+async function binOfWarehouse(tx: Db, binId: string, warehouseId: string): Promise<void> {
+  const b = (await query(tx, `SELECT warehouse_id::text AS warehouse_id, status FROM wms_bins WHERE id=$1::uuid AND deleted_at IS NULL`, binId))[0];
+  if (!b || b.warehouse_id !== warehouseId || b.status !== 'Active') throw Errors.validation({ suggestedBinId: 'Pick an active bin of this warehouse.' });
+}
+
 export const putaway = {
+  /** Receipt quantities a task can be added for: posted, usable, and not yet on any task that is still alive. */
+  async eligible(caller: Caller) {
+    const unitId = concreteUnit(caller);
+    const rows = await query(
+      prisma,
+      `SELECT f.grn_line_id::text, f.batch_id::text, f.grn_no, f.warehouse_id::text, w.code AS warehouse_code, i.code AS item_code, i.name AS item_name,
+              i.serial_tracked, ba.batch_no, round(f.free, 3)::text AS free
+         FROM (${FREE_TO_PUT}) f JOIN items i ON i.id = f.item_id JOIN warehouses w ON w.id = f.warehouse_id LEFT JOIN batches ba ON ba.id = f.batch_id
+        WHERE f.unit_id = $1::uuid AND round(f.free, 3) > 0 ORDER BY f.grn_no DESC, i.code LIMIT 200`,
+      unitId,
+    );
+    return rows.map((r) => norm(r));
+  },
+
+  async create(caller: Caller, b: { grnLineId: string; batchId?: string | null | undefined; qty: string; suggestedBinId?: string | null | undefined; priority?: number | undefined }) {
+    const unitId = concreteUnit(caller);
+    return prisma.$transaction(async (tx) => {
+      // two people adding for the same receipt line: the second waits and then sees what is left
+      await query(tx, `SELECT 1 AS ok FROM goods_receipt_lines WHERE id=$1::uuid FOR UPDATE`, b.grnLineId);
+      const f = (
+        await query(
+          tx,
+          `SELECT f.*, f.free::text AS free_text, i.serial_tracked FROM (${FREE_TO_PUT}) f JOIN items i ON i.id = f.item_id
+            WHERE f.grn_line_id=$1::uuid AND f.batch_id IS NOT DISTINCT FROM $2::uuid AND f.unit_id=$3::uuid`,
+          b.grnLineId,
+          b.batchId ?? null,
+          unitId,
+        )
+      )[0];
+      if (!f) throw Errors.validation({ grnLineId: 'Pick a posted goods receipt line of this plant.' });
+      const qty = round3(D(b.qty));
+      const free = round3(D(S(f.free_text)));
+      if (qty.lte(0)) throw Errors.validation({ qty: 'Enter a quantity greater than 0.' });
+      if (qty.gt(free)) throw Errors.validation({ qty: `Only ${str(free)} of this receipt has no put-away task.` });
+      if (f.serial_tracked === true && !qty.equals(free)) throw Errors.validation({ qty: `This item is tracked by serial number: put away all ${str(free)} together.` });
+      if (b.suggestedBinId) await binOfWarehouse(tx, b.suggestedBinId, S(f.warehouse_id));
+      const taskNo = await allocateNumber(tx, { pageId: 'wms-putaway' } as DocDef, unitId, S(f.fy_id));
+      await insertRow(tx, 'putaway_tasks', {
+        unitId,
+        taskNo,
+        grnId: f.grn_id,
+        grnLineId: f.grn_line_id,
+        itemId: f.item_id,
+        batchId: f.batch_id,
+        qty: str(qty),
+        warehouseId: f.warehouse_id,
+        suggestedBinId: b.suggestedBinId ?? (await suggestBin(tx, S(f.warehouse_id), S(f.item_id))),
+        ...(b.priority ? { priority: b.priority } : {}),
+        status: 'Open',
+        createdById: caller.auth.userId,
+        updatedById: caller.auth.userId,
+      });
+      await refreshPutawayStatus(tx, S(f.grn_id));
+      const t = (await query(tx, `SELECT * FROM putaway_tasks WHERE task_no=$1 AND unit_id=$2::uuid`, taskNo, unitId))[0]!;
+      await audit(tx, caller, caller.auth.userId, 'SCM_PUTAWAY', 'Put-away', { id: S(t.id), code: taskNo }, 'wms-putaway', { added: str(qty), grn: S(f.grn_no) });
+      return norm(t);
+    }, TX);
+  },
+
+  /** Suggested bin and priority of a task that is not finished. */
+  async update(caller: Caller, id: string, b: { suggestedBinId?: string | null | undefined; priority?: number | undefined }) {
+    const unitId = concreteUnit(caller);
+    return prisma.$transaction(async (tx) => {
+      const t = (await query(tx, `SELECT * FROM putaway_tasks WHERE id=$1::uuid AND unit_id=$2::uuid FOR UPDATE`, id, unitId))[0];
+      if (!t) throw Errors.notFound('Task not found.');
+      if (!['Open', 'Assigned', 'Exception'].includes(S(t.status))) throw Errors.conflict(`A ${S(t.status)} task cannot be changed.`);
+      if (b.suggestedBinId) await binOfWarehouse(tx, b.suggestedBinId, S(t.warehouse_id));
+      // a task with a reported problem goes back to the queue once someone changes it
+      await exec(
+        tx,
+        `UPDATE putaway_tasks SET suggested_bin_id = CASE WHEN $2::boolean THEN $3::uuid ELSE suggested_bin_id END, priority = COALESCE($4::smallint, priority),
+                status = CASE WHEN status = 'Exception' THEN 'Open' ELSE status END, operator_id = CASE WHEN status = 'Exception' THEN NULL ELSE operator_id END,
+                version = version + 1, updated_at = now(), updated_by_id = $5::uuid WHERE id = $1::uuid`,
+        id,
+        b.suggestedBinId !== undefined,
+        b.suggestedBinId ?? null,
+        b.priority ?? null,
+        caller.auth.userId,
+      );
+      await audit(tx, caller, caller.auth.userId, 'SCM_PUTAWAY', 'Put-away', { id, code: S(t.task_no) }, 'wms-putaway', { changed: Object.keys(b) });
+      return norm((await query(tx, `SELECT * FROM putaway_tasks WHERE id=$1::uuid`, id))[0]!);
+    }, TX);
+  },
+
+  /** A task that moved nothing is cancelled; its quantity can be put on a new task. */
+  async cancel(caller: Caller, id: string, reason: string) {
+    const unitId = concreteUnit(caller);
+    return prisma.$transaction(async (tx) => {
+      const t = (await query(tx, `SELECT * FROM putaway_tasks WHERE id=$1::uuid AND unit_id=$2::uuid FOR UPDATE`, id, unitId))[0];
+      if (!t) throw Errors.notFound('Task not found.');
+      if (!['Open', 'Assigned', 'Exception'].includes(S(t.status))) throw Errors.conflict(`A ${S(t.status)} task cannot be cancelled.`);
+      await exec(
+        tx,
+        `UPDATE putaway_tasks SET status='Cancelled', exception_reason=$2, version=version+1, updated_at=now(), updated_by_id=$3::uuid WHERE id=$1::uuid`,
+        id,
+        reason,
+        caller.auth.userId,
+      );
+      await refreshPutawayStatus(tx, S(t.grn_id));
+      await audit(tx, caller, caller.auth.userId, 'SCM_PUTAWAY', 'Put-away', { id, code: S(t.task_no) }, 'wms-putaway', { cancelled: reason });
+      return norm((await query(tx, `SELECT * FROM putaway_tasks WHERE id=$1::uuid`, id))[0]!);
+    }, TX);
+  },
+
   async list(caller: Caller, q: { status?: string | undefined; page: number; size: number }) {
     const args: unknown[] = [];
     const where = [`t.unit_id IS NOT NULL`];

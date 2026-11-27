@@ -428,7 +428,7 @@ export function BinsPage({ actions }: { actions: ActionSet }) {
   );
 }
 
-function BinForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+export function BinForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const [warehouseId, setW] = useState('');
   const [code, setCode] = useState('');
   const [zone, setZone] = useState('');
@@ -448,6 +448,12 @@ function BinForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
             type="button"
             className="btn primary"
             onClick={() => {
+              const missing: Record<string, string> = {
+                ...(warehouseId ? {} : { warehouseId: 'Choose a warehouse.' }),
+                ...(code.trim() ? {} : { code: 'Type the bin code.' }),
+              };
+              setFields(missing);
+              if (Object.keys(missing).length) return setMsg('Please fix the fields marked below.');
               void (async () => {
                 try {
                   await createBin({

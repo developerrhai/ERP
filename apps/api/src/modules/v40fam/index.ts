@@ -10,7 +10,9 @@ import { callerOf, uuid } from '../inventory/routes-shared';
 import { allocateStock } from '../inventory/v40/allocate';
 import { scopeSql } from '../inventory/v40/stats';
 import { mountV40 } from '../v40-route';
+import { runV40Summary } from '../sales/v40-views';
 import type { PageDef } from '../sales/v40-views';
+import { Errors } from '../../core/http/errors';
 import { ASSETS_V40_PAGES } from './assets';
 import { LOGISTICS_V40_PAGES } from './logistics';
 import { WMS_V40_PAGES } from './wms';
@@ -24,6 +26,20 @@ export const FAM_V40_PAGES: Record<string, PageDef> = {
 const allocBody = z.object({ warehouseId: uuid }).strict();
 
 export function mountFamV40(router: Router): void {
+  // whole-set counts for the Analytics & Graphs and Reports tabs (same answer as GET /sales/v40/:pageId/summary)
+  router.get(
+    '/fam/v40/:pageId/summary',
+    (req, res, next) => {
+      const pageId = String(req.params.pageId ?? '');
+      if (!FAM_V40_PAGES[pageId]) return next(Errors.notFound('No V40 views for this page.'));
+      return requirePageAction(pageId, 'view')(req, res, next);
+    },
+    asyncHandler(async (req: Request, res: Response) => {
+      const pageId = String(req.params.pageId);
+      res.json({ data: await runV40Summary(FAM_V40_PAGES[pageId]!, callerOf(req), pageId) });
+    }),
+  );
+
   mountV40(router, '/fam', FAM_V40_PAGES, requirePageAction, (fn) =>
     asyncHandler(async (req: Request, res: Response) => {
       await fn(req, res);

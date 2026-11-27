@@ -791,7 +791,15 @@ export async function getInvoice(db: Db, caller: Caller, id: string) {
     id,
   );
   const c = (await query(db, `SELECT name FROM customers WHERE id=$1::uuid`, h.customer_id))[0];
-  return { ...norm<Row>(h), customerName: c?.name, lines: lines.map((l) => norm<Row>(l)) };
+  // the challan the invoice bills is held on its lines; editing a draft needs it again
+  const d = (
+    await query(
+      db,
+      `SELECT dl.dispatch_id::text AS id FROM sales_invoice_lines l JOIN sales_dispatch_lines dl ON dl.id=l.dispatch_line_id WHERE l.invoice_id=$1::uuid LIMIT 1`,
+      id,
+    )
+  )[0];
+  return { ...norm<Row>(h), dispatchId: d?.id ?? null, customerName: c?.name, lines: lines.map((l) => norm<Row>(l)) };
 }
 
 export async function postInvoice(tx: Db, id: string, actor: Actor): Promise<void> {

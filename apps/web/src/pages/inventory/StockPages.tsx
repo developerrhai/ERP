@@ -53,7 +53,9 @@ function useAct(reload: () => void) {
       toast(msg);
       reload();
     } catch (e) {
-      setErr(toUiError(e).message);
+      const u = toUiError(e);
+      // "Please fix the highlighted fields" says nothing on a screen with no such field: show what the server said about it
+      setErr(Object.values(u.fields)[0] ?? u.message);
     }
   };
   return { err, act, setErr };
@@ -440,7 +442,7 @@ function CountsPageBody({ type, actions }: CountsProps) {
   );
 }
 
-function CountForm({
+export function CountForm({
   type,
   onClose,
   onSaved,
@@ -535,7 +537,7 @@ function CountForm({
   );
 }
 
-function CountDialog({
+export function CountDialog({
   id,
   actions,
   onClose,
@@ -545,7 +547,7 @@ function CountDialog({
   onClose: () => void;
 }) {
   const d = useLoad(() => getCount(id), [id]);
-  const { err, act } = useAct(d.reload);
+  const { err, act, setErr } = useAct(d.reload);
   const [vals, setVals] = useState<Record<string, string>>({});
   const c = d.data;
   const step = (s: 'start' | 'review' | 'approve' | 'post' | 'cancel', label: string) =>
@@ -667,12 +669,14 @@ function CountDialog({
                           <button
                             type="button"
                             className="btn sm"
-                            onClick={() =>
-                              void act(
-                                () => enterCount(c.id, l.id, Number(vals[l.id] ?? '')),
-                                'Saved.',
-                              )
-                            }
+                            onClick={() => {
+                              const typed = (vals[l.id] ?? '').trim();
+                              if (typed === '' || !Number.isFinite(Number(typed)) || Number(typed) < 0) {
+                                setErr(`Type the counted quantity of ${l.item?.code ?? 'the item'} in its Enter box (0 or more), then press Save.`);
+                                return;
+                              }
+                              void act(() => enterCount(c.id, l.id, Number(typed)), 'Saved.');
+                            }}
                           >
                             Save
                           </button>

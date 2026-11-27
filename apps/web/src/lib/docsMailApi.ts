@@ -14,7 +14,7 @@ export const PRINT_CHOICES: { kind: PrintKind; label: string }[] = [
 
 export interface CatalogEntry { pageId: string; title: string; group: string; count: number }
 export interface CatalogRecord { id: string; number: string; status: string; date: string | null }
-export interface MailRow { id: string; subject: string; body?: string; from_department: string | null; from_name?: string; to_department?: string | null; created_at: string; read?: boolean; attachments: number | { label: string; page_id: string | null; record_id: string | null; format: string | null }[]; recipients?: number; read_by?: number }
+export interface MailRow { id: string; subject: string; body?: string; from_department: string | null; from_name?: string; to_department?: string | null; created_at: string; read?: boolean; mine?: boolean; attachments: number | { label: string; page_id: string | null; record_id: string | null; format: string | null }[]; recipients?: number; read_by?: number }
 export interface Automation {
   code: string; seq: number; name: string; module: string; trigger_kind: 'EVENT' | 'DATE' | 'SCHEDULE'; trigger_text: string; recipients_text: string; attachment_text: string | null;
   enabled: boolean; default_on: boolean; wired: boolean; p21_rule_code: string | null; subject_tpl: string | null; body_tpl: string | null; run_time: string | null; offset_days: number | null;
@@ -39,7 +39,8 @@ export const docsMailApi = {
   records: (pageId: string, q: string) => api<CatalogRecord[]>(`/doc-center/catalog/${pageId}/records${qs({ q })}`),
   sendToDept: (b: { pageId: string; recordId: string; docNo?: string; toDepartmentId: string; note?: string; fromDepartmentId?: string | null }) => api<Row>('/doc-center/send', { method: 'POST', body: b }),
   departments: () => api<{ id: string; name: string }[]>('/mail/departments'),
-  inbox: () => api<MailRow[]>('/mail/inbox'),
+  /** My mail; with a department name, that department's mailbox. */
+  inbox: (department?: string) => api<MailRow[]>(department ? `/mail/inbox?department=${encodeURIComponent(department)}` : '/mail/inbox'),
   sent: () => api<MailRow[]>('/mail/sent'),
   open: (id: string) => api<MailRow>(`/mail/${id}`),
   sendInternal: (b: Row) => api<MailRow>('/mail/internal', { method: 'POST', body: b }),

@@ -18,6 +18,7 @@ import { SALES_V40_IDS } from '../sales/salesV40Api';
 import { FINANCE_V40_IDS, TAX_V40_IDS } from '../finance/finV40Api';
 import { PLANT_V40_IDS } from '../plant/plantV40Api';
 import { FAM_V40_IDS } from '../v40fam/famIds';
+import { QMS_V2_REGISTER_IDS } from '../qms/v2/ids';
 import { auditRecord } from '../../lib/auditRecord';
 
 const SCM_V40_IDS = [
@@ -42,6 +43,7 @@ const ALL_CLAIMED_PAGES = new Set<string>([
   ...TAX_V40_IDS,
   ...PLANT_V40_IDS,
   ...FAM_V40_IDS,
+  ...QMS_V2_REGISTER_IDS,
   'process-exceptions',
 ]);
 

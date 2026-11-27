@@ -1,7 +1,9 @@
 // My Account → Security (/account/security) per Phase 01 §2, §7, §8:
 // Change Password card, Two-step Verification wizard & status, and Devices table.
 import { useEffect, useState, type FormEvent } from 'react';
-import { PasswordChecklist } from '../../components/PasswordChecklist';
+import { PasswordHints } from '../../components/PasswordHints';
+import { checkPassword } from '../../lib/password-policy';
+import { usePasswordMinLength } from '../../lib/usePasswordMinLength';
 import { useToast } from '../../components/Toast';
 import {
   ApiError,
@@ -31,6 +33,8 @@ export function AccountSecurityPage({ user }: Props) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [pwPending, setPwPending] = useState(false);
   const [pwError, setPwError] = useState('');
+  const minLength = usePasswordMinLength();
+  const pwChecks = checkPassword(newPassword, user.loginId, user.email, user.name, minLength);
 
   // Two-Step Verification state
   const [mfaStatus, setMfaStatus] = useState<MfaStatus | null>(null);
@@ -77,8 +81,8 @@ export function AccountSecurityPage({ user }: Props) {
   // Password Change handler
   const onPasswordSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 12) {
-      setPwError('Password must be at least 12 characters.');
+    if (newPassword.length < minLength) {
+      setPwError(`Password must be at least ${minLength} characters.`);
       return;
     }
     if (newPassword.length > 128) {
@@ -257,7 +261,7 @@ export function AccountSecurityPage({ user }: Props) {
           <p
             className="x-c-var-color-muted-h64748b x-fs-14px x-mb-1_25rem"
           >
-            Choose a unique phrase of at least 12 characters that you do not use anywhere else.
+            Choose a unique phrase of at least {minLength} characters that you do not use anywhere else.
           </p>
 
           {pwError ? (
@@ -298,18 +302,17 @@ export function AccountSecurityPage({ user }: Props) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
+              {confirmPassword.length > 0 && confirmPassword !== newPassword ? (
+                <span className="field-error">Passwords do not match.</span>
+              ) : null}
             </div>
 
-            <PasswordChecklist
-              password={newPassword}
-              confirmPassword={confirmPassword}
-              contextWords={[user.name, user.loginId, user.email ?? '']}
-            />
+            <PasswordHints checks={pwChecks} />
 
             <button
               type="submit"
               className="btn primary x-mt-1_25rem"
-              disabled={pwPending || newPassword.length < 12 || newPassword !== confirmPassword}
+              disabled={pwPending || !pwChecks.every((c) => c.ok) || newPassword !== confirmPassword}
             >
               {pwPending ? 'Updating…' : 'Update Password'}
             </button>

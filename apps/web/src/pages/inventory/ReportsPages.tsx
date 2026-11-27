@@ -216,7 +216,7 @@ function ValuationPageBody({ actions }: { actions: ActionSet }) {
   );
 }
 
-export function ScanPage() {
+export function ScanPage({ embedded = false, onScanned }: { /** inside the Barcode register: no second page head */ embedded?: boolean; onScanned?: () => void } = {}) {
   const [raw, setRaw] = useState('');
   const [context, setContext] = useState('LOOKUP');
   const [warehouseId, setW] = useState('');
@@ -227,16 +227,19 @@ export function ScanPage() {
     try {
       setResult(await scanCode(raw, context, warehouseId || undefined));
       setRaw('');
+      onScanned?.();
     } catch (e) {
       setErr(toUiError(e).message);
     }
   };
   return (
     <>
-      <PageHead
-        title="Barcode / QR"
-        sub="Scan or type a barcode, a GS1 code, a batch, a serial number or a bin. Scanning never changes stock."
-      />
+      {embedded ? null : (
+        <PageHead
+          title="Barcode / QR"
+          sub="Scan or type a barcode, a GS1 code, a batch, a serial number or a bin. Scanning never changes stock."
+        />
+      )}
       <ErrorBox message={err} />
       <div className="card">
         <div className="field">

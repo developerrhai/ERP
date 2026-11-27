@@ -15,6 +15,7 @@ const ARGON2_OPTIONS = {
 import {
   checkPasswordPolicy as checkPolicy,
   warmUpPasswordBlocklist,
+  type PasswordPolicyConfig,
   type UserIdentityContext,
 } from './password-policy';
 
@@ -62,7 +63,9 @@ export async function dummyVerify(password: string): Promise<void> {
 export function checkPasswordPolicy(
   password: string,
   identity?: UserIdentityContext | null,
+  /** the Security Center settings (minimum length); the standard minimum when not given */
+  policy?: PasswordPolicyConfig | null,
 ): string | null {
-  return checkPolicy(password, identity);
+  return checkPolicy(password, identity, policy);
 }
 

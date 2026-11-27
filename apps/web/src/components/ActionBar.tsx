@@ -315,7 +315,10 @@ function Bar({
         }
       }
       else if (label === '⇧ Import' || label === 'Import') {
-        setImporting(true);
+        // a page with its own import (it checks every row on the server) opens that; the others get the drawer
+        const detail = { pageId, handled: false };
+        window.dispatchEvent(new CustomEvent('v40-open-import', { detail }));
+        if (!detail.handled) setImporting(true);
       }
       else if (label === 'Duplicates') {
         // QA ERP-DUP-01: really compare the rows of the register on screen and highlight the repeated ones

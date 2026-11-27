@@ -1,0 +1,669 @@
+/* Pop-ups, side panels and drop-downs: one look for every one of them. Visual properties only.
+   Loaded after sweep.css and before utilities.css (see main.tsx).
+
+   Families in use:
+     .modal-bg > .modal                 <Modal>  (head / body / foot)
+     .modal-backdrop > .modal           page-built forms (h2 + labels + .modal-actions)
+     .drawer                            <Drawer>  and the Check Access panel (.drawer-overlay)
+     .slideover                         Import Data
+     .modal-overlay > .card             security confirmations
+     .fixed.inset-0 > div               forms on the HR, payroll and logistics pages */
+
+:root {
+  --scrim: rgba(15, 23, 42, 0.55);
+  --radius-pop: 14px;
+  --shadow-pop: 0 24px 64px -16px rgba(15, 23, 42, 0.4), 0 4px 14px -6px rgba(15, 23, 42, 0.2);
+  --shadow-panel: -1px 0 0 var(--line), -24px 0 64px -12px rgba(15, 23, 42, 0.3);
+  --shadow-menu: 0 12px 32px -8px rgba(15, 23, 42, 0.24), 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+/* ================================================================ 1. Dimmed background */
+.modal-bg,
+.modal-backdrop,
+.slideover-backdrop,
+.drawer-overlay {
+  background: var(--scrim);
+}
+.modal-overlay,
+.fixed.inset-0 {
+  background-color: var(--scrim) !important;
+}
+/* the page's spacing classes pushed these down and left the top of the screen bright */
+.fixed.inset-0 {
+  margin: 0 !important;
+}
+
+/* ================================================================ 2. Dialog box */
+.modal,
+.ui-confirm,
+.modal-overlay > .card,
+.fixed.inset-0 > div {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pop);
+  background: var(--card);
+  box-shadow: var(--shadow-pop);
+  color: var(--text);
+}
+.modal,
+.drawer,
+.slideover-body {
+  overscroll-behavior: contain;
+}
+
+/* ================================================================ 3. <Modal>: header, body, footer */
+.modal-head,
+.drawer-head {
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+/* the title and the close button stay in view while a long form scrolls */
+.modal > .modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.modal-head > div:first-child {
+  min-width: 0;
+}
+.modal-head b,
+.drawer-head b,
+.drawer-head h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  line-height: var(--lh-tight);
+  overflow-wrap: anywhere;
+}
+.modal-sub,
+.drawer-head .v8-sub {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  line-height: var(--lh-body);
+}
+.modal-body {
+  padding: 18px;
+}
+.modal-foot,
+.drawer-foot,
+.slideover-foot {
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--card2);
+}
+.modal-foot .btn:where(:not(.sm)),
+.slideover-foot .btn {
+  min-width: 92px;
+  min-height: 36px;
+}
+/* Save stays reachable on long forms (not on very short screens, where it would cover the form) */
+@media (min-height: 560px) {
+  /* a footer that opens a menu stays in place, so the menu is never trapped under it */
+  .modal > .modal-foot:not(:has(.print-menu, .print-menu-wrap, [aria-haspopup])) {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+  }
+}
+
+/* close button: one shape everywhere */
+.close,
+.modal-head > .close,
+.drawer-head > .close,
+.drawer-head > .btn[aria-label='Close'] {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-btn);
+  background: var(--soft);
+  color: var(--text-2);
+  font-size: var(--fs-lg);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color var(--ease),
+    color var(--ease);
+}
+@media (hover: hover) {
+  .close:hover,
+  .drawer-head > .btn[aria-label='Close']:hover {
+    border-color: #fecaca;
+    background: var(--danger-bg);
+    color: var(--danger-fg);
+  }
+}
+
+/* ================================================================ 4. Page-built forms (.modal-backdrop > .modal) */
+.modal-backdrop > .modal {
+  gap: 12px;
+  padding: 18px;
+}
+.modal-backdrop > .modal > :is(h2, h3):first-child {
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+}
+.modal-backdrop > .modal p {
+  margin: 0;
+}
+.modal-backdrop > .modal label {
+  gap: 5px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+/* a tick-box sits beside its words, not above them */
+.modal-backdrop > .modal label:has(> input[type='checkbox'], > input[type='radio']) {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.modal-backdrop > .modal label input:is([type='checkbox'], [type='radio']) {
+  flex: 0 0 auto;
+  width: 16px;
+  min-height: 16px;
+  height: 16px;
+}
+.modal-actions {
+  gap: 8px;
+}
+.modal-backdrop > .modal .modal-actions {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.modal-actions > .btn {
+  min-width: 92px;
+  min-height: 36px;
+}
+.ui-confirm {
+  width: min(440px, 96vw);
+  padding: 20px;
+}
+.ui-confirm h2 {
+  margin: 0 0 8px;
+  font-size: var(--fs-xl);
+}
+.ui-confirm input {
+  width: 100%;
+  min-height: var(--input-h);
+  margin-top: 4px;
+}
+.ui-confirm-actions {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* ================================================================ 5. Fields inside any pop-up or panel */
+:where(.modal, .drawer, .slideover, .ui-confirm, .modal-overlay > .card, .rt-dialog)
+  :is(
+    input:not(
+        [type='checkbox'],
+        [type='radio'],
+        [type='range'],
+        [type='file'],
+        [type='color'],
+        [type='submit'],
+        [type='button']
+      ),
+    select,
+    textarea
+  ) {
+  min-height: var(--input-h);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-btn);
+  font-size: var(--fs-md);
+}
+:is(.modal, .drawer, .slideover) textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+.modal-body :is(.field, .form-grid) {
+  min-width: 0;
+}
+.modal-body .form-grid {
+  gap: 12px 14px;
+}
+.modal-body .field > label,
+.drawer .field > label {
+  margin-bottom: 5px;
+}
+/* help text under a field is smaller and lighter than the field's own label */
+:is(.modal, .drawer, .slideover) :is(.field, .form-grid) .hint {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.5;
+}
+/* date boxes keep room for the calendar button; the hidden native picker stays tiny */
+:is(.modal, .drawer, .slideover, .fixed.inset-0 > div) .date-field > input[type='text'] {
+  padding-right: 34px;
+}
+.date-field > .date-field-native {
+  min-height: 0 !important;
+}
+/* entry tables stay compact */
+.modal-body table :is(input:not([type='checkbox'], [type='radio']), select) {
+  min-height: 32px;
+}
+/* "Choose file" looks like a button */
+:is(.modal, .drawer, .slideover) input[type='file'] {
+  max-width: 100%;
+  padding: 8px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-btn);
+  background: var(--card2);
+  font-size: var(--fs-sm);
+}
+:is(.modal, .drawer, .slideover) input[type='file']::file-selector-button {
+  margin-right: 10px;
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--secondary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ================================================================ 6. Sections, tables and fact tiles inside */
+.modal-body h3 {
+  margin: 18px 0 8px;
+  font-size: var(--fs-md);
+  font-weight: 800;
+}
+.modal-body > h3:first-child,
+.drawer-body > h3:first-child {
+  margin-top: 0;
+}
+.modal-body .table-wrap,
+.drawer-body .table-wrap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-btn);
+}
+:is(.modal-body, .drawer-body) .table-wrap > table {
+  margin: 0;
+}
+:is(.modal, .drawer, .slideover) th {
+  padding-block: 8px;
+}
+:is(.modal, .drawer, .slideover) td {
+  padding-block: 8px;
+}
+:is(.modal, .drawer) :where(.detail, .v8-mini) {
+  border-color: var(--line);
+  border-radius: var(--radius-btn);
+  background: var(--card2);
+}
+:is(.modal, .drawer) :is(.detail, .v8-mini) small {
+  margin-bottom: 3px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+:is(.modal, .drawer) :where(.detail b, .v8-mini b) {
+  overflow-wrap: anywhere;
+}
+:is(.modal, .drawer) .record-cards dt {
+  font-weight: 600;
+}
+.modal-body .notice,
+.drawer-body .notice {
+  border-radius: var(--radius-btn);
+}
+
+/* ================================================================ 7. Side panel */
+.drawer {
+  box-shadow: var(--shadow-panel);
+}
+/* closed panels cast no shadow onto the page */
+.drawer:not(.show) {
+  box-shadow: none;
+}
+.drawer-head {
+  z-index: 10;
+  justify-content: space-between;
+}
+.drawer-body {
+  padding: 16px 18px 24px;
+}
+.drawer-section {
+  margin-top: 18px;
+}
+.drawer-section > h3,
+.drawer-body > section > h3 {
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.drawer-profile {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card2);
+}
+.drawer-profile b {
+  font-size: var(--fs-lg);
+}
+.drawer-meta {
+  margin: 12px 0 0;
+}
+.drawer-actions {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.drawer-actions .btn {
+  min-height: 38px;
+  padding: 8px 12px;
+}
+.drawer .timeline {
+  padding: 0;
+}
+.drawer .timeline li {
+  padding: 2px 0 2px 12px;
+  border-left-color: var(--primary-border);
+}
+
+/* Check Access: it had no style of its own, so the panel stayed off the screen */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+}
+.drawer-overlay > .drawer {
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-panel);
+  transform: none;
+}
+.drawer-overlay > .drawer > .drawer-head {
+  align-items: flex-start;
+}
+.drawer-overlay > .drawer > .drawer-body {
+  flex: 1 0 auto;
+}
+.drawer-overlay > .drawer > .drawer-foot {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ================================================================ 8. Import Data panel */
+.slideover {
+  box-shadow: var(--shadow-panel);
+}
+.slideover-head {
+  padding: 14px 18px;
+}
+.slideover-head h2 {
+  font-size: var(--fs-xl);
+  font-weight: 800;
+}
+.slideover-head p {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.slideover-body {
+  padding: 18px;
+  gap: 14px;
+}
+.slideover-body label {
+  gap: 5px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.slideover-error {
+  padding: 8px 10px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-btn);
+  background: #fef2f2;
+  color: var(--danger-fg);
+  font-weight: 600;
+}
+.slideover-preview .table-wrap {
+  border-color: var(--line);
+  border-radius: var(--radius-btn);
+}
+
+/* ================================================================ 9. Security, session and privacy notices */
+/* !important because these boxes carry fixed radius and shadow classes from sweep.css */
+.modal-overlay > .card,
+.modal-backdrop > .card {
+  border-radius: var(--radius-pop) !important;
+  box-shadow: var(--shadow-pop) !important;
+}
+.modal-overlay > .card,
+.modal-backdrop > .card {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.modal-backdrop > .card > div:first-child {
+  flex-wrap: wrap;
+}
+/* the privacy notice keeps its title and buttons in view while the text scrolls (card padding is 20px) */
+.modal-backdrop > .card > div:first-child,
+.modal-backdrop > .card > div:last-child {
+  position: sticky;
+  z-index: 1;
+  background: var(--card);
+}
+.modal-backdrop > .card > div:first-child {
+  top: -20px;
+  margin: -20px -20px 0;
+  padding: 16px 20px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-backdrop > .card > div:last-child {
+  bottom: -20px;
+  margin: 14px -20px -20px !important;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+}
+.modal-overlay > .card h2 {
+  margin-top: 0;
+  font-size: var(--fs-xl) !important;
+}
+
+/* ================================================================ 10. HR, payroll and logistics forms */
+/* tall forms scroll inside the box instead of being cut off at the top and bottom */
+.fixed.inset-0 > div {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.fixed.inset-0 > div > :is(h2, h3):first-child,
+.fixed.inset-0 > div > div:first-child > :is(h2, h3) {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+}
+.fixed.inset-0 > div label {
+  margin-bottom: 4px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.fixed.inset-0 > div input:not([type='checkbox'], [type='radio']),
+.fixed.inset-0 > div select,
+.fixed.inset-0 > div textarea {
+  padding: 7px 10px;
+  border-color: var(--line-strong);
+  border-radius: var(--radius-btn);
+}
+.fixed.inset-0 > div input:is([type='checkbox'], [type='radio']) + label,
+.fixed.inset-0 > div label:has(> input:is([type='checkbox'], [type='radio'])) {
+  margin-bottom: 0;
+}
+.fixed.inset-0 > div button {
+  min-height: 36px;
+  border-radius: var(--radius-btn);
+  font-weight: 700;
+}
+
+/* ================================================================ 11. Drop-down lists and small menus */
+.pick-list,
+.ui-combo ul,
+.print-menu-list,
+.plant-menu {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  box-shadow: var(--shadow-menu);
+}
+.pick-list,
+.print-menu-list {
+  padding: 4px;
+}
+.pick-list button,
+.ui-combo li {
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+}
+.pick-list button:hover,
+.pick-list button:focus,
+.ui-combo li.on {
+  background: var(--primary-subtle);
+}
+.print-menu-list .btn:not(.primary, .danger, .success, .warning) {
+  margin: 0;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.print-menu-list .btn:not(.primary, .danger, .success, .warning):hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--primary-subtle);
+}
+
+/* ================================================================ 12. Short messages */
+.toast {
+  max-width: min(440px, calc(100vw - 30px));
+  padding: 11px 15px;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-menu);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+/* ================================================================ 13. Opening animation */
+@media (prefers-reduced-motion: no-preference) {
+  .modal,
+  .ui-confirm,
+  .modal-overlay > .card,
+  .fixed.inset-0 > div {
+    animation: pop-in 0.16s ease-out;
+  }
+  .drawer-overlay > .drawer {
+    animation: panel-in 0.18s ease-out;
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+
+/* ================================================================ 14. Phones */
+@media (max-width: 600px) {
+  .modal-bg {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal-bg > .modal {
+    width: 100vw;
+    max-height: 92vh;
+    border-radius: var(--radius-pop) var(--radius-pop) 0 0;
+  }
+  .modal-head,
+  .drawer-head {
+    padding: 11px 14px;
+  }
+  .modal-body,
+  .drawer-body,
+  .slideover-body {
+    padding: 14px;
+  }
+  .modal-foot,
+  .drawer-foot,
+  .slideover-foot {
+    padding: 10px 14px;
+  }
+  .close,
+  .drawer-head > .btn[aria-label='Close'] {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .drawer {
+    width: 100vw;
+  }
+  .drawer-overlay > .drawer {
+    width: 100vw !important;
+  }
+  :is(.modal, .drawer, .slideover, .ui-confirm, .fixed.inset-0 > div)
+    :is(input, select, textarea):where(:not([type='checkbox'], [type='radio'])) {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .slideover-foot > .btn,
+  .ui-confirm-actions > button {
+    flex: 1 1 auto;
+  }
+  /* a long row of record buttons scrolls instead of covering the form */
+  .modal > .modal-foot:not(:has(.print-menu, .print-menu-wrap, [aria-haspopup])) {
+    max-height: 38vh;
+    overflow-y: auto;
+  }
+  /* a wide table scrolls by itself, so the whole pop-up never slides sideways */
+  :is(.modal-body, .drawer-body) :where(div, section, fieldset):has(> table) {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  :is(.modal-body, .drawer-body) fieldset {
+    min-width: 0;
+  }
+  :is(.modal-body, .drawer-body) table.level-table {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media print {
+  .drawer-overlay {
+    display: none;
+  }
+}

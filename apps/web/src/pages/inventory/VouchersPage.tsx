@@ -414,7 +414,7 @@ function VouchersList({
   );
 }
 
-function LinesTable({ v, kind }: { v: Voucher; kind: VoucherKind }) {
+export function LinesTable({ v, kind }: { v: Voucher; kind: VoucherKind }) {
   return (
     <div className="table-wrap">
       <table>
@@ -456,7 +456,7 @@ function LinesTable({ v, kind }: { v: Voucher; kind: VoucherKind }) {
   );
 }
 
-function CancelDialog({
+export function CancelDialog({
   voucher,
   onClose,
   onDone,
@@ -523,7 +523,7 @@ function CancelDialog({
   );
 }
 
-function VoucherForm({
+export function VoucherForm({
   kind,
   voucher,
   prefill,

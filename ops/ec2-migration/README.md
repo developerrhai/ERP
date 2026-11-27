@@ -6,8 +6,16 @@
 | API address | `institute-api.rhaitech.online/sawant-erp` | `dnyansagarclasses.rhaitech.online/sawant-erp` |
 | Frontend | Vercel, calls the old address | Vercel, calls the new address |
 
-Only the ERP moves: the PM2 app `sawant-erp-backend`, its PostgreSQL database and
-its folder (code, `.env`, uploaded files). The other apps on both servers stay.
+Only the ERP moves. The other apps on both servers stay. Choose one way:
+
+| Step 3 | Code on server 3 | Database on server 3 |
+|---|---|---|
+| `deploy` | this laptop's code, including uncommitted changes | new and empty, with default setup and one admin |
+| `copy` | copied from server 1 | copied from server 1, with uploaded files |
+
+The owner chose **`deploy`** on 2026-11-28, because the data on server 1 is demo
+data. Both ways take the settings (`.env`) from server 1, and leave server 1's
+database untouched.
 
 These scripts have been syntax-checked and partly simulated on a laptop. They
 have **never run against the real servers**, so do the practice steps first.
@@ -49,7 +57,8 @@ type a word first.
 |---|---|---|---|
 | 1 | `./migrate.sh check` | Reads both servers. Reports RAM, disk, versions, database, Nginx, cron, conflicts. | none |
 | 2 | `./migrate.sh prepare` | Server 3: swap file, same Node version (under `/opt/node`), PostgreSQL. | none |
-| 3 | `./migrate.sh copy` | Practice copy of database and files. Compares row counts. | none |
+| 3 | `./migrate.sh deploy` | Builds the backend here, uploads it, installs Node 20 and packages, creates the empty database and asks you for the first admin login. | none |
+| 3 (other way) | `./migrate.sh copy` | Practice copy of server 1's database and files. Compares row counts. | none |
 | 4 | `./migrate.sh web` | Server 3: adds `/sawant-erp/` to the existing site (backs the file up, tests, reloads). | none |
 | 5 | `./migrate.sh test` | Starts the copied app for a health check, then stops it. | none |
 | 6 | `./migrate.sh cutover` | The real move (below). | a few minutes; depends on size |
@@ -60,8 +69,14 @@ from server 1 with the block in the `cmd_web` part of `migrate.sh`. If server 1
 has extra settings (larger upload size, extra headers, other paths to port 5010),
 add them to the script before step 4.
 
-**Step 5 warning:** the copy holds real data. Queued jobs can send real emails or
-messages while the test app runs. Skip it if you cannot accept that.
+**Step 5 warning (after `copy` only):** the copy holds real data. Queued jobs can
+send real emails or messages while the test app runs. Skip it if you cannot accept
+that.
+
+**After `deploy`:** cutover copies nothing from server 1; users get the empty
+database. The web app must match the new backend, so commit and push the matching
+`apps/web` and `packages` changes right after cutover (Vercel redeploys). The
+first login must change the temporary password.
 
 ## What cutover does
 

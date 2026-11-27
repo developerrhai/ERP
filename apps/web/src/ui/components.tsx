@@ -399,6 +399,18 @@ export function Combobox({
   // restarts the search (that made the list refetch and flicker "Searching…" over and over)
   const searchRef = useRef(search);
   searchRef.current = search;
+  // A value that arrives or changes after the first draw (an edit form that loads its record, a line that is cleared)
+  // must show in the box. Text the user is typing is left alone: it no longer matches the old label.
+  const last = useRef(value);
+  useEffect(() => {
+    if (value) setQ(value.label);
+    else if (last.current) {
+      const was = last.current.label;
+      setQ((cur) => (cur === was ? '' : cur));
+    }
+    last.current = value;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value?.value, value?.label]);
   useEffect(() => {
     if (!open) return undefined;
     const n = ++seq.current;

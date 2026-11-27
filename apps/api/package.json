@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node -e \"const fs=require('fs');fs.cpSync('assets','dist/assets',{recursive:true});fs.copyFileSync('src/core/auth/seclists-10k.txt','dist/core/auth/seclists-10k.txt')\"",
     "start": "node dist/server.js",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",

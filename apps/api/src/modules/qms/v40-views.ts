@@ -1,7 +1,7 @@
 // V40 tab views of the Quality (QMS) pages. GET /qms/v40/:pageId?tab=<V40 tab name>: the columns V40 shows on each tab with values read
 // from the real tables (inspection sheets, rejections, 8D / CI forms, 5-why cases, instruments, plans). Same engine and rules as the
 // Sales views: a label with no real source returns NULL (a dash on screen) and is listed by noSourceColumns(); nothing is invented.
-import { ACTIONS, DOCS, apJoin, approvalCols, d, n, none, t } from '../sales/v40-views';
+import { ACTIONS, DOCS, apJoin, approvalCols, d, m, n, none, t } from '../sales/v40-views';
 import type { PageDef, ViewDef } from '../sales/v40-views';
 
 const V = (re: string, labels: string[], extra: Partial<ViewDef> = {}): ViewDef => ({
@@ -322,11 +322,13 @@ const CAPA: PageDef = {
 const MOM_C = [
   'MOM No',
   'Date',
+  'Department',
   'Title',
-  'Location',
   'Attendees',
+  'Agenda',
   'Action Items',
-  'Next Meeting Date',
+  'Responsible Owner',
+  'Target Date',
   'Status',
   'Actions',
 ];
@@ -353,6 +355,14 @@ const MOM: PageDef = {
     ...approvalCols('t.number'),
     Docs: DOCS('qms-mom'),
     Actions: ACTIONS,
+    // the meeting's own department (the approval request's is a different thing) and who has to act by when
+    Department: t(`t.data->>'department'`),
+    'Responsible Owner': t(
+      `(SELECT string_agg(DISTINCT NULLIF(a->>'responsible',''), ', ') FROM jsonb_array_elements(COALESCE(t.data->'action_items','[]'::jsonb)) a)`,
+    ),
+    'Target Date': d(
+      `(SELECT min(NULLIF(a->>'due_date','')) FROM jsonb_array_elements(COALESCE(t.data->'action_items','[]'::jsonb)) a WHERE lower(COALESCE(a->>'status','')) NOT IN ('done','closed'))`,
+    ),
   },
   register: MOM_C,
   compact: MOM_C,
@@ -508,7 +518,145 @@ const PLANS: PageDef = {
   ],
 };
 
+// ------------------------------------------------------------------------------------------------ Customer NCR / Conformance NCR
+const NCR_FROM = (page: string): string =>
+  `qms_ncrs t LEFT JOIN customers cu ON cu.id=t.customer_id LEFT JOIN items it ON it.id=t.item_id ${apJoin(page)}`;
+const NCR_COLS = (page: string): PageDef['cols'] => ({
+  'NCR No': t('t.number'),
+  Date: d('t.ncr_date'),
+  'Customer No': t('cu.code'),
+  Customer: t('cu.name'),
+  Item: t(`it.code || ' · ' || it.name`),
+  Reference: t('t.reference'),
+  Department: t('t.department'),
+  Process: t('t.process'),
+  Title: t('t.title'),
+  Description: t('t.description'),
+  Result: t(`CASE t.result WHEN 'CONFORMANCE' THEN 'Conformance' ELSE 'Non-conformance' END`),
+  Priority: pill(`initcap(t.priority)`),
+  Qty: n('t.qty'),
+  'Claim Amount': m('t.claim_amount'),
+  'Gates Passed': t(`(SELECT count(*) FROM jsonb_each(t.eight_d) g WHERE (g.value->>'done')='true') || ' of 8'`),
+  'Root Cause': t('t.root_cause'),
+  'Corrective Action': t('t.corrective_action'),
+  'Preventive Action': t('t.preventive_action'),
+  'Responsible Owner': t('t.owner_name'),
+  'Target Date': d('t.target_date'),
+  'Closed On': d('t.closed_at'),
+  'Closure Note': t('t.closure_note'),
+  Status: pill('t.status'),
+  ...approvalCols('t.number'),
+  Docs: DOCS(page),
+  Actions: ACTIONS,
+});
+const ncrPage = (page: string, type: string, register: string[], views: ViewDef[]): PageDef => ({
+  from: NCR_FROM(page),
+  number: 't.number',
+  status: 't.status',
+  base: [`t.type='${type}'`],
+  search: ['t.number', 't.title', 't.reference', 'cu.name', 'cu.code', 'it.name', 't.department', 't.owner_name'],
+  order: 't.ncr_date DESC, t.number DESC',
+  cols: NCR_COLS(page),
+  register,
+  compact: register,
+  views,
+});
+const CNCR_C = ['NCR No', 'Status', 'Priority', 'Date', 'Customer No', 'Customer', 'Title', 'Gates Passed', 'Qty', 'Claim Amount', 'Target Date', 'Actions'];
+const CUSTOMER_NCR = ncrPage('qms-customer-ncr', 'CUSTOMER', CNCR_C, [V('audit trail', CNCR_C, { audit: true })]);
+const CONF_C = ['NCR No', 'Status', 'Priority', 'Date', 'Result', 'Department', 'Title', 'Process', 'Responsible Owner', 'Target Date', 'Actions'];
+const CONFORMANCE_NCR = ncrPage('qms-conformance-ncr', 'CONFORMANCE', CONF_C, [
+  V('root cause & closure', ['NCR No', 'Title', 'Root Cause', 'Corrective Action', 'Preventive Action', 'Target Date', 'Closed On', 'Closure Note', 'Status', 'Actions']),
+  V('audit trail', CONF_C, { audit: true }),
+]);
+
+// ------------------------------------------------------------------------------------------------ Template & Feature
+const FMT_C = ['Format No', 'Title', 'Category', 'Revision', 'Effective Date', 'Check Points', 'Status', 'Actions'];
+const TEMPLATES: PageDef = {
+  from: `qms_formats t LEFT JOIN qms_doc_categories ca ON ca.id=t.category_id ${apJoin('qms-templates')}`,
+  unit: null,
+  owner: null,
+  number: 't.code',
+  status: 't.status',
+  search: ['t.code', 't.title', 'ca.name'],
+  order: 'lower(t.code)',
+  cols: {
+    'Format No': t('t.code'),
+    Type: t(`CASE t.type WHEN 'CHECKLIST' THEN 'Checklist' WHEN 'AUDIT_FORM' THEN 'Audit form' ELSE 'Record format' END`),
+    Title: t('t.title'),
+    Category: t('ca.name'),
+    Revision: n('t.revision'),
+    'Effective Date': d('t.effective_date'),
+    'Check Points': n('jsonb_array_length(t.points)'),
+    Notes: t('t.notes'),
+    Status: pill('t.status'),
+    ...approvalCols('t.code'),
+    Docs: DOCS('qms-templates'),
+    Actions: ACTIONS,
+  },
+  register: FMT_C,
+  compact: FMT_C,
+  views: [
+    V('checklists', FMT_C, { where: [`t.type='CHECKLIST'`] }),
+    V('audit forms', FMT_C, { where: [`t.type='AUDIT_FORM'`] }),
+    V('record doc\\. format', ['Format No', 'Title', 'Category', 'Revision', 'Effective Date', 'Docs', 'Status', 'Actions'], {
+      where: [`t.type='RECORD_FORMAT'`],
+    }),
+    V('documents', ['Format No', 'Type', 'Title', 'Category', 'Docs', 'Status', 'Actions']),
+    V('audit trail', FMT_C, { audit: true }),
+  ],
+};
+
+// ------------------------------------------------------------------------------------------------ Rejection & Revoke Register
+const REV_C = ['Rejection No', 'Status', 'Revoke Status', 'Date', 'Item', 'Qty', 'Defect', 'Source', 'Revoke No', 'Revoke Reason', 'Actions'];
+const REVOKE: PageDef = {
+  from: `qms_rejections t LEFT JOIN items it ON it.id=t.item_id
+    LEFT JOIN LATERAL (SELECT q.number, q.status, q.reason, q.requested_at, q.decided_at, q.decision_note, q.override,
+        (SELECT u.name FROM users u WHERE u.id=q.requested_by_id) AS asked_by, (SELECT u.name FROM users u WHERE u.id=q.decided_by_id) AS decided_by
+      FROM qms_revoke_requests q WHERE q.rejection_id=t.id ORDER BY q.requested_at DESC LIMIT 1) rq ON true ${apJoin('qms-rejection-revoke')}`,
+  number: 't.number',
+  status: 't.status',
+  search: ['t.number', 't.part', 'it.name', 't.defect', 't.process', 'rq.number', 'rq.reason'],
+  order: 't.reject_date DESC, t.number DESC',
+  cols: {
+    'Rejection No': t('t.number'),
+    Date: d('t.reject_date'),
+    Source: t('t.process'),
+    Item: t(`COALESCE(it.code || ' · ' || it.name, t.part)`),
+    Qty: n('t.hold_qty'),
+    Defect: t('t.defect'),
+    Disposition: t('t.disposition'),
+    'Revoke No': t('rq.number'),
+    'Revoke Status': pill('rq.status'),
+    'Revoke Reason': t('rq.reason'),
+    'Requested By': t('rq.asked_by'),
+    'Requested On': d('rq.requested_at'),
+    'Decided By': t('rq.decided_by'),
+    'Decided On': d('rq.decided_at'),
+    'Decision Note': t('rq.decision_note'),
+    Override: t(`CASE WHEN rq.override THEN 'Yes' END`),
+    Status: pill('t.status'),
+    ...approvalCols('t.number'),
+    Docs: DOCS('qms-rejection-revoke'),
+    Actions: ACTIONS,
+  },
+  register: REV_C,
+  compact: REV_C,
+  views: [
+    V('pending revokes', ['Rejection No', 'Item', 'Qty', 'Defect', 'Revoke No', 'Revoke Reason', 'Requested By', 'Requested On', 'Status', 'Actions'], {
+      where: [`rq.status='Pending'`],
+    }),
+    V('revoked', ['Rejection No', 'Item', 'Qty', 'Revoke No', 'Revoke Reason', 'Decided By', 'Decided On', 'Decision Note', 'Override', 'Status', 'Actions'], {
+      where: [`t.status='Revoked'`],
+    }),
+    V('audit trail', REV_C, { audit: true }),
+  ],
+};
+
 export const QMS_V40_PAGES: Record<string, PageDef> = {
+  'qms-customer-ncr': CUSTOMER_NCR,
+  'qms-conformance-ncr': CONFORMANCE_NCR,
+  'qms-templates': TEMPLATES,
+  'qms-rejection-revoke': REVOKE,
   'qms-incoming': INCOMING,
   'qms-process': PROCESS,
   'qms-final': FINAL,

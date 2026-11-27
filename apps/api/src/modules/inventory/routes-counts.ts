@@ -92,6 +92,15 @@ export function mountCountsRoutes(r: Router): void {
   step('cancel', 'edit', (req) =>
     countService.cancel(callerOf(req), String(req.params.id), ver(req)),
   );
+  r.patch(
+    '/counts/:id',
+    requirePageAction('wms-cycle', 'edit'),
+    validate({ params: idParams, body: z.object({ plannedDate: isoDate }).strict() }),
+    asyncHandler(async (req: Request, res: Response) => {
+      const b = req.body as { plannedDate: string };
+      res.json({ data: await countService.reschedule(callerOf(req), String(req.params.id), ver(req), b.plannedDate) });
+    }),
+  );
   const pb = z
     .object({ lineIds: z.array(uuid).max(1000).optional() })
     .strict()

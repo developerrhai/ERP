@@ -55,6 +55,8 @@ export const printDtoSchema = z.object({
           label: z.string(),
           format: z.string(),
           align: z.enum(['left', 'right']).optional(),
+          /** share of the page width; used when every column of the table gives one */
+          weight: z.number().positive().optional(),
         }),
       ),
       rows: z.array(z.record(z.union([z.string(), z.number(), z.null()]))),

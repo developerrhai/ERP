@@ -30,7 +30,7 @@ import { headerTotals, lineTax } from '../procurement/math';
 import type { LineTax } from '../procurement/math';
 import { resolveGstPct } from '../procurement/po-service';
 import { pricingService } from '../masters/pricing-service';
-import { creditExposure } from './crm-service';
+import { creditExposure, resolveProject } from './crm-service';
 
 export const CRFQ_DEF: DocDef = {
   pageId: 'sales-quotations',
@@ -407,6 +407,9 @@ export const quotationCrud = makeCrud({
     'priceListId',
     'marginPct',
     'customerRef',
+    'customerPoNo',
+    'deliveryDate',
+    'projectNumber',
     'notes',
   ],
   lineKeys: [
@@ -424,9 +427,26 @@ export const quotationCrud = makeCrud({
     'leadDays',
   ],
   hasSupplier: false,
+  extraSelect:
+    "pj.code AS project_number, (SELECT so.number FROM sales_orders so WHERE so.quotation_id = t.id AND so.status <> 'Cancelled' AND so.deleted_at IS NULL LIMIT 1) AS sales_order_made",
+  extraJoin: 'LEFT JOIN projects pj ON pj.id = t.project_id',
+  async decorate(db, h) {
+    const r = (
+      await query(
+        db,
+        `SELECT (SELECT code FROM projects WHERE id=$1::uuid) AS project_number,
+                (SELECT number FROM sales_orders WHERE quotation_id=$2::uuid AND status <> 'Cancelled' AND deleted_at IS NULL LIMIT 1) AS sales_order_made`,
+        h.project_id ?? null,
+        h.id,
+      )
+    )[0];
+    return { projectNumber: r?.project_number ?? null, salesOrderMade: r?.sales_order_made ?? null };
+  },
   async prepare(c) {
     const customerId = S(c.header.customerId ?? c.existing?.customer_id);
     if (!customerId) throw Errors.validation({ customerId: 'Choose a customer.' });
+    if (c.header.deliveryDate === '') c.header.deliveryDate = null;
+    const typed = await resolveProject(c.tx, { ...c.header });
     const date = S(c.header.quoteDate ?? c.existing?.quote_date ?? todayIst());
     const p = await priceLines(c.tx, customerId, c.unitId, date, c.lines, false);
     // margin from the cost the sales person entered (the cost formulas are Phase 6B rule sets, not code)
@@ -440,7 +460,7 @@ export const quotationCrud = makeCrud({
       if (rev.gt(0)) margin = str(rev.minus(cost).div(rev).mul(100).toDecimalPlaces(4));
     }
     return {
-      header: { ...c.header, ...p.totals, ...(margin !== null ? { marginPct: margin } : {}) },
+      header: { ...typed, ...p.totals, ...(margin !== null ? { marginPct: margin } : {}) },
       lines: p.lines,
     };
   },
@@ -562,14 +582,17 @@ export const quotationActions = {
       throw Errors.conflict(`Sales order ${S(dup.number)} was already made from this quotation.`);
     if (q.lines.some((l) => !l.itemId))
       throw Errors.validation({ lines: 'Every line needs an item before it becomes an order.' });
+    // what the quotation already says about the order is carried over unless it is typed again
+    const delivery = b.deliveryDate ?? (q.deliveryDate as string | null | undefined) ?? null;
     return orderCrud.create(caller, {
       header: {
         customerId: q.customerId,
         quotationId: id,
         paymentTermId: q.paymentTermId ?? null,
-        customerPoNo: b.customerPoNo ?? null,
+        customerPoNo: b.customerPoNo ?? (q.customerPoNo as string | null | undefined) ?? null,
         customerPoDate: b.customerPoDate ?? null,
-        deliveryDate: b.deliveryDate ?? null,
+        deliveryDate: delivery,
+        ...(q.projectId ? { projectId: q.projectId } : {}),
       },
       lines: q.lines.map((l) => ({
         itemId: l.itemId,
@@ -581,7 +604,7 @@ export const quotationActions = {
         rate: l.rate,
         discountPct: l.discountPct,
         gstPct: l.gstPct,
-        deliveryDate: b.deliveryDate ?? null,
+        deliveryDate: delivery,
       })),
     });
   },
@@ -601,6 +624,8 @@ export const orderCrud = makeCrud({
     'shipTo',
     'paymentTermId',
     'notes',
+    // given by "Make sales order" from a quotation that names a project; the order form does not send it
+    'projectId',
   ],
   lineKeys: [
     'itemId',

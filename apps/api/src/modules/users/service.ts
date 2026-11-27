@@ -76,12 +76,12 @@ export async function toDuplicateError(
   return Errors.duplicate(fields);
 }
 
-function assertPasswordPolicy(
+async function assertPasswordPolicy(
   password: string,
   identity: { loginId: string; email: string | null },
   field: string,
-): void {
-  const problem = checkPasswordPolicy(password, identity);
+): Promise<void> {
+  const problem = checkPasswordPolicy(password, identity, await getSecurityPolicy());
   if (problem) throw Errors.validation({ [field]: problem });
 }
 
@@ -261,7 +261,7 @@ export const userService = {
     );
 
     const email = input.email ?? null;
-    assertPasswordPolicy(
+    await assertPasswordPolicy(
       input.temporaryPassword,
       { loginId: input.loginId, email },
       'temporaryPassword',
@@ -698,7 +698,7 @@ export const userService = {
     }
     const target = await loadTarget(id);
     assertCanManage(actor.level, target.role.level);
-    assertPasswordPolicy(input.temporaryPassword, target, 'temporaryPassword');
+    await assertPasswordPolicy(input.temporaryPassword, target, 'temporaryPassword');
     const passwordHash = await hashPassword(input.temporaryPassword);
     await prisma.$transaction(async (tx) => {
       await userRepository.update(

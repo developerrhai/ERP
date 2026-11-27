@@ -199,8 +199,8 @@ export function makeCrud(spec: CrudSpec) {
             fyId: fy.id,
             number,
             department: await departmentOf(tx, def.pageId, caller),
-            // Meetings let the person pick the status on the form; every other document starts as a draft
-            status: (def.pageId === 'crm-meetings' ? (header.status as string | undefined) : undefined) ?? def.draftStatus ?? 'Draft',
+            // Meetings (Status) and leads (Stage) let the person pick it on the form; every other document starts as a draft
+            status: (def.pageId === 'crm-meetings' || def.pageId === 'crm-leads' ? (header.status as string | undefined) : undefined) ?? def.draftStatus ?? 'Draft',
             createdById: caller.auth.userId,
             updatedById: caller.auth.userId,
           });

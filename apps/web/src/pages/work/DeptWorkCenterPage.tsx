@@ -184,6 +184,11 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
         <Link className="btn" to="/m/ops-shift-roster">
           Shifts
         </Link>
+        {slug === 'quality' ? (
+          <Link className="btn primary" to="/m/qms-dashboard">
+            Centralized Dashboard
+          </Link>
+        ) : null}
         {slug === 'finance' ? (
           <>
             <Link className="btn" to="/m/fin-coa">

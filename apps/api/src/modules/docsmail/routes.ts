@@ -1,12 +1,13 @@
 // Phase 27 routes (mounted at the API root): /print, /doc-center (catalog + send), /mail, /admin/mail-automation, /hr/letters, /qms/certificates.
 import { Router } from 'express';
-import type { Request, Response } from 'express';
+import type { Request, RequestHandler, Response } from 'express';
 import { z } from 'zod';
+import { requireAuth } from '../../core/auth/auth-context';
 import { authenticate, requirePasswordChanged } from '../../core/auth/authenticate';
 import { resolveContext } from '../../core/context/resolve-context';
 import { asyncHandler } from '../../core/http/async-handler';
 import { validate, validated } from '../../core/http/validate';
-import { requirePageAction } from '../../core/rbac/access';
+import { accessUserOf, requirePageAction } from '../../core/rbac/access';
 import { callerOf } from '../inventory/routes-shared';
 import { workService } from '../work/service';
 import { mailAutomation } from './automation';
@@ -55,11 +56,21 @@ export function createDocsMailRouter(): Router {
   r.get('/mail/departments', requirePageAction('dept-mail', 'view'), h(async (_req, res) => ok(res, await mailService27.departments())));
   const internal = z.object({ fromDepartment: z.string().max(80).nullable().optional(), toDepartmentIds: z.array(z.string().uuid()).max(20).optional(), toUserIds: z.array(z.string().uuid()).max(50).optional(), subject: z.string().max(200).optional(), body: z.string().max(5000).optional(), attachments: z.array(attach).max(10).optional(), unitId: z.string().uuid().optional() }).strict();
   r.post('/mail/internal', requirePageAction('dept-mail', 'add'), validate({ body: internal }), h(async (req, res) => ok(res, await mailService27.sendInternal(callerOf(req), validated(res, 'body', internal)), 201)));
-  r.get('/mail/inbox', requirePageAction('dept-mail', 'view'), h(async (req, res) => ok(res, await mailService27.inbox(callerOf(req)))));
+  const inboxQ = z.object({ department: z.string().max(80).optional() }).strict();
+  // A department mailbox is read by the department's own people, who need not hold the Department Mail page: the query
+  // itself returns only what is addressed to them or to a department of theirs.
+  const mailPage = requirePageAction('dept-mail', 'view');
+  const ownDepartment: RequestHandler = (req, res, next) => {
+    const mine = accessUserOf(requireAuth(req).user).departments.map((d) => d.toLowerCase());
+    const asked = typeof req.query.department === 'string' ? req.query.department.toLowerCase() : null;
+    if (asked !== null ? mine.includes(asked) : req.params.id !== undefined && mine.length > 0) return next();
+    return mailPage(req, res, next);
+  };
+  r.get('/mail/inbox', ownDepartment, validate({ query: inboxQ }), h(async (req, res) => ok(res, await mailService27.inbox(callerOf(req), validated(res, 'query', inboxQ).department))));
   r.get('/mail/sent', requirePageAction('dept-mail', 'view'), h(async (req, res) => ok(res, await mailService27.sent(callerOf(req)))));
   const external = z.object({ to: z.array(z.string().max(200)).min(1).max(20), subject: z.string().max(200).optional(), body: z.string().max(5000).optional(), attachments: z.array(attach).max(10).optional() }).strict();
   r.post('/mail/external', requirePageAction('dept-mail', 'add'), validate({ body: external }), h(async (req, res) => ok(res, await mailService27.sendExternal(callerOf(req), validated(res, 'body', external)), 201)));
-  r.get('/mail/:id', requirePageAction('dept-mail', 'view'), validate({ params: id }), h(async (req, res) => ok(res, await mailService27.open(callerOf(req), validated(res, 'params', id).id))));
+  r.get('/mail/:id', ownDepartment, validate({ params: id }), h(async (req, res) => ok(res, await mailService27.open(callerOf(req), validated(res, 'params', id).id))));
 
   // ---- mail automation (Administrator)
   r.get('/admin/mail-automation', requirePageAction('admin-mail-automation', 'view'), h(async (_req, res) => ok(res, await mailAutomation.list())));

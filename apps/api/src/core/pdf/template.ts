@@ -109,6 +109,8 @@ function ensureRoom(
 
 function formatCell(value: string | number | null | undefined, format: string): string {
   if (value === null || value === undefined || value === '') return '';
+  // text stays as written: an HSN code or a batch number made of digits is not an amount
+  if (format === 'text' && typeof value === 'string') return value;
   const num = typeof value === 'number' ? value : (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value.trim()) ? Number(value.trim()) : NaN);
   if (!isNaN(num)) {
     if (format === 'money') return groupIndian(Math.round(num), 0);
@@ -200,7 +202,8 @@ export async function renderDocumentPdf(
     const fixed = cols.filter(numeric).length * 62;
     const flexCount = Math.max(cols.filter((c) => !numeric(c)).length, 1);
     const flexW = Math.max((width - fixed) / flexCount, 50);
-    const widths = cols.map((c) => (numeric(c) ? 62 : flexW));
+    const weighted = cols.every((c) => c.weight !== undefined);
+    const widths = cols.map((c) => (weighted ? (c.weight ?? 1) : numeric(c) ? 62 : flexW));
     const scale = width / widths.reduce((a, b) => a + b, 0);
     const colWidths = widths.map((w) => w * scale);
     const head = (): number => {

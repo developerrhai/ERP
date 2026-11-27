@@ -340,6 +340,32 @@ a.btn {
   -webkit-overflow-scrolling: touch;
 }
 
+/* row buttons: give a crowded cell enough width, so rows do not grow one button per line */
+td > .actions:has(> :nth-child(4)) {
+  min-width: 128px;
+  gap: 4px;
+}
+td > .actions:has(> :nth-child(4)) > .btn.sm {
+  padding-inline: 6px;
+}
+@media (min-width: 1500px) {
+  td > .actions:has(> :nth-child(4)) {
+    min-width: 212px;
+  }
+}
+.register-table td.row-actions:has(> :nth-child(6)) {
+  min-width: 300px;
+}
+.register-table td.row-actions:has(> :nth-child(6)) > .btn {
+  margin: 2px 4px 2px 0;
+}
+.register-table td .proc-row-actions:has(> :nth-child(10)) {
+  min-width: 344px;
+}
+.register-table td .proc-row-actions:has(> :nth-child(13)) {
+  min-width: 420px;
+}
+
 /* ================================================================ 5. Forms */
 /* baseline for any box that no stylesheet had dressed (these showed the raw browser border) */
 :where(
@@ -489,6 +515,25 @@ input[type='radio'] {
 /* header buttons that wrap onto a second line stay on the right-hand side */
 .page-head > .actions {
   justify-content: flex-end;
+}
+
+/* small cards that had no inner space, so their text touched the border */
+.main .card.work-flowbar,
+.main .card.mv-filter,
+.main div.card:has(> .field:first-child) {
+  padding: 12px 14px;
+}
+.main section.card[aria-label^='Exception Register'] > div:first-child {
+  margin-bottom: 0;
+  padding: 12px 14px 10px;
+}
+.main section.card[aria-label^='Exception Register'] td > b {
+  white-space: nowrap;
+}
+/* a coloured status chip keeps its text centred beside the plain chips */
+.main .chip.rag {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* ================================================================ 7. Shell */

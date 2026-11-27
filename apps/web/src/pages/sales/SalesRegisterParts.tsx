@@ -6,15 +6,17 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { HistoryDrawer, MoveForwardDialog } from '../../components/MoveForward';
+import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { findAddButton } from '../../lib/ownAddButton';
-import { toUiMessage } from '../../lib/errors';
+import { toUiError, toUiMessage } from '../../lib/errors';
+import { workApi } from '../../lib/workApi';
 import { lookupCustomers, post } from '../../lib/scmApi';
 import { useLoad } from '../../lib/useLoad';
 import { Combobox } from '../../ui/components';
-import { dmy, Pill } from '../finance/shared';
+import { dmy, inr, Pill } from '../finance/shared';
 import { v40TabsFor } from '../frame/V40TabFrame';
-import { getSalesV40Summary, type V40Column, type V40Row } from './salesV40Api';
+import { getSalesV40Summary, type V40Column, type V40Row, type V40Summary } from './salesV40Api';
 
 /** The status that means "finished" on each page (Completion = those records over all records). */
 const DONE: Record<string, string[]> = {
@@ -39,15 +41,47 @@ const RISK_NOTE: Record<string, string> = {
 /** The CRM / customer pages that carry the KPI cards, record strip and Detailed Table. */
 export const CRM_PAGES: ReadonlySet<string> = new Set(Object.keys(DONE));
 
+/** The cards of Credit Limits and Sales Returns: what each figure counts, said on the card itself. */
+function salesCards(pageId: string, data: V40Summary | null | undefined): [string, string, string][] {
+  const c = data?.cards;
+  const total = data ? String(data.total) : '…';
+  const pct = c ? `${c.completeness}%` : '…';
+  const open = c ? String(c.open) : '…';
+  const risk = c ? `${c.riskScore}/100` : '…';
+  if (pageId === 'sales-credit')
+    return [
+      ['Records in Scope', total, 'Active customers'],
+      ['Completion', pct, 'Credit limit, credit days, risk grade and review date that are filled in'],
+      ['Open / Pending', open, 'Customers with no limit yet, or a higher limit waiting for approval'],
+      ['At Risk Score', risk, 'Share of the customers with a limit who are over it or have overdue invoices'],
+    ];
+  return [
+    ['Live Records', total, 'Every return you can see on this page'],
+    ['Data Completeness', pct, 'Customer, invoice, warehouse, date, reason and credit note number that are filled in'],
+    ['Open / Pending', open, 'Returns that are not posted or cancelled'],
+    ['At Risk Score', risk, 'Share of the open returns dated more than 7 days ago'],
+    ['Primary Metric · Qty', c ? Number(c.metric ?? 0).toLocaleString('en-IN') : '…', 'Quantity on all these returns'],
+  ];
+}
+
 export function RegisterKpis({ pageId, reloadKey }: { pageId: string; reloadKey: unknown }) {
   const { data } = useLoad(() => getSalesV40Summary(pageId), [pageId, reloadKey]);
-  if (!DONE[pageId]) return null;
+  const sales = pageId === 'sales-credit' || pageId === 'sales-returns';
+  if (!DONE[pageId] && !sales) return null;
   const total = data?.total ?? 0;
   const done = (data?.byStatus ?? [])
     .filter((s) => (DONE[pageId] ?? []).includes(s.status))
     .reduce((n, s) => n + s.count, 0);
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  const cards: [string, string, string][] = [
+  const lead = data?.lead;
+  const leadCards: [string, string, string][] = [
+    ['Live Records', data ? String(total) : '…', 'Every lead you can see on this page'],
+    ['Data Completeness', lead ? `${lead.completeness}%` : '…', 'Company, mobile, email, source, owner, expected value, consent and next follow-up that are filled in'],
+    ['Open / Pending', lead ? String(lead.open) : '…', 'New, Contacted and Qualified leads'],
+    ['At Risk Score', lead ? `${lead.riskScore}/100` : '…', 'Share of the open leads that have no follow-up date ahead (missing or past)'],
+    ['Primary Metric · Expected Value', lead ? inr(lead.openValue) : '…', 'Expected value of the open leads'],
+  ];
+  const cards: [string, string, string][] = sales ? salesCards(pageId, data) : pageId === 'crm-leads' ? leadCards : [
     ['Records in Scope', data ? String(total) : '…', 'All records you can see on this page'],
     [
       'Completion',
@@ -75,6 +109,10 @@ export function RegisterKpis({ pageId, reloadKey }: { pageId: string; reloadKey:
 
 export interface StripProps {
   pageId: string;
+  /** the stored record behind a row, when the page has no table of its own (a credit profile is a customer) */
+  recordPage?: string;
+  /** why Delete is switched off, when a record of this page is not deleted this way */
+  deleteWhy?: string | undefined;
   rows: V40Row[];
   actions: { add?: boolean; edit?: boolean; delete?: boolean; submit?: boolean };
   canSubmitDoc: boolean;
@@ -84,12 +122,14 @@ export interface StripProps {
   onEdit?: ((id: string) => void) | undefined;
   onDelete: (id: string) => void;
   onSubmit: (id: string) => void;
+  /** records that need no approval chain: "Submit Approval" sends the record to a department for review instead */
+  review?: boolean;
 }
 
 export function RecordStrip(p: StripProps) {
   const [, setParams] = useSearchParams();
   const [activeId, setActiveId] = useState('');
-  const [drawer, setDrawer] = useState<'move' | 'history' | null>(null);
+  const [drawer, setDrawer] = useState<'move' | 'history' | 'review' | null>(null);
   const row = p.rows.find((r) => r.id === activeId) ?? p.rows[0];
   const tabs = v40TabsFor(p.pageId);
   const goTab = (re: RegExp): void => {
@@ -159,7 +199,7 @@ export function RecordStrip(p: StripProps) {
         disabled={!row || !p.actions.delete || !p.canDelete(row.status)}
         title={
           row && !p.canDelete(row.status)
-            ? 'This record is past the stage where it can be deleted.'
+            ? (p.deleteWhy ?? 'This record is past the stage where it can be deleted.')
             : undefined
         }
         onClick={() => row && p.onDelete(row.id)}
@@ -172,17 +212,17 @@ export function RecordStrip(p: StripProps) {
       <button
         type="button"
         className="btn sm primary"
-        disabled={!row || !p.canSubmitDoc || !p.actions.submit}
+        disabled={!row || !(p.canSubmitDoc || p.review) || !p.actions.submit}
         title={
           !row
             ? 'There is no record to submit.'
-            : !p.canSubmitDoc
+            : !(p.canSubmitDoc || p.review)
               ? 'These records need no approval.'
               : !p.actions.submit
                 ? 'You do not have the right to submit here.'
                 : undefined
         }
-        onClick={() => row && p.onSubmit(row.id)}
+        onClick={() => row && (p.review ? setDrawer('review') : p.onSubmit(row.id))}
       >
         Submit Approval
       </button>
@@ -197,22 +237,107 @@ export function RecordStrip(p: StripProps) {
       </button>
       {drawer === 'move' && row ? (
         <MoveForwardDialog
-          docType={p.pageId}
+          docType={p.recordPage ?? p.pageId}
           docId={row.id}
           docNo={row.number}
           onClose={() => setDrawer(null)}
           onMoved={() => setDrawer(null)}
         />
       ) : null}
+      {drawer === 'review' && row ? (
+        <ReviewDialog pageId={p.recordPage ?? p.pageId} id={row.id} number={row.number} onClose={() => setDrawer(null)} onDone={() => setDrawer(null)} />
+      ) : null}
       {drawer === 'history' && row ? (
         <HistoryDrawer
-          docType={p.pageId}
+          docType={p.recordPage ?? p.pageId}
           docId={row.id}
           title={row.number}
           onClose={() => setDrawer(null)}
         />
       ) : null}
     </div>
+  );
+}
+
+// ----------------------------------------------------------------------------------- Submit for review
+/** "Submit" on a record without an approval chain: the Move Forward handover, marked Review Required. */
+export function ReviewDialog({ pageId, id, number, onClose, onDone }: { pageId: string; id: string; number: string; onClose: () => void; onDone: () => void }) {
+  return (
+    <MoveForwardDialog
+      docType={pageId}
+      docId={id}
+      docNo={number}
+      title="Submit for Approval"
+      initialWorkStatus="Review Required"
+      onClose={onClose}
+      onMoved={onDone}
+    />
+  );
+}
+
+/** "Submit Selected": every ticked record goes to one department for review; the ones refused are named. */
+export function ReviewManyDialog({ pageId, rows, onClose, onDone }: { pageId: string; rows: V40Row[]; onClose: () => void; onDone: () => void }) {
+  const toast = useToast();
+  const depts = useLoad(() => workApi.departments(), []);
+  const [to, setTo] = useState('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState<string[]>([]);
+  const send = async (): Promise<void> => {
+    setBusy(true);
+    const refused: string[] = [];
+    let sent = 0;
+    for (const r of rows) {
+      try {
+        await workApi.forward({ docType: pageId, docId: r.id, docNo: r.number, toDepartmentId: to, workStatus: 'Review Required', handoverNote: note.trim() || null });
+        sent += 1;
+      } catch (e) {
+        const u = toUiError(e);
+        refused.push(`${r.number}: ${Object.values(u.fields)[0] ?? u.message}`);
+      }
+    }
+    setBusy(false);
+    setFailed(refused);
+    toast(`${sent} sent for review${refused.length ? `, ${refused.length} not sent` : ''}.`);
+    if (refused.length === 0) onDone();
+  };
+  return (
+    <Modal
+      title={`Submit ${rows.length} record(s) for approval`}
+      size="sm"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn" onClick={failed.length ? onDone : onClose}>
+            Close
+          </button>
+          <button type="button" className="btn primary" disabled={busy || !to} title={to ? undefined : 'Choose the department first.'} onClick={() => void send()}>
+            Submit
+          </button>
+        </>
+      }
+    >
+      {failed.length ? (
+        <div className="msg error show static" role="alert">
+          {failed.join('  ')}
+        </div>
+      ) : null}
+      <div className="field">
+        <label htmlFor="rv-to">Send to department *</label>
+        <select id="rv-to" value={to} onChange={(e) => setTo(e.target.value)}>
+          <option value="">Choose a department…</option>
+          {(depts.data ?? []).map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="rv-note">Note</label>
+        <textarea id="rv-note" rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
+      </div>
+    </Modal>
   );
 }
 
@@ -510,6 +635,106 @@ export function Customer360Workspace({
         />
       ) : null}
     </section>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------------- Credit profile workspace
+/** The credit profiles as cards with how much of each limit is used, and what is still missing on the chosen one. */
+export function CreditWorkspace({ rows, columns, onOpen }: { rows: V40Row[]; columns: V40Column[]; onOpen?: ((id: string) => void) | undefined }): ReactNode {
+  const [selId, setSelId] = useState('');
+  const [moving, setMoving] = useState(false);
+  const sel = rows.find((r) => r.id === selId) ?? rows[0];
+  if (!sel) return null;
+  const value = (r: V40Row, label: string): string => {
+    const c = columns.find((x) => x.label === label);
+    return (c ? r[c.key] : null) ?? '';
+  };
+  const amount = (r: V40Row, label: string): number => Number(value(r, label) || 0);
+  const figures: [string, string][] = [
+    ['Customer Code', value(sel, 'Customer Code')],
+    ['Credit Limit', value(sel, 'Credit Limit') ? inr(value(sel, 'Credit Limit')) : 'No limit'],
+    ['Overdue', inr(value(sel, 'Overdue') || '0')],
+    ['Oldest Due Days', value(sel, 'Oldest Due Days')],
+    ['Hold Status', value(sel, 'Hold Status')],
+    ['Review Date', value(sel, 'Review Date') ? dmy(value(sel, 'Review Date')) : ''],
+    ['Status', value(sel, 'Status')],
+  ];
+  const checks: [string, boolean, string][] = [
+    ['Information complete', Boolean(value(sel, 'Credit Limit') && value(sel, 'Credit Days')), 'A credit limit and credit days are set'],
+    ['Owner assigned', Boolean(value(sel, 'Sales Owner')), 'The customer has a sales person'],
+    ['Dependency clear', value(sel, 'Status') === 'Within limit' && amount(sel, 'Overdue') === 0, 'Within the limit and nothing overdue'],
+    ['Date commitment', Boolean(value(sel, 'Review Date')), 'A review date is set'],
+    ['Approval state', !value(sel, 'Limit Request'), 'No limit change is waiting for approval'],
+    ['Next action', Boolean(value(sel, 'Risk Grade')), 'A risk grade is recorded'],
+  ];
+  const ready = checks.every(([, ok]) => ok);
+  return (
+    <div className="sv40-c360-split">
+      <section className="sv40-panel sv40-c360" aria-label="Credit Profiles">
+        <h3>Credit Profiles</h3>
+        <div className="detail-grid">
+          {figures.map(([k, v]) => (
+            <div className="detail" key={k}>
+              <small>{k}</small>
+              <b>{v || '—'}</b>
+            </div>
+          ))}
+        </div>
+        <div className="sv40-cards">
+          {rows.slice(0, 8).map((r) => {
+            const limit = amount(r, 'Credit Limit');
+            const used = amount(r, 'Used Limit');
+            const share = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+            return (
+              <div className={`sv40-card${r.id === sel.id ? ' on' : ''}`} key={r.id}>
+                <b>{value(r, 'Customer') || r.number}</b>
+                <small>Overdue: {inr(value(r, 'Overdue') || '0')}</small>
+                <progress max={100} value={share} aria-label={`Credit used by ${value(r, 'Customer')}`} />
+                <small>{limit > 0 ? `${share}% of the limit used` : 'No limit set'}</small>
+                <div>
+                  <button type="button" className="btn sm" onClick={() => (r.id === sel.id ? onOpen?.(r.id) : setSelId(r.id))}>
+                    Open
+                  </button>
+                  <button
+                    type="button"
+                    className="btn sm primary"
+                    onClick={() => {
+                      setSelId(r.id);
+                      setMoving(true);
+                    }}
+                  >
+                    Move Forward
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      <section className="sv40-panel" aria-label="Operational Readiness">
+        <h3>Operational Readiness</h3>
+        <ul className="sv40-checks">
+          {checks.map(([label, ok, why]) => (
+            <li key={label} title={why}>
+              <span aria-hidden="true">{ok ? '✓' : '✕'}</span> {label}
+              <small className="muted"> {ok ? 'Ready' : 'Review'}</small>
+            </li>
+          ))}
+        </ul>
+        <button
+          type="button"
+          className="btn primary"
+          disabled={!ready}
+          title={ready ? undefined : 'Close the checks marked Review first.'}
+          onClick={() => setMoving(true)}
+        >
+          Complete Review
+        </button>
+        {moving ? (
+          <MoveForwardDialog docType="master-customers" docId={sel.id} docNo={sel.number} onClose={() => setMoving(false)} onMoved={() => setMoving(false)} />
+        ) : null}
+      </section>
     </div>
   );
 }
