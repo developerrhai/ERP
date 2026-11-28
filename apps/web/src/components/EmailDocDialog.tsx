@@ -1,11 +1,12 @@
 // Phase 21 §5.7: Reusable "Email Document" preview + editable To/CC/Message dialog
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ApiError } from '../lib/api';
 import { phase21Api, type EmailExtraFile } from '../lib/phase21Api';
 import { EMAIL_RE } from '../lib/validators';
 import { AttachDocs } from './AttachDocs';
 import { useToast } from './Toast';
+import { useFocusTrap } from './useFocusTrap';
 
 export type AttachFormat = 'pdf' | 'word' | 'excel';
 const FORMATS: { value: AttachFormat; label: string; ext: string }[] = [
@@ -79,6 +80,9 @@ export function EmailDocDialog({
   onClose: () => void;
 }) {
   const toast = useToast();
+  // Escape closes this dialog, not the record dialog it was opened from
+  const panel = useRef<HTMLDivElement>(null);
+  useFocusTrap(panel, true, onClose);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
@@ -205,6 +209,8 @@ export function EmailDocDialog({
   return createPortal(
     <div className="modal-bg show" role="dialog" aria-modal="true" aria-label="Email Document">
       <div
+        ref={panel}
+        tabIndex={-1}
         className="modal x-maxw-620px x-w-100pct x-r-16px x-box-shadow-0-20px-45px-rgba-15-23-42-0_22 x-bd-1px-solid-line x-d-flex x-fd-column x-maxh-90vh x-ov-hidden x-bg-card"
       >
         <div

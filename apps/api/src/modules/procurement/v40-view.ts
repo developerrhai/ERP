@@ -116,21 +116,25 @@ const SPECS: Record<V40Kind, Spec> = {
       JOIN purchase_requisitions t ON t.id = l.pr_id
       LEFT JOIN items i ON i.id = l.item_id
       LEFT JOIN users ru ON ru.id = t.requested_by_id
-      LEFT JOIN projects pj ON pj.id = t.project_id`,
-    select: `t.id::text AS id, l.id::text AS line_id, l.line_no, t.number, t.status, t.version, t.created_at::date AS pr_date,
+      LEFT JOIN projects pj ON pj.id = t.project_id
+      LEFT JOIN suppliers ps ON ps.id = t.preferred_supplier_id
+      LEFT JOIN mfg_production_plans pp ON pp.id = t.production_plan_id`,
+    select: `t.id::text AS id, l.id::text AS line_id, l.line_no, t.number, t.status, t.version, COALESCE(t.pr_date, t.created_at::date) AS pr_date,
       i.code AS material_code, COALESCE(i.name, l.service_text) AS required_material, l.qty AS quantity, l.uom,
-      COALESCE(l.required_date, t.required_date) AS required_date, t.department, ru.name AS requester,
-      ${soOf('t')} AS sales_order, pj.code AS project_number, t.purpose, t.estimated_total, l.est_rate,
+      COALESCE(l.required_date, t.required_date) AS required_date, COALESCE(t.request_department, t.department) AS department, ru.name AS requester,
+      COALESCE((SELECT rso.number FROM sales_orders rso WHERE rso.id = t.sales_order_id), ${soOf('t')}) AS sales_order,
+      pj.code AS project_number, t.purpose, t.estimated_total, l.est_rate,
+      t.priority, ps.name AS preferred_vendor, pp.number AS production_plan,
       l.closed_qty, GREATEST(l.qty - l.closed_qty, 0) AS open_quantity,
       (SELECT COALESCE(sum(b.on_hand), 0) FROM stock_balances b JOIN warehouses bw ON bw.id = b.warehouse_id
         WHERE b.item_id = l.item_id AND bw.unit_id = t.unit_id) AS stock_on_hand,
       (SELECT COALESCE(sum(d.qty), 0) FROM document_links d WHERE d.from_type = 'PR' AND d.from_line_id = l.id AND d.to_type = 'PO') AS ordered_quantity,
       (SELECT string_agg(DISTINCT po.number, ', ') FROM document_links d JOIN purchase_orders po ON po.id = d.to_id
         WHERE d.from_type = 'PR' AND d.from_line_id = l.id AND d.to_type = 'PO') AS po_numbers,
-      (SELECT string_agg(DISTINCT f.flow_no, ', ') FROM bom_material_flows f WHERE f.pr_id = t.id) AS mrp_line_no,
+      COALESCE(t.mrp_line_no, (SELECT string_agg(DISTINCT f.flow_no, ', ') FROM bom_material_flows f WHERE f.pr_id = t.id)) AS mrp_line_no,
       t.created_at`,
     order: 't.created_at DESC, t.number DESC, l.line_no',
-    search: ['t.number', 'i.code', 'i.name', 'ru.name'],
+    search: ['t.number', 'i.code', 'i.name', 'ru.name', 'ps.name', 't.mrp_line_no'],
     status: 't.status',
   },
   invoice: {
@@ -203,18 +207,22 @@ const SPECS: Record<V40Kind, Spec> = {
   rfq: {
     page: 'scm-rfq',
     scope: 'doc',
-    from: `rfqs t LEFT JOIN users cu ON cu.id = t.created_by_id`,
+    from: `rfqs t LEFT JOIN users cu ON cu.id = COALESCE(t.buyer_id, t.created_by_id)
+      LEFT JOIN projects pj ON pj.id = t.project_id`,
     select: `t.id::text AS id, t.number, t.status, t.version, t.issue_date AS rfq_date, t.due_date AS closing_date,
-      t.department, cu.name AS buyer, t.supplier_type AS category, t.notes, t.issued_at,
-      (SELECT string_agg(DISTINCT pr.number, ', ') FROM rfq_lines rl JOIN purchase_requisition_lines prl ON prl.id = rl.pr_line_id
-        JOIN purchase_requisitions pr ON pr.id = prl.pr_id WHERE rl.rfq_id = t.id) AS pr_number,
+      t.department, cu.name AS buyer,
+      COALESCE(NULLIF(t.category, ''), CASE t.supplier_type WHEN 'MATERIAL' THEN 'Material supplier' WHEN 'CONTRACTOR' THEN 'Contractor' ELSE t.supplier_type END) AS category,
+      t.technical_spec, t.commercial_terms, t.delivery_location, t.validity, pj.code AS project_code, t.notes, t.issued_at,
+      (SELECT string_agg(DISTINCT pr.number, ', ') FROM purchase_requisitions pr
+        WHERE pr.id = t.pr_id OR pr.id IN (SELECT prl.pr_id FROM rfq_lines rl JOIN purchase_requisition_lines prl ON prl.id = rl.pr_line_id
+          WHERE rl.rfq_id = t.id)) AS pr_number,
       (SELECT count(*)::int FROM rfq_suppliers rs WHERE rs.rfq_id = t.id) AS vendor_count,
       (SELECT count(*)::int FROM rfq_suppliers rs WHERE rs.rfq_id = t.id AND rs.responded_at IS NOT NULL) AS responded_count,
       (SELECT count(*)::int FROM rfq_lines rl WHERE rl.rfq_id = t.id) AS line_count,
       (SELECT count(*)::int FROM vendor_quotes vq WHERE vq.rfq_id = t.id AND vq.deleted_at IS NULL AND vq.is_current) AS quote_count,
       t.created_at`,
     order: 't.created_at DESC, t.number DESC',
-    search: ['t.number', 'cu.name'],
+    search: ['t.number', 'cu.name', 't.category', 'pj.code'],
     status: 't.status',
   },
   quote: {
@@ -229,11 +237,14 @@ const SPECS: Record<V40Kind, Spec> = {
           sum(l.qty * l.rate * COALESCE(l.discount_pct, 0) / 100) AS disc,
           sum(l.qty * l.rate * (1 - COALESCE(l.discount_pct, 0) / 100) * COALESCE(l.gst_pct, 0) / 100) AS gst,
           sum(l.landed_cost) AS landed, max(l.lead_days) AS lead
-        FROM vendor_quote_lines l WHERE l.quote_id = t.id) ag ON true`,
+        FROM vendor_quote_lines l WHERE l.quote_id = t.id) ag ON true
+      LEFT JOIN customers qc ON qc.id = t.customer_id
+      LEFT JOIN sales_orders qso ON qso.id = t.sales_order_id`,
     select: `t.id::text AS id, t.number, t.status, t.version, r.number AS rfq_no, s.code AS vendor_id, s.name AS vendor,
       t.quote_date, t.valid_until, t.round_no, t.is_current, ag.base AS base_amount, ag.disc AS discount, ag.gst,
       t.freight, t.other_charges, t.total AS total_before_tax,
-      COALESCE(NULLIF(ag.landed, 0), t.total + COALESCE(ag.gst, 0) + COALESCE(t.freight, 0) + COALESCE(t.other_charges, 0)) AS landed_cost,
+      t.total + COALESCE(ag.gst, 0) + COALESCE(ag.landed, 0) AS landed_cost,
+      t.warranty, qc.code AS customer_id, qso.customer_po_no AS customer_po_number, qso.number AS sales_order,
       ag.lead AS lead_time_days, pt.name AS payment_terms, t.technical_compliance, un.code AS company_code, t.department, t.created_at`,
     order: 't.created_at DESC, t.number DESC',
     search: ['t.number', 's.name', 's.code', 'r.number'],
@@ -244,7 +255,7 @@ const SPECS: Record<V40Kind, Spec> = {
     scope: 'doc',
     from: `vendor_comparisons t
       LEFT JOIN rfqs r ON r.id = t.rfq_id
-      LEFT JOIN users cu ON cu.id = t.created_by_id
+      LEFT JOIN users cu ON cu.id = COALESCE(t.buyer_id, t.created_by_id)
       LEFT JOIN units un ON un.id = t.unit_id
       LEFT JOIN vendor_quotes aq ON aq.id = t.awarded_quote_id
       LEFT JOIN suppliers asup ON asup.id = aq.supplier_id
@@ -253,8 +264,9 @@ const SPECS: Record<V40Kind, Spec> = {
             WHERE e2.comparison_id = t.id ORDER BY e2.rank NULLS LAST, e2.total_landed LIMIT 1) AS top_vendor,
           (SELECT max(e3.total_score) FROM comparison_entries e3 WHERE e3.comparison_id = t.id) AS top_score
         FROM comparison_entries e WHERE e.comparison_id = t.id) en ON true`,
-    select: `t.id::text AS id, t.number AS document_no, t.number, t.status, t.version, t.department, cu.name AS buyer,
-      t.created_at::date AS document_date, r.due_date AS required_date, r.number AS rfq_no,
+    select: `t.id::text AS id, t.number AS document_no, t.number, t.status, t.version,
+      COALESCE(t.request_department, t.department) AS department, cu.name AS buyer,
+      COALESCE(t.doc_date, t.created_at::date) AS document_date, COALESCE(t.required_date, r.due_date) AS required_date, r.number AS rfq_no,
       COALESCE(asup.name, en.top_vendor) AS vendor, asup.name AS awarded_vendor, en.n AS quote_count,
       COALESCE(aq.total, en.best) AS amount, en.best AS best_landed, en.top_score,
       t.w_price, t.w_lead, t.w_quality, un.code AS company_code, t.locked_at, t.award_reason, t.created_at`,

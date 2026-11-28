@@ -30,6 +30,7 @@ import { addDays, deliveryStatus, headerTotals, lineTax, netRate } from './math'
 import type { LineTax } from './math';
 import { CMP_DEF, PR_DEF, prActions, releaseAgainstContract } from './sourcing-service';
 import { assertCustomerOrder } from './customer-po';
+import { commonPairs, prepareRefs, refLabels, referenceList, refsOf } from './profile';
 
 export const PO_DEF: DocDef = {
   pageId: 'scm-po',
@@ -127,6 +128,10 @@ export const poCrud = makeCrud({
     'comparisonId',
     'salesOrderId',
     'notes',
+    'mfgOrderId',
+    'customerId',
+    'projectNumber',
+    'projectId',
   ],
   lineKeys: [
     'id',
@@ -146,6 +151,38 @@ export const poCrud = makeCrud({
     'contractLineId',
     'overReceiptPct',
   ],
+  async decorate(db, row) {
+    const l = await refLabels(db, row);
+    const pr = await query(
+      db,
+      `SELECT string_agg(DISTINCT p.number, ', ') AS numbers FROM purchase_order_lines pl
+         JOIN purchase_requisition_lines prl ON prl.id = pl.pr_line_id JOIN purchase_requisitions p ON p.id = prl.pr_id WHERE pl.po_id = $1::uuid`,
+      row.id,
+    );
+    const qty = (
+      await query(
+        db,
+        `SELECT trim_scale(sum(qty))::text AS ordered, trim_scale(sum(received_qty))::text AS received, trim_scale(sum(closed_qty))::text AS cancelled,
+                trim_scale(sum(GREATEST(qty - received_qty - closed_qty, 0)))::text AS pending FROM purchase_order_lines WHERE po_id = $1::uuid`,
+        row.id,
+      )
+    )[0]!;
+    return {
+      ...l,
+      references: referenceList([
+        ['Approval Status', row.status],
+        ['PR Number', pr[0]?.numbers],
+        ['Vendor ID', l.vendorId],
+        ['Payment Terms', l.paymentTerms],
+        ['Ordered Quantity', qty.ordered],
+        ['Received Quantity', qty.received],
+        ['Cancelled Quantity', qty.cancelled],
+        ['Pending Quantity', qty.pending],
+        // the Customer PO and its sales order have their own entry in the record view
+        ...commonPairs({ ...l, salesOrderNo: null, customerPoNo: null }),
+      ]),
+    };
+  },
   async prepare(c) {
     const supplierId = S(c.header.supplierId ?? c.existing?.supplier_id ?? '');
     if (!supplierId) throw Errors.validation({ supplierId: 'Choose a supplier.' });
@@ -168,6 +205,7 @@ export const poCrud = makeCrud({
         throw Errors.validation({ shipToWarehouseId: 'Choose a warehouse of this unit.' });
     }
     if (c.header.salesOrderId) await assertCustomerOrder(c.tx, c.caller.ctx.unitIds, S(c.header.salesOrderId));
+    const refs = await prepareRefs(c.tx, c.caller, c.header, c.existing);
     const posState = await unitState(c.tx, c.unitId);
     const intra = sup.stateCode === posState;
     const poDate = S(c.header.poDate ?? c.existing?.po_date ?? todayIst());
@@ -250,7 +288,7 @@ export const poCrud = makeCrud({
     const h = headerTotals(taxes);
     return {
       header: {
-        ...c.header,
+        ...refs,
         supplierId,
         posState,
         regime: intra ? 'INTRA' : 'INTER',
@@ -442,7 +480,12 @@ export const poActions = {
         `SELECT l.*, rl.pr_line_id FROM vendor_quote_lines l LEFT JOIN rfq_lines rl ON rl.id=l.rfq_line_id WHERE l.quote_id=$1::uuid ORDER BY l.line_no`,
         q.id,
       );
-      return { cmp, q, lines };
+      const rfq = q.rfq_id ? (await query(tx, `SELECT * FROM rfqs WHERE id=$1::uuid`, q.rfq_id))[0] : undefined;
+      // the order, customer and project of the sheet, else of the quotation, else of the RFQ
+      const refs: Row = {};
+      for (const from of [refsOf(cmp), refsOf(q), rfq ? refsOf(rfq) : {}])
+        for (const [k, v] of Object.entries(from)) if (v !== undefined && refs[k] === undefined) refs[k] = v;
+      return { cmp, q, lines, refs };
     });
     const po = await poCrud
       .create(caller, {
@@ -451,6 +494,7 @@ export const poActions = {
           supplierType: c.q.supplier_type,
           paymentTermId: c.q.payment_term_id,
           comparisonId: cmpId,
+          ...c.refs,
         },
         lines: c.lines.map((l) => {
           const n = norm(l);
@@ -515,13 +559,14 @@ export const poActions = {
           deliveryDate: n.requiredDate,
         });
       }
-      return { out, type: S(pr.supplier_type) };
+      return { out, type: S(pr.supplier_type), refs: refsOf(pr) };
     });
     return poCrud.create(caller, {
       header: {
         supplierId: body.supplierId,
         supplierType: lines.type,
         shipToWarehouseId: body.shipToWarehouseId,
+        ...lines.refs,
       },
       lines: lines.out,
     });

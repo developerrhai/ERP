@@ -10,11 +10,43 @@ import { docsMailApi, saveFile } from '../../lib/docsMailApi';
 import { useToast } from '../../components/Toast';
 import { ApiError } from '../../lib/api';
 import { lookupPage } from '../../lib/registry';
+import { getJson } from '../../lib/scmApi';
 import { workApi, type Dept, type InboxCounts, type Movement, type WorkRule } from '../../lib/workApi';
 import { deptFromPage, deptLabelFromPage } from './DeptMailboxPage';
 
 const when = (iso: string | null): string => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
 const pretty = (s: string): string => s.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+
+/** The purchase flow, stage by stage: documents in total and still open, each card opening its page. */
+function PurchaseStages() {
+  const [stages, setStages] = useState<{ page: string; label: string; total: number; open: number }[]>([]);
+  useEffect(() => {
+    let alive = true;
+    // a person without any purchase page, or a failed call, simply shows no cards
+    getJson<unknown>('/scm/purchase-stages').then(
+      (r) => alive && setStages(Array.isArray(r) ? (r as typeof stages) : []),
+      () => undefined,
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (stages.length === 0) return null;
+  return (
+    <section className="card" aria-label="Purchase workflow stages">
+      <h3>Purchase Workflow Stages</h3>
+      <div className="work-stages">
+        {stages.map((s, i) => (
+          <Link key={s.page} className="work-stage" to={`/m/${s.page}`}>
+            <small>{`${String(i + 1).padStart(2, '0')} • ${s.label}`}</small>
+            <b>{s.total}</b>
+            <small>{s.open === 0 ? 'None waiting' : `${s.open} draft or waiting for approval`}</small>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
   const toast = useToast();
@@ -158,7 +190,7 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
       <div className="v39-quick x-wrap-wrap x-gap-8px">
         <b>Quick Actions</b>
         <Link className="btn primary" to={`/m/dept-inbox-${slug}`}>
-          Department Inbox
+          Open {name} Inbox
         </Link>
         <Link className="btn" to="/m/my-approvals">
           Approvals
@@ -206,6 +238,8 @@ export function DeptWorkCenterPage({ pageId }: { pageId: string }) {
           </>
         ) : null}
       </div>
+
+      {slug === 'purchase' ? <PurchaseStages /> : null}
 
       <div className="card work-note">
         <b>Flexible routed access:</b> when this department receives and accepts a document from another ERP family, the active movement grants controlled work access according to the module rule. This prevents cross-department handoffs from being blocked by the normal menu family restriction.

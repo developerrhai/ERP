@@ -57,6 +57,9 @@ import {
 
 export const UNDO_MS = 10_000;
 
+/** Pages where the owner wants only the V40 top bar and tabs: no second tab strip, no second Excel / PDF / Print / Add. */
+const SINGLE_BAR_PAGES: ReadonlySet<string> = new Set(['scm-vendorportal']);
+
 /** Shortcuts of the strip that are screens of their own. */
 const SHORTCUT_PAGES: Readonly<Record<string, string>> = {
   'AI Decision Center': '/m/ai-insights',
@@ -239,6 +242,21 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
   }, [canAdd, schema.pageId]);
   const canDeletePerm = perms.delete && !readOnly;
 
+  // without the page's own "＋ Add" button, the top bar's "＋ Add New" opens the form here
+  const singleBar = !!frame && SINGLE_BAR_PAGES.has(schema.pageId);
+  useEffect(() => {
+    if (!singleBar) return undefined;
+    const onAdd = (e: Event): void => {
+      const { detail } = e as CustomEvent<{ pageId?: string; handled: boolean }>;
+      if (detail.pageId !== schema.pageId) return;
+      detail.handled = true;
+      if (canAdd) setForm({});
+      else toast('You cannot add records on this page.');
+    };
+    window.addEventListener('v40-add-record', onAdd);
+    return () => window.removeEventListener('v40-add-record', onAdd);
+  }, [singleBar, canAdd, schema.pageId, toast]);
+
   const openWorkspace = (row: RecordRow): void => {
     const recordPanel = schema.tabPanels?.find((tp) => tp.scope === 'record');
     if (!recordPanel) return;
@@ -362,12 +380,12 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
           <p>{schema.purpose ?? schema.family}</p>
         </div>
         <div className="actions">
-          {perms.export ? (
+          {perms.export && !singleBar ? (
             <button type="button" className="btn" onClick={excel}>
               Excel
             </button>
           ) : null}
-          {schema.kind === 'generic' && perms.export ? (
+          {schema.kind === 'generic' && perms.export && !singleBar ? (
             <button
               type="button"
               className="btn"
@@ -383,7 +401,7 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
               PDF
             </button>
           ) : null}
-          {schema.printTemplates && schema.printTemplates.some((t) => t.scope === 'page') ? (
+          {singleBar ? null : schema.printTemplates && schema.printTemplates.some((t) => t.scope === 'page') ? (
             <PrintMenu
               pageId={schema.pageId ?? ''}
               templates={schema.printTemplates}
@@ -395,7 +413,7 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
               Print
             </button>
           )}
-          {canAdd ? (
+          {canAdd && !singleBar ? (
             <button type="button" className="btn primary" onClick={() => setForm({})}>
               ＋ Add
             </button>
@@ -433,23 +451,25 @@ function ModuleBody({ schema, user, perms }: { schema: PageSchema; user: User; p
           ))}
         </div>
       ) : null}
-      <div className="tabs" role="tablist" aria-label="Module views">
-        {tabs
-          // under the V40 tabs the strip lists only the shortcuts that lead somewhere
-          .filter((t) => !frame || leadsSomewhere(t))
-          .map((t) => (
-          <button
-            key={t}
-            type="button"
-            role="tab"
-            aria-selected={t === tab}
-            className={t === tab ? 'tab active' : 'tab'}
-            onClick={() => openShortcut(t)}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+      {singleBar ? null : (
+        <div className="tabs" role="tablist" aria-label="Module views">
+          {tabs
+            // under the V40 tabs the strip lists only the shortcuts that lead somewhere
+            .filter((t) => !frame || leadsSomewhere(t))
+            .map((t) => (
+              <button
+                key={t}
+                type="button"
+                role="tab"
+                aria-selected={t === tab}
+                className={t === tab ? 'tab active' : 'tab'}
+                onClick={() => openShortcut(t)}
+              >
+                {t}
+              </button>
+            ))}
+        </div>
+      )}
       <div role="tabpanel" aria-label={tab}>
         {!invBody && tab === registerTab ? itemShape?.header : null}
         {invBody ? (

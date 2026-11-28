@@ -45,6 +45,7 @@ import { V40_KINDS, v40PageOf, v40Register } from './v40-view';
 import type { V40Kind } from './v40-view';
 import type { DocDef, Row } from './core';
 import { customerPos } from './customer-po';
+import { PURCHASE_PAGES, SOURCE_PAGE, optionList, orderFlow, purchaseStages, sourceDocument } from './options';
 
 const h = (fn: (req: Request, res: Response) => Promise<unknown>): RequestHandler =>
   asyncHandler(async (req, res) => {
@@ -187,6 +188,15 @@ export function createProcurementRouter(): Router {
       );
   }
 
+  /** The references every purchasing form may carry (an empty value clears it). */
+  const refs = {
+    salesOrderId: uuid.nullish(),
+    mfgOrderId: uuid.nullish(),
+    customerId: uuid.nullish(),
+    projectNumber: z.string().trim().max(50).nullish(),
+  };
+  const text = (max: number) => z.string().trim().max(max).nullish();
+
   // ------------------------------------------------------------------ PR
   const prLine = z
     .object({
@@ -205,6 +215,13 @@ export function createProcurementRouter(): Router {
     requestedById: uuid.nullish(),
     supplierType: z.enum(['MATERIAL', 'CONTRACTOR']).optional(),
     purpose: z.string().max(300).nullish(),
+    prDate: ymd.nullish(),
+    priority: z.enum(['Low', 'Medium', 'High', 'Urgent']).nullish().or(z.literal('').transform(() => null)),
+    requestDepartment: text(60),
+    preferredSupplierId: uuid.nullish(),
+    productionPlanId: uuid.nullish(),
+    mrpLineNo: text(60),
+    ...refs,
   });
   mountDoc('/scm/pr', PR_DEF, prCrud, prHead.strict(), prLine);
   router.get(
@@ -274,6 +291,14 @@ export function createProcurementRouter(): Router {
         dueDate: ymd.nullish(),
         supplierType: z.enum(['MATERIAL', 'CONTRACTOR']).optional(),
         notes: z.string().max(500).nullish(),
+        prId: uuid.nullish(),
+        buyerId: uuid.nullish(),
+        category: text(80),
+        technicalSpec: text(2000),
+        commercialTerms: text(2000),
+        deliveryLocation: text(200),
+        validity: text(80),
+        ...refs,
       })
       .strict(),
     rfqLine,
@@ -329,6 +354,9 @@ export function createProcurementRouter(): Router {
         otherCharges: dec.optional(),
         technicalCompliance: z.boolean().optional(),
         notes: z.string().max(500).nullish(),
+        warranty: text(200),
+        complianceNote: text(500),
+        ...refs,
       })
       .strict(),
     vqLine,
@@ -354,36 +382,33 @@ export function createProcurementRouter(): Router {
     validate({ params: idp }),
     h(async (req, res) => send(res, await cmpCrud.get(callerOf(req), S(req.params.id)))),
   );
+  const cmpFields = {
+    wPrice: z.number().min(0).max(100).optional(),
+    wLead: z.number().min(0).max(100).optional(),
+    wQuality: z.number().min(0).max(100).optional(),
+    docDate: ymd.nullish(),
+    requiredDate: ymd.nullish(),
+    requestDepartment: text(60),
+    buyerId: uuid.nullish(),
+    reference: text(120),
+    ...refs,
+  };
+  const cmpNew = z.object({ rfqId: uuid, ...cmpFields }).strict();
   router.post(
     '/scm/comparison',
     g('scm-comparison', 'add'),
-    validate({
-      body: z
-        .object({
-          rfqId: uuid,
-          wPrice: z.number().min(0).max(100).optional(),
-          wLead: z.number().min(0).max(100).optional(),
-          wQuality: z.number().min(0).max(100).optional(),
-        })
-        .strict(),
-    }),
+    validate({ body: cmpNew }),
+    h(async (req, res) => send(res, await cmpActions.create(callerOf(req), validated(res, 'body', cmpNew)), 201)),
+  );
+  const cmpEdit = z.object(cmpFields).strict();
+  router.put(
+    '/scm/comparison/:id',
+    g('scm-comparison', 'edit'),
+    validate({ params: idp, body: cmpEdit }),
     h(async (req, res) =>
       send(
         res,
-        await cmpActions.create(
-          callerOf(req),
-          validated(
-            res,
-            'body',
-            z.object({
-              rfqId: uuid,
-              wPrice: z.number().optional(),
-              wLead: z.number().optional(),
-              wQuality: z.number().optional(),
-            }),
-          ) as never,
-        ),
-        201,
+        await cmpActions.update(callerOf(req), S(req.params.id), parseIfMatch(req.get('if-match')), validated(res, 'body', cmpEdit)),
       ),
     ),
   );
@@ -501,8 +526,8 @@ export function createProcurementRouter(): Router {
         shipToWarehouseId: uuid.nullish(),
         paymentTermId: uuid.nullish(),
         contractId: uuid.nullish(),
-        salesOrderId: uuid.nullish(),
         notes: z.string().max(500).nullish(),
+        ...refs,
       })
       .strict(),
     poLine,
@@ -522,6 +547,40 @@ export function createProcurementRouter(): Router {
       const rows = await customerPos(callerOf(req), validated(res, 'query', cpoQ).q);
       res.json({ data: rows, meta: { page: 1, size: rows.length, total: rows.length } });
     }),
+  );
+  // drop-downs, "load from a source document" and the order / stage figures of the procurement screens
+  const canViewAny = (pages: readonly string[]): RequestHandler =>
+    asyncHandler(async (req, _res, next) => {
+      const user = accessUserOf(requireAuth(req));
+      for (const page of pages) if (await can(user, page, 'view')) return next();
+      throw Errors.forbidden();
+    });
+  router.get(
+    '/scm/options/:list',
+    canViewAny(PURCHASE_PAGES),
+    validate({ params: z.object({ list: z.string().max(30) }).strict(), query: cpoQ }),
+    h(async (req, res) => {
+      const rows = await optionList(callerOf(req), S(req.params.list), validated(res, 'query', cpoQ).q);
+      res.json({ data: rows, meta: { page: 1, size: rows.length, total: rows.length } });
+    }),
+  );
+  for (const kind of ['pr', 'rfq'] as const)
+    router.get(
+      `/scm/source/${kind}/:id`,
+      g(SOURCE_PAGE[kind], 'view'),
+      validate({ params: idp }),
+      h(async (req, res) => res.json({ data: await sourceDocument(callerOf(req), kind, S(req.params.id)) })),
+    );
+  const flowQ = z.object({ salesOrderId: uuid.optional() }).strict();
+  router.get(
+    '/scm/order-flow',
+    canViewAny(['scm-pr', 'scm-po', 'scm-grn', 'scm-purchaseinvoice']),
+    validate({ query: flowQ }),
+    h(async (req, res) => res.json({ data: await orderFlow(callerOf(req), validated(res, 'query', flowQ).salesOrderId) })),
+  );
+  router.get(
+    '/scm/purchase-stages',
+    h(async (req, res) => res.json({ data: await purchaseStages(callerOf(req)) })),
   );
   router.get(
     '/scm/po-delivery',

@@ -23,6 +23,7 @@ import {
   loadDoc,
   norm,
   query,
+  resolveProject,
   scopeSql,
   todayIst,
   updateRow,
@@ -150,22 +151,7 @@ export const leadCrud = makeCrud({
     return { header, lines: [] };
   },
 });
-/** Turns a typed Project Number into project_id (blank clears it; an unknown number is a field error). */
-export async function resolveProject(tx: Db, header: Row): Promise<Row> {
-  if (!('projectNumber' in header)) return header;
-  const code = S(header.projectNumber).trim();
-  delete header.projectNumber;
-  if (code === '') header.projectId = null;
-  else {
-    const p = (await query(tx, `SELECT id FROM projects WHERE upper(code)=upper($1) LIMIT 1`, code))[0];
-    if (!p)
-      throw Errors.validation({
-        projectNumber: `No project has the number ${code}. Create it under Projects first, or leave this blank.`,
-      });
-    header.projectId = p.id;
-  }
-  return header;
-}
+export { resolveProject };
 
 export const oppCrud = makeCrud({
   hasCustomer: true,

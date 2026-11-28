@@ -23,11 +23,13 @@ import {
   settings,
   updateRow,
   fyOfCaller,
+  todayIst,
 } from './core';
 import { S } from './core';
 import type { DocDef, Row } from './core';
 import { concreteUnit } from '../inventory/typed';
 import { lineTax } from './math';
+import { REF_KEYS, commonPairs, prepareRefs, refLabels, referenceList, refsOf } from './profile';
 
 // ---------------------------------------------------------------------------------------------------- defs
 export const PR_DEF: DocDef = {
@@ -72,6 +74,13 @@ export const CMP_DEF: DocDef = {
   amountCol: null,
   linesTable: 'comparison_entries',
   parentCol: 'comparison_id',
+  preLock: async (tx, id) => {
+    const r = (await query(tx, `SELECT status FROM vendor_comparisons WHERE id=$1::uuid`, id))[0];
+    if (!r || (r.status !== 'Draft' && r.status !== 'Rejected')) return;
+    await refreshEntries(tx, id); // quotes may have been added or changed since the sheet was made
+    if (!(await query(tx, `SELECT 1 FROM comparison_entries WHERE comparison_id=$1::uuid LIMIT 1`, id))[0])
+      throw Errors.conflict('There is no vendor quotation to compare yet. Enter the quotations of this RFQ first.');
+  },
 };
 export const CON_DEF: DocDef = {
   pageId: 'scm-contracts',
@@ -90,18 +99,63 @@ const itemOrText = (l: Row, n: number): void => {
     throw Errors.validation({ [`lines.${n}.qty`]: 'Enter a quantity greater than 0.' });
 };
 
+/** The references of the source document fill whatever the form left empty. */
+const inherit = (header: Row, from: Row): Row => ({
+  ...header,
+  ...Object.fromEntries(Object.entries(from).filter(([k]) => header[k] === undefined || header[k] === null || header[k] === '')),
+});
+
 // ---------------------------------------------------------------------------------------------------- PR
 export const prCrud = makeCrud({
   def: PR_DEF,
-  headerKeys: ['requiredDate', 'requestedById', 'supplierType', 'purpose'],
+  headerKeys: [
+    'requiredDate',
+    'requestedById',
+    'supplierType',
+    'purpose',
+    'prDate',
+    'priority',
+    'requestDepartment',
+    'preferredSupplierId',
+    'productionPlanId',
+    'mrpLineNo',
+    ...REF_KEYS,
+  ],
   lineKeys: ['itemId', 'serviceText', 'qty', 'uom', 'estRate', 'costCenterId', 'requiredDate'],
-  prepare(c) {
+  async prepare(c) {
     let total = ZERO;
     c.lines.forEach((l, i) => {
       itemOrText(l, i);
       total = total.plus(round2(D(S(l.qty)).mul(D(S(l.estRate ?? 0)))));
     });
-    return { header: { ...c.header, estimatedTotal: str(total) }, lines: c.lines };
+    const header = await prepareRefs(c.tx, c.caller, c.header, c.existing);
+    if (!c.existing) {
+      header.prDate = header.prDate ?? todayIst();
+      header.requestedById = header.requestedById ?? c.caller.auth.userId;
+    }
+    return { header: { ...header, estimatedTotal: str(total) }, lines: c.lines };
+  },
+  async decorate(db, row) {
+    const l = await refLabels(db, row);
+    const po = await query(
+      db,
+      `SELECT string_agg(DISTINCT po.number, ', ') AS numbers FROM document_links d JOIN purchase_orders po ON po.id = d.to_id
+        WHERE d.from_type = 'PR' AND d.from_id = $1::uuid AND d.to_type = 'PO'`,
+      row.id,
+    );
+    return {
+      ...l,
+      references: referenceList([
+        ['Approval Status', row.status],
+        ['Priority', row.priority],
+        ['Department', row.request_department ?? row.department],
+        ['Requester', l.requesterName],
+        ['Preferred Vendor', l.preferredSupplierName],
+        ['Production Plan', l.productionPlanNo],
+        ['PO Number', po[0]?.numbers],
+        ...commonPairs(l),
+      ]),
+    };
   },
 });
 
@@ -220,6 +274,9 @@ export const prActions = {
         status: 'Draft',
         supplierType: pr.supplier_type,
         dueDate: body.dueDate ?? null,
+        prId: id,
+        buyerId: caller.auth.userId,
+        ...refsOf(pr),
         createdById: caller.auth.userId,
         updatedById: caller.auth.userId,
       });
@@ -272,11 +329,52 @@ export const prActions = {
 // ---------------------------------------------------------------------------------------------------- RFQ
 export const rfqCrud = makeCrud({
   def: RFQ_DEF,
-  headerKeys: ['issueDate', 'dueDate', 'supplierType', 'notes'],
+  headerKeys: [
+    'issueDate',
+    'dueDate',
+    'supplierType',
+    'notes',
+    'prId',
+    'buyerId',
+    'category',
+    'technicalSpec',
+    'commercialTerms',
+    'deliveryLocation',
+    'validity',
+    ...REF_KEYS,
+  ],
   lineKeys: ['prLineId', 'itemId', 'serviceText', 'qty', 'uom', 'requiredDate'],
-  prepare(c) {
+  async prepare(c) {
     c.lines.forEach((l, i) => itemOrText(l, i));
-    return { header: c.header, lines: c.lines };
+    const header = await prepareRefs(c.tx, c.caller, c.header, c.existing);
+    if (!c.existing) header.buyerId = header.buyerId ?? c.caller.auth.userId;
+    return { header, lines: c.lines };
+  },
+  async decorate(db, row) {
+    const l = await refLabels(db, { ...row, buyer_id: row.buyer_id ?? row.created_by_id });
+    const r = (
+      await query(
+        db,
+        `SELECT (SELECT string_agg(DISTINCT p.number, ', ') FROM purchase_requisitions p
+                   WHERE p.id = $2::uuid OR p.id IN (SELECT prl.pr_id FROM rfq_lines rl JOIN purchase_requisition_lines prl ON prl.id = rl.pr_line_id WHERE rl.rfq_id = $1::uuid)) AS pr_numbers,
+                (SELECT count(*)::int FROM rfq_suppliers WHERE rfq_id = $1::uuid) AS vendor_count,
+                (SELECT string_agg(s.name, ', ' ORDER BY s.name) FROM rfq_suppliers rs JOIN suppliers s ON s.id = rs.supplier_id WHERE rs.rfq_id = $1::uuid) AS suppliers,
+                (SELECT count(*)::int FROM vendor_quotes q WHERE q.rfq_id = $1::uuid AND q.is_current AND q.deleted_at IS NULL) AS quotes`,
+        row.id,
+        row.pr_id ?? null,
+      )
+    )[0]!;
+    return {
+      ...l,
+      references: referenceList([
+        ['PR Number', r.pr_numbers],
+        ['Buyer', l.buyerName],
+        ['Vendor Count', r.vendor_count],
+        ['Invited Suppliers', r.suppliers],
+        ['Quotations Received', r.quotes],
+        ...commonPairs(l),
+      ]),
+    };
   },
 });
 export const rfqActions = {
@@ -376,6 +474,10 @@ export const vqCrud = makeCrud({
     'otherCharges',
     'technicalCompliance',
     'notes',
+    'warranty',
+    'complianceNote',
+    ...REF_KEYS,
+    'projectId',
   ],
   lineKeys: [
     'rfqLineId',
@@ -391,6 +493,13 @@ export const vqCrud = makeCrud({
   ],
   async prepare(c) {
     if (c.header.supplierId) assertBuyable(await loadSupplier(c.tx, S(c.header.supplierId)));
+    let header = c.header;
+    // a quotation of an RFQ is about the same order, customer and project, unless the form says otherwise
+    if (!c.existing && header.rfqId) {
+      const rfq = (await query(c.tx, `SELECT * FROM rfqs WHERE id = $1::uuid`, header.rfqId))[0];
+      if (rfq) header = inherit(header, refsOf(rfq));
+    }
+    header = await prepareRefs(c.tx, c.caller, header, c.existing);
     let total = ZERO;
     c.lines.forEach((l, i) => {
       if (D(S(l.qty ?? 0)).lte(0))
@@ -405,11 +514,52 @@ export const vqCrud = makeCrud({
       total = total.plus(t.taxable);
     });
     total = total
-      .plus(D(S(c.header.freight ?? c.existing?.freight ?? 0)))
-      .plus(D(S(c.header.otherCharges ?? c.existing?.other_charges ?? 0)));
-    return { header: { ...c.header, total: str(total) }, lines: c.lines };
+      .plus(D(S(header.freight ?? c.existing?.freight ?? 0)))
+      .plus(D(S(header.otherCharges ?? c.existing?.other_charges ?? 0)));
+    return { header: { ...header, total: str(total) }, lines: c.lines };
+  },
+  async decorate(db, row) {
+    const l = await refLabels(db, row);
+    const r = (
+      await query(
+        db,
+        `SELECT (SELECT number FROM rfqs WHERE id = $2::uuid) AS rfq_no,
+                COALESCE(sum(l.qty * l.rate), 0)::numeric(18,2)::text AS base,
+                COALESCE(sum(l.qty * l.rate * COALESCE(l.discount_pct, 0) / 100), 0)::numeric(18,2)::text AS discount,
+                COALESCE(sum(l.qty * l.rate * (1 - COALESCE(l.discount_pct, 0) / 100) * COALESCE(l.gst_pct, 0) / 100), 0)::numeric(18,2)::text AS gst,
+                COALESCE(sum(l.landed_cost), 0)::numeric(18,2)::text AS extra,
+                max(l.lead_days) AS lead
+           FROM vendor_quote_lines l WHERE l.quote_id = $1::uuid`,
+        row.id,
+        row.rfq_id ?? null,
+      )
+    )[0]!;
+    const named = norm(r);
+    // the quotation total already holds freight and other charges: the landed cost adds only tax and extra line costs
+    const landed = round2(D(S(row.total)).plus(D(S(r.gst))).plus(D(S(r.extra))));
+    return {
+      ...l,
+      references: [
+        ...referenceList([
+          ['RFQ No', named.rfqNo],
+          ['Vendor ID', l.vendorId],
+          ['Payment Terms', l.paymentTerms],
+          ['Technical Compliance', row.technical_compliance ? 'Meets the technical needs' : 'Does not meet the technical needs'],
+          ['Lead Time Days', named.lead],
+        ]),
+        ...referenceList([
+          ['Base Amount', named.base],
+          ['Discount', named.discount],
+          ['GST', named.gst],
+          ['Landed Cost', str(landed)],
+        ]).map((x) => ({ ...x, fmt: 'inr' as const })),
+        ...referenceList(commonPairs(l)),
+      ],
+    };
   },
   async afterSave(c) {
+    // draft comparison sheets of the RFQ follow the quotation that was just saved
+    for (const id of new Set([c.header.rfqId, c.existing?.rfq_id])) if (id) await refreshOpenSheets(c.tx, S(id));
     const rfqId = c.header.rfqId ?? c.existing?.rfq_id;
     const supplierId = c.header.supplierId ?? c.existing?.supplier_id;
     if (rfqId && supplierId)
@@ -446,6 +596,9 @@ export const vqActions = {
         freight: norm(q).freight,
         otherCharges: norm(q).otherCharges,
         technicalCompliance: q.technical_compliance,
+        warranty: q.warranty,
+        complianceNote: q.compliance_note,
+        ...refsOf(q),
         total: norm(q).total,
         createdById: caller.auth.userId,
         updatedById: caller.auth.userId,
@@ -472,6 +625,7 @@ export const vqActions = {
         `UPDATE vendor_quotes SET is_current = false, version = version + 1 WHERE id = $1::uuid`,
         id,
       );
+      if (q.rfq_id) await refreshOpenSheets(tx, S(q.rfq_id));
       await audit(
         tx,
         caller,
@@ -505,7 +659,7 @@ export async function scoreComparison(
     db,
     `SELECT q.id::text, q.supplier_id::text, q.total::text, q.technical_compliance,
             COALESCE((SELECT sum(l.landed_cost) FROM vendor_quote_lines l WHERE l.quote_id = q.id),0)::text AS landed,
-            (SELECT min(l.lead_days) FROM vendor_quote_lines l WHERE l.quote_id = q.id) AS lead,
+            (SELECT max(l.lead_days) FROM vendor_quote_lines l WHERE l.quote_id = q.id) AS lead,
             (SELECT e.overall::text FROM supplier_evaluations e WHERE e.supplier_id = q.supplier_id ORDER BY e.period DESC LIMIT 1) AS quality
        FROM vendor_quotes q
       WHERE q.rfq_id = $1::uuid AND q.is_current AND q.deleted_at IS NULL AND q.status IN ('Approved','Posted','Draft','Pending Approval')`,
@@ -546,11 +700,123 @@ export async function scoreComparison(
   return scored.map((s) => ({ ...s, rank: rankOf.get(s.quoteId) ?? null }));
 }
 
+/** The rows of a comparison sheet with the names behind them: live while the sheet is open, stored once awarded. */
+export async function comparisonRows(db: Db, sheet: Row): Promise<Row[]> {
+  if (!sheet.rfq_id) return [];
+  const rows: Row[] = sheet.locked_at
+    ? (await query(db, `SELECT * FROM comparison_entries WHERE comparison_id=$1::uuid`, sheet.id)).map((e) => norm(e))
+    : (await scoreComparison(db, S(sheet.rfq_id), { price: S(sheet.w_price), lead: S(sheet.w_lead), quality: S(sheet.w_quality) })).map((s) => ({
+        quoteId: s.quoteId,
+        supplierId: s.supplierId,
+        rank: s.rank,
+        totalLanded: round2(s.totalLanded).toFixed(),
+        priceScore: s.price ? s.price.toDecimalPlaces(4).toFixed() : null,
+        leadScore: s.leadS ? s.leadS.toDecimalPlaces(4).toFixed() : null,
+        qualityScore: s.quality.toDecimalPlaces(4).toFixed(),
+        totalScore: s.total ? s.total.toDecimalPlaces(4).toFixed() : null,
+      }));
+  if (rows.length === 0) return [];
+  const info = await query(
+    db,
+    `SELECT q.id::text AS id, q.number, s.name AS supplier, q.technical_compliance,
+            (SELECT max(l.lead_days) FROM vendor_quote_lines l WHERE l.quote_id = q.id) AS lead,
+            (SELECT count(*)::int FROM rfq_lines rl WHERE rl.rfq_id = $2::uuid) AS rfq_lines,
+            (SELECT count(*)::int FROM rfq_lines rl WHERE rl.rfq_id = $2::uuid AND rl.qty <=
+               COALESCE((SELECT sum(l.qty) FROM vendor_quote_lines l WHERE l.quote_id = q.id
+                  AND (l.rfq_line_id = rl.id OR (l.rfq_line_id IS NULL AND l.item_id = rl.item_id))), 0)) AS covered
+       FROM vendor_quotes q JOIN suppliers s ON s.id = q.supplier_id WHERE q.id = ANY($1::uuid[])`,
+    rows.map((r) => S(r.quoteId)),
+    sheet.rfq_id,
+  );
+  const byId = new Map(info.map((i) => [S(i.id), i]));
+  return rows
+    .map((r) => {
+      const i = byId.get(S(r.quoteId));
+      return {
+        ...r,
+        quoteNumber: i?.number ?? null,
+        supplierName: i?.supplier ?? null,
+        leadDays: i?.lead ?? null,
+        meetsTechnical: i?.technical_compliance === true,
+        rfqLines: Number(i?.rfq_lines ?? 0),
+        coveredLines: Number(i?.covered ?? 0),
+      } as Row;
+    })
+    .sort((a, b) => Number(a.rank ?? 9999) - Number(b.rank ?? 9999));
+}
+
+/** Keeps the stored rows of the draft sheets of an RFQ in step with its quotations. */
+export async function refreshOpenSheets(tx: Db, rfqId: string): Promise<void> {
+  const open = await query(
+    tx,
+    `SELECT id::text AS id FROM vendor_comparisons WHERE rfq_id=$1::uuid AND deleted_at IS NULL AND locked_at IS NULL AND status IN ('Draft','Rejected')`,
+    rfqId,
+  );
+  for (const s of open) await refreshEntries(tx, S(s.id));
+}
+
 export const cmpCrud = makeCrud({
   def: CMP_DEF,
-  headerKeys: ['rfqId', 'wPrice', 'wLead', 'wQuality'],
+  headerKeys: [
+    'rfqId',
+    'wPrice',
+    'wLead',
+    'wQuality',
+    'docDate',
+    'requiredDate',
+    'requestDepartment',
+    'buyerId',
+    'reference',
+    ...REF_KEYS,
+    'projectId',
+  ],
   lineKeys: [],
-  prepare(c) {
+  async decorate(db, row) {
+    const l = await refLabels(db, { ...row, buyer_id: row.buyer_id ?? row.created_by_id });
+    const quotes = await comparisonRows(db, row);
+    const r = norm(
+      (
+        await query(
+          db,
+          `SELECT (SELECT number FROM rfqs WHERE id = $2::uuid) AS rfq_no,
+                  (SELECT due_date FROM rfqs WHERE id = $2::uuid) AS due_date,
+                  (SELECT current_level || ' of ' || total_levels FROM approval_requests WHERE doc_id = $1::uuid ORDER BY requested_at DESC LIMIT 1) AS approval_level,
+                  (SELECT string_agg(concat_ws(' ', i.code, i.name, '×', trim_scale(rl.qty)::text, rl.uom), '; ' ORDER BY rl.line_no)
+                     FROM rfq_lines rl LEFT JOIN items i ON i.id = rl.item_id WHERE rl.rfq_id = $2::uuid) AS items`,
+          row.id,
+          row.rfq_id ?? null,
+        )
+      )[0]!,
+    );
+    const own = norm(row);
+    const best = quotes.find((q) => (row.awarded_quote_id ? q.quoteId === row.awarded_quote_id : q.rank === 1));
+    const day = (v: unknown): string => S(v).slice(0, 10).split('-').reverse().join('-');
+    const required = own.requiredDate ?? r.dueDate;
+    return {
+      ...l,
+      quotes,
+      rfqNo: r.rfqNo,
+      references: [
+        ...referenceList([
+          ['RFQ No', r.rfqNo],
+          ['Items Compared', r.items],
+          [row.awarded_quote_id ? 'Awarded Vendor' : 'Top Ranked Vendor', best?.supplierName],
+        ]),
+        ...referenceList([['Amount', best?.totalLanded]]).map((x) => ({ ...x, fmt: 'inr' as const })),
+        ...referenceList([
+          ['Date', day(own.docDate ?? own.createdAt)],
+          ['Required Date', required ? day(required) : null],
+          ['Department', row.request_department ?? row.department],
+          ['Buyer', l.buyerName],
+          ['Reference', row.reference],
+          ['Approval Level', r.approvalLevel],
+          ['Award Reason', row.award_reason],
+          ...commonPairs(l),
+        ]),
+      ],
+    };
+  },
+  async prepare(c) {
     const w = {
       price: Number(c.header.wPrice ?? c.existing?.w_price ?? 50),
       lead: Number(c.header.wLead ?? c.existing?.w_lead ?? 20),
@@ -558,7 +824,12 @@ export const cmpCrud = makeCrud({
     };
     if (Math.abs(w.price + w.lead + w.quality - 100) > 0.0001)
       throw Errors.validation({ wPrice: 'The three weights must add up to 100.' });
-    return { header: c.header, lines: [] };
+    let header = c.header;
+    if (!c.existing && header.rfqId) {
+      const rfq = (await query(c.tx, `SELECT * FROM rfqs WHERE id = $1::uuid`, header.rfqId))[0];
+      if (rfq) header = inherit(header, { ...refsOf(rfq), buyerId: rfq.buyer_id ?? c.caller.auth.userId });
+    }
+    return { header: await prepareRefs(c.tx, c.caller, header, c.existing), lines: [] };
   },
   async afterSave() {
     /* entries are written by refreshEntries below (needs the id) */
@@ -595,10 +866,11 @@ export async function refreshEntries(tx: Db, id: string): Promise<void> {
 export const cmpActions = {
   async create(
     caller: Caller,
-    body: { rfqId: string; wPrice?: number; wLead?: number; wQuality?: number },
+    body: Row & { rfqId: string; wPrice?: number; wLead?: number; wQuality?: number },
   ) {
     const made = await cmpCrud.create(caller, {
       header: {
+        ...body,
         rfqId: body.rfqId,
         wPrice: body.wPrice ?? 50,
         wLead: body.wLead ?? 20,
@@ -608,6 +880,12 @@ export const cmpActions = {
     });
     await prisma.$transaction(async (tx) => refreshEntries(tx, S(made.id)), TX);
     return cmpCrud.get(caller, S(made.id));
+  },
+  /** Edits the sheet's own fields and weights while it is Draft or Rejected, then scores it again. */
+  async update(caller: Caller, id: string, ifMatch: number | undefined, header: Row) {
+    await cmpCrud.update(caller, id, ifMatch, { header });
+    await prisma.$transaction(async (tx) => refreshEntries(tx, id), TX);
+    return cmpCrud.get(caller, id);
   },
   async simulate(
     caller: Caller,

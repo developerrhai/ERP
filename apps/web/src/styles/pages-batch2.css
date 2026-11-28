@@ -294,6 +294,59 @@
 }
 
 /* long document forms: group headings, the multi-item picker, and lines that wrap instead of scrolling sideways */
+/* a tick box sits beside its label, not alone under it */
+.field.field-check {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  align-self: end;
+  min-height: 38px;
+}
+.field.field-check > input {
+  width: auto;
+}
+.field.field-check > label {
+  margin: 0;
+}
+
+/* Purchase Work Center: the workflow stage cards */
+.work-stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.work-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line, #dbe3ee);
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+.work-stage:hover,
+.work-stage:focus-visible {
+  border-color: var(--primary, #1d4ed8);
+}
+.work-stage > b {
+  font-size: 20px;
+}
+
+/* the comparison sheet fits its dialog: every column, with the Award button, is on screen */
+table.cmp-quotes th,
+table.cmp-quotes td {
+  white-space: normal;
+  padding-left: 8px;
+  padding-right: 8px;
+  vertical-align: top;
+}
+table.cmp-quotes td small {
+  display: block;
+}
+
 .doc-section {
   grid-column: 1 / -1;
   margin: 6px 0 0;

@@ -12,7 +12,7 @@ import { docsMailApi, saveFile } from '../../lib/docsMailApi';
 import { toUiMessage } from '../../lib/errors';
 import { formatDateTime } from '../../lib/format';
 import { submitSupplier } from '../../lib/mastersApi';
-import { deleteDoc, verb } from '../../lib/scmApi';
+import { deleteDoc, getJson, verb } from '../../lib/scmApi';
 import { useLoad } from '../../lib/useLoad';
 import type { ActionSet } from '../../types';
 import { listPageAudit } from '../generic/engineApi';
@@ -58,13 +58,6 @@ const CONNECTED_MODULES = new Set([
   'scm-grn',
   'scm-purchaseinvoice',
 ]);
-
-const DEFAULT_ORDERS = [
-  { id: 'SO-2026-001', label: 'SO-2026-001 • Apex Mobility Pvt. Ltd.' },
-  { id: 'SO-2026-002', label: 'SO-2026-002 • Tata Motors Ltd.' },
-  { id: 'SO-2026-003', label: 'SO-2026-003 • Mahindra Electric' },
-  { id: 'SO-2026-004', label: 'SO-2026-004 • Bharat Forge Ltd.' },
-];
 
 /** One cell: dates DD-MM-YYYY, money in rupees, quantities without trailing zeros, a missing value as a dash. */
 export function cell(col: Col, v: unknown): string {
@@ -132,6 +125,13 @@ function ruleTotals(spec: PageSpec, rows: Row[]): RuleTotals[] {
   }
   return out;
 }
+/** Money shows in rupees; a count or a score stays a plain number. */
+const isMoney = (spec: PageSpec): boolean => {
+  const col = spec.cols[spec.amountKey];
+  // a figure with no column of its own (a requisition's estimated value) is money when its name says so
+  return col ? col.fmt === 'inr' : /value|amount|cost/i.test(spec.amountLabel);
+};
+const average = (spec: PageSpec, v: number): string => (isMoney(spec) ? inr(Math.round(v * 100) / 100) : String(Math.round(v * 100) / 100));
 function metrics(spec: PageSpec, rows: Row[], total: number) {
   const amounts = rows.map((r) => num(r[spec.amountKey])).filter((x) => x > 0);
   const sum = amounts.reduce((a, b) => a + b, 0);
@@ -164,51 +164,23 @@ function metrics(spec: PageSpec, rows: Row[], total: number) {
 }
 
 // ------------------------------------------------------------------------------------------------ Ribbon & Controls
-function ConnectedManufacturingRibbon({
-  pageId,
-  spec,
-  soNo,
-  onSelectSo,
-}: {
-  pageId: string;
-  spec: PageSpec;
-  soNo: string;
-  onSelectSo: (so: string) => void;
-}) {
+interface OrderFlow {
+  orders: { id: string; number: string; customer: string }[];
+  selected: string | null;
+  stages: { label: string; detail: string; state: 'done' | 'current' | 'planned'; documents: string[] }[];
+}
+
+/** Where the chosen sales order of the plant stands, stage by stage, from the real documents linked to it. */
+function ConnectedManufacturingRibbon({ spec }: { spec: PageSpec }) {
   const navigate = useNavigate();
   const [drawer, setDrawer] = useState<'track' | 'move' | null>(null);
-
-  const stages = [
-    { label: 'Sales', detail: 'SO / approval', state: 'done' },
-    { label: 'Plan & MRP', detail: 'BOM demand', state: 'done' },
-    {
-      label: 'Purchase',
-      detail: 'PR / PO',
-      state: pageId === 'scm-pr' || pageId === 'scm-po' ? 'current' : 'done',
-    },
-    {
-      label: 'Receipt & IQC',
-      detail: 'GRN / accepted stock',
-      state:
-        pageId === 'scm-grn'
-          ? 'current'
-          : ['scm-pr', 'scm-po'].includes(pageId)
-            ? 'blocked'
-            : 'done',
-    },
-    { label: 'Material Issue', detail: 'Reserved issue', state: '' },
-    { label: 'Production', detail: 'WIP / routing', state: '' },
-    { label: 'FG & Quality', detail: 'Final release', state: '' },
-    { label: 'DC & Receipt', detail: 'Dispatch / POD', state: '' },
-    {
-      label: 'Invoice',
-      detail: 'Delivered quantity',
-      state: pageId === 'scm-purchaseinvoice' ? 'current' : '',
-    },
-    { label: 'Payment', detail: 'Collection / closure', state: '' },
-  ];
-
-  const completeCount = stages.filter((s) => s.state === 'done').length;
+  const [chosen, setChosen] = useState('');
+  const flow = useLoad(() => getJson<OrderFlow>(`/scm/order-flow${chosen ? `?salesOrderId=${chosen}` : ''}`), [chosen]);
+  const data = flow.data;
+  if (!data || !Array.isArray(data.orders)) return null;
+  const order = data.orders.find((o) => o.id === data.selected);
+  const complete = data.stages.filter((s) => s.state === 'done').length;
+  const none = order ? undefined : 'There is no sales order in this plant yet.';
 
   return (
     <div className="v17-integrated">
@@ -216,79 +188,61 @@ function ConnectedManufacturingRibbon({
         <div>
           <h3>Connected Manufacturing • 360° Order Movement</h3>
           <p>
-            This {spec.title} record stays connected to its Sales Order parent and all downstream
-            quantities, approvals and balances.
+            This {spec.title} page stays connected to the sales order chosen here and all downstream quantities, approvals and
+            balances.
           </p>
         </div>
         <div className="v17-actions">
-          <select
-            aria-label="Select Sales Order"
-            value={soNo}
-            onChange={(e) => onSelectSo(e.target.value)}
-          >
-            {DEFAULT_ORDERS.map((o) => (
+          <select aria-label="Select Sales Order" value={data.selected ?? ''} onChange={(e) => setChosen(e.target.value)}>
+            {data.orders.map((o) => (
               <option key={o.id} value={o.id}>
-                {o.label}
+                {o.number} • {o.customer}
               </option>
             ))}
+            {data.orders.length === 0 ? <option value="">No sales order yet</option> : null}
           </select>
-          <button
-            type="button"
-            className="btn sm"
-            onClick={() => navigate('/m/plant-dashboard')}
-          >
+          <button type="button" className="btn sm" onClick={() => navigate('/m/plant-dashboard')}>
             Dashboard
           </button>
-          <button
-            type="button"
-            className="btn sm"
-            onClick={() => setDrawer('track')}
-          >
+          <button type="button" className="btn sm" disabled={!order} title={none} onClick={() => setDrawer('track')}>
             Full 360°
           </button>
-          <button
-            type="button"
-            className="btn sm primary"
-            onClick={() => setDrawer('move')}
-          >
+          <button type="button" className="btn sm primary" disabled={!order} title={none} onClick={() => setDrawer('move')}>
             Move Next Controlled Step
           </button>
         </div>
       </div>
-      <div className="v17-mini-flow">
-        {stages.map((s, i) => (
-          <div key={s.label} className={`v17-mini-stage ${s.state}`}>
-            <small>
-              {String(i + 1).padStart(2, '0')} •{' '}
-              {s.state === 'done'
-                ? 'Complete'
-                : s.state === 'blocked'
-                  ? 'Blocked'
-                  : s.state === 'current'
-                    ? 'Current'
-                    : 'Planned'}
-            </small>
-            <b>{s.label}</b>
-            <small>{s.detail}</small>
+      {order ? (
+        <>
+          <div className="v17-mini-flow">
+            {data.stages.map((s, i) => (
+              <div key={s.label} className={`v17-mini-stage ${s.state === 'planned' ? '' : s.state}`} title={s.documents.join(', ') || undefined}>
+                <small>
+                  {String(i + 1).padStart(2, '0')} • {s.state === 'done' ? 'Complete' : s.state === 'current' ? 'In progress' : 'Not started'}
+                </small>
+                <b>{s.label}</b>
+                <small>{s.documents[0] ?? s.detail}</small>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="x-mt-7px x-fs-11px x-c-h52677f">
-        <b>{completeCount} / {stages.length} stages complete</b> • Parent {soNo} • Auto-synchronization active
-      </div>
-      {drawer === 'track' ? (
-        <HistoryDrawer
-          docType="sales-orders"
-          docId={soNo}
-          title={soNo}
-          onClose={() => setDrawer(null)}
-        />
+          <div className="x-mt-7px x-fs-11px x-c-h52677f">
+            <b>
+              {complete} / {data.stages.length} stages complete
+            </b>{' '}
+            • Parent {order.number}
+          </div>
+        </>
+      ) : (
+        <p className="muted">{none}</p>
+      )}
+      {drawer === 'track' && order ? (
+        <HistoryDrawer docType="sales-orders" docId={order.id} title={order.number} onClose={() => setDrawer(null)} />
       ) : null}
-      {drawer === 'move' ? (
+      {drawer === 'move' && order ? (
         <MoveForwardDialog
           docType="sales-orders"
-          docId={soNo}
-          docNo={soNo}
+          docId={order.id}
+          docNo={order.number}
           onClose={() => setDrawer(null)}
           onMoved={() => setDrawer(null)}
         />
@@ -479,112 +433,88 @@ function RecordControlsBar({
   );
 }
 
-function ComparisonSummaryPanel({ spec: _spec, m }: { spec: PageSpec; m: Metrics }) {
-  const pts = m.trend.length
-    ? m.trend
-    : [12000, 18000, 15000, 22000, 25000, 21000, 28000, 31000, 29000, 35000];
+/** Comparison amounts on this page: their trend, range and status mix. Nothing here is made up: no data, no figure. */
+function ComparisonSummaryPanel({ m }: { m: Metrics }) {
+  const pts = m.trend;
+  const n = pts.length;
   const max = Math.max(1, ...pts);
-  const min = Math.min(...pts);
   const W = 300;
   const H = 90;
-  const x = (i: number): number => (pts.length > 1 ? (i / (pts.length - 1)) * W : W / 2);
-  const line = pts
-    .map((v, i) => `${x(i).toFixed(1)},${(H - (v / max) * (H - 8) - 4).toFixed(1)}`)
-    .join(' ');
-  const n = pts.length;
-  let trend = '';
-  let slope = 0;
-  if (n > 1) {
-    const mx = (n - 1) / 2;
-    const my = pts.reduce((a, b) => a + b, 0) / n;
-    slope =
-      pts.reduce((a, v, i) => a + (i - mx) * (v - my), 0) /
-      pts.reduce((a, _v, i) => a + (i - mx) ** 2, 0);
-    const y = (i: number): number => H - ((my + slope * (i - mx)) / max) * (H - 8) - 4;
-    trend = `${x(0).toFixed(1)},${y(0).toFixed(1)} ${x(n - 1).toFixed(1)},${y(n - 1).toFixed(1)}`;
-  }
+  const x = (i: number): number => (n > 1 ? (i / (n - 1)) * W : W / 2);
+  const y = (v: number): number => H - (v / max) * (H - 8) - 4;
+  // least-squares line and how well it fits (R squared)
+  const mean = n ? pts.reduce((a, b) => a + b, 0) / n : 0;
+  const mx = (n - 1) / 2;
+  const slope = n > 1 ? pts.reduce((a, v, i) => a + (i - mx) * (v - mean), 0) / pts.reduce((a, _v, i) => a + (i - mx) ** 2, 0) : 0;
+  const total = pts.reduce((a, v) => a + (v - mean) ** 2, 0);
+  const left = pts.reduce((a, v, i) => a + (v - (mean + slope * (i - mx))) ** 2, 0);
+  const fit = n > 2 && total > 0 ? Math.round(Math.max(0, 1 - left / total) * 100) : null;
+  const sd = n ? Math.sqrt(total / n) : 0;
+  const outliers = sd > 0 ? pts.filter((v) => Math.abs(v - mean) > 2 * sd).length : 0;
   const statuses = Object.entries(m.status);
   const top = Math.max(1, ...statuses.map(([, v]) => v));
+  const money = (v: number): string => inr(Math.round(v * 100) / 100);
 
   return (
     <div className="x-mb-14px">
       <div className="v8-graph-grid">
         <div className="v8-graph-card">
           <h3>Comparison Sheet • 20-Point Trend & Forecast</h3>
-          <div className="v8-sub">
-            Blue = demo/actual sequence • Green = calculated trend line • quote evaluation values
-          </div>
-          <svg viewBox={`0 0 ${W} ${H}`} className="proc-chart" preserveAspectRatio="none">
-            <polyline fill="none" stroke="#2563eb" strokeWidth="2" points={line} />
-            {trend ? (
+          <div className="v8-sub">Blue = lowest landed cost of the sheets on this page, oldest first • Green = trend line</div>
+          {n > 1 ? (
+            <svg viewBox={`0 0 ${W} ${H}`} className="proc-chart" preserveAspectRatio="none" role="img" aria-label="Amount trend">
+              <polyline fill="none" stroke="#2563eb" strokeWidth="2" points={pts.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')} />
               <line
                 stroke="#16a34a"
                 strokeWidth="2"
                 strokeDasharray="4 2"
-                x1={trend.split(' ')[0]?.split(',')[0]}
-                y1={trend.split(' ')[0]?.split(',')[1]}
-                x2={trend.split(' ')[1]?.split(',')[0]}
-                y2={trend.split(' ')[1]?.split(',')[1]}
+                x1={x(0)}
+                y1={y(mean - slope * mx)}
+                x2={x(n - 1)}
+                y2={y(mean + slope * mx)}
               />
-            ) : null}
-          </svg>
+            </svg>
+          ) : (
+            <p className="muted">
+              {n === 1 ? `Only one comparison has an amount (${money(pts[0] ?? 0)}). A trend needs at least two.` : 'No comparison has an amount yet.'}
+            </p>
+          )}
         </div>
         <div className="v8-graph-card">
           <h3>Status / Business Distribution</h3>
-          <div className="v8-sub">Distribution of quotations across vendors and status</div>
+          <div className="v8-sub">Comparison sheets on this page by status</div>
           <div className="x-d-flex x-fd-column x-gap-6px x-mt-10px">
-            {(statuses.length
-              ? statuses
-              : [
-                  ['Selected', 4],
-                  ['Evaluated', 8],
-                  ['Under Review', 3],
-                ]
-            ).map(([k, v]) => (
+            {statuses.map(([k, v]) => (
               <div key={k} className="x-d-flex x-ai-center x-fs-11px">
-                <span
-                  className="x-w-90px x-ov-hidden x-text-overflow-ellipsis x-ws-nowrap"
-                >
-                  {k}
-                </span>
+                <span className="x-w-90px x-ov-hidden x-text-overflow-ellipsis x-ws-nowrap">{k}</span>
                 <div className="proc-bar">
-                  <i style={{ width: `${Math.round((Number(v) / (top || 8)) * 100)}%` }} />
+                  <i style={{ width: `${Math.round((v / top) * 100)}%` }} />
                 </div>
                 <b className="x-w-24px x-ta-right">{v}</b>
               </div>
             ))}
+            {statuses.length === 0 ? <p className="muted">No records.</p> : null}
           </div>
         </div>
       </div>
       <div className="card panel x-mt-12px x-p-14px">
         <h3 className="x-m-0-0-10px x-fs-13px x-c-h17365d">Analysis Summary</h3>
         <div className="detail-grid">
-          <div className="detail">
-            <small>Minimum</small>
-            <b>{inr(Math.round(min || 12000))}</b>
-          </div>
-          <div className="detail">
-            <small>Maximum</small>
-            <b>{inr(Math.round(max || 35000))}</b>
-          </div>
-          <div className="detail">
-            <small>Detected Outliers</small>
-            <b>0</b>
-          </div>
-          <div className="detail">
-            <small>Open / Pending</small>
-            <b>{m.status['Pending'] ?? m.status['Draft'] ?? 2}</b>
-          </div>
-          <div className="detail">
-            <small>Trend Direction</small>
-            <b style={{ color: slope >= 0 ? '#16a34a' : '#dc2626' }}>
-              {slope >= 0 ? 'Increasing' : 'Decreasing'}
-            </b>
-          </div>
-          <div className="detail">
-            <small>Forecast Confidence</small>
-            <b>94%</b>
-          </div>
+          {(
+            [
+              ['Minimum', n ? money(Math.min(...pts)) : '—'],
+              ['Maximum', n ? money(Math.max(...pts)) : '—'],
+              ['Detected Outliers', n > 2 ? String(outliers) : '—'],
+              ['Open / Pending', String((m.status['Draft'] ?? 0) + (m.status['Pending Approval'] ?? 0) + (m.status['Pending'] ?? 0))],
+              ['Trend Direction', n > 1 ? (slope > 0 ? 'Increasing' : slope < 0 ? 'Decreasing' : 'Flat') : '—'],
+              ['Forecast Confidence', fit === null ? '—' : `${fit}%`],
+            ] as const
+          ).map(([label, value]) => (
+            <div key={label} className="detail">
+              <small>{label}</small>
+              <b>{value}</b>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -733,7 +663,6 @@ export function V40Body({
   const [error, setError] = useState('');
   const [dept, setDept] = useState('');
   const [activeRecordId, setActiveRecordId] = useState('');
-  const [soNo, setSoNo] = useState('SO-2026-001');
   useEffect(() => {
     frame?.claim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -879,12 +808,7 @@ export function V40Body({
     <div className="proc-v40" data-v40-page={pageId} data-v40-tab={tabName}>
       <ErrorBox message={error || list.error} />
       {CONNECTED_MODULES.has(pageId) && isReg ? (
-        <ConnectedManufacturingRibbon
-          pageId={pageId}
-          spec={spec}
-          soNo={soNo}
-          onSelectSo={setSoNo}
-        />
+        <ConnectedManufacturingRibbon spec={spec} />
       ) : null}
       {isReg ? (
         <RecordControlsBar
@@ -912,7 +836,7 @@ export function V40Body({
         />
       ) : null}
       {pageId === 'scm-comparison' && isReg ? (
-        <ComparisonSummaryPanel spec={spec} m={m} />
+        <ComparisonSummaryPanel m={m} />
       ) : null}
       {panel}
       <div className="card">
@@ -924,7 +848,7 @@ export function V40Body({
             </div>
             <div className="v8-mini">
               <small>Data Completeness</small>
-              <b>{m.completeness || 96}%</b>
+              <b>{rows.length ? `${m.completeness}%` : '—'}</b>
             </div>
             <div className="v8-mini">
               <small>Open / Pending</small>
@@ -932,15 +856,11 @@ export function V40Body({
             </div>
             <div className="v8-mini">
               <small>AI Risk Score</small>
-              <b>{m.risk || 4}/100</b>
+              <b>{rows.length ? `${m.risk}/100` : '—'}</b>
             </div>
             <div className="v8-mini">
               <small>Primary Metric</small>
-              <b>
-                {m.avg
-                  ? `${spec.amountLabel}: ${inr(Math.round(m.avg))}`
-                  : `${spec.amountLabel}: ${total || rows.length}`}
-              </b>
+              <b>{`Average ${spec.amountLabel}: ${m.avg ? average(spec, m.avg) : isMoney(spec) || !rows.length ? '—' : '0'}`}</b>
             </div>
           </div>
         ) : null}
@@ -2067,7 +1987,6 @@ function ChannelPanel() {
 }
 
 function SimulationPanel({ spec, rows }: { spec: PageSpec; rows: Row[] }) {
-  const toast = useToast();
   const first = rows[0];
   const seed = first ? num(first[spec.amountKey]) : 0;
   const [base, setBase] = useState(String(seed || ''));
@@ -2087,8 +2006,6 @@ function SimulationPanel({ spec, rows }: { spec: PageSpec; rows: Row[] }) {
 
   const guardrails = [
     { label: 'Minimum margin', status: marginPct >= 10 ? 'Pass' : 'Review' },
-    { label: 'Credit exposure', status: 'Pass' },
-    { label: 'Budget availability', status: 'Pass' },
     { label: 'Tax validity', status: num(tax) > 0 ? 'Pass' : 'Review' },
     { label: 'Price deviation', status: num(disc) <= 15 ? 'Pass' : 'Review' },
   ];
@@ -2132,19 +2049,10 @@ function SimulationPanel({ spec, rows }: { spec: PageSpec; rows: Row[] }) {
             </div>
           ))}
         </div>
-        <div className="x-mt-14px">
-          <button
-            type="button"
-            className="btn primary"
-            onClick={() => toast('Commercial simulation approved')}
-          >
-            Approve Simulation
-          </button>
-        </div>
       </Section>
       <Section
         title="Commercial Guardrails"
-        hint="Automated validation against commercial thresholds and policy limits."
+        hint="Checks on the figures typed on the left."
       >
         <div className="v9-guardrails">
           {guardrails.map((g) => (
@@ -2274,7 +2182,7 @@ function AnalyticsPanel({ spec, m, title }: { spec: PageSpec; m: Metrics; title:
       <Kpis
         items={[
           ['Records', String(m.records), 'Data points'],
-          ['Average', m.avg ? inr(Math.round(m.avg * 100) / 100) : '—', spec.amountLabel],
+          ['Average', m.avg ? average(spec, m.avg) : '—', spec.amountLabel],
           ['AI Risk', `${m.risk}/100`, 'Rule-based: warnings and failures of the validation rules'],
           ['Data Quality', `${m.completeness}%`, 'Completeness of the key fields'],
         ]}
@@ -2320,7 +2228,7 @@ function AnalyticsPanel({ spec, m, title }: { spec: PageSpec; m: Metrics; title:
         </Section>
       </div>
       <Section title="Analysis Summary">
-        <p>{`${m.records} records, ${spec.amountLabel.toLowerCase()} total ${m.sum ? inr(Math.round(m.sum * 100) / 100) : '—'} on this page. ${m.completeness}% of the key fields are filled.`}</p>
+        <p>{`${m.records} records, ${spec.amountLabel.toLowerCase()} total ${m.sum ? average(spec, m.sum) : '—'} on this page. ${m.completeness}% of the key fields are filled.`}</p>
       </Section>
     </div>
   );

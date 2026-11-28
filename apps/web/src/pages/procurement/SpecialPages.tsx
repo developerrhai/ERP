@@ -2,7 +2,9 @@
 // Purchase Invoice (matching traffic lights, payment readiness), Vendor Comparison, Accounts Payable,
 // Put-away (phone) and Supplier Evaluation.
 import { FinV40 } from '../finance/FinV40';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { CMP_CFG } from './configs';
+import { DocForm, RecordBar } from './DocPage';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { toUiMessage } from '../../lib/errors';
@@ -1014,6 +1016,44 @@ export function ComparisonPage({ actions }: { actions: ActionSet }) {
   const [rfqId, setRfqId] = useState('');
   const [open, setOpen] = useState<Doc | null>(null);
   const [msg, setMsg] = useState('');
+  const [editing, setEditing] = useState<Doc | null>(null);
+  /** the quotation waiting for the reason of an award that is not the first rank */
+  const [reasonFor, setReasonFor] = useState<string | null>(null);
+  const [reason, setReason] = useState('');
+  const quotes = rowsOf(open?.quotes ?? open?.lines);
+  const references = rowsOf(open?.references);
+  const partial = quotes.some((q) => Number(q.coveredLines) < Number(q.rfqLines));
+  const award = (quoteId: string, why?: string): void => {
+    if (!open) return;
+    void run(() => verb('/scm/comparison', open.id, 'award', { quoteId, ...(why ? { reason: why } : {}) }), 'Awarded', open.id);
+  };
+  const create = async (): Promise<void> => {
+    setMsg('');
+    try {
+      const made = await createDoc('/scm/comparison', { rfqId });
+      setOpen(await getDoc('/scm/comparison', made.id));
+      toast('Comparison created');
+      list.reload();
+    } catch (e) {
+      setMsg(toUiMessage(e));
+    }
+  };
+  // the top bar's "+ Add New": a comparison is made from an RFQ chosen on this page
+  useEffect(() => {
+    const onAdd = (e: Event): void => {
+      const { detail } = e as CustomEvent<{ pageId?: string; handled: boolean }>;
+      if (detail.pageId !== 'scm-comparison') return;
+      detail.handled = true;
+      if (!actions.add) toast('You cannot add comparisons.');
+      else if (rfqId) void create();
+      else {
+        toast('Choose an RFQ in the list on this page, then press Compare quotes.');
+        document.querySelector<HTMLSelectElement>('select[aria-label="RFQ"]')?.focus();
+      }
+    };
+    window.addEventListener('v40-add-record', onAdd);
+    return () => window.removeEventListener('v40-add-record', onAdd);
+  });
   async function run(fn: () => Promise<unknown>, text: string, id?: string) {
     setMsg('');
     try {
@@ -1046,7 +1086,7 @@ export function ComparisonPage({ actions }: { actions: ActionSet }) {
             type="button"
             className="btn primary"
             disabled={!rfqId}
-            onClick={() => void run(() => post('/scm/comparison', { rfqId }), 'Comparison created')}
+            onClick={() => void create()}
           >
             ＋ Compare quotes
           </button>
@@ -1104,75 +1144,141 @@ export function ComparisonPage({ actions }: { actions: ActionSet }) {
       {open ? (
         <Modal
           title={`Comparison ${s(open.number)}`}
+          size="lg"
           onClose={() => setOpen(null)}
           footer={
-            open.status === 'Draft' && actions.submit ? (
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() =>
-                  void run(
-                    () => verb('/scm/comparison', open.id, 'submit', {}, open.version),
-                    'Submitted',
-                    open.id,
-                  )
-                }
-              >
-                Submit
-              </button>
-            ) : undefined
+            <>
+              <RecordBar doc={open} canEdit={actions.edit} pageId="scm-comparison" />
+              {(open.status === 'Draft' || open.status === 'Rejected') && actions.edit ? (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setEditing(open);
+                    setOpen(null);
+                  }}
+                >
+                  Edit details
+                </button>
+              ) : null}
+              {open.status === 'Draft' && actions.submit ? (
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={quotes.length === 0}
+                  title={quotes.length === 0 ? 'Enter the quotations of this RFQ first.' : undefined}
+                  onClick={() =>
+                    void run(
+                      () => verb('/scm/comparison', open.id, 'submit', {}, open.version),
+                      'Submitted',
+                      open.id,
+                    )
+                  }
+                >
+                  Submit
+                </button>
+              ) : null}
+            </>
           }
         >
+          <ErrorBox message={msg} />
+          <p>
+            <Pill>{open.status}</Pill>
+          </p>
+          {references.length > 0 ? (
+            <dl className="kv">
+              {references.map((r) => (
+                <div key={s(r.label)}>
+                  <dt>{s(r.label)}</dt>
+                  <dd>{r.fmt === 'inr' ? inr(s(r.value)) : s(r.value)}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
           <div className="table-wrap">
-            <table>
+            <table className="cmp-quotes">
               <thead>
                 <tr>
                   <th>Rank</th>
-                  <th>Total landed</th>
-                  <th>Price score</th>
-                  <th>Lead score</th>
-                  <th>Quality score</th>
-                  <th>Total</th>
+                  <th>Supplier / Quote No</th>
+                  <th>Items covered</th>
+                  <th className="num">Total landed (before tax)</th>
+                  <th className="num">Lead days</th>
+                  <th className="num">Price / Lead / Quality score</th>
+                  <th className="num">Total score</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {rowsOf(open.lines).map((e) => (
-                  <tr key={s(e.id)}>
+                {quotes.length === 0 ? (
+                  <Empty cols={8}>
+                    No quotation to compare yet for this RFQ. Enter the suppliers’ prices under Vendor Quotations, then open this sheet again.
+                  </Empty>
+                ) : null}
+                {quotes.map((e) => (
+                  <tr key={s(e.quoteId)}>
                     <td>{s(e.rank) || 'Not eligible'}</td>
-                    <td>{inr(s(e.totalLanded))}</td>
-                    <td>{s(e.priceScore)}</td>
-                    <td>{s(e.leadScore)}</td>
-                    <td>{s(e.qualityScore)}</td>
-                    <td>{s(e.totalScore)}</td>
+                    <td>
+                      {s(e.supplierName) || '—'}
+                      <small className="muted">{s(e.quoteNumber)}</small>
+                    </td>
+                    <td>
+                      {Number(e.rfqLines) > 0 ? `${s(e.coveredLines)} of ${s(e.rfqLines)}` : '—'}
+                      {Number(e.coveredLines) < Number(e.rfqLines) ? <span className="field-error"> Incomplete</span> : null}
+                    </td>
+                    <td className="num">{inr(s(e.totalLanded))}</td>
+                    <td className="num">{s(e.leadDays) || '—'}</td>
+                    <td className="num">{[e.priceScore, e.leadScore, e.qualityScore].map(score).join(' / ')}</td>
+                    <td className="num">{score(e.totalScore)}</td>
                     <td>
                       {open.status === 'Approved' && !open.lockedAt && actions.approve && e.rank ? (
                         <button
                           type="button"
                           className="btn sm primary"
-                          onClick={() =>
-                            void run(
-                              () =>
-                                verb('/scm/comparison', open.id, 'award', {
-                                  quoteId: s(e.quoteId),
-                                  ...(Number(e.rank) !== 1
-                                    ? { reason: 'Chosen for delivery time or relationship' }
-                                    : {}),
-                                }),
-                              'Awarded',
-                              open.id,
-                            )
-                          }
+                          onClick={() => {
+                            if (Number(e.rank) === 1) return award(s(e.quoteId));
+                            setReason('');
+                            setReasonFor(s(e.quoteId));
+                          }}
                         >
                           Award
                         </button>
                       ) : null}
+                      {open.awardedQuoteId === e.quoteId ? <Pill>Awarded</Pill> : null}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          {partial ? (
+            <p className="notice" role="note">
+              An incomplete quotation does not cover every item and quantity of the RFQ, so its total can look lower. Check it before awarding.
+            </p>
+          ) : null}
+          {reasonFor ? (
+            <div className="field">
+              <label htmlFor="award-reason">Why this quotation and not the first rank? *</label>
+              <input id="award-reason" value={reason} onChange={(e) => setReason(e.target.value)} />
+              <div className="actions">
+                <button type="button" className="btn sm" onClick={() => setReasonFor(null)}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn sm primary"
+                  disabled={reason.trim().length < 5}
+                  title={reason.trim().length < 5 ? 'Type a reason of at least 5 letters first' : undefined}
+                  onClick={() => {
+                    award(reasonFor, reason.trim());
+                    setReasonFor(null);
+                  }}
+                >
+                  Award with this reason
+                </button>
+              </div>
+            </div>
+          ) : null}
           {open.lockedAt ? (
             <button
               type="button"
@@ -1189,9 +1295,25 @@ export function ComparisonPage({ actions }: { actions: ActionSet }) {
           ) : null}
         </Modal>
       ) : null}
+      {editing ? (
+        <DocForm
+          cfg={CMP_CFG}
+          doc={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(d) => {
+            setEditing(null);
+            setOpen(d);
+            toast(`Saved ${s(d.number)}`);
+            list.reload();
+          }}
+        />
+      ) : null}
     </>
   );
 }
+
+/** A score with two decimals; a quotation that is not eligible has none. */
+const score = (v: unknown): string => (v === null || v === undefined || v === '' ? '—' : Number(v).toFixed(2));
 
 // ------------------------------------------------------------------------------------------------ AP
 export function ApPage({ actions }: { actions: ActionSet }) {

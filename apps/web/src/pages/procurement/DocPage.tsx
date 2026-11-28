@@ -80,6 +80,16 @@ export interface FieldCfg {
   placeholder?: string;
   /** header only: a heading drawn above this field, to group a long form */
   section?: string;
+  /** picking a record here brings its references and lines into a new document ("source document") */
+  loads?: 'pr' | 'rfq';
+  /** a helper of the form only: never sent, and shown only while the record is new */
+  transient?: boolean;
+  /** a blank on Edit clears the stored value (sent as null) */
+  nullable?: boolean;
+  /** pre-filled with today's date on a new record */
+  today?: boolean;
+  /** the key of the saved record that holds the text of the chosen value */
+  knownKey?: string;
 }
 /** Extra input for an action: asked in a small dialog first; `body` is always sent. */
 export interface MoreExtra {
@@ -122,6 +132,12 @@ export interface DocCfg {
   itemPicker?: boolean;
   /** each line is drawn as a block that wraps, so no field hides behind a sideways scroll */
   wrapLines?: boolean;
+  /** line values with no field of their own that an Edit or a source document must not lose (links, service text) */
+  keepLineKeys?: string[];
+  /** extra read-only columns of the lines in the record view */
+  detailLines?: { label: string; value: (line: Record<string, unknown>) => string }[];
+  /** quotations: the totals show base amount, discount, freight and the landed cost */
+  landedTotals?: boolean;
 }
 
 /** Whether the record's status still allows Edit; mirrors the server rule of the same page. */
@@ -484,6 +500,7 @@ function Input({
       <LookupCombo<Option>
         id={fid}
         value={value}
+        known={known}
         search={lookupSuppliers}
         label={(o) => o.label}
         onPick={(o) => onChange(o?.id ?? '')}
@@ -588,6 +605,8 @@ function Input({
     control = (
       <select {...common} value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">Choose…</option>
+        {/* a saved value that is no longer offered (an order closed since) stays selected */}
+        {value && !(refs.data ?? []).some((o) => o.id === value) ? <option value={value}>{known ?? 'Current selection'}</option> : null}
         {(refs.data ?? []).map((o) => (
           <option key={o.id} value={o.id}>
             {o.label}
@@ -627,7 +646,7 @@ function Input({
       />
     );
   return (
-    <div className="field">
+    <div className={f.type === 'check' ? 'field field-check' : 'field'}>
       <label htmlFor={fid}>
         {f.label}
         {f.required ? ' *' : ''}
@@ -663,10 +682,37 @@ export function docTotals(
   return priced ? { taxable, gst, total: taxable + gst, priced } : null;
 }
 
-function TotalsPanel({ lines }: { lines: Record<string, string>[] }) {
+function TotalsPanel({ lines, landed }: { lines: Record<string, string>[]; landed?: { freight: number } | undefined }) {
   const t = docTotals(lines);
   if (!t) return null;
   const half = t.gst / 2;
+  if (landed) {
+    const base = docTotals(lines.map((l) => ({ ...l, discountPct: '0' })))?.taxable ?? 0;
+    const total = t.total + landed.freight;
+    return (
+      <div className="ui-totals" role="group" aria-label="Totals">
+        {(
+          [
+            ['Base amount', base],
+            ['Discount', base - t.taxable],
+            ['Taxable value', t.taxable],
+            ['GST', t.gst],
+            ['Freight', landed.freight],
+          ] as const
+        ).map(([label, amount]) => (
+          <div key={label}>
+            <span>{label}</span>
+            <b>₹ {formatINR(amount)}</b>
+          </div>
+        ))}
+        <div className="grand">
+          <span>Landed cost</span>
+          <b>₹ {formatINR(total)}</b>
+        </div>
+        <p>{amountInWords(Math.round(total * 100) / 100)}</p>
+      </div>
+    );
+  }
   return (
     <div className="ui-totals" role="group" aria-label="Totals">
       <div>
@@ -754,7 +800,7 @@ function ItemPicker({ onAdd, onBlank, onClear }: { onAdd: (items: Ref[]) => void
   );
 }
 
-const INT_KEYS = ['leadDays', 'rating', 'probability', 'durationMin', 'score'];
+const INT_KEYS = ['leadDays', 'rating', 'probability', 'durationMin', 'score', 'wPrice', 'wLead', 'wQuality'];
 
 /** ISO instant -> the "YYYY-MM-DDTHH:mm" value of a datetime-local input, in the browser's time zone. */
 function localInput(iso: string): string {
@@ -783,8 +829,10 @@ function toBody(
       out[f.key] = v === 'true';
       continue;
     }
+    if (f.transient) continue;
     if (v === '') {
-      if (editing && f.clearable && !(f.type === 'lead' && keepRelation))
+      if (editing && f.nullable) out[f.key] = null;
+      else if (editing && f.clearable && !(f.type === 'lead' && keepRelation))
         out[f.key] = f.type === 'lead' || f.type === 'ref' || f.type === 'leadSource' ? null : '';
       continue;
     }
@@ -794,7 +842,7 @@ function toBody(
   return out;
 }
 
-function DocForm({
+export function DocForm({
   cfg,
   doc,
   onClose,
@@ -814,9 +862,11 @@ function DocForm({
           : f.type === 'lead' && src.relatedType !== 'LEAD'
             ? ''
             : s(src[f.key])
-        : f.type === 'date' && f.key.toLowerCase().includes('date') && !f.def
-          ? ''
-          : (f.def ?? '');
+        : f.today
+          ? todayIso()
+          : f.type === 'date' && f.key.toLowerCase().includes('date') && !f.def
+            ? ''
+            : (f.def ?? '');
     return o;
   };
   const [head, setHead] = useState(() => {
@@ -844,6 +894,60 @@ function DocForm({
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const [sourceNote, setSourceNote] = useState('');
+  /** The line values that link a line to its source; they leave with the item when another item is chosen. */
+  const LINKS = ['prLineId', 'rfqLineId', 'contractLineId'];
+  const kept = (l: Record<string, string>): Row => {
+    const saved = (Array.isArray(doc?.lines) ? (doc.lines as Row[]) : []).find((x) => s(x.id) === l.id && s(x.itemId) === (l.itemId ?? ''));
+    return Object.fromEntries(
+      (cfg.keepLineKeys ?? [])
+        .map((k) => [k, l[k] || saved?.[k]] as const)
+        .filter(([k, v]) => v !== undefined && v !== null && v !== '' && !cfg.lines?.some((f) => f.key === k)),
+    );
+  };
+
+  /** "Source document": its references go into the header and its product lines into the line list. */
+  async function loadSource(kind: 'pr' | 'rfq', id: string) {
+    setSourceNote('');
+    try {
+      const src = await getJson<{ number: string; header: Row; lines: Row[] }>(`/scm/source/${kind}/${id}`);
+      setHead((h) => {
+        const next = { ...h };
+        for (const f of cfg.header) {
+          const v = src.header[f.key];
+          if (!f.transient && !f.readOnly && v !== null && v !== undefined && v !== '') next[f.key] = s(v);
+        }
+        return next;
+      });
+      const brought = src.lines.map((x) => {
+        const line: Record<string, string> = {
+          ...initial(cfg.lines ?? [], null),
+          itemId: s(x.itemId),
+          _item: [s(x.itemCode), s(x.itemName)].filter(Boolean).join(' · '),
+        };
+        const take = (key: string, from: unknown) => {
+          if (from !== null && from !== undefined && from !== '' && cfg.lines?.some((f) => f.key === key)) line[key] = s(from);
+        };
+        take('uom', x.uom);
+        take('qty', x.qty);
+        take('hsnSac', x.hsnSac);
+        take('estRate', x.estRate);
+        take('rate', x.estRate);
+        take('requiredDate', x.requiredDate);
+        take('deliveryDate', x.requiredDate);
+        for (const k of cfg.keepLineKeys ?? []) if (x[k] !== null && x[k] !== undefined) line[k] = s(x[k]);
+        return line;
+      });
+      if (brought.length === 0) return setSourceNote(`${src.number} has nothing left to bring over.`);
+      if (lines.every((l) => untouched(cfg.lines ?? [], l))) {
+        setLines(brought);
+        setSourceNote(`${brought.length} line${brought.length === 1 ? '' : 's'} loaded from ${src.number}.`);
+      } else setSourceNote(`Your lines are kept. Press "Clear Items" and choose ${src.number} again to load its lines.`);
+    } catch (e) {
+      setSourceNote(toUiMessage(e));
+    }
+  }
+
   async function save() {
     setBusy(true);
     setMsg('');
@@ -859,6 +963,7 @@ function DocForm({
       };
       if (cfg.lines) {
         body.lines = lines.map((l) => ({
+          ...kept(l),
           ...toBody(cfg.lines ?? [], l),
           ...(l.id ? { id: l.id } : {}),
         }));
@@ -911,15 +1016,22 @@ function DocForm({
         {cfg.header.map((f) => (
           <Fragment key={f.key}>
             {f.section ? <h3 className="doc-section">{f.section}</h3> : null}
-            <Input
-              f={f}
-              value={head[f.key] ?? ''}
-              error={fields[f.key]}
-              onChange={(v) => setHead((h) => ({ ...h, [f.key]: v }))}
-            />
+            {f.transient && doc ? null : (
+              <Input
+                f={f}
+                value={head[f.key] ?? ''}
+                error={fields[f.key]}
+                known={f.knownKey && doc && head[f.key] === s(doc[f.key]) ? s(doc[f.knownKey]) || undefined : undefined}
+                onChange={(v) => {
+                  setHead((h) => ({ ...h, [f.key]: v }));
+                  if (f.loads && v && !doc) void loadSource(f.loads, v);
+                }}
+              />
+            )}
           </Fragment>
         ))}
       </div>
+      {sourceNote ? <p className="muted" role="status">{sourceNote}</p> : null}
       {cfg.lines ? (
         <>
           <h3>Lines</h3>
@@ -957,7 +1069,14 @@ function DocForm({
                         onChange={(v, extra) =>
                           setLines((ls) =>
                             ls.map((x, j) =>
-                              j === i ? { ...x, [f.key]: v, ...(f.type === 'item' ? { _item: '' } : {}), ...ownColumns(cfg.lines, extra) } : x,
+                              j === i
+                              ? {
+                                  ...(f.type === 'item' ? (Object.fromEntries(Object.entries(x).filter(([k]) => !LINKS.includes(k))) as Record<string, string>) : x),
+                                  [f.key]: v,
+                                  ...(f.type === 'item' ? { _item: '' } : {}),
+                                  ...ownColumns(cfg.lines, extra),
+                                }
+                              : x,
                             ),
                           )
                         }
@@ -1031,7 +1150,7 @@ function DocForm({
           >
             ＋ Add line
           </button>
-          <TotalsPanel lines={lines} />
+          <TotalsPanel lines={lines} landed={cfg.landedTotals ? { freight: Number(head.freight) || 0 } : undefined} />
         </>
       ) : null}
     </Modal>
@@ -1285,15 +1404,23 @@ function DocDetail({
           </div>
         ))}
         {/* a purchase made for a customer's order */}
-        {s(doc.salesOrderNo) ? (
+        {s(doc.salesOrderNo) && !(Array.isArray(doc.references) && (doc.references as { label: string }[]).some((r) => r.label === 'Sales Order')) ? (
           <div>
             <dt>Customer PO</dt>
             <dd>{[s(doc.customerPoNo), s(doc.salesOrderNo)].filter(Boolean).join(' · ')}</dd>
           </div>
         ) : null}
+        {/* names behind the references, sent by the server */}
+        {(Array.isArray(doc.references) ? (doc.references as { label: string; value: string; fmt?: string }[]) : []).map((r) => (
+          <div key={r.label}>
+            <dt>{r.label}</dt>
+            <dd>{show(r.value, r.fmt)}</dd>
+          </div>
+        ))}
         {/* the other things typed on the entry form, once they hold a value */}
         {cfg.header
-          .filter((f) => !cfg.showAll && (f.type === 'text' || f.type === 'date' || f.type === 'number') && !cfg.columns.some((c) => c.key === f.key) && s(doc[f.key]) !== '')
+          .filter((f) => !cfg.showAll && !f.readOnly && !f.transient && (f.type === 'text' || f.type === 'date' || f.type === 'number') && !cfg.columns.some((c) => c.key === f.key) && s(doc[f.key]) !== '')
+          .filter((f) => !(Array.isArray(doc.references) && (doc.references as { label: string }[]).some((r) => r.label === f.label)))
           .map((f) => (
             <div key={f.key}>
               <dt>{f.label}</dt>
@@ -1310,13 +1437,19 @@ function DocDetail({
                 {cfg.lines.map((f) => (
                   <th key={f.key}>{f.label.replace(/\s*\(blank[^)]*\)/i, '')}</th>
                 ))}
+                {cfg.detailLines?.map((c) => <th key={c.label}>{c.label}</th>)}
               </tr>
             </thead>
             <tbody>
               {lines.map((l) => (
                 <tr key={s(l.id)}>
                   <td>{s(l.lineNo)}</td>
-                  {cfg.lines?.map((f) => <td key={f.key}>{(f.type === 'item' ? s(l.itemLabel) || s(l.itemCode) : '') || s(l[f.key]) || '—'}</td>)}
+                  {cfg.lines?.map((f) => (
+                    <td key={f.key}>
+                      {f.type === 'date' ? show(l[f.key], 'date') : (f.type === 'item' ? s(l.itemLabel) || s(l.itemCode) : '') || s(l[f.key]) || '—'}
+                    </td>
+                  ))}
+                  {cfg.detailLines?.map((c) => <td key={c.label}>{c.value(l) || '—'}</td>)}
                 </tr>
               ))}
             </tbody>

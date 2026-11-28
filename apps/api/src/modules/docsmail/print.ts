@@ -18,6 +18,7 @@ import type { Caller } from '../records/service';
 import { stripHtml } from './letters';
 import { salesCopyMark, salesPrint } from './sales-print';
 import { query } from '../procurement/core';
+import { comparisonRows } from '../procurement/sourcing-service';
 import type { Row } from '../procurement/core';
 
 export type PrintKind = 'standard' | 'letterhead' | 'commercial' | 'word' | 'excel';
@@ -70,6 +71,8 @@ export const CATALOG: readonly CatalogDoc[] = [
  * Word / PDF / Excel and the Docs upload of their rows read the table row directly (no 'own storage' refusal).
  */
 export const TYPED_DOCS: readonly CatalogDoc[] = [
+  { pageId: 'scm-vendorquote', title: 'Vendor Quotation', group: 'Procurement', table: 'vendor_quotes', numberCol: 'number', dateCol: 'quote_date', statusCol: 'status', unitCol: 'unit_id', lines: { table: 'vendor_quote_lines', fk: 'quote_id' } },
+  { pageId: 'scm-comparison', title: 'Vendor Comparison', group: 'Procurement', table: 'vendor_comparisons', numberCol: 'number', dateCol: 'created_at', statusCol: 'status', unitCol: 'unit_id' },
   { pageId: 'inv-items', title: 'Item Master', group: 'Inventory', table: 'items', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
   // Product / Raw Material Master are views of the item table, so their toolbar Word / PDF print the item
   { pageId: 'master-products', title: 'Product', group: 'Inventory', table: 'items', numberCol: 'code', dateCol: 'created_at', statusCol: 'status', unitCol: null },
@@ -242,6 +245,14 @@ async function linkedNames(r: Row): Promise<{ facts: { label: string; value: str
     ['source_id', 'Lead source', 'SELECT name AS label FROM lead_sources WHERE id = $1::uuid'],
     ['assigned_to_id', 'Owner', 'SELECT name AS label FROM users WHERE id = $1::uuid'],
     ['project_id', 'Project Number', 'SELECT code AS label FROM projects WHERE id = $1::uuid'],
+    // purchasing documents name who and what they are linked to
+    ['rfq_id', 'RFQ No', 'SELECT number AS label FROM rfqs WHERE id = $1::uuid'],
+    ['pr_id', 'PR Number', 'SELECT number AS label FROM purchase_requisitions WHERE id = $1::uuid'],
+    ['mfg_order_id', 'Manufacturing Order', 'SELECT number AS label FROM mfg_orders WHERE id = $1::uuid'],
+    ['buyer_id', 'Buyer', 'SELECT name AS label FROM users WHERE id = $1::uuid'],
+    ['requested_by_id', 'Requester', 'SELECT name AS label FROM users WHERE id = $1::uuid'],
+    ['preferred_supplier_id', 'Preferred Vendor', 'SELECT name AS label FROM suppliers WHERE id = $1::uuid'],
+    ['payment_term_id', 'Payment Terms', 'SELECT name AS label FROM payment_terms WHERE id = $1::uuid'],
   ];
   const facts: { label: string; value: string }[] = [];
   let order = '';
@@ -290,6 +301,28 @@ async function rowDto(caller: Caller, doc: CatalogDoc, id: string): Promise<Prin
         }))) as never,
       };
     }
+  }
+  // a comparison sheet prints its ranked quotations, by name
+  if (doc.table === 'vendor_comparisons') {
+    const ranked = await comparisonRows(prisma, r);
+    const columns: [string, string, boolean][] = [
+      ['rank', 'Rank', true], ['quoteNumber', 'Quote No', false], ['supplierName', 'Supplier', false], ['covered', 'Items covered', false],
+      ['totalLanded', 'Total landed', true], ['leadDays', 'Lead days', true], ['totalScore', 'Total score', true],
+    ];
+    lines = ranked.length
+      ? {
+          columns: columns.map(([key, label, num]) => ({ key, label, format: 'text', align: num ? ('right' as const) : ('left' as const) })),
+          rows: ranked.map((q) => ({
+            rank: q.rank === null ? 'Not eligible' : String(q.rank as number),
+            quoteNumber: (q.quoteNumber as string | null) ?? '-',
+            supplierName: (q.supplierName as string | null) ?? '-',
+            covered: `${String(q.coveredLines as number)} of ${String(q.rfqLines as number)}`,
+            totalLanded: formatInr(Number(q.totalLanded)),
+            leadDays: q.leadDays === null ? '-' : String(q.leadDays as number),
+            totalScore: q.totalScore === null ? '-' : Number(q.totalScore).toFixed(2),
+          })) as never,
+        }
+      : null;
   }
   const linked = await linkedNames(r);
   // a line of a production order (job card, material, cost sheet) is named after its order
